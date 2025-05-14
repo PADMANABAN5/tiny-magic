@@ -1,0 +1,9 @@
+.dropdown-menu.dropdown-menu-end{
+    background-color: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+}   
+.dropdown-divider{
+    background-color: #6c757d !important;
+    width: 1% !important;
+}

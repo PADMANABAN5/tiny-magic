@@ -1,0 +1,61 @@
+*{
+    box-sizing: border-box;
+    
+}
+body{
+  overflow-y: hidden;
+  
+}
+.dashboard-container {
+  min-height: 60vh;
+  min-width: 95vw;
+  margin-bottom: -10px !important;
+
+}
+
+.dashboard-content {
+  display: flex;
+  overflow-y: auto;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 100vh;
+}
+
+.chat-history-placeholder {
+  flex-grow: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+}
+
+.prompt-input-group {
+  display: flex;
+  align-items: stretch;
+  max-width: 800px;
+  width: 100%;
+  margin: 0 auto;
+}
+
+/* Make textarea bigger */
+.prompt-input-group textarea {
+  resize: none;
+  height: 70px;
+  border-top-left-radius: 0.5rem;
+  border-bottom-left-radius: 0.5rem;
+}
+
+/* Button same height as textarea */
+.prompt-input-group button {
+  border-top-right-radius: 0.5rem !important;
+  border-bottom-right-radius: 0.5rem !important;
+  height: 100px;
+  white-space: nowrap;
+}
+.submitted-prompt-box {
+  max-width: 300px;
+  word-wrap: break-word;
+  z-index: 1000;
+}

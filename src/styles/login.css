@@ -1,0 +1,253 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    
+}
+
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(to right, #115fcb, #25e3fc);
+    color: #333;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 1200px;
+    margin: auto;
+}
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    margin-right: 50%;
+}
+.sphere {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.5;
+  filter: blur(1px);
+  z-index: 0;
+}
+
+.sphere1 {
+  width: 200px;
+  height: 200px;
+  background: #41a6c0;
+  top: 80px;
+  left: 50px;
+}
+
+.sphere2 {
+  width: 300px;
+  height: 300px;
+  background: #3e197e;
+  bottom: 10px;
+  right: 20px;
+}
+
+.sphere3 {
+  width: 150px;
+  height: 150px;
+  background: #0cc4dd;
+  top: 50%;
+  left: 30%;
+  transform: translate(-50%, -50%);
+}
+
+.login-card {
+    background:  rgba(173, 213, 248, 0.95);
+    padding: 50px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    border-radius: 20px !important;
+    width: 100%;
+    max-width: 850px; 
+    text-align: center;
+    backdrop-filter: blur(15px);
+    animation: fadeInScale 1.2s ease-out;
+    border: 1px solid rgba(252, 252, 252, 0.3);
+}
+.login-card:hover {
+    transform: scale(1.01);
+    transition: 0.3s ease;
+  }
+  
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+.login-title {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 30px;
+    color: #333;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.input-group {
+    margin-bottom: 25px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #555;
+    font-size: 15px;
+}
+
+.input-group input {
+  width: 100%;
+  padding: 10px 0;
+  font-size: 16px;
+  border: none;
+  border-bottom: 2px solid #ccc;
+  outline: none;
+  background-color: transparent !important;
+  transition: border-color 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  color: #000000;
+  border-radius: 0;
+  box-shadow: none; /* optional: if you want a truly flat input */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+}
+
+.input-group input:focus {
+  background-color: transparent !important;
+  border-bottom: 2px solid #00bcd4;
+  box-shadow: none !important;
+}
+
+/* Fix for Chrome autofill */
+.input-group input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #fff !important; /* match your theme */
+  background-color: transparent !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Firefox Autofill */
+input:-moz-autofill {
+  box-shadow: 0 0 0px 1000px transparent inset !important;
+  -moz-text-fill-color: #fff !important;
+}
+
+
+button {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(to right, #1136cb, #25cafc);
+    color: #fff;
+    border: 1px solid #118acb !important;
+    border-radius: 10px !important;
+    font-size: 18px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s ease, background 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+button:hover {
+    background: linear-gradient(to right, #115fcb, #25e3fc);
+    transform: translateY(-3px);
+    box-shadow: 0 7px 20px rgba(0, 0, 0, 0.3);
+}
+
+button:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.error-msg {
+    color: #e74c3c;
+    font-weight: bold;
+    margin-top: -15px;
+    margin-bottom: 15px;
+    font-size: 14px;
+}
+
+.success-msg {
+    color: #2ecc71;
+    font-weight: bold;
+    font-size: 14px;
+    margin-top: 15px;
+}
+
+@media (max-width: 500px) {
+    .login-card {
+        padding: 25px;
+    }
+
+    .login-title {
+        font-size: 22px;
+        margin-bottom: 20px;
+    }
+
+    .input-group input {
+        padding: 12px;
+        font-size: 15px;
+    }
+
+    button {
+        padding: 12px;
+        font-size: 16px;
+    }
+}
+/* Styles for the entire model popup container */
+.model-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: rgb(173, 203, 231);
+  width: 40%;  
+  height: 60%; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1050; 
+  border-radius: 10px;
+  padding: 20px;
+  overflow-y: auto; 
+}
+
+.popup-content {
+  background-color: white;
+  padding: 30px;
+  width: 100%;  
+  height: 100%;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; 
+  align-items: center;
+  overflow-y: auto;
+}
+
+.popup-content input[type="radio"] {
+  margin: 10px;
+}
+
+.popup-content button {
+  margin-top: 20px;
+  width: 100px;
+  align-self: center;
+}
