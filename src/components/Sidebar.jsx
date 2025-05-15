@@ -133,8 +133,8 @@ function Sidebar() {
             </Link>
           </li>
           <li>
-            <Link to="/customers" className={`nav-link link-dark ${location.pathname === '' ? 'active' : ''}`}>
-              <FaBook className="me-2" /> <span className={isCollapsed ? 'd-none' : ''}>Subjects</span>
+            <Link to="/variables" className={`nav-link link-dark ${location.pathname === '' ? 'active' : ''}`}>
+              <FaBook className="me-2" /> <span className={isCollapsed ? 'd-none' : ''}>Variables</span>
             </Link>
           </li>
         </ul>

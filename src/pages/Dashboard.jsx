@@ -46,7 +46,7 @@ function Dashboard() {
       pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save("chat-history.pdf");
 
-      // Restore original styles
+      
       chatDiv.style.maxHeight = originalHeight;
       chatDiv.style.overflowY = originalOverflow;
     });
