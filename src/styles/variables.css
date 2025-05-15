@@ -4,3 +4,14 @@ table,tr,th,td{
     border-collapse: separate !important;
     box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.2);
 }
+.force-skyblue {
+  background-: skyblue !important;
+  color: white !important;
+}
+.force-skyblue:hover {
+  background-color: #007bff !important;
+  color: white !important;
+  position:  static !important;
+  background: rgb(84, 165, 227) !important;
+  background-color: #f0f0f0; /* Replace with your desired color */
+}

@@ -3,7 +3,8 @@ import { Modal, Button, Form, Pagination } from "react-bootstrap";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
 import { FaPlus, FaEdit, FaTrash } from "react-icons/fa";
-import "../styles/variables.css"
+import "../styles/variables.css";
+
 function Variables() {
   const [show, setShow] = useState(false);
   const [variables, setVariables] = useState([]);
@@ -17,6 +18,7 @@ function Variables() {
     setShow(false);
     setIsEditMode(false);
     setFormData({ variable: "", value: "", template: "" });
+    setSelectedIndex(null);
   };
 
   const handleShowAdd = () => {
@@ -36,14 +38,6 @@ function Variables() {
     }
   };
 
-  const handleEdit = () => {
-    if (selectedIndex !== null) {
-      setFormData(variables[selectedIndex]);
-      setIsEditMode(true);
-      setShow(true);
-    }
-  };
-
   const handleUpdate = () => {
     if (formData.variable && formData.value && formData.template) {
       const updated = [...variables];
@@ -51,18 +45,6 @@ function Variables() {
       setVariables(updated);
       handleClose();
     }
-  };
-
-  const handleDelete = () => {
-    if (selectedIndex !== null) {
-      const updated = variables.filter((_, i) => i !== selectedIndex);
-      setVariables(updated);
-      setSelectedIndex(null);
-    }
-  };
-
-  const handleRowClick = (globalIndex) => {
-    setSelectedIndex(globalIndex === selectedIndex ? null : globalIndex);
   };
 
   // Pagination logic
@@ -80,69 +62,94 @@ function Variables() {
     <div className="d-flex flex-column flex-md-row dashboard-container position-relative">
       <Sidebar />
       <div className="flex-grow-1 p-4" style={{ minHeight: "100vh" }}>
-        <h3 className="mb-4" style={{ textAlign: "center" }}>Manage Variables</h3>
+        <h3 className="mb-4 text-center">Manage Variables</h3>
 
-        <div className="mb-3 d-flex gap-2">
-          <Button variant="primary" onClick={handleShowAdd} style={{width:"15%",marginLeft:"15px"}}><FaPlus /></Button>
-          <Button variant="warning" onClick={handleEdit} style={{width:"15%",marginLeft:"15px"}} disabled={selectedIndex === null}><FaEdit /></Button>
-          <Button variant="danger" onClick={handleDelete} style={{width:"15%",marginLeft:"15px"}} disabled={selectedIndex === null}><FaTrash /></Button>
+        <div className="mb-3 d-flex justify-content-start" style={{width:"15%"}}>
+          <Button variant="primary" onClick={handleShowAdd}>
+            <FaPlus className="me-2" />
+          </Button>
         </div>
 
-        <table className="table table-bordered table-striped w-100" style={{ textAlign: "center", border: "1px solidrgb(51, 61, 71)", borderRadius: "5px" }}>
+        <table className="table table-bordered table-striped w-100 text-center">
           <thead>
             <tr>
-              <th style={{backgroundColor: "skyblue"}}>Variable</th>
-              <th style={{backgroundColor: "skyblue"}}>Value</th>
-              <th style={{backgroundColor: "skyblue"}}>Template</th>
+              <th>Variable</th>
+              <th>Value</th>
+              <th>Template</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
             {currentRows.length === 0 ? (
-              <tr><td colSpan="3" className="text-center">No variables added.</td></tr>
+              <tr>
+                <td colSpan="4" className="text-center">
+                  No variables added.
+                </td>
+              </tr>
             ) : (
               currentRows.map((item, index) => {
                 const globalIndex = index + indexOfFirstRow;
                 return (
-                  <tr
-                    key={globalIndex}
-                    onClick={() => handleRowClick(globalIndex)}
-                    style={{
-                      backgroundColor: selectedIndex === globalIndex ? "#d9edf7" : "white",
-                      cursor: "pointer"
-                    }}
-                  >
+                  <tr key={globalIndex}>
                     <td>{item.variable}</td>
                     <td>{item.value}</td>
                     <td>{item.template}</td>
+                    <td>
+                      <Button
+                        variant="warning"
+                        size="sm"
+                        style={{ width: "30px" }}
+                        className="me-2 force-skyblue"
+                        onClick={() => {
+                          setSelectedIndex(globalIndex);
+                          setFormData(item);
+                          setIsEditMode(true);
+                          setShow(true);
+                        }}
+                      >
+                        <FaEdit />
+                      </Button>
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        style={{ width: "30px" }}
+                        className="force-skyblue"
+                        onClick={() => {
+                          const updated = variables.filter((_, i) => i !== globalIndex);
+                          setVariables(updated);
+                          setSelectedIndex(null);
+                        }}
+                      >
+                        <FaTrash />
+                      </Button>
+                    </td>
                   </tr>
                 );
               })
             )}
           </tbody>
         </table>
-
-        {/* Pagination controls */}
-        <Pagination>
-          <Pagination.Prev
-            disabled={currentPage === 1}
-            onClick={() => changePage(currentPage - 1)}
-          />
-          {[...Array(totalPages)].map((_, i) => (
-            <Pagination.Item
-              key={i + 1}
-              active={i + 1 === currentPage}
-              onClick={() => changePage(i + 1)}
-            >
-              {i + 1}
-            </Pagination.Item>
-          ))}
-          <Pagination.Next
-            disabled={currentPage === totalPages}
-            onClick={() => changePage(currentPage + 1)}
-          />
-        </Pagination>
-
-        {/* Modal */}
+        {totalPages > 1 && (
+          <Pagination>
+            <Pagination.Prev
+              disabled={currentPage === 1}
+              onClick={() => changePage(currentPage - 1)}
+            />
+            {[...Array(totalPages)].map((_, i) => (
+              <Pagination.Item
+                key={i + 1}
+                active={i + 1 === currentPage}
+                onClick={() => changePage(i + 1)}
+              >
+                {i + 1}
+              </Pagination.Item>
+            ))}
+            <Pagination.Next
+              disabled={currentPage === totalPages}
+              onClick={() => changePage(currentPage + 1)}
+            />
+          </Pagination>
+        )}
         <Modal show={show} onHide={handleClose}>
           <Modal.Header closeButton>
             <Modal.Title>{isEditMode ? "Edit Variable" : "Add Variable"}</Modal.Title>
@@ -157,7 +164,7 @@ function Variables() {
                   name="variable"
                   value={formData.variable}
                   onChange={handleChange}
-                  disabled={isEditMode}
+                  
                 />
               </Form.Group>
 
