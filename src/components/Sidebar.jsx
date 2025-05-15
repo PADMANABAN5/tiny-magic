@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+
 import "../styles/sidebar.css";
 import {
   FaTachometerAlt,
@@ -14,9 +15,12 @@ import {
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+ const location = useLocation();
+  const username = location.state?.username || "PADMANABAN";
+
   const [isMobileOpen, setIsMobileOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const location = useLocation();
+  
 
   // Detect screen size on resize
   useEffect(() => {
@@ -123,7 +127,7 @@ function Sidebar() {
           >
             <FaUser size={32} className="me-2" style={{ marginLeft: "6px" }} />
             <span className={isCollapsed ? "d-none" : ""}>
-              <strong>User Name</strong>
+              <strong>{username}</strong>
             </span>
           </a>
           {!isCollapsed && (

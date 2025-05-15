@@ -3,12 +3,10 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import '../styles/top-right-corner.css';
 
-function TopRightDropdown({ onModelSelect }) {
-  const models = [
-    'Gemini 2.0 pro',
-    'llama3.2:1b',
-    'mistral',
-    'llama3.2:7b'
+function TopRightDropdown({ onPromptSelect }) {
+  const prompts = [
+    'Assessment Prompt',
+    'Concept Prompt'
   ];
 
   return (
@@ -21,20 +19,20 @@ function TopRightDropdown({ onModelSelect }) {
           data-bs-toggle="dropdown"
           aria-expanded="false"
         >
-          Models
+          Prompts
         </button>
         <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
-          {models.map((model, index) => (
-            <React.Fragment key={model}>
+          {prompts.map((prompt, index) => (
+            <React.Fragment key={prompt}>
               <li>
                 <button
                   className="dropdown-item"
-                  onClick={() => onModelSelect(model)}
+                  onClick={() => onPromptSelect(prompt)}
                 >
-                  {model}
+                  {prompt}
                 </button>
               </li>
-              {index !== models.length - 1 && <li><hr className="dropdown-divider" /></li>}
+              {index !== prompts.length - 1 && <li><hr className="dropdown-divider" /></li>}
             </React.Fragment>
           ))}
         </ul>
