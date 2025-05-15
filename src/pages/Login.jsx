@@ -1,14 +1,14 @@
-import React, { useState} from 'react';
-import '../styles/login.css';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import "../styles/login.css";
+import { useNavigate } from "react-router-dom";
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
-  const [selectedModel, setSelectedModel] = useState('');
+  const [selectedModel, setSelectedModel] = useState("");
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
@@ -24,9 +24,9 @@ function Login() {
       return;
     }
 
-    setError('');
+    setError("");
     setIsLoggedIn(true);
-    
+
     // Delay before showing model popup
     setTimeout(() => {
       setShowModelPopup(true);
@@ -35,7 +35,9 @@ function Login() {
 
   const handleModelSelection = () => {
     if (selectedModel) {
-      navigate('/dashboard', { state: { selectedModel, username: "PADMANABAN" } });
+      navigate("/dashboard", {
+        state: { selectedModel, username: "PADMANABAN" },
+      });
     }
   };
 
@@ -56,12 +58,22 @@ function Login() {
 
             <div className="input-group">
               <label>Email</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
             </div>
 
             <div className="input-group">
               <label>Password</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
             </div>
 
             <button type="submit">Login</button>
@@ -72,7 +84,7 @@ function Login() {
         <div className="model-popup">
           <div className="popup-content">
             <h4>Select Your Preferred LLM Model</h4>
-            {['Llama 3', 'Mistral', 'Llama 4', 'GPT-4.o'].map((model) => (
+            {["llama4", "mistral", "llama3", "gpt4o"].map((model) => (
               <div key={model}>
                 <input
                   type="radio"
@@ -84,7 +96,11 @@ function Login() {
                 <label htmlFor={model}>{model}</label>
               </div>
             ))}
-            <button className="btn btn-primary mt-3" onClick={handleModelSelection} disabled={!selectedModel}>
+            <button
+              className="btn btn-primary mt-3"
+              onClick={handleModelSelection}
+              disabled={!selectedModel}
+            >
               Continue
             </button>
           </div>

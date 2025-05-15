@@ -4,13 +4,10 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
 import "../styles/dashboard.css";
 import TopRightDropdown from "../components/Toprightcorner.jsx";
-import { FiSend } from "react-icons/fi";
-import { FiDownload } from "react-icons/fi";
+import { FiSend, FiDownload } from "react-icons/fi";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-
 import axios from "axios";
-
 
 function Dashboard() {
   const [prompt, setPrompt] = useState("");
@@ -22,70 +19,137 @@ function Dashboard() {
   const [selectedPrompt, setSelectedPrompt] = useState("");
 
   const handleDownloadPDF = () => {
-  const chatDiv = document.getElementById("chat-history");
+    const chatDiv = document.getElementById("chat-history");
 
-  if (!chatDiv) {
-    console.error("Chat history div not found");
-    return;
-  }
+    if (!chatDiv) {
+      console.error("Chat history div not found");
+      return;
+    }
 
-  // Store original styles
-  const originalHeight = chatDiv.style.maxHeight;
-  const originalOverflow = chatDiv.style.overflowY;
+    // Store original styles
+    const originalHeight = chatDiv.style.maxHeight;
+    const originalOverflow = chatDiv.style.overflowY;
 
-  // Temporarily expand to fit all content
-  chatDiv.style.maxHeight = "none";
-  chatDiv.style.overflowY = "visible";
+    // Temporarily expand to fit all content
+    chatDiv.style.maxHeight = "none";
+    chatDiv.style.overflowY = "visible";
 
-  // Give the browser a moment to reflow layout
-  setTimeout(() => {
-    html2canvas(chatDiv).then((canvas) => {
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF();
-      const imgProps = pdf.getImageProperties(imgData);
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    // Give the browser a moment to reflow layout
+    setTimeout(() => {
+      html2canvas(chatDiv).then((canvas) => {
+        const imgData = canvas.toDataURL("image/png");
+        const pdf = new jsPDF();
+        const imgProps = pdf.getImageProperties(imgData);
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save("chat-history.pdf");
+        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        pdf.save("chat-history.pdf");
 
-      
-      chatDiv.style.maxHeight = originalHeight;
-      chatDiv.style.overflowY = originalOverflow;
-    });
-  }, 100);
-};
+        chatDiv.style.maxHeight = originalHeight;
+        chatDiv.style.overflowY = originalOverflow;
+      });
+    }, 100);
+  };
 
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
 
-  const handleSendClick = () => {
-    if (!prompt.trim()) return;
+  const handleSendClick = async () => {
+    if (
+      !prompt.trim() ||
+      !selectedPrompt ||
+      selectedModel === "Choose a model"
+    ) {
+      alert("Please enter a prompt, select a prompt type, and choose a model.");
+      return;
+    }
 
-    const requestBody = {
-      systemContent: "Hi",
-      promptText: prompt,
-      llmProvider: selectedModel,
+    // Fetch variables from localStorage
+    const savedData = localStorage.getItem("variables");
+    let variablesData = {};
+    if (savedData) {
+      try {
+        const variablesArray = JSON.parse(savedData);
+        if (Array.isArray(variablesArray)) {
+          const matchingVariables = variablesArray.filter(
+            (item) => item.promptType === selectedPrompt
+          );
+          if (matchingVariables.length === 0) {
+            alert(
+              `No variables found in localStorage for promptType: ${selectedPrompt}. Please add variables in the Variables section.`
+            );
+            return;
+          }
+          // Construct variables object dynamically from matching entries
+          variablesData = matchingVariables.reduce((acc, item) => {
+            acc[item.variable] = item.value;
+            return acc;
+          }, {});
+        } else {
+          alert(
+            "Invalid data format in localStorage. Please check the Variables section."
+          );
+          return;
+        }
+      } catch (err) {
+        console.error("Error parsing localStorage:", err);
+        alert("Failed to load variables from localStorage. Please try again.");
+        return;
+      }
+    } else {
+      alert(
+        "No variables found in localStorage. Please add variables in the Variables section."
+      );
+      return;
+    }
+
+    const username = "Jhon Deo";
+    const saveRequestBody = {
+      username,
+      promptType: selectedPrompt,
+      variables: variablesData,
     };
-    // API Integration
-    axios
-      .post("https://tinymagicapp.onrender.com/api/reviewapi", requestBody)
-      .then((response) => {
-        const conversation = response.data;
-        const systemMessage = conversation.find((msg) => msg.role === "system");
-        const systemResponse = systemMessage
-          ? systemMessage.content
-          : "No system message";
-        setChatHistory((prev) => [
-          ...prev,
-          { user: prompt, system: systemResponse },
-        ]);
-        setPrompt("");
-      })
-      .catch((error) => {
-        console.error("Error making API request:", error);
-      });
+
+    try {
+      // Step 1: Save template variables
+      const saveResponse = await axios.post(
+        "https://tinymagicapp.onrender.com/api/saveTemplateVariables",
+        saveRequestBody
+      );
+      if (!saveResponse.data.success) {
+        throw new Error("Failed to save template variables");
+      }
+
+      // Step 2: Process prompt
+      const processRequestBody = {
+        username,
+        promptType: selectedPrompt,
+        llmProvider: selectedModel,
+        userInput: prompt,
+      };
+
+      const processResponse = await axios.post(
+        "https://tinymagicapp.onrender.com/api/processPrompt",
+        processRequestBody
+      );
+
+      const conversation = processResponse.data.messages;
+      const systemMessage = conversation.find((msg) => msg.role === "system");
+      const systemResponse = systemMessage
+        ? systemMessage.content
+        : "No system message";
+
+      setChatHistory((prev) => [
+        ...prev,
+        { user: prompt, system: systemResponse },
+      ]);
+      setPrompt("");
+    } catch (error) {
+      console.error("Error in API request:", error);
+      alert("Failed to process request. Please try again.");
+    }
   };
 
   const handleKeyPress = (event) => {
@@ -108,23 +172,25 @@ function Dashboard() {
         className="flex-grow-1 dashboard-content position-relative"
         style={{ padding: "20px", height: "100vh", overflowY: "auto" }}
       >
-        <div className="position-absolute top-0 end-0 m-5" style={{ marginTop: "10%" }}>
+        <div
+          className="position-absolute top-0 end-0 m-5"
+          style={{ marginTop: "10%" }}
+        >
           <TopRightDropdown onPromptSelect={setSelectedPrompt} />
         </div>
-        
+
         <div className="mt-5 pt-5">
           <p className="text-muted">
             Selected Model: <strong>{selectedModel}</strong>
-            </p>
-           <p className="text-muted">
+          </p>
+          <p className="text-muted">
             Selected Prompt: <strong>{selectedPrompt || "None"}</strong>
           </p>
           <div
-          
-          id="chat-history"
+            id="chat-history"
             className="chat-history mt-4 d-flex flex-column gap-3 p-2 border rounded"
             style={{
-              maxHeight: "60vh",
+              maxHeight: "50vh",
               overflowY: "auto",
               backgroundColor: "transparent",
             }}
@@ -152,11 +218,24 @@ function Dashboard() {
             <div ref={chatEndRef} />
           </div>
         </div>
-    <div className="position-fixed bottom-13 end-0 m-5" >
-      <button className="btn btn-outline-secondary" style={{ position: "fixed", right:"7.5%", width: "6.5%", top:"15%"}} onClick={handleDownloadPDF}>
-      <FiDownload size={20} className="me-2"  style={{position:"relative",left:"3px",color:"white"}}/>
-    </button>
-    </div>
+        <div className="position-fixed bottom-13 end-0 m-5">
+          <button
+            className="btn btn-outline-secondary"
+            style={{
+              position: "fixed",
+              right: "7.5%",
+              width: "6.5%",
+              top: "15%",
+            }}
+            onClick={handleDownloadPDF}
+          >
+            <FiDownload
+              size={20}
+              className="me-2"
+              style={{ position: "relative", left: "3px", color: "white" }}
+            />
+          </button>
+        </div>
         <div className="d-flex align-items-start gap-2 prompt-input-group mt-4">
           <textarea
             className="form-control"
@@ -176,7 +255,6 @@ function Dashboard() {
           >
             <FiSend size={20} />
           </button>
-          
         </div>
       </div>
     </div>

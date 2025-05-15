@@ -1,13 +1,10 @@
-import React from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import '../styles/top-right-corner.css';
+import React from "react";
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+import "../styles/top-right-corner.css";
 
 function TopRightDropdown({ onPromptSelect }) {
-  const prompts = [
-    'Assessment Prompt',
-    'Concept Prompt'
-  ];
+  const prompts = ["assessmentPrompt", "conceptMentor"];
 
   return (
     <div className="position-absolute top-0 end-0 m-3">
@@ -21,7 +18,10 @@ function TopRightDropdown({ onPromptSelect }) {
         >
           Prompts
         </button>
-        <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+        <ul
+          className="dropdown-menu dropdown-menu-end"
+          aria-labelledby="dropdownMenuButton"
+        >
           {prompts.map((prompt, index) => (
             <React.Fragment key={prompt}>
               <li>
@@ -32,7 +32,11 @@ function TopRightDropdown({ onPromptSelect }) {
                   {prompt}
                 </button>
               </li>
-              {index !== prompts.length - 1 && <li><hr className="dropdown-divider" /></li>}
+              {index !== prompts.length - 1 && (
+                <li>
+                  <hr className="dropdown-divider" />
+                </li>
+              )}
             </React.Fragment>
           ))}
         </ul>
