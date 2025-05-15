@@ -11,6 +11,7 @@ import html2canvas from "html2canvas";
 
 import axios from "axios";
 
+
 function Dashboard() {
   const [prompt, setPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
@@ -18,6 +19,8 @@ function Dashboard() {
   const chatEndRef = useRef(null);
   const initialModel = location.state?.selectedModel || "Choose a model";
   const [selectedModel, setSelectedModel] = useState(initialModel);
+  const [selectedPrompt, setSelectedPrompt] = useState("");
+
   const handleDownloadPDF = () => {
   const chatDiv = document.getElementById("chat-history");
 
@@ -105,16 +108,19 @@ function Dashboard() {
         className="flex-grow-1 dashboard-content position-relative"
         style={{ padding: "20px", height: "100vh", overflowY: "auto" }}
       >
-        <div className="position-absolute top-0 end-0 m-3">
-          <TopRightDropdown onModelSelect={setSelectedModel} />
+        <div className="position-absolute top-0 end-0 m-5" style={{ marginTop: "10%" }}>
+          <TopRightDropdown onPromptSelect={setSelectedPrompt} />
         </div>
-
+        
         <div className="mt-5 pt-5">
           <p className="text-muted">
             Selected Model: <strong>{selectedModel}</strong>
+            </p>
+           <p className="text-muted">
+            Selected Prompt: <strong>{selectedPrompt || "None"}</strong>
           </p>
-
           <div
+          
           id="chat-history"
             className="chat-history mt-4 d-flex flex-column gap-3 p-2 border rounded"
             style={{
@@ -146,8 +152,8 @@ function Dashboard() {
             <div ref={chatEndRef} />
           </div>
         </div>
-    <div className="position-fixed bottom-13 end-1 m-4">
-      <button className="btn btn-outline-secondary" onClick={handleDownloadPDF}>
+    <div className="position-fixed bottom-13 end-0 m-5" >
+      <button className="btn btn-outline-secondary" style={{ position: "fixed", right:"7.5%", width: "6.5%", top:"15%"}} onClick={handleDownloadPDF}>
       <FiDownload size={20} className="me-2"  style={{position:"relative",left:"3px",color:"white"}}/>
     </button>
     </div>

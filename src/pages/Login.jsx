@@ -35,7 +35,7 @@ function Login() {
 
   const handleModelSelection = () => {
     if (selectedModel) {
-      navigate('/dashboard', { state: { selectedModel } });
+      navigate('/dashboard', { state: { selectedModel, username: "PADMANABAN" } });
     }
   };
 
@@ -72,7 +72,7 @@ function Login() {
         <div className="model-popup">
           <div className="popup-content">
             <h4>Select Your Preferred LLM Model</h4>
-            {['Gemini 2.0', 'LLaMA 3.2:1B', 'Mistral', 'LLaMA 3.2:7B', 'GPT-4'].map((model) => (
+            {['Llama 3', 'Mistral', 'Llama 4', 'GPT-4.o'].map((model) => (
               <div key={model}>
                 <input
                   type="radio"
