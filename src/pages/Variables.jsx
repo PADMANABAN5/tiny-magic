@@ -18,7 +18,7 @@ function Variables() {
   const [formData, setFormData] = useState({
     variable: "",
     value: "",
-    template: "",
+    promptType: "",
   });
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
@@ -52,13 +52,13 @@ function Variables() {
   const handleClose = () => {
     setShow(false);
     setIsEditMode(false);
-    setFormData({ variable: "", value: "", template: "" });
+    setFormData({ variable: "", value: "", promptType: "" });
     setSelectedIndex(null);
   };
 
   const handleShowAdd = () => {
     setIsEditMode(false);
-    setFormData({ variable: "", value: "", template: "" });
+    setFormData({ variable: "", value: "", promptType: "" });
     setShow(true);
   };
 
@@ -67,14 +67,14 @@ function Variables() {
   };
 
   const handleAdd = () => {
-    if (formData.variable && formData.value && formData.template) {
+    if (formData.variable && formData.value && formData.promptType) {
       setVariables((prev) => [...prev, formData]);
       handleClose();
     }
   };
 
   const handleUpdate = () => {
-    if (formData.variable && formData.value && formData.template) {
+    if (formData.variable && formData.value && formData.promptType) {
       const updated = [...variables];
       updated[selectedIndex] = formData;
       setVariables(updated);
@@ -172,7 +172,7 @@ function Variables() {
             <tr>
               <th>Variable</th>
               <th>Value</th>
-              <th>Template</th>
+              <th>Prompt</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -190,7 +190,7 @@ function Variables() {
                   <tr key={globalIndex}>
                     <td>{item.variable}</td>
                     <td>{item.value}</td>
-                    <td>{item.template}</td>
+                    <td>{item.promptType}</td>
                     <td>
                       <div className="d-flex justify-content-center gap-2">
                         <Button
@@ -281,17 +281,16 @@ function Variables() {
                 />
               </Form.Group>
 
-              <Form.Group controlId="formTemplate" className="mt-3">
-                <Form.Label>Template</Form.Label>
+              <Form.Group controlId="formPrompt" className="mt-3">
+                <Form.Label>Prompt</Form.Label>
                 <Form.Select
-                  name="template"
-                  value={formData.template}
+                  name="promptType"
+                  value={formData.promptType}
                   onChange={handleChange}
                 >
-                  <option value="">Select Template</option>
-                  <option value="Template A">Template A</option>
-                  <option value="Template B">Template B</option>
-                  <option value="Template C">Template C</option>
+                  <option value="">Select Prompt</option>
+                  <option value="assessmentPrompt">assessmentPrompt</option>
+                  <option value="conceptMentor">conceptMentor</option>
                 </Form.Select>
               </Form.Group>
             </Form>
