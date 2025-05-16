@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-
 import "../styles/sidebar.css";
 import {
-  FaTachometerAlt,
-  FaQuestionCircle,
-  FaPoll,
+  FaTachometerAlt, 
   FaBook,
   FaSignOutAlt,
   FaBars,
@@ -15,19 +12,16 @@ import {
 
 function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
- const location = useLocation();
-  const username = location.state?.username || "PADMANABAN";
-
+  const location = useLocation();
+  const username = localStorage.getItem("username");
   const [isMobileOpen, setIsMobileOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  
 
-  // Detect screen size on resize
   useEffect(() => {
     const handleResize = () => {
       const isNowMobile = window.innerWidth < 768;
       setIsMobile(isNowMobile);
-      if (!isNowMobile) setIsMobileOpen(false); // Auto-close mobile sidebar
+      if (!isNowMobile) setIsMobileOpen(false);
     };
 
     window.addEventListener("resize", handleResize);
@@ -191,7 +185,7 @@ function Sidebar() {
         </ul>
 
         <Link
-          to="/login"
+          to="/"
           className="d-flex align-items-center link-dark text-decoration-none mt-auto"
         >
           <FaSignOutAlt className="me-2" />{" "}

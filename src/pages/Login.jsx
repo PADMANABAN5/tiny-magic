@@ -35,6 +35,8 @@ function Login() {
 
   const handleModelSelection = () => {
     if (selectedModel) {
+      localStorage.setItem("selectedModel", selectedModel);
+      localStorage.setItem("username", email);
       navigate("/dashboard", {
         state: { selectedModel, username: "PADMANABAN" },
       });
