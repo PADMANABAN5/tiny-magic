@@ -4,6 +4,7 @@
 }
 body{
   overflow-y: hidden;
+  background: #f8f9fa !important;
   
 }
 .dashboard-container {
@@ -60,4 +61,37 @@ body{
   word-wrap: break-word;
   z-index: 1000;
 }
+/* Force desktop view layout even on smaller screens */
+@media (max-width: 768px) {
+  .dashboard-container {
+    flex-direction: row !important;
+    overflow-x: hidden;
+  }
+
+  .sidebar {
+    width: 250px !important;
+    min-width: 250px;
+    flex-shrink: 0;
+  }
+
+  .chat-history {
+    max-height: 60vh;
+  }
+
+  .form-control,
+  .btn {
+    font-size: 0.95rem;
+  }
+
+  textarea.form-control {
+    height: 60px;
+    resize: none;
+  }
+
+  html,
+  body {
+    touch-action: manipulation;
+  }
+}
+
 

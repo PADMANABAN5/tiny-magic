@@ -4,8 +4,9 @@ table,tr,th,td{
     border-collapse: separate !important;
     box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.2);
 }
+
 .force-skyblue {
-  background-: skyblue !important;
+ 
   color: white !important;
 }
 .force-skyblue:hover {
@@ -14,4 +15,20 @@ table,tr,th,td{
   position:  static !important;
   background: rgb(84, 165, 227) !important;
   background-color: #f0f0f0; /* Replace with your desired color */
+}
+.pagination-rounded .page-link {
+  border-radius: 50px;
+  padding: 0.5rem 1rem;
+  margin: 0 0.25rem;
+}
+
+.pagination-rounded .page-item.active .page-link {
+  background-color: var(--bs-primary);
+  border-color: var(--bs-primary);
+  color: white;
+}
+
+@media (max-width: 768px) {
+
+ 
 }

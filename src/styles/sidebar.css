@@ -24,6 +24,10 @@
     transition: width var(--sidebar-transition-duration) ease-in-out, padding var(--sidebar-transition-duration) ease-in-out; /* Add transition for width and padding */
     overflow-x: hidden; 
     border-radius: 10px;
+     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 
+              0 8px 40px rgba(0, 0, 0, 0.08);
+
+  
   }
   
   .container.collapsed {
@@ -39,6 +43,7 @@
     border: none;
     height: 1px;
     background-color: var(--border-color);
+    color: var(--primary-color);
     margin: 1.5rem 0;
     width: 100%; /* Ensure HR spans the full width (important for collapsed state) */
   }

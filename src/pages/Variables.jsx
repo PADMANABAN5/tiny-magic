@@ -10,11 +10,12 @@ import {
   FaFileExport,
 } from "react-icons/fa";
 import "../styles/variables.css";
+import axios from "axios";
 
 function Variables() {
   const [show, setShow] = useState(false);
   const [variables, setVariables] = useState([]);
-  const isInitialMount = useRef(true); // Track first render
+  const isInitialMount = useRef(true);
   const [formData, setFormData] = useState({
     variable: "",
     value: "",
@@ -23,7 +24,7 @@ function Variables() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 10;
+  const rowsPerPage = 8;
 
   // Load data from localStorage only on first render
   useEffect(() => {
@@ -49,6 +50,35 @@ function Variables() {
     localStorage.setItem("variables", JSON.stringify(variables));
   }, [variables]);
 
+  // Function to save a single new variable to the server
+  const saveNewVariableToServer = async (newVariable) => {
+    const username = "Jhon Deo";
+    const requestBody = {
+      username,
+      promptType: newVariable.promptType,
+      variables: {
+        [newVariable.variable]: newVariable.value,
+      },
+    };
+    try {
+      const response = await axios.post(
+        "https://tinymagicapp.onrender.com/api/saveTemplateVariables",
+        requestBody
+      );
+      if (!response.data.success) {
+        console.error(
+          `Failed to save new variable for ${newVariable.promptType}`
+        );
+        alert(
+          `Failed to save new variable for ${newVariable.promptType}. Please try again.`
+        );
+      }
+    } catch (error) {
+      console.error("Error saving new variable:", error);
+      alert("Error saving new variable to server. Please try again.");
+    }
+  };
+
   const handleClose = () => {
     setShow(false);
     setIsEditMode(false);
@@ -68,16 +98,18 @@ function Variables() {
 
   const handleAdd = () => {
     if (formData.variable && formData.value && formData.promptType) {
-      setVariables((prev) => [...prev, formData]);
+      const newVariables = [...variables, formData];
+      setVariables(newVariables);
+      saveNewVariableToServer(formData); // Save only the new variable to server
       handleClose();
     }
   };
 
   const handleUpdate = () => {
     if (formData.variable && formData.value && formData.promptType) {
-      const updated = [...variables];
-      updated[selectedIndex] = formData;
-      setVariables(updated);
+      const updatedVariables = [...variables];
+      updatedVariables[selectedIndex] = formData;
+      setVariables(updatedVariables);
       handleClose();
     }
   };
@@ -129,7 +161,7 @@ function Variables() {
         <h3 className="mb-4 text-center">Manage Variables</h3>
 
         {/* Buttons Row */}
-        <div className="mb-3 d-flex align-items-center gap-2 flex-nowrap">
+        <div className="mb-3 d-flex align-items-center gap-2 flex-nowrap varbutton" style={{ marginLeft:"35%" }}>
           <Button
             variant="primary"
             onClick={handleShowAdd}
@@ -167,7 +199,7 @@ function Variables() {
         </div>
 
         {/* Table */}
-        <table className="table table-bordered table-striped w-100 text-center">
+        <table className="table table-bordered table-striped text-center">
           <thead>
             <tr>
               <th>Variable</th>
@@ -177,80 +209,107 @@ function Variables() {
             </tr>
           </thead>
           <tbody>
-            {currentRows.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="text-center">
-                  No variables added.
-                </td>
-              </tr>
-            ) : (
-              currentRows.map((item, index) => {
-                const globalIndex = index + indexOfFirstRow;
-                return (
-                  <tr key={globalIndex}>
-                    <td>{item.variable}</td>
-                    <td>{item.value}</td>
-                    <td>{item.promptType}</td>
-                    <td>
-                      <div className="d-flex justify-content-center gap-2">
-                        <Button
-                          variant="warning"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedIndex(globalIndex);
-                            setFormData(item);
-                            setIsEditMode(true);
-                            setShow(true);
-                          }}
-                        >
-                          <FaEdit />
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => {
-                            const updated = variables.filter(
-                              (_, i) => i !== globalIndex
-                            );
-                            setVariables(updated);
-                            setSelectedIndex(null);
-                          }}
-                        >
-                          <FaTrash />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
+  {currentRows.length === 0 ? (
+    <tr>
+      <td colSpan="4" className="text-center">
+        No variables added.
+      </td>
+    </tr>
+  ) : (
+    currentRows.map((item, index) => {
+      const globalIndex = index + indexOfFirstRow;
+      return (
+        <tr key={globalIndex}>
+          <td data-label="Variable">{item.variable}</td>
+          <td data-label="Value">{item.value}</td>
+          <td data-label="Prompt">{item.promptType}</td>
+          <td data-label="Action">
+            <div className="d-flex justify-content-center gap-2">
+              <Button
+                variant="warning"
+                size="sm"
+                onClick={() => {
+                  setSelectedIndex(globalIndex);
+                  setFormData(item);
+                  setIsEditMode(true);
+                  setShow(true);
+                }}
+              >
+                <FaEdit />
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                onClick={() => {
+                  const updatedVariables = variables.filter(
+                    (_, i) => i !== globalIndex
+                  );
+                  setVariables(updatedVariables);
+                  setSelectedIndex(null);
+                }}
+              >
+                <FaTrash />
+              </Button>
+            </div>
+          </td>
+        </tr>
+      );
+    })
+  )}
+</tbody>
+
         </table>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <Pagination>
+              {totalPages > 1 && (
+        <div className="d-flex justify-content-center mt-4">
+          <Pagination className="custom-pagination">
+            <Pagination.First
+              disabled={currentPage === 1}
+              onClick={() => changePage(1)}
+            />
+
             <Pagination.Prev
               disabled={currentPage === 1}
               onClick={() => changePage(currentPage - 1)}
             />
-            {[...Array(totalPages)].map((_, i) => (
-              <Pagination.Item
-                key={i + 1}
-                active={i + 1 === currentPage}
-                onClick={() => changePage(i + 1)}
-              >
-                {i + 1}
-              </Pagination.Item>
-            ))}
+
+            {currentPage > 2 && <Pagination.Ellipsis disabled />}
+
+            {[...Array(totalPages)].map((_, i) => {
+              const page = i + 1;
+              if (
+                page === 1 ||
+                page === totalPages ||
+                Math.abs(currentPage - page) <= 1
+              ) {
+                return (
+                  <Pagination.Item
+                    key={page}
+                    active={page === currentPage}
+                    onClick={() => changePage(page)}
+                  >
+                    {page}
+                  </Pagination.Item>
+                );
+              }
+              return null;
+            })}
+
+            {currentPage < totalPages - 1 && <Pagination.Ellipsis disabled />}
+
             <Pagination.Next
               disabled={currentPage === totalPages}
               onClick={() => changePage(currentPage + 1)}
             />
-          </Pagination>
-        )}
 
-        {/* Modal */}
+            <Pagination.Last
+              disabled={currentPage === totalPages}
+              onClick={() => changePage(totalPages)}
+            />
+          </Pagination>
+        </div>
+      )}
+
         <Modal show={show} onHide={handleClose}>
           <Modal.Header closeButton>
             <Modal.Title>

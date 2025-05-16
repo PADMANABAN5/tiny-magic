@@ -115,7 +115,7 @@ function Sidebar() {
           )}
         </div>
 
-        <div className="dropdown mb-3">
+        <div className={`dropdown ${isCollapsed ? "mb-0" : "mb-3"}`}>
           <a
             href="#"
             className={`d-flex align-items-center link-dark text-decoration-none ${
@@ -154,7 +154,7 @@ function Sidebar() {
           )}
         </div>
 
-        <hr />
+        <hr  className={`hr ${isCollapsed ? "mt-1" : "mb-10"}`}/>
         <ul className="nav nav-pills flex-column mb-auto">
           <li className="nav-item">
             <Link

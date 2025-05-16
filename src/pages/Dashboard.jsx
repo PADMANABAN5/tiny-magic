@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
-import "../styles/dashboard.css";
+import "../styles/dashboard.css"; // Make sure you have this file
 import TopRightDropdown from "../components/Toprightcorner.jsx";
 import { FiSend, FiDownload } from "react-icons/fi";
 import jsPDF from "jspdf";
@@ -10,13 +10,31 @@ import html2canvas from "html2canvas";
 import axios from "axios";
 
 function Dashboard() {
-  const [prompt, setPrompt] = useState("");
+ const [prompt, setPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const location = useLocation();
   const chatEndRef = useRef(null);
-  const initialModel = location.state?.selectedModel || "Choose a model";
-  const [selectedModel, setSelectedModel] = useState(initialModel);
-  const [selectedPrompt, setSelectedPrompt] = useState("");
+  
+  
+  const storedPrompt = localStorage.getItem("selectedPrompt") || "";
+  const storedModel = localStorage.getItem("selectedModel") || "Choose a model";
+
+  const [selectedModel, setSelectedModel] = useState(
+    location.state?.selectedModel || storedModel
+  );
+  const [selectedPrompt, setSelectedPrompt] = useState(storedPrompt);
+
+  useEffect(() => {
+    if (selectedModel && selectedModel !== "Choose a model") {
+      localStorage.setItem("selectedModel", selectedModel);
+    }
+  }, [selectedModel]);
+
+  useEffect(() => {
+    if (selectedPrompt) {
+      localStorage.setItem("selectedPrompt", selectedPrompt);
+    }
+  }, [selectedPrompt]);
 
   const handleDownloadPDF = () => {
     const chatDiv = document.getElementById("chat-history");
@@ -66,70 +84,16 @@ function Dashboard() {
       return;
     }
 
-    // Fetch variables from localStorage
-    const savedData = localStorage.getItem("variables");
-    let variablesData = {};
-    if (savedData) {
-      try {
-        const variablesArray = JSON.parse(savedData);
-        if (Array.isArray(variablesArray)) {
-          const matchingVariables = variablesArray.filter(
-            (item) => item.promptType === selectedPrompt
-          );
-          if (matchingVariables.length === 0) {
-            alert(
-              `No variables found in localStorage for promptType: ${selectedPrompt}. Please add variables in the Variables section.`
-            );
-            return;
-          }
-          // Construct variables object dynamically from matching entries
-          variablesData = matchingVariables.reduce((acc, item) => {
-            acc[item.variable] = item.value;
-            return acc;
-          }, {});
-        } else {
-          alert(
-            "Invalid data format in localStorage. Please check the Variables section."
-          );
-          return;
-        }
-      } catch (err) {
-        console.error("Error parsing localStorage:", err);
-        alert("Failed to load variables from localStorage. Please try again.");
-        return;
-      }
-    } else {
-      alert(
-        "No variables found in localStorage. Please add variables in the Variables section."
-      );
-      return;
-    }
-
     const username = "Jhon Deo";
-    const saveRequestBody = {
+    const processRequestBody = {
       username,
       promptType: selectedPrompt,
-      variables: variablesData,
+      llmProvider: selectedModel,
+      userInput: prompt,
     };
 
     try {
-      // Step 1: Save template variables
-      const saveResponse = await axios.post(
-        "https://tinymagicapp.onrender.com/api/saveTemplateVariables",
-        saveRequestBody
-      );
-      if (!saveResponse.data.success) {
-        throw new Error("Failed to save template variables");
-      }
-
-      // Step 2: Process prompt
-      const processRequestBody = {
-        username,
-        promptType: selectedPrompt,
-        llmProvider: selectedModel,
-        userInput: prompt,
-      };
-
+     
       const processResponse = await axios.post(
         "https://tinymagicapp.onrender.com/api/processPrompt",
         processRequestBody
@@ -166,96 +130,85 @@ function Dashboard() {
   }, [chatHistory]);
 
   return (
-    <div className="d-flex flex-column flex-md-row dashboard-container position-relative">
+    <div className="d-flex flex-column flex-md-row dashboard-container bg-light min-vh-100">
       <Sidebar />
-      <div
-        className="flex-grow-1 dashboard-content position-relative"
-        style={{ padding: "20px", height: "100vh", overflowY: "auto" }}
-      >
-        <div
-          className="position-absolute top-0 end-0 m-5"
-          style={{ marginTop: "10%" }}
-        >
+      <div className="flex-grow-1 p-4 d-flex flex-column position-relative">
+        <div className="position-absolute top-0 end-0 p-3">
           <TopRightDropdown onPromptSelect={setSelectedPrompt} />
         </div>
 
-        <div className="mt-5 pt-5">
-          <p className="text-muted">
-            Selected Model: <strong>{selectedModel}</strong>
-          </p>
-          <p className="text-muted">
-            Selected Prompt: <strong>{selectedPrompt || "None"}</strong>
-          </p>
-          <div
-            id="chat-history"
-            className="chat-history mt-4 d-flex flex-column gap-3 p-2 border rounded"
-            style={{
-              maxHeight: "50vh",
-              overflowY: "auto",
-              backgroundColor: "transparent",
-            }}
-          >
-            {chatHistory.map((item, index) => (
-              <div key={index}>
-                <div className="d-flex justify-content-end">
-                  <div
-                    className="alert alert-primary mb-1"
-                    style={{ maxWidth: "70%" }}
-                  >
-                    <strong>You:</strong> {item.user}
-                  </div>
-                </div>
-                <div className="d-flex justify-content-start">
-                  <div
-                    className="alert alert-secondary"
-                    style={{ maxWidth: "70%" }}
-                  >
-                    <strong>{selectedModel} :</strong> {item.system}
-                  </div>
-                </div>
-              </div>
-            ))}
-            <div ref={chatEndRef} />
+        <div className="mb-4 mt-5">
+          <h5 className="text-primary">Model: {selectedModel}</h5>
+          <h6 className="text-secondary">Prompt: {selectedPrompt || "None"}</h6>
+        </div>
+
+            <div
+      id="chat-history"
+      className="chat-history flex-grow-1 overflow-auto p-3 border rounded shadow-sm bg-white"
+      style={{ maxHeight: "60vh" }}
+    >
+      {chatHistory.map((item, index) => (
+        <div key={index}>
+          <div className="d-flex justify-content-end mb-2">
+            <div
+              className="alert alert-primary"
+              style={{
+                maxWidth: "100%",
+                wordBreak: "break-word",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              <strong>You:</strong> {item.user}
+            </div>
+          </div>
+
+          {/* System Message */}
+          <div className="d-flex justify-content-start mb-3">
+            <div
+              className="alert alert-secondary"
+              style={{
+                maxWidth: "100%",
+                wordBreak: "break-word",
+                whiteSpace: "pre-wrap",
+              }}
+            >
+              <strong>{selectedModel}:</strong> {item.system}
+            </div>
           </div>
         </div>
-        <div className="position-fixed bottom-13 end-0 m-5">
-          <button
-            className="btn btn-outline-secondary"
-            style={{
-              position: "fixed",
-              right: "7.5%",
-              width: "6.5%",
-              top: "15%",
-            }}
-            onClick={handleDownloadPDF}
-          >
-            <FiDownload
-              size={20}
-              className="me-2"
-              style={{ position: "relative", left: "3px", color: "white" }}
-            />
-          </button>
-        </div>
-        <div className="d-flex align-items-start gap-2 prompt-input-group mt-4">
+      ))}
+      <div ref={chatEndRef} />
+    </div>
+
+
+       
+        <div className="input-area-container mt-4 shadow-sm position-relative">
           <textarea
-            className="form-control"
-            placeholder="Enter your prompt here..."
-            rows="1"
+            className="form-control rounded" 
+            placeholder="Type your prompt..."
+            rows="2"
+            style={{ resize: "none", paddingRight: "50px" }} 
             value={prompt}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-          ></textarea>
-
+          />
           <button
-            className="btn btn-primary d-flex align-items-center justify-content-center"
-            type="button"
+            className="btn btn-primary position-absolute end-0 bottom-0 m-2" 
             onClick={handleSendClick}
             disabled={!prompt.trim()}
-            style={{ height: "100%", width: "60px" }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", padding: 0 }} 
           >
             <FiSend size={20} />
           </button>
         </div>
+
+        <button
+          className="btn btn-outline-dark position-fixed"
+          style={{ top: "13%", right: "5%", width: "50px" }} 
+          onClick={handleDownloadPDF}
+        >
+          <FiDownload /> 
+        </button>
       </div>
     </div>
   );
