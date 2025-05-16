@@ -66,70 +66,16 @@ function Dashboard() {
       return;
     }
 
-    // Fetch variables from localStorage
-    const savedData = localStorage.getItem("variables");
-    let variablesData = {};
-    if (savedData) {
-      try {
-        const variablesArray = JSON.parse(savedData);
-        if (Array.isArray(variablesArray)) {
-          const matchingVariables = variablesArray.filter(
-            (item) => item.promptType === selectedPrompt
-          );
-          if (matchingVariables.length === 0) {
-            alert(
-              `No variables found in localStorage for promptType: ${selectedPrompt}. Please add variables in the Variables section.`
-            );
-            return;
-          }
-          // Construct variables object dynamically from matching entries
-          variablesData = matchingVariables.reduce((acc, item) => {
-            acc[item.variable] = item.value;
-            return acc;
-          }, {});
-        } else {
-          alert(
-            "Invalid data format in localStorage. Please check the Variables section."
-          );
-          return;
-        }
-      } catch (err) {
-        console.error("Error parsing localStorage:", err);
-        alert("Failed to load variables from localStorage. Please try again.");
-        return;
-      }
-    } else {
-      alert(
-        "No variables found in localStorage. Please add variables in the Variables section."
-      );
-      return;
-    }
-
     const username = "Jhon Deo";
-    const saveRequestBody = {
+    const processRequestBody = {
       username,
       promptType: selectedPrompt,
-      variables: variablesData,
+      llmProvider: selectedModel,
+      userInput: prompt,
     };
 
     try {
-      // Step 1: Save template variables
-      const saveResponse = await axios.post(
-        "https://tinymagicapp.onrender.com/api/saveTemplateVariables",
-        saveRequestBody
-      );
-      if (!saveResponse.data.success) {
-        throw new Error("Failed to save template variables");
-      }
-
-      // Step 2: Process prompt
-      const processRequestBody = {
-        username,
-        promptType: selectedPrompt,
-        llmProvider: selectedModel,
-        userInput: prompt,
-      };
-
+      // Directly process the prompt (variables are saved in variables.jsx)
       const processResponse = await axios.post(
         "https://tinymagicapp.onrender.com/api/processPrompt",
         processRequestBody
