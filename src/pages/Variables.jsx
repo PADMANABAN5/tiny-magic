@@ -10,11 +10,12 @@ import {
   FaFileExport,
 } from "react-icons/fa";
 import "../styles/variables.css";
+import axios from "axios";
 
 function Variables() {
   const [show, setShow] = useState(false);
   const [variables, setVariables] = useState([]);
-  const isInitialMount = useRef(true); // Track first render
+  const isInitialMount = useRef(true);
   const [formData, setFormData] = useState({
     variable: "",
     value: "",
@@ -49,6 +50,35 @@ function Variables() {
     localStorage.setItem("variables", JSON.stringify(variables));
   }, [variables]);
 
+  // Function to save a single new variable to the server
+  const saveNewVariableToServer = async (newVariable) => {
+    const username = "Jhon Deo";
+    const requestBody = {
+      username,
+      promptType: newVariable.promptType,
+      variables: {
+        [newVariable.variable]: newVariable.value,
+      },
+    };
+    try {
+      const response = await axios.post(
+        "https://tinymagicapp.onrender.com/api/saveTemplateVariables",
+        requestBody
+      );
+      if (!response.data.success) {
+        console.error(
+          `Failed to save new variable for ${newVariable.promptType}`
+        );
+        alert(
+          `Failed to save new variable for ${newVariable.promptType}. Please try again.`
+        );
+      }
+    } catch (error) {
+      console.error("Error saving new variable:", error);
+      alert("Error saving new variable to server. Please try again.");
+    }
+  };
+
   const handleClose = () => {
     setShow(false);
     setIsEditMode(false);
@@ -68,16 +98,18 @@ function Variables() {
 
   const handleAdd = () => {
     if (formData.variable && formData.value && formData.promptType) {
-      setVariables((prev) => [...prev, formData]);
+      const newVariables = [...variables, formData];
+      setVariables(newVariables);
+      saveNewVariableToServer(formData); // Save only the new variable to server
       handleClose();
     }
   };
 
   const handleUpdate = () => {
     if (formData.variable && formData.value && formData.promptType) {
-      const updated = [...variables];
-      updated[selectedIndex] = formData;
-      setVariables(updated);
+      const updatedVariables = [...variables];
+      updatedVariables[selectedIndex] = formData;
+      setVariables(updatedVariables);
       handleClose();
     }
   };
@@ -209,10 +241,10 @@ function Variables() {
                           variant="danger"
                           size="sm"
                           onClick={() => {
-                            const updated = variables.filter(
+                            const updatedVariables = variables.filter(
                               (_, i) => i !== globalIndex
                             );
-                            setVariables(updated);
+                            setVariables(updatedVariables);
                             setSelectedIndex(null);
                           }}
                         >
