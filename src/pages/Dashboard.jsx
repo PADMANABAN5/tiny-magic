@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
 import "../styles/dashboard.css";
-import TopRightDropdown from "../components/Toprightcorner.jsx";
 import { FiSend, FiDownload } from "react-icons/fi";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -107,10 +106,15 @@ function Dashboard() {
       } catch (err) {
         console.error("Failed to parse llmResponse JSON:", err);
       }
-      setChatHistory((prev) => [
-        ...prev,
-        { user: prompt, system: apiResponseText },
-      ]);
+        setChatHistory((prev) => {
+        const updatedHistory = [
+          ...prev,
+          { user: prompt, system: apiResponseText },
+        ];
+        localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+        return updatedHistory;
+      });
+
       setSessionHistory((prev) => [
         ...prev,
         { userText: prompt, apiResponse: apiResponseText },
@@ -137,13 +141,20 @@ function Dashboard() {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatHistory]);
+      useEffect(() => {
+      const savedChatHistory = localStorage.getItem("chatHistory");
+      if (savedChatHistory) {
+        setChatHistory(JSON.parse(savedChatHistory));
+      }
+    }, []);
 
+ 
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container bg-light min-vh-100">
       <Sidebar />
       <div className="flex-grow-1 p-4 d-flex flex-column position-relative">
         <div className="mb-4 mt-5">
-          <h5 className="text-primary">Model: {selectedModel}</h5>
+          <h5 className="text-primary"><span style={{color:"black"}}>Model : </span>{selectedModel}</h5>
 
         </div>
         <div
@@ -203,7 +214,7 @@ function Dashboard() {
         </div>
         <button
           className="btn btn-outline-dark position-fixed"
-          style={{ top: "13%", right: "5%", width: "50px" }}
+          style={{ top: "10%", right: "5%", width: "50px" }}
           onClick={handleDownloadPDF}
         >
           <FiDownload />
