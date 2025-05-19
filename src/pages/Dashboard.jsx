@@ -19,6 +19,7 @@ function Dashboard() {
   const username = localStorage.getItem("username");
   const [llmContent, setLlmContent] = useState("");
   const [interactionCompleted, setInteractionCompleted] = useState(false);
+  const [sessionHistory, setSessionHistory] = useState([]);
 
   const handleDownloadPDF = () => {
     const chatDiv = document.getElementById("chat-history");
@@ -26,32 +27,46 @@ function Dashboard() {
       console.error("Chat history div not found");
       return;
     }
+
     const originalHeight = chatDiv.style.maxHeight;
     const originalOverflow = chatDiv.style.overflowY;
     chatDiv.style.maxHeight = "none";
     chatDiv.style.overflowY = "visible";
 
     setTimeout(() => {
-      html2canvas(chatDiv).then((canvas) => {
+      html2canvas(chatDiv, { scale: 2, useCORS: true }).then((canvas) => {
         const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF();
-        const imgProps = pdf.getImageProperties(imgData);
+        const pdf = new jsPDF("p", "mm", "a4");
+
         const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let heightLeft = imgHeight;
+        let position = 0;
+
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pdfHeight;
+
+        while (heightLeft > 0) {
+          position = heightLeft - imgHeight;
+          pdf.addPage();
+          pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+          heightLeft -= pdfHeight;
+        }
+
         pdf.save("chat-history.pdf");
         chatDiv.style.maxHeight = originalHeight;
         chatDiv.style.overflowY = originalOverflow;
       });
     }, 100);
   };
-
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
 
-  const [sessionHistory, setSessionHistory] = useState([]);
-
+  
   const handleSendClick = async () => {
     if (!prompt.trim() || !selectedPrompt || selectedModel === "Choose a model") {
       alert("Please enter a prompt, select a prompt type, and choose a model.");
@@ -100,16 +115,21 @@ function Dashboard() {
         console.log("Assessment Response:", assessmentResponse);
  
         setChatHistory((prev) => {
-          const updatedHistory = [
-            ...prev,
-            {
-              user: prompt,
-              system: assessmentResponse.apiResponseText
-            },
-          ];
-          localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
-          return updatedHistory;
-        });
+        const updatedHistory = [...prev, { user: prompt, system: initialResponse.apiResponseText }];
+        const savePayload = {
+          username,
+          model: selectedModel,
+          timestamp: new Date().toISOString(),
+          chatHistory: updatedHistory,
+        };
+
+        axios
+          .post("https://chat-history-tcip.onrender.com/api/saveChatHistory", savePayload)
+          .then(() => console.log("Chat history saved"))
+          .catch((err) => console.error("Failed to save chat history:", err));
+
+        return updatedHistory;
+      });
 
         setSessionHistory((prev) => [
           ...prev,
@@ -141,11 +161,22 @@ function Dashboard() {
   }, [chatHistory]);
 
   useEffect(() => {
-    const savedChatHistory = localStorage.getItem("chatHistory");
-    if (savedChatHistory) {
-      setChatHistory(JSON.parse(savedChatHistory));
+    const fetchChatHistory = async () => {
+      try {
+        const response = await axios.get(
+          `https://chat-history-tcip.onrender.com/loadChat/${username}`
+        );
+        setChatHistory(response.data.chatHistory || []);
+      } catch (error) {
+        console.error("Error loading chat history:", error);
+      }
+    };
+
+    if (username) {
+      fetchChatHistory();
     }
-  }, []);
+  }, [username]);
+
  
   const renderScoringTable = (content) => {
     const scoringStart = content.indexOf("```json") + "```json".length;
