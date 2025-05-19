@@ -6,7 +6,7 @@ import { FiSend, FiDownload } from "react-icons/fi";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import axios from "axios";
-import { callLLM } from "../utils/callLLM.js"
+import { callLLM } from "../utils/callLLM.js";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 
 function Dashboard() {
@@ -82,11 +82,10 @@ function Dashboard() {
         { Mentee: prompt, Mentor: initialResponse.apiResponseText },
       ]);
 
-      if (initialResponse.endRequested || initialResponse.interactionCompleted) {
-        // Now handle the assessment prompt
+      if (initialResponse.endRequested || initialResponse.interactionCompleted) { 
         const assessmentResponse = await processPromptAndCallLLM({
           username,
-          selectedPrompt: "assessmentPrompt",  // Make sure it's 'assessmentPrompt'
+          selectedPrompt: "assessmentPrompt",   
           selectedModel,
           sessionHistory: [
             ...sessionHistory,
@@ -94,17 +93,17 @@ function Dashboard() {
           ],
           userPrompt: prompt,
         });
+
+        setLlmContent(assessmentResponse.apiResponseText);
+
         setInteractionCompleted(initialResponse.interactionCompleted);
-         
         console.log("Assessment Response:", assessmentResponse);
-        
-        // Add the assessment response to chat history - directly use the apiResponseText
-        // which should already contain the full assessment content
+ 
         setChatHistory((prev) => {
           const updatedHistory = [
             ...prev,
-            { 
-              user: "Assessment Request", 
+            {
+              user: prompt,
               system: assessmentResponse.apiResponseText
             },
           ];
@@ -114,10 +113,9 @@ function Dashboard() {
 
         setSessionHistory((prev) => [
           ...prev,
-          { Mentee: "Assessment Request", Mentor: assessmentResponse.apiResponseText },
+          { Mentee: prompt, Mentor: assessmentResponse.apiResponseText },
         ]);
-
-        // Reset prompt type back to "conceptMentor"
+ 
         setSelectedPrompt("conceptMentor");
       }
 
@@ -141,13 +139,59 @@ function Dashboard() {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatHistory]);
-  
+
   useEffect(() => {
     const savedChatHistory = localStorage.getItem("chatHistory");
     if (savedChatHistory) {
       setChatHistory(JSON.parse(savedChatHistory));
     }
   }, []);
+ 
+  const renderScoringTable = (content) => {
+    const scoringStart = content.indexOf("```json") + "```json".length;
+    const scoringEnd = content.indexOf("```", scoringStart);
+
+    const scoringJson = content.slice(scoringStart, scoringEnd).trim();
+    let scoringData = {};
+
+    try {
+      scoringData = JSON.parse(scoringJson);
+    } catch (e) {
+      console.error("Error parsing scoring JSON:", e);
+    }
+
+    return Object.keys(scoringData)
+      .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary") // Exclude OverallScore and EvaluationSummary
+      .map((key) => (
+        <tr key={key}>
+          <td>{key}</td>
+          <td>{scoringData[key].score}</td>
+          <td>{scoringData[key].evidence}</td>
+        </tr>
+      ));
+  };
+
+  const renderOverallScoreAndSummary = (content) => { 
+    const overallScoreMatch = content.match(/"OverallScore":\s*(\d+)/);
+    const evaluationSummaryMatch = content.match(/"EvaluationSummary":\s*"([^"]+)"/);
+ 
+    const overallScore = overallScoreMatch ? overallScoreMatch[1] : "N/A";
+    const evaluationSummary = evaluationSummaryMatch ? evaluationSummaryMatch[1] : "N/A";
+
+    return (
+      <div className="my-3">
+        <div><strong>Overall Score:</strong> {overallScore}</div>
+        <div><strong>Evaluation Summary:</strong> {evaluationSummary}</div>
+      </div>
+    );
+  };
+ 
+  const parseAssessmentContent = (content) => {
+    const assessmentStart = content.indexOf("### Part 1: Detailed Assessment") + "### Part 1: Detailed Assessment".length;
+    const assessmentEnd = content.indexOf("### Part 2: Deterministic Scoring");
+    return content.slice(assessmentStart, assessmentEnd).trim();
+  };
+
 
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container bg-light min-vh-100">
@@ -177,8 +221,7 @@ function Dashboard() {
                 >
                   <strong>You:</strong> {item.user}
                 </div>
-              </div>
-              {/* System Message */}
+              </div> 
               <div className="d-flex justify-content-start mb-3">
                 <div
                   className="alert alert-secondary"
@@ -187,8 +230,29 @@ function Dashboard() {
                     wordBreak: "break-word",
                     whiteSpace: "pre-wrap",
                   }}
-                >
-                  <strong>{selectedModel}:</strong> {item.system}
+                > 
+                  {item.system && item.system.includes("### Part 1: Detailed Assessment") ? (
+                    <div>
+                      <h5>Detailed Assessment:</h5>
+                      <p>{parseAssessmentContent(item.system)}</p>
+                      <h5>Deterministic Scoring:</h5>
+                      <table className="table table-bordered">
+                        <thead>
+                          <tr>
+                            <th>Category</th>
+                            <th>Score</th>
+                            <th>Evidence</th>
+                          </tr>
+                        </thead>
+                        <tbody>{renderScoringTable(item.system)}</tbody>
+                      </table> 
+                      {renderOverallScoreAndSummary(item.system)}
+                    </div>
+                  ) : (
+                    <div>
+                      <strong>{selectedModel}:</strong> {item.system}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

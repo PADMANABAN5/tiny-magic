@@ -44,34 +44,9 @@ export const processPromptAndCallLLM = async ({
     // Log the raw LLM response for debugging
     console.log("Raw LLM Response:", llmResponse);
 
-    // Handle different response formats based on prompt type
     if (selectedPrompt === 'assessmentPrompt') {
-      // For assessment prompts, try to parse the JSON structure
-      try {
-        // First try to parse the entire response as JSON
-        const parsed = JSON.parse(llmResponse);
-        parsedResponse.apiResponseText = parsed.choices?.[0]?.message?.content || 
-                                         "No structured assessment response from model.";
-      } catch (jsonError) {
-        // If that fails, try to extract JSON from the response
-        const jsonMatch = llmResponse.match(/\{[\s\S]*\}/s); // Match across multiple lines
-        
-        if (jsonMatch) {
-          try {
-            const extractedJson = JSON.parse(jsonMatch[0]);
-            parsedResponse.apiResponseText = extractedJson.choices?.[0]?.message?.content || 
-                                             "No structured assessment content found.";
-          } catch (innerError) {
-            // If JSON parsing still fails, use the raw response
-            console.warn("Failed to parse extracted JSON:", innerError);
-            parsedResponse.apiResponseText = llmResponse;
-          }
-        } else {
-          // If no JSON structure is found, use the raw response
-          console.warn("No JSON structure found in assessment response");
-          parsedResponse.apiResponseText = llmResponse;
-        }
-      }
+      // For 'assessmentPrompt', just return the raw LLM response without parsing
+      parsedResponse.apiResponseText = llmResponse;
     } else {
       // For conceptMentor and other prompt types
       try {
@@ -101,12 +76,6 @@ export const processPromptAndCallLLM = async ({
     }
   } catch (err) {
     console.error("Error processing LLM response:", err);
-  }
-
-  // Important: For assessment prompts, ensure we're returning the full content
-  if (selectedPrompt === 'assessmentPrompt' && parsedResponse.apiResponseText === "No structured response from model.") {
-    // Last resort: if everything fails, return the raw response for assessment prompts
-    parsedResponse.apiResponseText = llmResponse;
   }
 
   return parsedResponse;
