@@ -6,7 +6,7 @@ import { FiSend, FiDownload } from "react-icons/fi";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import axios from "axios";
-import { callLLM } from "../utils/callLLM.js"
+import { callLLM } from "../utils/callLLM.js";
 
 function Dashboard() {
   const [prompt, setPrompt] = useState("");
@@ -17,6 +17,7 @@ function Dashboard() {
   const [selectedPrompt, setSelectedPrompt] = useState("conceptMentor");
   const username = localStorage.getItem("username");
   const [llmContent, setLlmContent] = useState("");
+  const [interactionCompleted, setInteractionCompleted] = useState(false);
 
   const handleDownloadPDF = () => {
     const chatDiv = document.getElementById("chat-history");
@@ -61,12 +62,12 @@ function Dashboard() {
     const userInput = isFirstMessage
       ? prompt
       : [
-        ...sessionHistory.map(
-          (entry) =>
-            `userText: ${entry.userText}\napiResponse: ${entry.apiResponse}`
-        ),
-        `userText: ${prompt}`,
-      ].join("\n");
+          ...sessionHistory.map(
+            (entry) =>
+              `userText: ${entry.userText}\napiResponse: ${entry.apiResponse}`
+          ),
+          `userText: ${prompt}`,
+        ].join("\n");
 
     const processRequestBody = {
       username,
@@ -86,7 +87,7 @@ function Dashboard() {
       let apiResponseText = "No structured response from model.";
 
       try {
-        const jsonStartIndex = llmResponse.indexOf('{');
+        const jsonStartIndex = llmResponse.indexOf("{");
         if (jsonStartIndex !== -1) {
           const jsonString = llmResponse.slice(jsonStartIndex);
           const parsed = JSON.parse(jsonString);
@@ -96,17 +97,22 @@ function Dashboard() {
             setSelectedPrompt("assessmentPrompt");
           }
 
+          setInteractionCompleted(parsed.interactionCompleted === true);
           // if (parsed.interactionCompleted === true) {
           //   setSelectedPrompt("conceptMentor");
           // }
-
         } else {
-          console.warn("JSON not found in llmResponse:", llmResponse);
+          console.warn(
+            "JSON not found in llmResponse, hiding button:",
+            llmResponse
+          );
+          setInteractionCompleted(false);
         }
       } catch (err) {
-        console.error("Failed to parse llmResponse JSON:", err);
+        console.error("Failed to parse llmResponse JSON, hiding button:", err);
+        setInteractionCompleted(false);
       }
-        setChatHistory((prev) => {
+      setChatHistory((prev) => {
         const updatedHistory = [
           ...prev,
           { user: prompt, system: apiResponseText },
@@ -127,8 +133,6 @@ function Dashboard() {
     }
   };
 
-
-
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -141,21 +145,22 @@ function Dashboard() {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatHistory]);
-      useEffect(() => {
-      const savedChatHistory = localStorage.getItem("chatHistory");
-      if (savedChatHistory) {
-        setChatHistory(JSON.parse(savedChatHistory));
-      }
-    }, []);
+  useEffect(() => {
+    const savedChatHistory = localStorage.getItem("chatHistory");
+    if (savedChatHistory) {
+      setChatHistory(JSON.parse(savedChatHistory));
+    }
+  }, []);
 
- 
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container bg-light min-vh-100">
       <Sidebar />
       <div className="flex-grow-1 p-4 d-flex flex-column position-relative">
         <div className="mb-4 mt-5">
-          <h5 className="text-primary"><span style={{color:"black"}}>Model : </span>{selectedModel}</h5>
-
+          <h5 className="text-primary">
+            <span style={{ color: "black" }}>Model : </span>
+            {selectedModel}
+          </h5>
         </div>
         <div
           id="chat-history"
@@ -207,18 +212,27 @@ function Dashboard() {
             className="btn btn-primary position-absolute end-0 bottom-0 m-2"
             onClick={handleSendClick}
             disabled={!prompt.trim()}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", padding: 0 }}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "38px",
+              height: "38px",
+              padding: 0,
+            }}
           >
             <FiSend size={20} />
           </button>
         </div>
-        <button
-          className="btn btn-outline-dark position-fixed"
-          style={{ top: "10%", right: "5%", width: "50px" }}
-          onClick={handleDownloadPDF}
-        >
-          <FiDownload />
-        </button>
+        {interactionCompleted && (
+          <button
+            className="btn btn-outline-dark position-fixed"
+            style={{ top: "10%", right: "5%", width: "50px" }}
+            onClick={handleDownloadPDF}
+          >
+            <FiDownload />
+          </button>
+        )}
       </div>
     </div>
   );
