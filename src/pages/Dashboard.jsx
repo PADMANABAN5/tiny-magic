@@ -6,7 +6,8 @@ import { FiSend, FiDownload } from "react-icons/fi";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import axios from "axios";
-import { callLLM } from "../utils/callLLM.js";
+import { callLLM } from "../utils/callLLM.js"
+import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 
 function Dashboard() {
   const [prompt, setPrompt] = useState("");
@@ -48,74 +49,29 @@ function Dashboard() {
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
+
   const [sessionHistory, setSessionHistory] = useState([]);
+
   const handleSendClick = async () => {
-    if (
-      !prompt.trim() ||
-      !selectedPrompt ||
-      selectedModel === "Choose a model"
-    ) {
+    if (!prompt.trim() || !selectedPrompt || selectedModel === "Choose a model") {
       alert("Please enter a prompt, select a prompt type, and choose a model.");
       return;
     }
-    const isFirstMessage = sessionHistory.length === 0;
-    const userInput = isFirstMessage
-      ? prompt
-      : [
-          ...sessionHistory.map(
-            (entry) =>
-              `userText: ${entry.userText}\napiResponse: ${entry.apiResponse}`
-          ),
-          `userText: ${prompt}`,
-        ].join("\n");
-
-    const processRequestBody = {
-      username,
-      promptType: selectedPrompt,
-      llmProvider: selectedModel,
-      userInput,
-    };
 
     try {
-      const processResponse = await axios.post(
-        `${process.env.REACT_APP_API_LINK}/processPrompt`,
-        processRequestBody
-      );
+      // Process the initial response (conceptMentor)
+      const initialResponse = await processPromptAndCallLLM({
+        username,
+        selectedPrompt,
+        selectedModel,
+        sessionHistory,
+        userPrompt: prompt,
+      });
 
-      const { messages, llmConfig } = processResponse.data;
-      const llmResponse = await callLLM(selectedModel, llmConfig, messages);
-      let apiResponseText = "No structured response from model.";
-
-      try {
-        const jsonStartIndex = llmResponse.indexOf("{");
-        if (jsonStartIndex !== -1) {
-          const jsonString = llmResponse.slice(jsonStartIndex);
-          const parsed = JSON.parse(jsonString);
-          apiResponseText = parsed.userText || apiResponseText;
-
-          if (parsed.currentStage === 5) {
-            setSelectedPrompt("assessmentPrompt");
-          }
-
-          setInteractionCompleted(parsed.interactionCompleted === true);
-          // if (parsed.interactionCompleted === true) {
-          //   setSelectedPrompt("conceptMentor");
-          // }
-        } else {
-          console.warn(
-            "JSON not found in llmResponse, hiding button:",
-            llmResponse
-          );
-          setInteractionCompleted(false);
-        }
-      } catch (err) {
-        console.error("Failed to parse llmResponse JSON, hiding button:", err);
-        setInteractionCompleted(false);
-      }
       setChatHistory((prev) => {
         const updatedHistory = [
           ...prev,
-          { user: prompt, system: apiResponseText },
+          { user: prompt, system: initialResponse.apiResponseText },
         ];
         localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
         return updatedHistory;
@@ -123,12 +79,52 @@ function Dashboard() {
 
       setSessionHistory((prev) => [
         ...prev,
-        { userText: prompt, apiResponse: apiResponseText },
+        { Mentee: prompt, Mentor: initialResponse.apiResponseText },
       ]);
 
-      setPrompt("");
+      if (initialResponse.endRequested || initialResponse.interactionCompleted) {
+        // Now handle the assessment prompt
+        const assessmentResponse = await processPromptAndCallLLM({
+          username,
+          selectedPrompt: "assessmentPrompt",  // Make sure it's 'assessmentPrompt'
+          selectedModel,
+          sessionHistory: [
+            ...sessionHistory,
+            { Mentee: prompt, Mentor: initialResponse.apiResponseText },
+          ],
+          userPrompt: prompt,
+        });
+        setInteractionCompleted(initialResponse.interactionCompleted);
+         
+        console.log("Assessment Response:", assessmentResponse);
+        
+        // Add the assessment response to chat history - directly use the apiResponseText
+        // which should already contain the full assessment content
+        setChatHistory((prev) => {
+          const updatedHistory = [
+            ...prev,
+            { 
+              user: "Assessment Request", 
+              system: assessmentResponse.apiResponseText
+            },
+          ];
+          localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+          return updatedHistory;
+        });
+
+        setSessionHistory((prev) => [
+          ...prev,
+          { Mentee: "Assessment Request", Mentor: assessmentResponse.apiResponseText },
+        ]);
+
+        // Reset prompt type back to "conceptMentor"
+        setSelectedPrompt("conceptMentor");
+      }
+
+      setPrompt("");  // Clear the prompt after sending
     } catch (error) {
       console.error("Error in API request:", error);
+      setInteractionCompleted(false);
       alert("Failed to process request. Please try again.");
     }
   };
@@ -145,6 +141,7 @@ function Dashboard() {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatHistory]);
+  
   useEffect(() => {
     const savedChatHistory = localStorage.getItem("chatHistory");
     if (savedChatHistory) {
@@ -212,14 +209,7 @@ function Dashboard() {
             className="btn btn-primary position-absolute end-0 bottom-0 m-2"
             onClick={handleSendClick}
             disabled={!prompt.trim()}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: "38px",
-              height: "38px",
-              padding: 0,
-            }}
+            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", padding: 0 }}
           >
             <FiSend size={20} />
           </button>
@@ -237,4 +227,5 @@ function Dashboard() {
     </div>
   );
 }
+
 export default Dashboard;
