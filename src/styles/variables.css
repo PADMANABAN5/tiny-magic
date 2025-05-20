@@ -1,7 +1,6 @@
 table,tr,th,td{
-    border-radius: 5px;
-    border: none;
-    border-collapse: separate !important;
+    border-radius: 0px;
+    border: 1px solid gray;
     box-shadow: 10px 10px 10px rgba(0, 0, 0, 0.2);
 }
 
