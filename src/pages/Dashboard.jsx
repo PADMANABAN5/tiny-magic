@@ -9,6 +9,7 @@ import axios from "axios";
 import { callLLM } from "../utils/callLLM.js";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 const BASE_URL = process.env.REACT_APP_CHAT_SAVE_KEY;
+
 function Dashboard() {
   const [prompt, setPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
@@ -28,45 +29,44 @@ function Dashboard() {
   const [apiKeyError, setApiKeyError] = useState("");
 
   const initiateFirstMentorMessage = async () => {
-  if (
-    sessionHistory.length === 0 &&
-    selectedPrompt === "conceptMentor" &&
-    selectedModel &&
-    selectedModel !== "Choose a model"
-  ) {
-    setIsLoading(true);
-    try {
-      const response = await processPromptAndCallLLM({
-        username,
-        selectedPrompt: "conceptMentor",
-        selectedModel,
-        sessionHistory: [],
-        userPrompt: "",
-      });
+    if (
+      sessionHistory.length === 0 &&
+      selectedPrompt === "conceptMentor" &&
+      selectedModel &&
+      selectedModel !== "Choose a model"
+    ) {
+      setIsLoading(true);
+      try {
+        const response = await processPromptAndCallLLM({
+          username,
+          selectedPrompt: "conceptMentor",
+          selectedModel,
+          sessionHistory: [],
+          userPrompt: "",
+        });
 
-      const mentorMessage = response.apiResponseText;
+        const mentorMessage = response.apiResponseText;
 
-      setChatHistory([
-        {
-          user: "",
-          system: mentorMessage,
-        },
-      ]);
+        setChatHistory([
+          {
+            user: "",
+            system: mentorMessage,
+          },
+        ]);
 
-      setSessionHistory([
-        {
-          Mentee: "",
-          Mentor: mentorMessage,
-        },
-      ]);
-    } catch (err) {
-      console.error("Failed to load initial mentor message:", err);
-    } finally {
-      setIsLoading(false);
+        setSessionHistory([
+          {
+            Mentee: "",
+            Mentor: mentorMessage,
+          },
+        ]);
+      } catch (err) {
+        console.error("Failed to load initial mentor message:", err);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  }
-};
-
+  };
 
   const handleApiKeySubmit = async() => {
     if (apiKey.length < 10) {
@@ -260,19 +260,33 @@ function Dashboard() {
     }
   }, [username]);
 
-  const renderScoringTable = (content) => {
-    const scoringStart = content.indexOf("```json") + "```json".length;
-    const scoringEnd = content.indexOf("```", scoringStart);
-
-    const scoringJson = content.slice(scoringStart, scoringEnd).trim();
-    let scoringData = {};
-
+  // Improved JSON parsing function that handles different formats
+  const extractScoringData = (content) => {
     try {
-      scoringData = JSON.parse(scoringJson);
+      // First, try to find JSON structure within ```json ... ``` block
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+      
+      if (jsonMatch && jsonMatch[1]) {
+        return JSON.parse(jsonMatch[1]);
+      }
+      
+      // If that fails, look for a JSON object anywhere in the content
+      const possibleJson = content.match(/\{[\s\S]*"OverallScore"[\s\S]*\}/);
+      if (possibleJson) {
+        return JSON.parse(possibleJson[0]);
+      }
+      
+      // If all parsing attempts fail, return empty object
+      return {};
     } catch (e) {
       console.error("Error parsing scoring JSON:", e);
+      return {};
     }
+  };
 
+  const renderScoringTable = (content) => {
+    const scoringData = extractScoringData(content);
+    
     return Object.keys(scoringData)
       .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary")
       .map((key) => (
@@ -285,15 +299,10 @@ function Dashboard() {
   };
 
   const renderOverallScoreAndSummary = (content) => {
-    const overallScoreMatch = content.match(/"OverallScore":\s*(\d+)/);
-    const evaluationSummaryMatch = content.match(
-      /"EvaluationSummary":\s*"([^"]+)"/
-    );
-
-    const overallScore = overallScoreMatch ? overallScoreMatch[1] : "N/A";
-    const evaluationSummary = evaluationSummaryMatch
-      ? evaluationSummaryMatch[1]
-      : "N/A";
+    const scoringData = extractScoringData(content);
+    
+    const overallScore = scoringData.OverallScore || "N/A";
+    const evaluationSummary = scoringData.EvaluationSummary || "N/A";
 
     return (
       <div className="my-3">
@@ -308,11 +317,47 @@ function Dashboard() {
   };
 
   const parseAssessmentContent = (content) => {
-    const assessmentStart =
-      content.indexOf("### Part 1: Detailed Assessment") +
-      "### Part 1: Detailed Assessment".length;
-    const assessmentEnd = content.indexOf("### Part 2: Deterministic Scoring");
-    return content.slice(assessmentStart, assessmentEnd).trim();
+    // Extract the assessment content between Part 1 and Part 2
+    const detailedAssessmentHeader = "### Part 1: Detailed Assessment";
+    const deterministicScoringHeader = "### Part 2: Deterministic Scoring";
+    
+    const part1Index = content.indexOf(detailedAssessmentHeader);
+    
+    if (part1Index === -1) {
+      // Try alternative format (without space)
+      const altHeader = "### Part1: Detailed Assessment";
+      const altPart1Index = content.indexOf(altHeader);
+      
+      if (altPart1Index === -1) {
+        return content; // Return full content if headers not found
+      }
+      
+      const assessmentStart = altPart1Index + altHeader.length;
+      const part2Index = content.indexOf("### Part2: Deterministic Scoring");
+      
+      if (part2Index === -1) {
+        return content.slice(assessmentStart).trim();
+      }
+      
+      return content.slice(assessmentStart, part2Index).trim();
+    }
+    
+    const assessmentStart = part1Index + detailedAssessmentHeader.length;
+    const part2Index = content.indexOf(deterministicScoringHeader);
+    
+    if (part2Index === -1) {
+      return content.slice(assessmentStart).trim();
+    }
+    
+    return content.slice(assessmentStart, part2Index).trim();
+  };
+
+  // Determine if content contains assessment data
+  const hasAssessmentData = (content) => {
+    return content && (
+      content.includes("Detailed Assessment") && 
+      content.includes("Deterministic Scoring")
+    );
   };
 
   useEffect(() => { 
@@ -401,18 +446,18 @@ function Dashboard() {
                     whiteSpace: "pre-wrap",
                   }}
                 >
-                  {item.system &&
-                  item.system.includes("### Part 1: Detailed Assessment") ? (
+                  {hasAssessmentData(item.system) ? (
                     <div>
+                      <h5>{selectedModel}:</h5>
                       <h5>Detailed Assessment:</h5>
                       <p>{parseAssessmentContent(item.system)}</p>
                       <h5>Deterministic Scoring:</h5>
                       <table className="table table-bordered">
                         <thead>
                           <tr>
-                            <th>Category</th>
-                            <th>Score</th>
-                            <th>Evidence</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Category</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Score</th>
+                            <th style={{ whiteSpace: 'nowrap' }}>Evidence</th>
                           </tr>
                         </thead>
                         <tbody>{renderScoringTable(item.system)}</tbody>

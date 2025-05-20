@@ -40,7 +40,7 @@ function Sidebar() {
                 Dashboard
               </Link>
             </li>
-            <li className="nav-item">
+            {/* <li className="nav-item">
               <Link
                 to="/variables"
                 className={`nav-link d-flex align-items-center ${location.pathname === "/variables" ? "active" : ""}`}
@@ -48,13 +48,23 @@ function Sidebar() {
                 <FaBook className="me-2" style={{ fontSize: "16px" }} />
                 Variables
               </Link>
-            </li>
-            <li className="nav-item">
-              <Link to="/" className="nav-link d-flex align-items-center">
-                <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
-                Log Out
-              </Link>
-            </li>
+            </li> */}
+            <Link
+              to="/"
+              className="nav-link d-flex align-items-center"
+              onClick={() => {
+                const username = localStorage.getItem("username");
+                if (username) {
+                  localStorage.removeItem(`apiKey_${username}`);
+                  localStorage.removeItem("username");  
+                  localStorage.removeItem("selectedModel");  
+                }
+              }}
+            >
+              <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
+              Log Out
+            </Link>
+
           </ul>
         </div>
       </div>

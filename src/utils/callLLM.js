@@ -6,19 +6,18 @@ export async function callLLM(provider, config, messages) {
     console.error("No API key found in localStorage for user:", username);
     return "Error: No API key provided. Please enter an API key in the dashboard.";
   }
-
   try {
     switch (provider.toLowerCase()) {
-      case "chatgpt":
+      case "gpt4o":
       case "openai": {
-        const res = await fetch(`${process.env.REACT_APP_GROQ_API_LINK}`, {
+        const res = await fetch("https://api.openai.com/v1/chat/completions", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${process.env.NEXT_PUBLIC_OPENAI_API_KEY}`,
+            Authorization: `Bearer ${apiKey}`,  
           },
           body: JSON.stringify({
-            model: config.model,
+            model: config.model,  
             messages,
             temperature: config.temperature,
             max_tokens: config.maxTokens,
@@ -26,11 +25,16 @@ export async function callLLM(provider, config, messages) {
           }),
         });
 
+        if (!res.ok) {
+          const errorText = await res.text();
+          console.error("OpenAI API Error:", res.status, errorText);
+          return `Error: ${errorText}`;
+        }
+
         const data = await res.json();
-        return (
-          data?.choices?.[0]?.message?.content || "No response from OpenAI"
-        );
+        return data?.choices?.[0]?.message?.content || "No response from OpenAI";
       }
+
 
       case "groq": {
         const res = await fetch(
