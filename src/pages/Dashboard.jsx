@@ -21,6 +21,38 @@ function Dashboard() {
   const [interactionCompleted, setInteractionCompleted] = useState(false);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showApiKeyPopup, setShowApiKeyPopup] = useState(
+    !localStorage.getItem(`apiKey_${username}`)
+  );
+  const [apiKey, setApiKey] = useState("");
+  const [apiKeyError, setApiKeyError] = useState("");
+
+  const handleApiKeySubmit = () => {
+    if (apiKey.length < 10) {
+      setApiKeyError("API Key must be at least 10 characters long");
+      return;
+    }
+
+    const existingApiKeys = JSON.parse(localStorage.getItem("apiKeys") || "{}");
+
+    const isKeyUsed = Object.entries(existingApiKeys).some(
+      ([storedUsername, storedApiKey]) =>
+        storedApiKey === apiKey && storedUsername !== username
+    );
+
+    if (isKeyUsed) {
+      setApiKeyError("This API Key is already used by another user");
+      return;
+    }
+
+    localStorage.setItem(`apiKey_${username}`, apiKey);
+
+    existingApiKeys[username] = apiKey;
+    localStorage.setItem("apiKeys", JSON.stringify(existingApiKeys));
+
+    setShowApiKeyPopup(false);
+    setApiKeyError("");
+  };
 
   const handleDownloadPDF = () => {
     const chatDiv = document.getElementById("chat-history");
@@ -63,19 +95,22 @@ function Dashboard() {
       });
     }, 100);
   };
+
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
 
-
   const handleSendClick = async () => {
-    if (!prompt.trim() || !selectedPrompt || selectedModel === "Choose a model") {
+    if (
+      !prompt.trim() ||
+      !selectedPrompt ||
+      selectedModel === "Choose a model"
+    ) {
       alert("Please enter a prompt, select a prompt type, and choose a model.");
       return;
     }
     setIsLoading(true);
     try {
-      // Process the initial response (conceptMentor)
       const initialResponse = await processPromptAndCallLLM({
         username,
         selectedPrompt,
@@ -98,7 +133,10 @@ function Dashboard() {
         { Mentee: prompt, Mentor: initialResponse.apiResponseText },
       ]);
 
-      if (initialResponse.endRequested || initialResponse.interactionCompleted) {
+      if (
+        initialResponse.endRequested ||
+        initialResponse.interactionCompleted
+      ) {
         const assessmentResponse = await processPromptAndCallLLM({
           username,
           selectedPrompt: "assessmentPrompt",
@@ -111,12 +149,13 @@ function Dashboard() {
         });
 
         setLlmContent(assessmentResponse.apiResponseText);
-
         setInteractionCompleted(initialResponse.interactionCompleted);
-        console.log("Assessment Response:", assessmentResponse);
 
         setChatHistory((prev) => {
-          const updatedHistory = [...prev, { user: prompt, system: assessmentResponse.apiResponseText }];
+          const updatedHistory = [
+            ...prev,
+            { user: prompt, system: assessmentResponse.apiResponseText },
+          ];
           const savePayload = {
             username,
             model: selectedModel,
@@ -125,7 +164,10 @@ function Dashboard() {
           };
 
           axios
-            .post("https://chat-history-tcip.onrender.com/api/saveChatHistory", savePayload)
+            .post(
+              "https://chat-history-tcip.onrender.com/api/saveChatHistory",
+              savePayload
+            )
             .then(() => console.log("Chat history saved"))
             .catch((err) => console.error("Failed to save chat history:", err));
 
@@ -140,7 +182,7 @@ function Dashboard() {
         setSelectedPrompt("conceptMentor");
       }
 
-      setPrompt("");  // Clear the prompt after sending
+      setPrompt("");
     } catch (error) {
       setIsLoading(false);
       console.error("Error in API request:", error);
@@ -176,11 +218,10 @@ function Dashboard() {
       }
     };
 
-    if (username) {
+    if (username && localStorage.getItem(`apiKey_${username}`)) {
       fetchChatHistory();
     }
   }, [username]);
-
 
   const renderScoringTable = (content) => {
     const scoringStart = content.indexOf("```json") + "```json".length;
@@ -196,7 +237,7 @@ function Dashboard() {
     }
 
     return Object.keys(scoringData)
-      .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary") // Exclude OverallScore and EvaluationSummary
+      .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary")
       .map((key) => (
         <tr key={key}>
           <td>{key}</td>
@@ -208,28 +249,43 @@ function Dashboard() {
 
   const renderOverallScoreAndSummary = (content) => {
     const overallScoreMatch = content.match(/"OverallScore":\s*(\d+)/);
-    const evaluationSummaryMatch = content.match(/"EvaluationSummary":\s*"([^"]+)"/);
+    const evaluationSummaryMatch = content.match(
+      /"EvaluationSummary":\s*"([^"]+)"/
+    );
 
     const overallScore = overallScoreMatch ? overallScoreMatch[1] : "N/A";
-    const evaluationSummary = evaluationSummaryMatch ? evaluationSummaryMatch[1] : "N/A";
+    const evaluationSummary = evaluationSummaryMatch
+      ? evaluationSummaryMatch[1]
+      : "N/A";
 
     return (
       <div className="my-3">
-        <div><strong>Overall Score:</strong> {overallScore}</div>
-        <div><strong>Evaluation Summary:</strong> {evaluationSummary}</div>
+        <div>
+          <strong>Overall Score:</strong> {overallScore}
+        </div>
+        <div>
+          <strong>Evaluation Summary:</strong> {evaluationSummary}
+        </div>
       </div>
     );
   };
 
   const parseAssessmentContent = (content) => {
-    const assessmentStart = content.indexOf("### Part 1: Detailed Assessment") + "### Part 1: Detailed Assessment".length;
+    const assessmentStart =
+      content.indexOf("### Part 1: Detailed Assessment") +
+      "### Part 1: Detailed Assessment".length;
     const assessmentEnd = content.indexOf("### Part 2: Deterministic Scoring");
     return content.slice(assessmentStart, assessmentEnd).trim();
   };
 
   useEffect(() => {
     const initiateFirstMentorMessage = async () => {
-      if (sessionHistory.length === 0 && selectedPrompt === "conceptMentor" && selectedModel && selectedModel !== "Choose a model") {
+      if (
+        sessionHistory.length === 0 &&
+        selectedPrompt === "conceptMentor" &&
+        selectedModel &&
+        selectedModel !== "Choose a model"
+      ) {
         setIsLoading(true);
         try {
           const response = await processPromptAndCallLLM({
@@ -263,13 +319,52 @@ function Dashboard() {
       }
     };
 
-    if (username && selectedModel) {
+    if (
+      username &&
+      selectedModel &&
+      localStorage.getItem(`apiKey_${username}`)
+    ) {
       initiateFirstMentorMessage();
     }
   }, [username, selectedModel]);
 
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container bg-light min-vh-100">
+      {showApiKeyPopup && (
+        <div
+          className="modal d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+        >
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Enter API Key</h5>
+              </div>
+              <div className="modal-body">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Enter your API Key"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+                {apiKeyError && (
+                  <div className="text-danger mt-2">{apiKeyError}</div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  className="btn btn-primary"
+                  onClick={handleApiKeySubmit}
+                  disabled={apiKey.length < 10}
+                >
+                  Submit
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <Sidebar />
       <div className="flex-grow-1 p-4 d-flex flex-column position-relative">
         <div className="mb-3 mt-5">
@@ -309,7 +404,8 @@ function Dashboard() {
                     whiteSpace: "pre-wrap",
                   }}
                 >
-                  {item.system && item.system.includes("### Part 1: Detailed Assessment") ? (
+                  {item.system &&
+                  item.system.includes("### Part 1: Detailed Assessment") ? (
                     <div>
                       <h5>Detailed Assessment:</h5>
                       <p>{parseAssessmentContent(item.system)}</p>
@@ -354,12 +450,20 @@ function Dashboard() {
             value={prompt}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
+            disabled={showApiKeyPopup}
           />
           <button
             className="btn btn-primary position-absolute end-0 bottom-0 m-2"
             onClick={handleSendClick}
-            disabled={!prompt.trim()}
-            style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "38px", height: "38px", padding: 0 }}
+            disabled={!prompt.trim() || showApiKeyPopup}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "38px",
+              height: "38px",
+              padding: 0,
+            }}
           >
             <FiSend size={20} />
           </button>
@@ -369,6 +473,7 @@ function Dashboard() {
             className="btn btn-outline-dark position-fixed"
             style={{ top: "10%", right: "5%", width: "50px" }}
             onClick={handleDownloadPDF}
+            disabled={showApiKeyPopup}
           >
             <FiDownload />
           </button>
