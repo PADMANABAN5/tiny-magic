@@ -27,7 +27,48 @@ function Dashboard() {
   const [apiKey, setApiKey] = useState("");
   const [apiKeyError, setApiKeyError] = useState("");
 
-  const handleApiKeySubmit = () => {
+  const initiateFirstMentorMessage = async () => {
+  if (
+    sessionHistory.length === 0 &&
+    selectedPrompt === "conceptMentor" &&
+    selectedModel &&
+    selectedModel !== "Choose a model"
+  ) {
+    setIsLoading(true);
+    try {
+      const response = await processPromptAndCallLLM({
+        username,
+        selectedPrompt: "conceptMentor",
+        selectedModel,
+        sessionHistory: [],
+        userPrompt: "",
+      });
+
+      const mentorMessage = response.apiResponseText;
+
+      setChatHistory([
+        {
+          user: "",
+          system: mentorMessage,
+        },
+      ]);
+
+      setSessionHistory([
+        {
+          Mentee: "",
+          Mentor: mentorMessage,
+        },
+      ]);
+    } catch (err) {
+      console.error("Failed to load initial mentor message:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+};
+
+
+  const handleApiKeySubmit = async() => {
     if (apiKey.length < 10) {
       setApiKeyError("API Key must be at least 10 characters long");
       return;
@@ -52,6 +93,7 @@ function Dashboard() {
 
     setShowApiKeyPopup(false);
     setApiKeyError("");
+    await initiateFirstMentorMessage();
   };
 
   const handleDownloadPDF = () => {
@@ -273,47 +315,7 @@ function Dashboard() {
     return content.slice(assessmentStart, assessmentEnd).trim();
   };
 
-  useEffect(() => {
-    const initiateFirstMentorMessage = async () => {
-      if (
-        sessionHistory.length === 0 &&
-        selectedPrompt === "conceptMentor" &&
-        selectedModel &&
-        selectedModel !== "Choose a model"
-      ) {
-        setIsLoading(true);
-        try {
-          const response = await processPromptAndCallLLM({
-            username,
-            selectedPrompt: "conceptMentor",
-            selectedModel,
-            sessionHistory: [],
-            userPrompt: "",
-          });
-
-          const mentorMessage = response.apiResponseText;
-
-          setChatHistory([
-            {
-              user: "",
-              system: mentorMessage,
-            },
-          ]);
-
-          setSessionHistory([
-            {
-              Mentee: "",
-              Mentor: mentorMessage,
-            },
-          ]);
-        } catch (err) {
-          console.error("Failed to load initial mentor message:", err);
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    };
-
+  useEffect(() => { 
     if (
       username &&
       selectedModel &&
@@ -321,7 +323,7 @@ function Dashboard() {
     ) {
       initiateFirstMentorMessage();
     }
-  }, [username, selectedModel]);
+  }, [selectedModel]);
 
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container bg-light min-vh-100">

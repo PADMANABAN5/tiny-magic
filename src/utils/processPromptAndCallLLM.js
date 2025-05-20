@@ -12,12 +12,12 @@ export const processPromptAndCallLLM = async ({
   const userInput = isFirstMessage
     ? userPrompt
     : [
-        ...sessionHistory.map(
-          (entry) =>
-            `Mentee: ${entry.Mentee}\nMentor: ${entry.Mentor}`
-        ),
-        `Mentee: ${userPrompt}`,
-      ].join("\n");
+      ...sessionHistory.map(
+        (entry) =>
+          `Mentee: ${entry.Mentee}\nMentor: ${entry.Mentor}`
+      ),
+      `Mentee: ${userPrompt}`,
+    ].join("\n");
 
   const processRequestBody = {
     username,
@@ -35,30 +35,23 @@ export const processPromptAndCallLLM = async ({
   const llmResponse = await callLLM(selectedModel, llmConfig, messages);
 
   let parsedResponse = {
-    apiResponseText: "No structured response from model.",
+    apiResponseText: "The LLM did not return a valid response. Please try again.",
     interactionCompleted: false,
     endRequested: false,
   };
 
-  try {
-    // Log the raw LLM response for debugging
-    console.log("Raw LLM Response:", llmResponse);
-
-    if (selectedPrompt === 'assessmentPrompt') {
-      // For 'assessmentPrompt', just return the raw LLM response without parsing
+  try {  
+    if (selectedPrompt === 'assessmentPrompt') { 
       parsedResponse.apiResponseText = llmResponse;
-    } else {
-      // For conceptMentor and other prompt types
-      try {
-        // Try parsing as JSON to extract userText
+    } else { 
+      try { 
         const parsed = JSON.parse(llmResponse);
         parsedResponse.apiResponseText = parsed.userText || parsedResponse.apiResponseText;
         parsedResponse.interactionCompleted = parsed.interactionCompleted || false;
         parsedResponse.endRequested = parsed.endRequested || false;
-      } catch (jsonError) {
-        // If not valid JSON, try to extract the JSON part
+      } catch (jsonError) { 
         const jsonMatch = llmResponse.match(/\{[\s\S]*\}/s);
-        
+
         if (jsonMatch) {
           try {
             const extractedJson = JSON.parse(jsonMatch[0]);
@@ -66,8 +59,7 @@ export const processPromptAndCallLLM = async ({
             parsedResponse.interactionCompleted = extractedJson.interactionCompleted || false;
             parsedResponse.endRequested = extractedJson.endRequested || false;
           } catch (innerError) {
-            console.warn("Failed to parse extracted JSON:", innerError);
-            // For non-assessment prompts, we still need structured data, so don't fallback to raw text
+            console.warn("Failed to parse extracted JSON:", innerError); 
           }
         } else {
           console.warn("No JSON structure found in response");
