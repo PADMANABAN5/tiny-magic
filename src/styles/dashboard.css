@@ -1,17 +1,19 @@
-*{
-    box-sizing: border-box;
-    
+* {
+  box-sizing: border-box;
+
 }
-body{
+
+body {
   overflow-y: hidden;
   background: #f8f9fa !important;
-  
+
 }
+
 .dashboard-container {
   min-height: 60vh;
   min-width: 95vw;
   margin-bottom: -10px !important;
-  
+
 }
 
 .dashboard-content {
@@ -56,11 +58,13 @@ body{
   height: 100px;
   white-space: nowrap;
 }
+
 .submitted-prompt-box {
   max-width: 300px;
   word-wrap: break-word;
   z-index: 1000;
 }
+
 /* Force desktop view layout even on smaller screens */
 @media (max-width: 768px) {
   .dashboard-container {
@@ -92,7 +96,8 @@ body{
   body {
     touch-action: manipulation;
   }
+} 
+.navbar-nav .nav-item .active {
+  color: blue;
+  font-weight: 500;
 }
-
-
-

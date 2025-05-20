@@ -20,6 +20,7 @@ function Dashboard() {
   const [llmContent, setLlmContent] = useState("");
   const [interactionCompleted, setInteractionCompleted] = useState(false);
   const [sessionHistory, setSessionHistory] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleDownloadPDF = () => {
     const chatDiv = document.getElementById("chat-history");
@@ -66,13 +67,13 @@ function Dashboard() {
     setPrompt(event.target.value);
   };
 
-  
+
   const handleSendClick = async () => {
     if (!prompt.trim() || !selectedPrompt || selectedModel === "Choose a model") {
       alert("Please enter a prompt, select a prompt type, and choose a model.");
       return;
     }
-
+    setIsLoading(true);
     try {
       // Process the initial response (conceptMentor)
       const initialResponse = await processPromptAndCallLLM({
@@ -97,10 +98,10 @@ function Dashboard() {
         { Mentee: prompt, Mentor: initialResponse.apiResponseText },
       ]);
 
-      if (initialResponse.endRequested || initialResponse.interactionCompleted) { 
+      if (initialResponse.endRequested || initialResponse.interactionCompleted) {
         const assessmentResponse = await processPromptAndCallLLM({
           username,
-          selectedPrompt: "assessmentPrompt",   
+          selectedPrompt: "assessmentPrompt",
           selectedModel,
           sessionHistory: [
             ...sessionHistory,
@@ -113,37 +114,40 @@ function Dashboard() {
 
         setInteractionCompleted(initialResponse.interactionCompleted);
         console.log("Assessment Response:", assessmentResponse);
- 
+
         setChatHistory((prev) => {
-        const updatedHistory = [...prev, { user: prompt, system: initialResponse.apiResponseText }];
-        const savePayload = {
-          username,
-          model: selectedModel,
-          timestamp: new Date().toISOString(),
-          chatHistory: updatedHistory,
-        };
+          const updatedHistory = [...prev, { user: prompt, system: assessmentResponse.apiResponseText }];
+          const savePayload = {
+            username,
+            model: selectedModel,
+            timestamp: new Date().toISOString(),
+            chatHistory: updatedHistory,
+          };
 
-        axios
-          .post("https://chat-history-tcip.onrender.com/api/saveChatHistory", savePayload)
-          .then(() => console.log("Chat history saved"))
-          .catch((err) => console.error("Failed to save chat history:", err));
+          axios
+            .post("https://chat-history-tcip.onrender.com/api/saveChatHistory", savePayload)
+            .then(() => console.log("Chat history saved"))
+            .catch((err) => console.error("Failed to save chat history:", err));
 
-        return updatedHistory;
-      });
+          return updatedHistory;
+        });
 
         setSessionHistory((prev) => [
           ...prev,
           { Mentee: prompt, Mentor: assessmentResponse.apiResponseText },
         ]);
- 
+
         setSelectedPrompt("conceptMentor");
       }
 
       setPrompt("");  // Clear the prompt after sending
     } catch (error) {
+      setIsLoading(false);
       console.error("Error in API request:", error);
       setInteractionCompleted(false);
       alert("Failed to process request. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -177,7 +181,7 @@ function Dashboard() {
     }
   }, [username]);
 
- 
+
   const renderScoringTable = (content) => {
     const scoringStart = content.indexOf("```json") + "```json".length;
     const scoringEnd = content.indexOf("```", scoringStart);
@@ -202,10 +206,10 @@ function Dashboard() {
       ));
   };
 
-  const renderOverallScoreAndSummary = (content) => { 
+  const renderOverallScoreAndSummary = (content) => {
     const overallScoreMatch = content.match(/"OverallScore":\s*(\d+)/);
     const evaluationSummaryMatch = content.match(/"EvaluationSummary":\s*"([^"]+)"/);
- 
+
     const overallScore = overallScoreMatch ? overallScoreMatch[1] : "N/A";
     const evaluationSummary = evaluationSummaryMatch ? evaluationSummaryMatch[1] : "N/A";
 
@@ -216,19 +220,59 @@ function Dashboard() {
       </div>
     );
   };
- 
+
   const parseAssessmentContent = (content) => {
     const assessmentStart = content.indexOf("### Part 1: Detailed Assessment") + "### Part 1: Detailed Assessment".length;
     const assessmentEnd = content.indexOf("### Part 2: Deterministic Scoring");
     return content.slice(assessmentStart, assessmentEnd).trim();
   };
 
+  useEffect(() => {
+    const initiateFirstMentorMessage = async () => {
+      if (sessionHistory.length === 0 && selectedPrompt === "conceptMentor" && selectedModel && selectedModel !== "Choose a model") {
+        setIsLoading(true);
+        try {
+          const response = await processPromptAndCallLLM({
+            username,
+            selectedPrompt: "conceptMentor",
+            selectedModel,
+            sessionHistory: [],
+            userPrompt: "",
+          });
+
+          const mentorMessage = response.apiResponseText;
+
+          setChatHistory([
+            {
+              user: "",
+              system: mentorMessage,
+            },
+          ]);
+
+          setSessionHistory([
+            {
+              Mentee: "",
+              Mentor: mentorMessage,
+            },
+          ]);
+        } catch (err) {
+          console.error("Failed to load initial mentor message:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    if (username && selectedModel) {
+      initiateFirstMentorMessage();
+    }
+  }, [username, selectedModel]);
 
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container bg-light min-vh-100">
       <Sidebar />
       <div className="flex-grow-1 p-4 d-flex flex-column position-relative">
-        <div className="mb-4 mt-5">
+        <div className="mb-3 mt-5">
           <h5 className="text-primary">
             <span style={{ color: "black" }}>Model : </span>
             {selectedModel}
@@ -241,18 +285,21 @@ function Dashboard() {
         >
           {chatHistory.map((item, index) => (
             <div key={index}>
-              <div className="d-flex justify-content-end mb-2">
-                <div
-                  className="alert alert-primary"
-                  style={{
-                    maxWidth: "100%",
-                    wordBreak: "break-word",
-                    whiteSpace: "pre-wrap",
-                  }}
-                >
-                  <strong>You:</strong> {item.user}
+              {item.user && (
+                <div className="d-flex justify-content-end mb-2">
+                  <div
+                    className="alert alert-primary"
+                    style={{
+                      maxWidth: "100%",
+                      wordBreak: "break-word",
+                      whiteSpace: "pre-wrap",
+                    }}
+                  >
+                    <strong>You:</strong> {item.user}
+                  </div>
                 </div>
-              </div> 
+              )}
+
               <div className="d-flex justify-content-start mb-3">
                 <div
                   className="alert alert-secondary"
@@ -261,7 +308,7 @@ function Dashboard() {
                     wordBreak: "break-word",
                     whiteSpace: "pre-wrap",
                   }}
-                > 
+                >
                   {item.system && item.system.includes("### Part 1: Detailed Assessment") ? (
                     <div>
                       <h5>Detailed Assessment:</h5>
@@ -276,7 +323,7 @@ function Dashboard() {
                           </tr>
                         </thead>
                         <tbody>{renderScoringTable(item.system)}</tbody>
-                      </table> 
+                      </table>
                       {renderOverallScoreAndSummary(item.system)}
                     </div>
                   ) : (
@@ -291,6 +338,14 @@ function Dashboard() {
           <div ref={chatEndRef} />
         </div>
         <div className="input-area-container mt-4 shadow-sm position-relative">
+          {isLoading && (
+            <div className="d-flex justify-content-center my-3">
+              <div className="spinner-border text-primary" role="status">
+                <span className="visually-hidden">Loading...</span>
+              </div>
+            </div>
+          )}
+
           <textarea
             className="form-control rounded"
             placeholder="Type your prompt..."
