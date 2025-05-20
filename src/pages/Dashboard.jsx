@@ -21,80 +21,6 @@ function Dashboard() {
   const [interactionCompleted, setInteractionCompleted] = useState(false);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [showApiKeyPopup, setShowApiKeyPopup] = useState(
-    !localStorage.getItem(`apiKey_${username}`)
-  );
-  const [apiKey, setApiKey] = useState("");
-  const [apiKeyError, setApiKeyError] = useState("");
-
-  const initiateFirstMentorMessage = async () => {
-  if (
-    sessionHistory.length === 0 &&
-    selectedPrompt === "conceptMentor" &&
-    selectedModel &&
-    selectedModel !== "Choose a model"
-  ) {
-    setIsLoading(true);
-    try {
-      const response = await processPromptAndCallLLM({
-        username,
-        selectedPrompt: "conceptMentor",
-        selectedModel,
-        sessionHistory: [],
-        userPrompt: "",
-      });
-
-      const mentorMessage = response.apiResponseText;
-
-      setChatHistory([
-        {
-          user: "",
-          system: mentorMessage,
-        },
-      ]);
-
-      setSessionHistory([
-        {
-          Mentee: "",
-          Mentor: mentorMessage,
-        },
-      ]);
-    } catch (err) {
-      console.error("Failed to load initial mentor message:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-};
-
-
-  const handleApiKeySubmit = async() => {
-    if (apiKey.length < 10) {
-      setApiKeyError("API Key must be at least 10 characters long");
-      return;
-    }
-
-    const existingApiKeys = JSON.parse(localStorage.getItem("apiKeys") || "{}");
-
-    const isKeyUsed = Object.entries(existingApiKeys).some(
-      ([storedUsername, storedApiKey]) =>
-        storedApiKey === apiKey && storedUsername !== username
-    );
-
-    if (isKeyUsed) {
-      setApiKeyError("This API Key is already used by another user");
-      return;
-    }
-
-    localStorage.setItem(`apiKey_${username}`, apiKey);
-
-    existingApiKeys[username] = apiKey;
-    localStorage.setItem("apiKeys", JSON.stringify(existingApiKeys));
-
-    setShowApiKeyPopup(false);
-    setApiKeyError("");
-    await initiateFirstMentorMessage();
-  };
 
   const handleDownloadPDF = () => {
     const chatDiv = document.getElementById("chat-history");
@@ -137,7 +63,6 @@ function Dashboard() {
       });
     }, 100);
   };
-
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
@@ -153,6 +78,7 @@ function Dashboard() {
     }
     setIsLoading(true);
     try {
+      // Process the initial response (conceptMentor)
       const initialResponse = await processPromptAndCallLLM({
         username,
         selectedPrompt,
@@ -191,7 +117,9 @@ function Dashboard() {
         });
 
         setLlmContent(assessmentResponse.apiResponseText);
+
         setInteractionCompleted(initialResponse.interactionCompleted);
+        console.log("Assessment Response:", assessmentResponse);
 
         setChatHistory((prev) => {
           const updatedHistory = [
@@ -206,7 +134,10 @@ function Dashboard() {
           };
 
           axios
-            .post(`${BASE_URL}/api/saveChatHistory`, savePayload)
+            .post(
+              "https://chat-history-tcip.onrender.com/api/saveChatHistory",
+              savePayload
+            )
             .then(() => console.log("Chat history saved"))
             .catch((err) => console.error("Failed to save chat history:", err));
 
@@ -221,7 +152,7 @@ function Dashboard() {
         setSelectedPrompt("conceptMentor");
       }
 
-      setPrompt("");
+      setPrompt(""); // Clear the prompt after sending
     } catch (error) {
       setIsLoading(false);
       console.error("Error in API request:", error);
@@ -255,7 +186,7 @@ function Dashboard() {
       }
     };
 
-    if (username && localStorage.getItem(`apiKey_${username}`)) {
+    if (username) {
       fetchChatHistory();
     }
   }, [username]);
@@ -274,7 +205,7 @@ function Dashboard() {
     }
 
     return Object.keys(scoringData)
-      .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary")
+      .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary") // Exclude OverallScore and EvaluationSummary
       .map((key) => (
         <tr key={key}>
           <td>{key}</td>
@@ -315,53 +246,54 @@ function Dashboard() {
     return content.slice(assessmentStart, assessmentEnd).trim();
   };
 
-  useEffect(() => { 
-    if (
-      username &&
-      selectedModel &&
-      localStorage.getItem(`apiKey_${username}`)
-    ) {
+  useEffect(() => {
+    const initiateFirstMentorMessage = async () => {
+      if (
+        sessionHistory.length === 0 &&
+        selectedPrompt === "conceptMentor" &&
+        selectedModel &&
+        selectedModel !== "Choose a model"
+      ) {
+        setIsLoading(true);
+        try {
+          const response = await processPromptAndCallLLM({
+            username,
+            selectedPrompt: "conceptMentor",
+            selectedModel,
+            sessionHistory: [],
+            userPrompt: "",
+          });
+
+          const mentorMessage = response.apiResponseText;
+
+          setChatHistory([
+            {
+              user: "",
+              system: mentorMessage,
+            },
+          ]);
+
+          setSessionHistory([
+            {
+              Mentee: "",
+              Mentor: mentorMessage,
+            },
+          ]);
+        } catch (err) {
+          console.error("Failed to load initial mentor message:", err);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    if (username && selectedModel) {
       initiateFirstMentorMessage();
     }
   }, [selectedModel]);
 
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container bg-light min-vh-100">
-      {showApiKeyPopup && (
-        <div
-          className="modal d-block"
-          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
-        >
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Enter API Key</h5>
-              </div>
-              <div className="modal-body">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Enter your API Key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-                {apiKeyError && (
-                  <div className="text-danger mt-2">{apiKeyError}</div>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button
-                  className="btn btn-primary"
-                  onClick={handleApiKeySubmit}
-                  disabled={apiKey.length < 10}
-                >
-                  Submit
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       <Sidebar />
       <div className="flex-grow-1 p-4 d-flex flex-column position-relative">
         <div className="mb-3 mt-5">
@@ -447,12 +379,11 @@ function Dashboard() {
             value={prompt}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            disabled={showApiKeyPopup}
           />
           <button
             className="btn btn-primary position-absolute end-0 bottom-0 m-2"
             onClick={handleSendClick}
-            disabled={!prompt.trim() || showApiKeyPopup}
+            disabled={!prompt.trim()}
             style={{
               display: "flex",
               alignItems: "center",
@@ -470,7 +401,6 @@ function Dashboard() {
             className="btn btn-outline-dark position-fixed"
             style={{ top: "10%", right: "5%", width: "50px" }}
             onClick={handleDownloadPDF}
-            disabled={showApiKeyPopup}
           >
             <FiDownload />
           </button>
