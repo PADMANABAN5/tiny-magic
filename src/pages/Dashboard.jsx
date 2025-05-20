@@ -8,7 +8,7 @@ import html2canvas from "html2canvas";
 import axios from "axios";
 import { callLLM } from "../utils/callLLM.js";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
-
+const BASE_URL = process.env.REACT_APP_CHAT_SAVE_KEY;
 function Dashboard() {
   const [prompt, setPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
@@ -21,7 +21,7 @@ function Dashboard() {
   const [interactionCompleted, setInteractionCompleted] = useState(false);
   const [sessionHistory, setSessionHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-
+  
   const handleDownloadPDF = () => {
     const chatDiv = document.getElementById("chat-history");
     if (!chatDiv) {
@@ -125,7 +125,7 @@ function Dashboard() {
           };
 
           axios
-            .post("https://chat-history-tcip.onrender.com/api/saveChatHistory", savePayload)
+            .post(`${BASE_URL}/api/saveChatHistory`, savePayload)
             .then(() => console.log("Chat history saved"))
             .catch((err) => console.error("Failed to save chat history:", err));
 
@@ -168,7 +168,7 @@ function Dashboard() {
     const fetchChatHistory = async () => {
       try {
         const response = await axios.get(
-          `https://chat-history-tcip.onrender.com/loadChat/${username}`
+          `${BASE_URL}/loadChat/${username}`
         );
         setChatHistory(response.data.chatHistory || []);
       } catch (error) {
