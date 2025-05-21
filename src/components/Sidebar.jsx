@@ -52,13 +52,8 @@ function Sidebar() {
             <Link
               to="/"
               className="nav-link d-flex align-items-center"
-              onClick={() => {
-                const username = localStorage.getItem("username");
-                if (username) {
-                  localStorage.removeItem(`apiKey_${username}`);
-                  localStorage.removeItem("username");  
-                  localStorage.removeItem("selectedModel");  
-                }
+              onClick={() => { 
+                localStorage.clear();
               }}
             >
               <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
