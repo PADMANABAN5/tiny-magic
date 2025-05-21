@@ -53,7 +53,9 @@ function Sidebar() {
               to="/"
               className="nav-link d-flex align-items-center"
               onClick={() => { 
+                localStorage.removeItem("chatHistory");
                 localStorage.clear();
+               
               }}
             >
               <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />

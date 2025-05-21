@@ -193,7 +193,7 @@ function Dashboard() {
         setLlmContent(assessmentResponse.apiResponseText);
         setInteractionCompleted(initialResponse.interactionCompleted);
 
-        setChatHistory((prev) => {
+       /* setChatHistory((prev) => {
           const updatedHistory = [
             ...prev,
             { user: prompt, system: assessmentResponse.apiResponseText },
@@ -211,7 +211,15 @@ function Dashboard() {
             .catch((err) => console.error("Failed to save chat history:", err));
 
           return updatedHistory;
-        });
+        });*/
+        setChatHistory((prev) => {
+        const updatedHistory = [
+          ...prev,
+          { user: prompt, system: assessmentResponse.apiResponseText },
+        ];
+        localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+        return updatedHistory;
+      });
 
         setSessionHistory((prev) => [
           ...prev,
@@ -245,7 +253,7 @@ function Dashboard() {
     }
   }, [chatHistory]);
 
-  useEffect(() => {
+ /* useEffect(() => {
     const fetchChatHistory = async () => {
       try {
         const response = await axios.get(`${BASE_URL}/loadChat/${username}`);
@@ -258,7 +266,14 @@ function Dashboard() {
     if (username && localStorage.getItem(`apiKey_${username}`)) {
       fetchChatHistory();
     }
-  }, [username]);
+  }, [username]);*/
+  useEffect(() => {
+  const savedChatHistory = localStorage.getItem("chatHistory");
+  if (savedChatHistory) {
+    setChatHistory(JSON.parse(savedChatHistory));
+  }
+}, []);
+
 
   // Improved JSON parsing function that handles different formats
   const extractScoringData = (content) => {
