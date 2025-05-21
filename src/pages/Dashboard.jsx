@@ -253,7 +253,7 @@ function Dashboard() {
     }
   }, [chatHistory]);
 
- /* useEffect(() => {
+  useEffect(() => {
     const fetchChatHistory = async () => {
       try {
         const response = await axios.get(`${BASE_URL}/loadChat/${username}`);
@@ -266,7 +266,7 @@ function Dashboard() {
     if (username && localStorage.getItem(`apiKey_${username}`)) {
       fetchChatHistory();
     }
-  }, [username]);*/
+  }, [username]);
   useEffect(() => {
   const savedChatHistory = localStorage.getItem("chatHistory");
   if (savedChatHistory) {

@@ -224,7 +224,7 @@ button:active {
 }
 
 .popup-content {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgb(255, 255, 255);
   border-radius: 16px;
   padding: 40px;
   width: 90%;
@@ -232,7 +232,7 @@ button:active {
   box-shadow: 0 8px 32px rgba(31, 38, 135, 0.3);
   backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  color: #fff;
+  color: #000000;
   text-align: center;
   font-family: "Poppins", sans-serif;
 }
@@ -241,7 +241,7 @@ button:active {
   font-size: 24px;
   font-weight: 600;
   margin-bottom: 25px;
-  color: #fff;
+  color: #1a1919;
 }
 
 .popup-content div {
@@ -262,13 +262,15 @@ button:active {
   font-size: 17px;
   font-weight: 500;
   cursor: pointer;
-  color: #e0e0e0;
+  color: #191818;
   transition: color 0.3s ease;
 }
-
+.popup-content label:hover {
+  color: #00b4d8;
+}
 .popup-content input[type="radio"]:checked + label {
   color: #00b4d8;
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .popup-content .btn {
@@ -286,7 +288,7 @@ button:active {
 }
 
 .popup-content .btn:disabled {
-  background: #6c757d;
+  background: linear-gradient(135deg, #00b4d8, #0077b6);;
   cursor: not-allowed;
   box-shadow: none;
 }
