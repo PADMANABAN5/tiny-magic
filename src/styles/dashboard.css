@@ -101,3 +101,6 @@ body {
   color: blue;
   font-weight: 500;
 }
+.form-check-input {
+  display: inline-block !important; 
+}

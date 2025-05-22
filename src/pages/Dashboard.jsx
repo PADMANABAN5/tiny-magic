@@ -4,6 +4,7 @@ import Sidebar from "../components/Sidebar.jsx";
 import "../styles/dashboard.css";
 import { FiSend, FiDownload } from "react-icons/fi";
 import jsPDF from "jspdf";
+import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import axios from "axios";
 import { callLLM } from "../utils/callLLM.js";
@@ -21,6 +22,9 @@ function Dashboard() {
   const [llmContent, setLlmContent] = useState("");
   const [interactionCompleted, setInteractionCompleted] = useState(false);
   const [sessionHistory, setSessionHistory] = useState([]);
+  const [isChecked, setIsChecked] = useState(false);
+  const navigate = useNavigate();
+
   const [isLoading, setIsLoading] = useState(false);
   const [showApiKeyPopup, setShowApiKeyPopup] = useState(
     !localStorage.getItem(`apiKey_${username}`)
@@ -67,7 +71,13 @@ function Dashboard() {
       }
     }
   };
-
+  const handleToggle = () => {
+    const newChecked = !isChecked;
+    setIsChecked(newChecked);
+    if (newChecked) {
+      navigate('/variables'); 
+    }
+  };
   const handleApiKeySubmit = async() => {
     if (apiKey.length < 10) {
       setApiKeyError("API Key must be at least 10 characters long");
@@ -395,7 +405,7 @@ function Dashboard() {
           <div className="modal-dialog modal-dialog-centered">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Enter API Key</h5>
+                <h5 className="modal-title" >Enter API Key</h5>
               </div>
               <div className="modal-body">
                 <input
@@ -422,6 +432,7 @@ function Dashboard() {
           </div>
         </div>
       )}
+       
       <Sidebar />
       <div className="flex-grow-1 p-4 d-flex flex-column position-relative">
         <div className="mb-3 mt-5">
@@ -430,6 +441,28 @@ function Dashboard() {
             {selectedModel}
           </h5>
         </div>
+        {prompt === '' && (
+        <div className="form-check form-switch m-3" style={{ marginRight: "10%" }}>
+        <input
+          className="form-check-input"
+          type="checkbox"
+          id="toggleSwitch"
+          checked={isChecked}
+          onChange={handleToggle}
+          style={{
+          width: '3rem',
+          height: '1.5rem',
+          backgroundColor: isChecked ? '#0d6efd' : '#dee2e6',
+          borderColor: isChecked ? '#0d6efd' : '#ced4da',
+          transition: 'all 0.3s ease',
+          cursor: 'pointer'
+        }}
+        />
+        <label className="form-check-label" style={{ marginLeft: "5px", marginTop: "3px" }} htmlFor="toggleSwitch">
+          change variables
+        </label>
+      </div>
+        )}
         <div
           id="chat-history"
           className="chat-history flex-grow-1 overflow-auto p-3 border rounded shadow-sm bg-white"
