@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import { Tab, Nav, Row, Col, Button } from 'react-bootstrap';
-import { FaEdit, FaSave, FaEye } from 'react-icons/fa';
+import { FaEdit, FaSave, FaEye, FaSyncAlt  } from 'react-icons/fa';
+import axios from 'axios'; // Import axios
 
 const initialTexts = {
   tab1: { label: 'Concept mentor', content: '' },
@@ -141,87 +142,81 @@ function EditableContent({ tabKey, content, onChange, isEditable }) {
   }, [tabKey, content]);
 
   useEffect(() => {
-  if (!ref.current) return;
+    if (!ref.current) return;
 
-  const handleKeyDown = (e) => {
-    if (e.key !== 'Backspace' && e.key !== 'Delete') return;
+    const handleKeyDown = (e) => {
+      if (e.key !== 'Backspace' && e.key !== 'Delete') return;
 
-    const selection = window.getSelection();
-    if (!selection.rangeCount) return;
+      const selection = window.getSelection();
+      if (!selection.rangeCount) return;
 
-    const range = selection.getRangeAt(0);
-    if (!range.collapsed) return; // Only caret, no range
+      const range = selection.getRangeAt(0);
+      if (!range.collapsed) return; // Only caret, no range
 
-    const { startContainer, startOffset } = range;
-    const container = ref.current;
+      const { startContainer, startOffset } = range;
+      const container = ref.current;
 
-    if (!container) return;
+      if (!container) return;
 
-    // Helper to check if node is locked (contenteditable=false) inside tab3
-    const isLocked = (node) =>
-      node &&
-      node.nodeType === 1 &&
-      node.getAttribute('contenteditable') === 'false' &&
-      container.contains(node);
+      // Helper to check if node is locked (contenteditable=false) inside tab3
+      const isLocked = (node) =>
+        node &&
+        node.nodeType === 1 &&
+        node.getAttribute('contenteditable') === 'false' &&
+        container.contains(node);
 
-    if (e.key === 'Backspace') {
-      let nodeBefore = null;
+      if (e.key === 'Backspace') {
+        let nodeBefore = null;
 
-      if (startContainer.nodeType === 3) {
-        if (startOffset > 0) {
-          // splitText is destructive, so instead do this:
-          // get previous sibling or previous character node
-          // better way:
-          nodeBefore = startContainer;
-          if (startOffset === 0) {
-            nodeBefore = startContainer.previousSibling;
+        if (startContainer.nodeType === 3) {
+          if (startOffset > 0) {
+            nodeBefore = startContainer;
+            if (startOffset === 0) {
+              nodeBefore = startContainer.previousSibling;
+            } else {
+              return;
+            }
           } else {
-            // Caret inside text node but not at start: no locked node before caret in this text node
-            // So safe to allow backspace
-            return;
+            nodeBefore = startContainer.previousSibling;
           }
-        } else {
-          nodeBefore = startContainer.previousSibling;
+        } else if (startContainer.nodeType === 1) {
+          nodeBefore = startContainer.childNodes[startOffset - 1];
         }
-      } else if (startContainer.nodeType === 1) {
-        nodeBefore = startContainer.childNodes[startOffset - 1];
-      }
 
-      if (isLocked(nodeBefore)) {
-        e.preventDefault();
-        return;
-      }
-    } else if (e.key === 'Delete') {
-      let nodeAfter = null;
-
-      if (startContainer.nodeType === 3) {
-        if (startOffset < startContainer.length) {
-          // Caret inside text node and not at end, safe to delete text content
+        if (isLocked(nodeBefore)) {
+          e.preventDefault();
           return;
-        } else {
-          nodeAfter = startContainer.nextSibling;
         }
-      } else if (startContainer.nodeType === 1) {
-        nodeAfter = startContainer.childNodes[startOffset];
+      } else if (e.key === 'Delete') {
+        let nodeAfter = null;
+
+        if (startContainer.nodeType === 3) {
+          if (startOffset < startContainer.length) {
+            return;
+          } else {
+            nodeAfter = startContainer.nextSibling;
+          }
+        } else if (startContainer.nodeType === 1) {
+          nodeAfter = startContainer.childNodes[startOffset];
+        }
+
+        if (isLocked(nodeAfter)) {
+          e.preventDefault();
+          return;
+        }
       }
+    };
 
-      if (isLocked(nodeAfter)) {
-        e.preventDefault();
-        return;
+    if (tabKey === 'tab3') {
+      ref.current.addEventListener('keydown', handleKeyDown);
+    }
+
+    return () => {
+      if (ref.current) {
+        ref.current.removeEventListener('keydown', handleKeyDown);
       }
-    }
-  };
-
-  if (tabKey === 'tab3') {
-    ref.current.addEventListener('keydown', handleKeyDown);
-  }
-
-  return () => {
-    if (ref.current) {
-      ref.current.removeEventListener('keydown', handleKeyDown);
-    }
-  };
-}, [tabKey]);
+    };
+  }, [tabKey]);
 
 
   const handleInput = () => {
@@ -252,38 +247,200 @@ function EditableContent({ tabKey, content, onChange, isEditable }) {
   );
 }
 
+// This function converts plain text "key: value" format to JSON
+// It's used specifically for tab3's initial content if it comes as plain text
+function convertTxtToJson(text) {
+  const lines = text.split('\n');
+  const jsonObj = {};
+
+  lines.forEach(line => {
+    const parts = line.split(':');
+    if (parts.length < 2) return; // Skip malformed lines
+
+    const key = parts[0].trim();
+    const rawVal = parts.slice(1).join(':').trim(); // Join remaining parts in case value contains colons
+
+    if (!key) return;
+
+    let value;
+    if (rawVal === 'true') value = true;
+    else if (rawVal === 'false') value = false;
+    else if (!isNaN(rawVal) && rawVal !== '') value = Number(rawVal);
+    else value = rawVal;
+
+    jsonObj[key] = value;
+  });
+
+  return JSON.stringify(jsonObj, null, 2);
+}
+
+
 function Prompt() {
   const [texts, setTexts] = useState(initialTexts);
   const [editMode, setEditMode] = useState({ tab1: false, tab2: false, tab3: false });
   const [currentTab, setCurrentTab] = useState('tab1');
   const [editedTexts, setEditedTexts] = useState(initialTexts);
 
-  const fetchTabContent = async (tabKey, fileName) => {
-    try {
-      const res = await fetch(`/${fileName}`);
-      if (!res.ok) throw new Error(`Failed to load ${fileName}`);
-      const text = await res.text();
-      setTexts((prev) => ({ ...prev, [tabKey]: { ...prev[tabKey], content: text } }));
-      setEditedTexts((prev) => ({ ...prev, [tabKey]: { ...prev[tabKey], content: text } }));
-    } catch (err) {
-      console.error(err);
-    }
+  const templateMap = {
+    tab1: 'conceptMentor',
+    tab2: 'assessmentPrompt',
+    tab3: 'defaultTemplateValues',
   };
 
   useEffect(() => {
-    fetchTabContent('tab1', 'conceptMentor.txt');
-    fetchTabContent('tab2', 'assessmentPrompt.txt');
-    fetchTabContent('tab3', 'defaultTemplateValues.json');
+    const fetchTemplates = async () => {
+      try {
+        console.log("Attempting to fetch templates...");
+        const requests = Object.entries(templateMap).map(([, templateType]) => {
+          const url = `https://tinymagiq-backend.onrender.com/api/templates/defaults?templateType=${templateType}`;
+          console.log(`Fetching: ${url}`);
+          return axios.get(url);
+        });
+        const responses = await Promise.all(requests);
+        console.log("Axios responses received:", responses);
+
+        const updatedTexts = {};
+
+        Object.keys(templateMap).forEach((tabKey, i) => {
+          const apiResponse = responses[i].data;
+          console.log(`Processing tab ${tabKey}, raw apiResponse:`, apiResponse);
+
+          let content = apiResponse.data?.content || ''; 
+          
+          if (tabKey === 'tab3') {
+            console.log(`Tab3 original content:`, content);
+            try {
+              const parsedJson = JSON.parse(content);
+              content = JSON.stringify(parsedJson, null, 2);
+            } catch (jsonParseError) {
+              console.warn(`Content for ${tabKey} was not valid JSON, attempting plain text conversion.`, jsonParseError);
+              try {
+                content = convertTxtToJson(content);
+                console.log(`Tab3 converted JSON content:`, content);
+              } catch (txtConvertError) {
+                console.error(`Failed to convert plain text for ${tabKey}:`, txtConvertError);
+                content = `<pre style="color:red;">Failed to parse content. Raw: ${content}</pre>`;
+              }
+            }
+          }
+          updatedTexts[tabKey] = {
+            label: initialTexts[tabKey].label,
+            content,
+          };
+          console.log(`UpdatedTexts for ${tabKey}:`, updatedTexts[tabKey]);
+        });
+
+        setTexts(updatedTexts);
+        setEditedTexts(updatedTexts);
+        console.log("All templates fetched and states updated.");
+      } catch (err) {
+        console.error('Error loading templates:', err);
+        if (axios.isAxiosError(err)) {
+          console.error('Axios error details:', err.response?.data, err.response?.status, err.config?.url);
+        }
+        alert(`Failed to load templates: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+      }
+    };
+
+    fetchTemplates();
   }, []);
 
   const handleEdit = (tab) => {
     setEditMode((prev) => ({ ...prev, [tab]: true }));
   };
 
-  const handleSave = (tab) => {
-    setTexts((prev) => ({ ...prev, [tab]: editedTexts[tab] }));
-    setEditMode((prev) => ({ ...prev, [tab]: false }));
+  const handleSave = async (tabKey) => {
+    const payload = {
+      username: 'kavitha',
+      templateType: templateMap[tabKey],
+      content: editedTexts[tabKey].content,
+    };
+    console.log("Saving payload:", payload);
+    try {
+      const res = await axios.post('https://tinymagiq-backend.onrender.com/api/templates', payload);
+      
+      console.log("Save successful response:", res.data);
+      alert('Template saved successfully!');
+
+      // On successful save, update the main 'texts' state and exit edit mode
+      setTexts((prev) => ({ ...prev, [tabKey]: editedTexts[tabKey] }));
+      setEditMode((prev) => ({ ...prev, [tabKey]: false }));
+
+    } catch (err) {
+      console.error('Save error', err);
+      if (axios.isAxiosError(err)) {
+        console.error('Axios save error details:', err.response?.data, err.response?.status);
+        if (err.response?.status === 409) {
+          // Specific handling for 409 conflict: template already exists.
+          // This means the POST failed to create a *new* template.
+          // The frontend should NOT assume an update happened unless the backend explicitly confirmed it.
+          console.warn(`Received 409 Conflict for ${tabKey}. Message: ${err.response.data?.message}. Template with this type/username already exists.`);
+          alert(`Failed to save: Template for '${texts[tabKey].label}' already exists. No new template was created. Please edit the existing template directly.`);
+          
+          // IMPORTANT: Do NOT update state or exit edit mode here,
+          // as the save operation (creating a *new* template) failed.
+          // Keep the user in edit mode with their unsaved changes.
+        } else {
+          // Handle other HTTP errors (e.g., 400, 500) as actual failures
+          alert(`Failed to save: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`); 
+          // Keep user in edit mode as save failed
+        }
+      } else {
+        // Handle non-Axios errors
+        alert(`Failed to save: ${err.message || 'An unknown error occurred.'}`);
+        // Keep user in edit mode as save failed
+      }
+      // Revert edited texts to original if save fails (optional, but good for user experience)
+      // setEditedTexts(texts); // Uncomment if you want to revert changes on any save failure
+    }
   };
+
+  const handleResetToDefault = async (tabKey) => {
+    const confirmReset = window.confirm(`Are you sure you want to reset "${texts[tabKey].label}" to its default? This cannot be undone.`);
+    if (!confirmReset) return;
+
+    const payload = {
+      username: 'kavitha',
+      templateType: templateMap[tabKey],
+      resetToDefault: true,
+    };
+    console.log("Resetting to default payload:", payload);
+
+    try {
+      await axios.post('https://tinymagiq-backend.onrender.com/api/templates/defaults', payload);
+
+      alert(`${texts[tabKey].label} has been reset to default.`);
+      
+      const defaultRes = await axios.get(`https://tinymagiq-backend.onrender.com/api/templates/defaults?templateType=${templateMap[tabKey]}`);
+      console.log("Refetched default content after reset:", defaultRes.data);
+
+      let newContent = defaultRes.data?.content || '';
+      if (tabKey === 'tab3') {
+        try {
+          const parsedJson = JSON.parse(newContent);
+          newContent = JSON.stringify(parsedJson, null, 2);
+        } catch (jsonParseError) {
+          console.warn(`Content for ${tabKey} after reset was not valid JSON, attempting plain text conversion.`, jsonParseError);
+          try {
+            newContent = convertTxtToJson(newContent);
+          } catch (txtConvertError) {
+            console.error(`Failed to convert plain text for ${tabKey} after reset:`, txtConvertError);
+            newContent = `<pre style="color:red;">Failed to parse content after reset. Raw: ${newContent}</pre>`;
+          }
+        }
+      }
+      setTexts((prev) => ({ ...prev, [tabKey]: { ...prev[tabKey], content: newContent } }));
+      setEditedTexts((prev) => ({ ...prev, [tabKey]: { ...prev[tabKey], content: newContent } }));
+      setEditMode((prev) => ({ ...prev, [tabKey]: false })); // Exit edit mode after reset
+    } catch (err) {
+      console.error('Reset to default error', err);
+      if (axios.isAxiosError(err)) {
+        console.error('Axios reset error details:', err.response?.data, err.response?.status);
+      }
+      alert(`Failed to reset to default: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+    }
+  };
+
 
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container position-relative">
@@ -317,17 +474,41 @@ function Prompt() {
                           <FaEye className="me-2" />
                           Editor
                         </h5>
-                        {!editMode[tabKey] ? (
-                          <Button style={{ width: '70px' }} variant="warning" size="sm" onClick={() => handleEdit(tabKey)}>
-                            <FaEdit className="me-1" />
-                            Edit
-                          </Button>
-                        ) : (
-                          <Button style={{ width: '70px' }} variant="success" size="sm" onClick={() => handleSave(tabKey)}>
-                            <FaSave className="me-1" />
-                            Save
-                          </Button>
-                        )}
+                        <div className="d-flex gap-2">
+                          {!editMode[tabKey] ? (
+                            <>
+                              <Button
+                                style={{ width: '70px' }}
+                                variant="warning"
+                                size="sm"
+                                onClick={() => handleEdit(tabKey)}
+                              >
+                                <FaEdit className="me-1" />
+                                
+                              </Button>
+                              <Button
+                                style={{ width: '70px' }}
+                                variant="danger"
+                                size="sm"
+                                onClick={() => handleResetToDefault(tabKey)}
+                                title="Reset to Default"
+                              >
+                                <FaSyncAlt className="me-1" />
+                                
+                              </Button>
+                            </>
+                          ) : (
+                            <Button
+                              style={{ width: '70px' }}
+                              variant="success"
+                              size="sm"
+                              onClick={() => handleSave(tabKey)}
+                            >
+                              <FaSave className="me-1" />
+                              
+                            </Button>
+                          )}
+                        </div>
                       </div>
                       <EditableContent
                         tabKey={tabKey}
