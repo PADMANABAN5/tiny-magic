@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar.jsx';
 import { Tab, Nav, Row, Col, Button } from 'react-bootstrap';
 import { FaEdit, FaSave, FaEye, FaSyncAlt  } from 'react-icons/fa';
 import axios from 'axios'; // Import axios
+const username = localStorage.getItem("username");
 
 const initialTexts = {
   tab1: { label: 'Concept mentor', content: '' },
@@ -351,7 +352,7 @@ function Prompt() {
 
   const handleSave = async (tabKey) => {
     const payload = {
-      username: 'kavitha',
+      username,
       templateType: templateMap[tabKey],
       content: editedTexts[tabKey].content,
     };
@@ -400,7 +401,7 @@ function Prompt() {
     if (!confirmReset) return;
 
     const payload = {
-      username: 'kavitha',
+      username,
       templateType: templateMap[tabKey],
       resetToDefault: true,
     };
