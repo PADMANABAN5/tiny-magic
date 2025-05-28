@@ -40,15 +40,15 @@ function Sidebar() {
                 Dashboard
               </Link>
             </li>
-            {/* <li className="nav-item">
+            <li className="nav-item">
               <Link
-                to="/variables"
-                className={`nav-link d-flex align-items-center ${location.pathname === "/variables" ? "active" : ""}`}
+                to="/prompt"
+                className={`nav-link d-flex align-items-center ${location.pathname === "/prompt" ? "active" : ""}`}
               >
                 <FaBook className="me-2" style={{ fontSize: "16px" }} />
-                Variables
+                Prompts
               </Link>
-            </li> */}
+            </li> 
             <Link
               to="/"
               className="nav-link d-flex align-items-center"
