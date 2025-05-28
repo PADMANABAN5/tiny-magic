@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '../components/Sidebar.jsx';
 import { Tab, Nav, Row, Col, Button } from 'react-bootstrap';
-import { FaEdit, FaSave, FaEye, FaSyncAlt  } from 'react-icons/fa';
-import axios from 'axios'; // Import axios
+import { FaEdit, FaSave, FaEye, FaSyncAlt } from 'react-icons/fa';
+import axios from 'axios';
+
 const username = localStorage.getItem("username");
 
 const initialTexts = {
@@ -11,7 +12,207 @@ const initialTexts = {
   tab3: { label: 'Default values', content: '' },
 };
 
+// Improved JSON Editor Component for tab3
+function ImprovedJSONEditor({ content, onChange, isEditable }) {
+  const [jsonData, setJsonData] = useState({});
+  const [error, setError] = useState('');
+  const [newKey, setNewKey] = useState('');
+  const [showAddField, setShowAddField] = useState(false);
+
+  useEffect(() => {
+    try {
+      if (content.trim()) {
+        const parsed = JSON.parse(content);
+        setJsonData(parsed);
+        setError('');
+      } else {
+        setJsonData({});
+      }
+    } catch (e) {
+      setError('Invalid JSON format');
+      setJsonData({});
+    }
+  }, [content]);
+
+  const handleFieldChange = (key, value) => {
+    const updated = { ...jsonData, [key]: value };
+    setJsonData(updated);
+    // Immediately notify parent component of changes
+    onChange(JSON.stringify(updated, null, 2));
+  };
+
+  const handleDeleteField = (key) => {
+    const updated = { ...jsonData };
+    delete updated[key];
+    setJsonData(updated);
+    onChange(JSON.stringify(updated, null, 2));
+  };
+
+  const handleAddField = () => {
+    if (newKey.trim() && !jsonData.hasOwnProperty(newKey.trim())) {
+      const updated = { ...jsonData, [newKey.trim()]: '' };
+      setJsonData(updated);
+      onChange(JSON.stringify(updated, null, 2));
+      setNewKey('');
+      setShowAddField(false);
+    }
+  };
+
+  const formatLabel = (key) => {
+    return key.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+  };
+
+  const renderFieldInput = (key, value) => {
+    const stringValue = String(value || '');
+    
+    if (stringValue.length > 100 || stringValue.includes('\n') || stringValue.includes('\\n')) {
+      const displayValue = stringValue.replace(/\\n/g, '\n');
+      return (
+        <textarea
+          className="form-control"
+          rows={Math.max(4, Math.min(10, displayValue.split('\n').length + 1))}
+          value={displayValue}
+          onChange={(e) => handleFieldChange(key, e.target.value.replace(/\n/g, '\\n'))}
+          disabled={!isEditable}
+          style={{ 
+            minHeight: '100px',
+            fontFamily: 'inherit',
+            resize: 'vertical'
+          }}
+        />
+      );
+    }
+    
+    return (
+      <input
+        type="text"
+        className="form-control"
+        value={stringValue}
+        onChange={(e) => handleFieldChange(key, e.target.value)}
+        disabled={!isEditable}
+      />
+    );
+  };
+
+  if (error) {
+    return (
+      <div className="alert alert-danger" role="alert">
+        <strong>JSON Parse Error:</strong> {error}
+        <div className="mt-2">
+          <small>Please check the JSON format and try again.</small>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      {Object.keys(jsonData).length === 0 ? (
+        <div className="alert alert-info" role="alert">
+          No configuration fields available. 
+          {isEditable && (
+            <button 
+              className="btn btn-link p-0 ms-2"
+              onClick={() => setShowAddField(true)}
+            >
+              Add a field
+            </button>
+          )}
+        </div>
+      ) : (
+        <div>
+          {Object.entries(jsonData).map(([key, value]) => (
+            <div key={key} className="card mb-3">
+              <div className="card-body">
+                <div className="row align-items-start">
+                  <div className="col-md-3">
+                    <label className="form-label fw-bold text-muted">
+                      {formatLabel(key)}
+                    </label>
+                    <div className="small text-muted font-monospace bg-light px-2 py-1 rounded">
+                      {key}
+                    </div>
+                  </div>
+                  <div className={`${isEditable ? 'col-md-8' : 'col-md-9'}`}>
+                    {renderFieldInput(key, value)}
+                  </div>
+                  {/* {isEditable && (
+                    <div className="col-md-1 text-end">
+                      <button
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={() => handleDeleteField(key)}
+                        title="Delete field"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )} */}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {isEditable && (
+        <div className="mt-4">
+          {!showAddField ? (
+            <button
+              className="btn btn-outline-primary"
+              onClick={() => setShowAddField(true)}
+            >
+              ➕ Add Field
+            </button>
+          ) : (
+            <div className="card border-primary">
+              <div className="card-body">
+                <div className="row align-items-end">
+                  <div className="col-md-4">
+                    <label className="form-label">Field Name</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="FIELD_NAME"
+                      value={newKey}
+                      onChange={(e) => setNewKey(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && handleAddField()}
+                    />
+                  </div>
+                  <div className="col-md-8">
+                    <button
+                      className="btn btn-success me-2"
+                      onClick={handleAddField}
+                      disabled={!newKey.trim() || jsonData.hasOwnProperty(newKey.trim())}
+                    >
+                      Add
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        setShowAddField(false);
+                        setNewKey('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+                {newKey.trim() && jsonData.hasOwnProperty(newKey.trim()) && (
+                  <div className="mt-2 text-danger small">
+                    Field "{newKey}" already exists
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EditableContent({ tabKey, content, onChange, isEditable }) {
+  // Declare all hooks at the top level (before any early returns)
   const ref = useRef(null);
   const hasInitialized = useRef(false);
 
@@ -68,45 +269,6 @@ function EditableContent({ tabKey, content, onChange, isEditable }) {
     sel.addRange(range);
   }
 
-  const parseJSONContent = (jsonText) => {
-    try {
-      const obj = JSON.parse(jsonText);
-      return Object.entries(obj)
-        .map(
-          ([key, val]) => `
-            <div style="margin-bottom: 8px; font-family: monospace;">
-              <span contenteditable="false" style="background:#d3d3d3;padding:2px 6px; border-radius:3px;">"${key}": </span>
-              <span
-                contenteditable="${isEditable ? 'true' : 'false'}"
-                data-key="${key}"
-                style="padding:2px 6px; border-bottom: 1px dotted #666; min-width: 50px; display: inline-block;"
-                spellCheck="false"
-              >${val}</span>
-              <span contenteditable="false">,</span>
-            </div>`
-        )
-        .join('');
-    } catch (e) {
-      return `<pre style="color:red;">Invalid JSON format</pre>`;
-    }
-  };
-
-  const serializeJSONContent = () => {
-    if (!ref.current) return '';
-    const valueSpans = ref.current.querySelectorAll('[data-key]');
-    let obj = {};
-    valueSpans.forEach((span) => {
-      const key = span.getAttribute('data-key');
-      let val = span.innerText.trim();
-      if (val === 'true') val = true;
-      else if (val === 'false') val = false;
-      else if (val === '') val = null;
-      else if (!isNaN(val) && val !== '') val = Number(val);
-      obj[key] = val;
-    });
-    return JSON.stringify(obj, null, 2);
-  };
-
   const serializeContent = () => {
     if (!ref.current) return '';
     const clone = ref.current.cloneNode(true);
@@ -122,17 +284,12 @@ function EditableContent({ tabKey, content, onChange, isEditable }) {
   }, [tabKey]);
 
   useEffect(() => {
-    if (!ref.current) return;
+    if (!ref.current || tabKey === 'tab3') return; // Skip for tab3
     const container = ref.current;
     const isFocused = document.activeElement === container;
     const savedSel = isFocused ? saveSelection(container) : null;
 
-    let newContent = '';
-    if (tabKey === 'tab3') {
-      newContent = parseJSONContent(content);
-    } else {
-      newContent = parseContent(content);
-    }
+    const newContent = parseContent(content);
 
     if (container.innerHTML !== newContent) {
       container.innerHTML = newContent;
@@ -142,86 +299,20 @@ function EditableContent({ tabKey, content, onChange, isEditable }) {
     hasInitialized.current = true;
   }, [tabKey, content]);
 
-  useEffect(() => {
-    if (!ref.current) return;
+  // Use improved JSON editor for tab3
+  if (tabKey === 'tab3') {
+    return (
+      <ImprovedJSONEditor
+        content={content}
+        onChange={onChange}
+        isEditable={isEditable}
+      />
+    );
+  }
 
-    const handleKeyDown = (e) => {
-      if (e.key !== 'Backspace' && e.key !== 'Delete') return;
-
-      const selection = window.getSelection();
-      if (!selection.rangeCount) return;
-
-      const range = selection.getRangeAt(0);
-      if (!range.collapsed) return; // Only caret, no range
-
-      const { startContainer, startOffset } = range;
-      const container = ref.current;
-
-      if (!container) return;
-
-      // Helper to check if node is locked (contenteditable=false) inside tab3
-      const isLocked = (node) =>
-        node &&
-        node.nodeType === 1 &&
-        node.getAttribute('contenteditable') === 'false' &&
-        container.contains(node);
-
-      if (e.key === 'Backspace') {
-        let nodeBefore = null;
-
-        if (startContainer.nodeType === 3) {
-          if (startOffset > 0) {
-            nodeBefore = startContainer;
-            if (startOffset === 0) {
-              nodeBefore = startContainer.previousSibling;
-            } else {
-              return;
-            }
-          } else {
-            nodeBefore = startContainer.previousSibling;
-          }
-        } else if (startContainer.nodeType === 1) {
-          nodeBefore = startContainer.childNodes[startOffset - 1];
-        }
-
-        if (isLocked(nodeBefore)) {
-          e.preventDefault();
-          return;
-        }
-      } else if (e.key === 'Delete') {
-        let nodeAfter = null;
-
-        if (startContainer.nodeType === 3) {
-          if (startOffset < startContainer.length) {
-            return;
-          } else {
-            nodeAfter = startContainer.nextSibling;
-          }
-        } else if (startContainer.nodeType === 1) {
-          nodeAfter = startContainer.childNodes[startOffset];
-        }
-
-        if (isLocked(nodeAfter)) {
-          e.preventDefault();
-          return;
-        }
-      }
-    };
-
-    if (tabKey === 'tab3') {
-      ref.current.addEventListener('keydown', handleKeyDown);
-    }
-
-    return () => {
-      if (ref.current) {
-        ref.current.removeEventListener('keydown', handleKeyDown);
-      }
-    };
-  }, [tabKey]);
-
-
+  // Keep existing logic for tab1 and tab2
   const handleInput = () => {
-    const newText = tabKey === 'tab3' ? serializeJSONContent() : serializeContent();
+    const newText = serializeContent();
     onChange(newText);
   };
 
@@ -233,7 +324,7 @@ function EditableContent({ tabKey, content, onChange, isEditable }) {
       spellCheck={false}
       className="p-3 bg-white text-dark border rounded"
       onInput={handleInput}
-      onBlur={() => onChange(tabKey === 'tab3' ? serializeJSONContent() : serializeContent())}
+      onBlur={() => onChange(serializeContent())}
       style={{
         minHeight: '300px',
         maxHeight: '400px',
@@ -249,17 +340,16 @@ function EditableContent({ tabKey, content, onChange, isEditable }) {
 }
 
 // This function converts plain text "key: value" format to JSON
-// It's used specifically for tab3's initial content if it comes as plain text
 function convertTxtToJson(text) {
   const lines = text.split('\n');
   const jsonObj = {};
 
   lines.forEach(line => {
     const parts = line.split(':');
-    if (parts.length < 2) return; // Skip malformed lines
+    if (parts.length < 2) return;
 
     const key = parts[0].trim();
-    const rawVal = parts.slice(1).join(':').trim(); // Join remaining parts in case value contains colons
+    const rawVal = parts.slice(1).join(':').trim();
 
     if (!key) return;
 
@@ -275,12 +365,12 @@ function convertTxtToJson(text) {
   return JSON.stringify(jsonObj, null, 2);
 }
 
-
 function Prompt() {
   const [texts, setTexts] = useState(initialTexts);
   const [editMode, setEditMode] = useState({ tab1: false, tab2: false, tab3: false });
   const [currentTab, setCurrentTab] = useState('tab1');
   const [editedTexts, setEditedTexts] = useState(initialTexts);
+  const [loadingTabs, setLoadingTabs] = useState({});
 
   const templateMap = {
     tab1: 'conceptMentor',
@@ -288,62 +378,65 @@ function Prompt() {
     tab3: 'defaultTemplateValues',
   };
 
-  useEffect(() => {
-    const fetchTemplates = async () => {
-      try {
-        console.log("Attempting to fetch templates...");
-        const requests = Object.entries(templateMap).map(([, templateType]) => {
-          const url = `https://tinymagiq-backend.onrender.com/api/templates/defaults?templateType=${templateType}`;
-          console.log(`Fetching: ${url}`);
-          return axios.get(url);
-        });
-        const responses = await Promise.all(requests);
-        console.log("Axios responses received:", responses);
+  // Function to fetch template for a specific tab
+  const fetchTemplateForTab = async (tabKey) => {
+    const templateType = templateMap[tabKey];
+    if (!templateType) return;
 
-        const updatedTexts = {};
+    setLoadingTabs(prev => ({ ...prev, [tabKey]: true }));
 
-        Object.keys(templateMap).forEach((tabKey, i) => {
-          const apiResponse = responses[i].data;
-          console.log(`Processing tab ${tabKey}, raw apiResponse:`, apiResponse);
-
-          let content = apiResponse.data?.content || ''; 
-          
-          if (tabKey === 'tab3') {
-            console.log(`Tab3 original content:`, content);
-            try {
-              const parsedJson = JSON.parse(content);
-              content = JSON.stringify(parsedJson, null, 2);
-            } catch (jsonParseError) {
-              console.warn(`Content for ${tabKey} was not valid JSON, attempting plain text conversion.`, jsonParseError);
-              try {
-                content = convertTxtToJson(content);
-                console.log(`Tab3 converted JSON content:`, content);
-              } catch (txtConvertError) {
-                console.error(`Failed to convert plain text for ${tabKey}:`, txtConvertError);
-                content = `<pre style="color:red;">Failed to parse content. Raw: ${content}</pre>`;
-              }
-            }
+    try {
+      const url = `https://tinymagiq-backend.onrender.com/api/templates/defaults?templateType=${templateType}`;
+      const response = await axios.get(url);
+      
+      let content = response.data.data?.content || '';
+      
+      // Handle tab3 JSON formatting
+      if (tabKey === 'tab3') {
+        try {
+          const parsedJson = JSON.parse(content);
+          content = JSON.stringify(parsedJson, null, 2);
+        } catch (jsonParseError) {
+          console.warn(`Content for ${tabKey} was not valid JSON, attempting plain text conversion.`, jsonParseError);
+          try {
+            content = convertTxtToJson(content);
+          } catch (txtConvertError) {
+            console.error(`Failed to convert plain text for ${tabKey}:`, txtConvertError);
+            content = `<pre style="color:red;">Failed to parse content. Raw: ${content}</pre>`;
           }
-          updatedTexts[tabKey] = {
-            label: initialTexts[tabKey].label,
-            content,
-          };
-          console.log(`UpdatedTexts for ${tabKey}:`, updatedTexts[tabKey]);
-        });
-
-        setTexts(updatedTexts);
-        setEditedTexts(updatedTexts);
-        console.log("All templates fetched and states updated.");
-      } catch (err) {
-        console.error('Error loading templates:', err);
-        if (axios.isAxiosError(err)) {
-          console.error('Axios error details:', err.response?.data, err.response?.status, err.config?.url);
         }
-        alert(`Failed to load templates: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
       }
-    };
 
-    fetchTemplates();
+      const updatedTabData = {
+        label: initialTexts[tabKey].label,
+        content,
+      };
+
+      setTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
+      setEditedTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
+
+    } catch (err) {
+      console.error(`Failed to load template for ${tabKey}:`, err);
+      if (axios.isAxiosError(err)) {
+        console.error('Axios error details:', err.response?.data, err.response?.status, err.config?.url);
+      }
+      alert(`Failed to load ${initialTexts[tabKey].label}: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+    } finally {
+      setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
+    }
+  };
+
+  // Handle tab selection - fetch data when tab is clicked
+  const handleTabSelect = (tabKey) => {
+    setCurrentTab(tabKey);
+    
+    if (!texts[tabKey].content) {
+      fetchTemplateForTab(tabKey);
+    }
+  };
+
+  useEffect(() => {
+    fetchTemplateForTab('tab1');
   }, []);
 
   const handleEdit = (tab) => {
@@ -351,48 +444,41 @@ function Prompt() {
   };
 
   const handleSave = async (tabKey) => {
+    // Add debugging to see what content is being sent
+    console.log(`Saving ${tabKey}:`, {
+      tabKey,
+      content: editedTexts[tabKey].content,
+      contentLength: editedTexts[tabKey].content.length
+    });
+
     const payload = {
       username,
       templateType: templateMap[tabKey],
       content: editedTexts[tabKey].content,
     };
-    console.log("Saving payload:", payload);
+
+    console.log('Save payload:', payload);
+
     try {
       const res = await axios.post('https://tinymagiq-backend.onrender.com/api/templates', payload);
       
-      console.log("Save successful response:", res.data);
       alert('Template saved successfully!');
 
-      // On successful save, update the main 'texts' state and exit edit mode
       setTexts((prev) => ({ ...prev, [tabKey]: editedTexts[tabKey] }));
       setEditMode((prev) => ({ ...prev, [tabKey]: false }));
 
     } catch (err) {
-      console.error('Save error', err);
       if (axios.isAxiosError(err)) {
         console.error('Axios save error details:', err.response?.data, err.response?.status);
         if (err.response?.status === 409) {
-          // Specific handling for 409 conflict: template already exists.
-          // This means the POST failed to create a *new* template.
-          // The frontend should NOT assume an update happened unless the backend explicitly confirmed it.
           console.warn(`Received 409 Conflict for ${tabKey}. Message: ${err.response.data?.message}. Template with this type/username already exists.`);
           alert(`Failed to save: Template for '${texts[tabKey].label}' already exists. No new template was created. Please edit the existing template directly.`);
-          
-          // IMPORTANT: Do NOT update state or exit edit mode here,
-          // as the save operation (creating a *new* template) failed.
-          // Keep the user in edit mode with their unsaved changes.
         } else {
-          // Handle other HTTP errors (e.g., 400, 500) as actual failures
-          alert(`Failed to save: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`); 
-          // Keep user in edit mode as save failed
+          alert(`Failed to save: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
         }
       } else {
-        // Handle non-Axios errors
         alert(`Failed to save: ${err.message || 'An unknown error occurred.'}`);
-        // Keep user in edit mode as save failed
       }
-      // Revert edited texts to original if save fails (optional, but good for user experience)
-      // setEditedTexts(texts); // Uncomment if you want to revert changes on any save failure
     }
   };
 
@@ -405,34 +491,15 @@ function Prompt() {
       templateType: templateMap[tabKey],
       resetToDefault: true,
     };
-    console.log("Resetting to default payload:", payload);
 
     try {
       await axios.post('https://tinymagiq-backend.onrender.com/api/templates/defaults', payload);
 
       alert(`${texts[tabKey].label} has been reset to default.`);
       
-      const defaultRes = await axios.get(`https://tinymagiq-backend.onrender.com/api/templates/defaults?templateType=${templateMap[tabKey]}`);
-      console.log("Refetched default content after reset:", defaultRes.data);
-
-      let newContent = defaultRes.data?.content || '';
-      if (tabKey === 'tab3') {
-        try {
-          const parsedJson = JSON.parse(newContent);
-          newContent = JSON.stringify(parsedJson, null, 2);
-        } catch (jsonParseError) {
-          console.warn(`Content for ${tabKey} after reset was not valid JSON, attempting plain text conversion.`, jsonParseError);
-          try {
-            newContent = convertTxtToJson(newContent);
-          } catch (txtConvertError) {
-            console.error(`Failed to convert plain text for ${tabKey} after reset:`, txtConvertError);
-            newContent = `<pre style="color:red;">Failed to parse content after reset. Raw: ${newContent}</pre>`;
-          }
-        }
-      }
-      setTexts((prev) => ({ ...prev, [tabKey]: { ...prev[tabKey], content: newContent } }));
-      setEditedTexts((prev) => ({ ...prev, [tabKey]: { ...prev[tabKey], content: newContent } }));
-      setEditMode((prev) => ({ ...prev, [tabKey]: false })); // Exit edit mode after reset
+      await fetchTemplateForTab(tabKey);
+      
+      setEditMode((prev) => ({ ...prev, [tabKey]: false }));
     } catch (err) {
       console.error('Reset to default error', err);
       if (axios.isAxiosError(err)) {
@@ -442,13 +509,12 @@ function Prompt() {
     }
   };
 
-
   return (
     <div className="d-flex flex-column flex-md-row dashboard-container position-relative">
       <Sidebar />
       <div className="flex-grow-1 pt-3 px-4">
         <h3 className="mb-3 text-center">Prompt Management</h3>
-        <Tab.Container activeKey={currentTab} onSelect={(k) => setCurrentTab(k)}>
+        <Tab.Container activeKey={currentTab} onSelect={handleTabSelect}>
           <Row>
             <Col sm={3}>
               <Nav variant="pills" className="flex-column">
@@ -460,6 +526,9 @@ function Prompt() {
                       style={{ borderColor: currentTab === tabKey ? '#0d6efd' : '#dee2e6' }}
                     >
                       {texts[tabKey].label}
+                      {loadingTabs[tabKey] && (
+                        <span className="ms-2 spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                      )}
                     </Nav.Link>
                   </Nav.Item>
                 ))}
@@ -474,6 +543,9 @@ function Prompt() {
                         <h5 className="mb-0">
                           <FaEye className="me-2" />
                           Editor
+                          {loadingTabs[tabKey] && (
+                            <span className="ms-2 text-muted">Loading...</span>
+                          )}
                         </h5>
                         <div className="d-flex gap-2">
                           {!editMode[tabKey] ? (
@@ -483,9 +555,9 @@ function Prompt() {
                                 variant="warning"
                                 size="sm"
                                 onClick={() => handleEdit(tabKey)}
+                                disabled={loadingTabs[tabKey]}
                               >
                                 <FaEdit className="me-1" />
-                                
                               </Button>
                               <Button
                                 style={{ width: '70px' }}
@@ -493,9 +565,9 @@ function Prompt() {
                                 size="sm"
                                 onClick={() => handleResetToDefault(tabKey)}
                                 title="Reset to Default"
+                                disabled={loadingTabs[tabKey]}
                               >
                                 <FaSyncAlt className="me-1" />
-                                
                               </Button>
                             </>
                           ) : (
@@ -504,24 +576,33 @@ function Prompt() {
                               variant="success"
                               size="sm"
                               onClick={() => handleSave(tabKey)}
+                              disabled={loadingTabs[tabKey]}
                             >
                               <FaSave className="me-1" />
-                              
                             </Button>
                           )}
                         </div>
                       </div>
-                      <EditableContent
-                        tabKey={tabKey}
-                        content={editedTexts[tabKey].content}
-                        onChange={(newVal) =>
-                          setEditedTexts((prev) => ({
-                            ...prev,
-                            [tabKey]: { ...prev[tabKey], content: newVal },
-                          }))
-                        }
-                        isEditable={editMode[tabKey]}
-                      />
+                      {loadingTabs[tabKey] ? (
+                        <div className="text-center p-4">
+                          <div className="spinner-border" role="status">
+                            <span className="visually-hidden">Loading...</span>
+                          </div>
+                          <div className="mt-2">Loading {texts[tabKey].label}...</div>
+                        </div>
+                      ) : (
+                        <EditableContent
+                          tabKey={tabKey}
+                          content={editedTexts[tabKey].content}
+                          onChange={(newVal) =>
+                            setEditedTexts((prev) => ({
+                              ...prev,
+                              [tabKey]: { ...prev[tabKey], content: newVal },
+                            }))
+                          }
+                          isEditable={editMode[tabKey]}
+                        />
+                      )}
                     </div>
                   </Tab.Pane>
                 ))}

@@ -29,7 +29,7 @@ export const processPromptAndCallLLM = async ({
 
   // Get the system prompt and configuration from your backend
   const processResponse = await axios.post(
-    `${process.env.REACT_APP_API_LINK}/processPrompt`,
+    `${process.env.REACT_APP_API_LINK}/templates/process`,
     processRequestBody
   );
 
