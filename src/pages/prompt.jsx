@@ -22,11 +22,10 @@ const initialTexts = {
 
 // Improved JSON Editor Component for tab3
 // Updated ImprovedJSONEditor with scrollable container
+// Updated ImprovedJSONEditor without Add Field functionality
 function ImprovedJSONEditor({ content, onChange, isEditable }) {
   const [jsonData, setJsonData] = useState({});
   const [error, setError] = useState('');
-  const [newKey, setNewKey] = useState('');
-  const [showAddField, setShowAddField] = useState(false);
 
   useEffect(() => {
     try {
@@ -48,23 +47,6 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
     setJsonData(updated);
     // Immediately notify parent component of changes
     onChange(JSON.stringify(updated, null, 2));
-  };
-
-  const handleDeleteField = (key) => {
-    const updated = { ...jsonData };
-    delete updated[key];
-    setJsonData(updated);
-    onChange(JSON.stringify(updated, null, 2));
-  };
-
-  const handleAddField = () => {
-    if (newKey.trim() && !jsonData.hasOwnProperty(newKey.trim())) {
-      const updated = { ...jsonData, [newKey.trim()]: '' };
-      setJsonData(updated);
-      onChange(JSON.stringify(updated, null, 2));
-      setNewKey('');
-      setShowAddField(false);
-    }
   };
 
   const formatLabel = (key) => {
@@ -115,7 +97,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
   }
 
   return (
-    // Add scrollable container with fixed height
+    // Scrollable container with fixed height
     <div 
       style={{
         maxHeight: '400px',
@@ -129,15 +111,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
     >
       {Object.keys(jsonData).length === 0 ? (
         <div className="alert alert-info" role="alert">
-          No configuration fields available. 
-          {isEditable && (
-            <button 
-              className="btn btn-link p-0 ms-2"
-              onClick={() => setShowAddField(true)}
-            >
-              Add a field
-            </button>
-          )}
+          No configuration fields available.
         </div>
       ) : (
         <div>
@@ -150,84 +124,18 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
                       {formatLabel(key)}
                     </label>
                   </div>
-                  <div className={`${isEditable ? 'col-md-8' : 'col-md-9'}`}>
+                  <div className="col-md-9">
                     {renderFieldInput(key, value)}
                   </div>
-                  {/* {isEditable && (
-                    <div className="col-md-1 text-end">
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleDeleteField(key)}
-                        title="Delete field"
-                        style={{ fontSize: '12px' }}
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  )} */}
                 </div>
               </div>
             </div>
           ))}
         </div>
       )}
-
-      {isEditable && (
-        <div className="mt-4" style={{ position: 'sticky', bottom: '0', backgroundColor: '#fff', paddingTop: '10px', borderTop: '1px solid #dee2e6' }}>
-          {!showAddField ? (
-            <button
-              className="btn btn-outline-primary"
-              onClick={() => setShowAddField(true)}
-            >
-              ➕ Add Field
-            </button>
-          ) : (
-            <div className="card border-primary">
-              <div className="card-body">
-                <div className="row align-items-end">
-                  <div className="col-md-4">
-                    <label className="form-label">Field Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="FIELD_NAME"
-                      value={newKey}
-                      onChange={(e) => setNewKey(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && handleAddField()}
-                    />
-                  </div>
-                  <div className="col-md-8">
-                    <button
-                      className="btn btn-success me-2"
-                      onClick={handleAddField}
-                      disabled={!newKey.trim() || jsonData.hasOwnProperty(newKey.trim())}
-                    >
-                      Add
-                    </button>
-                    <button
-                      className="btn btn-secondary"
-                      onClick={() => {
-                        setShowAddField(false);
-                        setNewKey('');
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-                {newKey.trim() && jsonData.hasOwnProperty(newKey.trim()) && (
-                  <div className="mt-2 text-danger small">
-                    Field "{newKey}" already exists
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
-}
+} 
 function EditableContent({ tabKey, content, onChange, isEditable }) {
   // Declare all hooks at the top level (before any early returns)
   const ref = useRef(null);
