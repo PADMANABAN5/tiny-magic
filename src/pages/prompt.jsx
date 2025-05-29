@@ -21,6 +21,7 @@ const initialTexts = {
 };
 
 // Improved JSON Editor Component for tab3
+// Updated ImprovedJSONEditor with scrollable container
 function ImprovedJSONEditor({ content, onChange, isEditable }) {
   const [jsonData, setJsonData] = useState({});
   const [error, setError] = useState('');
@@ -114,7 +115,18 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
   }
 
   return (
-    <div>
+    // Add scrollable container with fixed height
+    <div 
+      style={{
+        maxHeight: '400px',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+        padding: '10px',
+        border: '1px solid #dee2e6',
+        borderRadius: '5px',
+        backgroundColor: '#fff'
+      }}
+    >
       {Object.keys(jsonData).length === 0 ? (
         <div className="alert alert-info" role="alert">
           No configuration fields available. 
@@ -141,6 +153,18 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
                   <div className={`${isEditable ? 'col-md-8' : 'col-md-9'}`}>
                     {renderFieldInput(key, value)}
                   </div>
+                  {isEditable && (
+                    <div className="col-md-1 text-end">
+                      <button
+                        className="btn btn-outline-danger btn-sm"
+                        onClick={() => handleDeleteField(key)}
+                        title="Delete field"
+                        style={{ fontSize: '12px' }}
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -149,7 +173,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
       )}
 
       {isEditable && (
-        <div className="mt-4">
+        <div className="mt-4" style={{ position: 'sticky', bottom: '0', backgroundColor: '#fff', paddingTop: '10px', borderTop: '1px solid #dee2e6' }}>
           {!showAddField ? (
             <button
               className="btn btn-outline-primary"
@@ -204,7 +228,6 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
     </div>
   );
 }
-
 function EditableContent({ tabKey, content, onChange, isEditable }) {
   // Declare all hooks at the top level (before any early returns)
   const ref = useRef(null);
@@ -571,13 +594,13 @@ function Prompt() {
                           {!editMode[tabKey] ? (
                             <>
                               <Button
-                                style={{ width: '70px' }}
+                                style={{ width: '70px', color:'#fff' }}
                                 variant="warning"
                                 size="sm"
                                 onClick={() => handleEdit(tabKey)}
                                 disabled={loadingTabs[tabKey]}
                               >
-                                <FaEdit className="me-1" />
+                                <FaEdit className="me-1" />Edit
                               </Button>
                               {/* <Button
                                 style={{ width: '70px' }}
@@ -592,13 +615,13 @@ function Prompt() {
                             </>
                           ) : (
                             <Button
-                              style={{ width: '70px' }}
+                              style={{ width: '70px' , color:'#fff' }}
                               variant="success"
                               size="sm"
                               onClick={() => handleSave(tabKey)}
                               disabled={loadingTabs[tabKey]}
                             >
-                              <FaSave className="me-1" />
+                              <FaSave className="me-1" />Save
                             </Button>
                           )}
                         </div>
