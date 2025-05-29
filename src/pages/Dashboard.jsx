@@ -15,10 +15,10 @@ function Dashboard() {
   const [prompt, setPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const chatEndRef = useRef(null);
-  const model = localStorage.getItem("selectedModel");
+  const model = sessionStorage.getItem("selectedModel");
   const [selectedModel, setSelectedModel] = useState(model);
   const [selectedPrompt, setSelectedPrompt] = useState("conceptMentor");
-  const username = localStorage.getItem("username");
+  const username = sessionStorage.getItem("username");
   const [llmContent, setLlmContent] = useState("");
   const [interactionCompleted, setInteractionCompleted] = useState(false);
   const [sessionHistory, setSessionHistory] = useState([]);
@@ -27,7 +27,7 @@ function Dashboard() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [showApiKeyPopup, setShowApiKeyPopup] = useState(
-    !localStorage.getItem(`apiKey_${username}`)
+    !sessionStorage.getItem(`apiKey_${username}`)
   );
   const [apiKey, setApiKey] = useState("");
   const [apiKeyError, setApiKeyError] = useState("");
@@ -84,7 +84,7 @@ function Dashboard() {
       return;
     }
 
-    const existingApiKeys = JSON.parse(localStorage.getItem("apiKeys") || "{}");
+    const existingApiKeys = JSON.parse(sessionStorage.getItem("apiKeys") || "{}");
 
     const isKeyUsed = Object.entries(existingApiKeys).some(
       ([storedUsername, storedApiKey]) =>
@@ -96,10 +96,10 @@ function Dashboard() {
       return;
     }
 
-    localStorage.setItem(`apiKey_${username}`, apiKey);
+    sessionStorage.setItem(`apiKey_${username}`, apiKey);
 
     existingApiKeys[username] = apiKey;
-    localStorage.setItem("apiKeys", JSON.stringify(existingApiKeys));
+    sessionStorage.setItem("apiKeys", JSON.stringify(existingApiKeys));
 
     setShowApiKeyPopup(false);
     setApiKeyError("");
@@ -176,7 +176,7 @@ function Dashboard() {
           ...prev,
           { user: prompt, system: initialResponse.apiResponseText },
         ];
-        localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+        sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
         return updatedHistory;
       });
 
@@ -227,7 +227,7 @@ function Dashboard() {
           ...prev,
           { user: prompt, system: assessmentResponse.apiResponseText },
         ];
-        localStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+        sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
         return updatedHistory;
       });
 
@@ -273,12 +273,12 @@ function Dashboard() {
       }
     };
 
-    if (username && localStorage.getItem(`apiKey_${username}`)) {
+    if (username && sessionStorage.getItem(`apiKey_${username}`)) {
       fetchChatHistory();
     }
   }, [username]);
   useEffect(() => {
-  const savedChatHistory = localStorage.getItem("chatHistory");
+  const savedChatHistory = sessionStorage.getItem("chatHistory");
   if (savedChatHistory) {
     setChatHistory(JSON.parse(savedChatHistory));
   }
@@ -389,7 +389,7 @@ function Dashboard() {
     if (
       username &&
       selectedModel &&
-      localStorage.getItem(`apiKey_${username}`)
+      sessionStorage.getItem(`apiKey_${username}`)
     ) {
       initiateFirstMentorMessage();
     }
@@ -434,14 +434,14 @@ function Dashboard() {
       )}
        
       <Sidebar />
-      <div className="flex-grow-1 p-4 d-flex flex-column position-relative">
-        <div className="mb-3 mt-5">
+      <div className="flex-grow-1 p-4 d-flex flex-column position-relative dashboard-content">
+        <div className="mt-5">
           <h5 className="text-primary">
             <span style={{ color: "black" }}>Model : </span>
             {selectedModel}
           </h5>
         </div>
-        {prompt === '' && (
+        {/* {prompt === '' && (
         <div className="form-check form-switch m-3" style={{ marginRight: "10%" }}>
         <input
           className="form-check-input"
@@ -462,7 +462,7 @@ function Dashboard() {
           change variables
         </label>
       </div>
-        )}
+        )} */}
         <div
           id="chat-history"
           className="chat-history flex-grow-1 overflow-auto p-3 border rounded shadow-sm bg-white"

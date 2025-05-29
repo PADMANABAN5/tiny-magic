@@ -140,7 +140,7 @@
   }
   .nav-pills .nav-link.active {
     color: var(--active-color);
-    background-color: var(--primary-color);
+    background-color: #40739e;
     font-weight: 600;
   }
   

@@ -1,9 +1,9 @@
 export async function callLLM(provider, config, messages) {
-  const username = localStorage.getItem("username");
-  const apiKey = localStorage.getItem(`apiKey_${username}`);
+  const username = sessionStorage.getItem("username");
+  const apiKey = sessionStorage.getItem(`apiKey_${username}`);
 
   if (!apiKey && provider.toLowerCase() === "groq") {
-    console.error("No API key found in localStorage for user:", username);
+    console.error("No API key found in sessionStorage for user:", username);
     return "Error: No API key provided. Please enter an API key in the dashboard.";
   }
   try {

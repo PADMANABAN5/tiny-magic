@@ -26,9 +26,9 @@ function Variables() {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 8;
 
-  // Load data from localStorage only on first render
+  // Load data from sessionStorage only on first render
   useEffect(() => {
-    const savedData = localStorage.getItem("variables");
+    const savedData = sessionStorage.getItem("variables");
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
@@ -36,18 +36,18 @@ function Variables() {
           setVariables(parsed);
         }
       } catch (err) {
-        console.error("Invalid JSON in localStorage:", err);
+        console.error("Invalid JSON in sessionStorage:", err);
       }
     }
   }, []);
 
-  // Save to localStorage ONLY after first load (skip during load)
+  // Save to sessionStorage ONLY after first load (skip during load)
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false;
       return;
     }
-    localStorage.setItem("variables", JSON.stringify(variables));
+    sessionStorage.setItem("variables", JSON.stringify(variables));
   }, [variables]);
 
   // Function to save a single new variable to the server

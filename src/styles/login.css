@@ -154,7 +154,8 @@ input:-moz-autofill {
 button {
     width: 100%;
     padding: 15px;
-    background: linear-gradient(to right, #1136cb, #25cafc);
+    /* background: linear-gradient(to right, #1136cb, #25cafc); */
+    background-color: #40739e !important;
     color: #fff;
     border: 1px solid #118acb !important;
     border-radius: 10px !important;

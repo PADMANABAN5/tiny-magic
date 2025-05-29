@@ -10,7 +10,7 @@ import {
 
 function Sidebar() {
   const location = useLocation();
-  const username = localStorage.getItem("username");
+  const username = sessionStorage.getItem("username");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ function Sidebar() {
   }, []);
 
   return (
-    <nav className="navbar navbar-expand-lg navbar-light bg-light fixed-top border-bottom shadow-sm px-3">
+    <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
       <div className="container-fluid">
         <span className="navbar-brand d-flex align-items-center">
           <FaUser className="me-2" />
@@ -53,8 +53,8 @@ function Sidebar() {
               to="/"
               className="nav-link d-flex align-items-center"
               onClick={() => { 
-                localStorage.removeItem("chatHistory");
-                localStorage.clear();
+                sessionStorage.removeItem("chatHistory");
+                sessionStorage.clear();
                
               }}
             >

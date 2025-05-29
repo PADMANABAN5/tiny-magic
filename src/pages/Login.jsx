@@ -13,7 +13,8 @@ function Login() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
+    sessionStorage.clear();
+    sessionStorage.clear();
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       setError("Please enter a valid email.");
@@ -35,8 +36,8 @@ function Login() {
 
   const handleModelSelection = () => {
     if (selectedModel) {
-      localStorage.setItem("selectedModel", selectedModel);
-      localStorage.setItem("username", email);
+      sessionStorage.setItem("selectedModel", selectedModel);
+      sessionStorage.setItem("username", email);
       navigate("/dashboard", {
         state: { selectedModel, username: "PADMANABAN" },
       });

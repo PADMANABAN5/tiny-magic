@@ -4,8 +4,8 @@ import { Tab, Nav, Row, Col, Button } from 'react-bootstrap';
 import { FaEdit, FaSave, FaEye, FaSyncAlt } from 'react-icons/fa';
 import axios from 'axios';
 
-const username = localStorage.getItem("username");
-
+const username = sessionStorage.getItem("username");
+console.log(username)
 const initialTexts = {
   tab1: { label: 'Concept mentor', content: '' },
   tab2: { label: 'Assessment prompt', content: '' },
@@ -386,7 +386,7 @@ function Prompt() {
     setLoadingTabs(prev => ({ ...prev, [tabKey]: true }));
 
     try {
-      const url = `https://tinymagiq-backend.onrender.com/api/templates/defaults?templateType=${templateType}`;
+      const url = `${process.env.REACT_APP_API_LINK}/templates/defaults?templateType=${templateType}`;
       const response = await axios.get(url);
       
       let content = response.data.data?.content || '';
@@ -455,12 +455,9 @@ function Prompt() {
       username,
       templateType: templateMap[tabKey],
       content: editedTexts[tabKey].content,
-    };
-
-    console.log('Save payload:', payload);
-
+    }; 
     try {
-      const res = await axios.post('https://tinymagiq-backend.onrender.com/api/templates', payload);
+      const res = await axios.post(`${process.env.REACT_APP_API_LINK}/templates`, payload);
       
       alert('Template saved successfully!');
 
@@ -493,7 +490,7 @@ function Prompt() {
     };
 
     try {
-      await axios.post('https://tinymagiq-backend.onrender.com/api/templates/defaults', payload);
+      await axios.post(`${process.env.REACT_APP_API_LINK}/templates/defaults`, payload);
 
       alert(`${texts[tabKey].label} has been reset to default.`);
       
@@ -522,7 +519,7 @@ function Prompt() {
                   <Nav.Item key={tabKey}>
                     <Nav.Link
                       eventKey={tabKey}
-                      className="text-start border"
+                      className="text-start border prompt-nav"
                       style={{ borderColor: currentTab === tabKey ? '#0d6efd' : '#dee2e6' }}
                     >
                       {texts[tabKey].label}
