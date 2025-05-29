@@ -21,8 +21,6 @@ const initialTexts = {
 };
 
 // Improved JSON Editor Component for tab3
-// Updated ImprovedJSONEditor with scrollable container
-// Updated ImprovedJSONEditor without Add Field functionality
 function ImprovedJSONEditor({ content, onChange, isEditable }) {
   const [jsonData, setJsonData] = useState({});
   const [error, setError] = useState('');
@@ -136,6 +134,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
     </div>
   );
 } 
+
 function EditableContent({ tabKey, content, onChange, isEditable }) {
   // Declare all hooks at the top level (before any early returns)
   const ref = useRef(null);
@@ -303,56 +302,139 @@ function Prompt() {
     tab3: 'defaultTemplateValues',
   };
 
-  // Function to fetch template for a specific tab
+  // Function to fetch user's custom template first, then fallback to default
   const fetchTemplateForTab = async (tabKey) => {
     const templateType = templateMap[tabKey];
-    if (!templateType) return;
+    if (!templateType) {
+      setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
+      return;
+    }
+
+    const currentUsername = getUsername();
+    if (!currentUsername || currentUsername === 'null' || currentUsername === '') {
+      console.warn('No valid username found, skipping template fetch');
+      setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
+      return;
+    }
 
     setLoadingTabs(prev => ({ ...prev, [tabKey]: true }));
 
+    let templateContent = '';
+    let templateFound = false;
+
     try {
-      const url = `${process.env.REACT_APP_API_LINK}/templates/defaults?templateType=${templateType}`;
-      const response = await axios.get(url);
+      // First, try to fetch user's custom template
+      const customTemplateUrl = `${process.env.REACT_APP_API_LINK}/templates?username=${currentUsername}&templateType=${templateType}`;
+      console.log(`Fetching custom template for ${tabKey}:`, customTemplateUrl);
       
-      let content = response.data.data?.content || '';
+      const customResponse = await axios.get(customTemplateUrl);
+      console.log(`Custom template response for ${tabKey}:`, customResponse.data);
       
-      // Handle tab3 JSON formatting
-      if (tabKey === 'tab3') {
-        try {
-          const parsedJson = JSON.parse(content);
-          content = JSON.stringify(parsedJson, null, 2);
-        } catch (jsonParseError) {
-          console.warn(`Content for ${tabKey} was not valid JSON, attempting plain text conversion.`, jsonParseError);
+      if (customResponse.status === 200 && customResponse.data.success) {
+        if (customResponse.data.data?.template?.content) {
+          console.log(`✅ Found custom template for ${tabKey}`);
+          templateContent = customResponse.data.data.template.content;
+          templateFound = true;
+        } else if (customResponse.data.data?.content) {
+          console.log(`✅ Found custom template for ${tabKey} (alternate structure)`);
+          templateContent = customResponse.data.data.content;
+          templateFound = true;
+        } else {
+          console.log(`❌ Custom template response structure unexpected for ${tabKey}:`, customResponse.data);
+        }
+      } else {
+        console.log(`❌ Custom template response not successful for ${tabKey}:`, customResponse.data);
+      }
+    } catch (customErr) {
+      console.log(`⚠️ No custom template found for ${tabKey}, falling back to default. Error:`, customErr.response?.status, customErr.message);
+    }
+
+    // If no custom template found, try default template
+    if (!templateFound) {
+      try {
+        const defaultUrl = `${process.env.REACT_APP_API_LINK}/templates/defaults?templateType=${templateType}`;
+        console.log(`Fetching default template for ${tabKey}:`, defaultUrl);
+        
+        const response = await axios.get(defaultUrl);
+        console.log(`Default template response for ${tabKey}:`, response.data);
+        
+        // Handle multiple possible response structures
+        if (response.data.success) {
+          templateContent = response.data.data?.content || 
+                           response.data.data?.defaultContent || 
+                           response.data.data?.template?.content || '';
+        } else {
+          templateContent = response.data.content || 
+                           response.data.defaultContent || '';
+        }
+        
+        if (templateContent) {
+          console.log(`✅ Found default template for ${tabKey}`);
+          templateFound = true;
+        } else {
+          console.log(`❌ Default template response structure unexpected for ${tabKey}:`, response.data);
+        }
+
+      } catch (err) {
+        console.error(`❌ Failed to load default template for ${tabKey}:`, err);
+        if (axios.isAxiosError(err)) {
+          console.error('Axios error details:', err.response?.data, err.response?.status, err.config?.url);
+        }
+        
+        // Show alert after error handling
+        setTimeout(() => {
+          alert(`❌ Failed to load ${initialTexts[tabKey].label}: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+        }, 100);
+      }
+    }
+
+    // Process the content regardless of source
+    if (templateFound && templateContent) {
+      try {
+        let processedContent = templateContent;
+        
+        // Handle tab3 JSON formatting
+        if (tabKey === 'tab3') {
           try {
-            content = convertTxtToJson(content);
-          } catch (txtConvertError) {
-            console.error(`Failed to convert plain text for ${tabKey}:`, txtConvertError);
-            content = `<pre style="color:red;">Failed to parse content. Raw: ${content}</pre>`;
+            const parsedJson = JSON.parse(processedContent);
+            processedContent = JSON.stringify(parsedJson, null, 2);
+          } catch (jsonParseError) {
+            console.warn(`Template content for ${tabKey} was not valid JSON, attempting plain text conversion.`, jsonParseError);
+            try {
+              processedContent = convertTxtToJson(processedContent);
+            } catch (txtConvertError) {
+              console.error(`Failed to convert plain text for ${tabKey}:`, txtConvertError);
+              processedContent = `Failed to parse content. Raw: ${processedContent}`;
+            }
           }
         }
-      }
 
-      const updatedTabData = {
+        const updatedTabData = {
+          label: initialTexts[tabKey].label,
+          content: processedContent,
+        };
+
+        console.log(`✅ Setting content for ${tabKey}:`, processedContent.substring(0, 200) + '...');
+        console.log(`✅ Content length for ${tabKey}:`, processedContent.length);
+        setTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
+        setEditedTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
+      } catch (processingError) {
+        console.error(`Error processing content for ${tabKey}:`, processingError);
+        alert(`❌ Error processing template content for ${texts[tabKey].label}`);
+      }
+    } else {
+      console.log(`❌ No template content found for ${tabKey}`);
+      // Set empty content to stop loading
+      const emptyTabData = {
         label: initialTexts[tabKey].label,
-        content,
+        content: '',
       };
-
-      setTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
-      setEditedTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
-
-    } catch (err) {
-      console.error(`Failed to load template for ${tabKey}:`, err);
-      if (axios.isAxiosError(err)) {
-        console.error('Axios error details:', err.response?.data, err.response?.status, err.config?.url);
-      }
-      
-      // Show alert after error handling
-      setTimeout(() => {
-        alert(`❌ Failed to load ${initialTexts[tabKey].label}: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
-      }, 100);
-    } finally {
-      setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
+      setTexts(prev => ({ ...prev, [tabKey]: emptyTabData }));
+      setEditedTexts(prev => ({ ...prev, [tabKey]: emptyTabData }));
     }
+
+    // Always clear loading state
+    setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
   };
 
   // Handle tab selection - fetch data when tab is clicked
@@ -380,8 +462,6 @@ function Prompt() {
       return;
     }
 
-    // Add debugging to see what content is being sent
-    
     const payload = {
       username: currentUsername,
       templateType: templateMap[tabKey],
@@ -420,7 +500,7 @@ function Prompt() {
   };
 
   const handleResetToDefault = async (tabKey) => {
-    const confirmReset = window.confirm(`⚠️ Are you sure you want to reset "${texts[tabKey].label}" to its default? This cannot be undone.`);
+    const confirmReset = window.confirm(`⚠️ Are you sure you want to reset "${texts[tabKey].label}" to its default? This will overwrite your current template and cannot be undone.`);
     if (!confirmReset) return;
 
     // Validate username before making API call
@@ -430,6 +510,8 @@ function Prompt() {
       return;
     }
 
+    setLoadingTabs(prev => ({ ...prev, [tabKey]: true }));
+
     const payload = {
       username: currentUsername,
       templateType: templateMap[tabKey],
@@ -437,16 +519,45 @@ function Prompt() {
     };
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/templates/defaults`, payload);
+      console.log(`Resetting ${tabKey} to default with payload:`, payload);
+      const response = await axios.post(`${process.env.REACT_APP_API_LINK}/templates/defaults`, payload);
+      console.log(`Reset response for ${tabKey}:`, response.data);
 
       // Show success alert after API response
       setTimeout(() => {
         alert(`✅ ${texts[tabKey].label} has been reset to default.`);
       }, 100);
       
-      await fetchTemplateForTab(tabKey);
+      // Extract the default content from the response
+      let content = response.data.data?.defaultContent || response.data.data?.content || '';
+      console.log(`Reset content for ${tabKey}:`, content.substring(0, 100) + '...');
       
+      // Handle tab3 JSON formatting
+      if (tabKey === 'tab3') {
+        try {
+          const parsedJson = JSON.parse(content);
+          content = JSON.stringify(parsedJson, null, 2);
+        } catch (jsonParseError) {
+          console.warn(`Reset content for ${tabKey} was not valid JSON, attempting plain text conversion.`, jsonParseError);
+          try {
+            content = convertTxtToJson(content);
+          } catch (txtConvertError) {
+            console.error(`Failed to convert plain text for ${tabKey}:`, txtConvertError);
+            content = `Failed to parse content. Raw: ${content}`;
+          }
+        }
+      }
+
+      const updatedTabData = {
+        label: initialTexts[tabKey].label,
+        content,
+      };
+
+      console.log(`✅ Setting reset content for ${tabKey}`);
+      setTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
+      setEditedTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
       setEditMode((prev) => ({ ...prev, [tabKey]: false }));
+      
     } catch (err) {
       console.error('Reset to default error', err);
       
@@ -457,6 +568,8 @@ function Prompt() {
         }
         alert(`❌ Failed to reset to default: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
       }, 100);
+    } finally {
+      setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
     }
   };
 
@@ -474,7 +587,6 @@ function Prompt() {
                     <Nav.Link
                       eventKey={tabKey}
                       className="text-start border prompt-nav nav-link"
-                      
                     >
                       {texts[tabKey].label}
                       {loadingTabs[tabKey] && (
@@ -510,16 +622,16 @@ function Prompt() {
                               >
                                 <FaEdit className="me-1" />Edit
                               </Button>
-                              {/* <Button
-                                style={{ width: '70px' }}
+                              <Button
+                                style={{ width: '80px' }}
                                 variant="danger"
                                 size="sm"
                                 onClick={() => handleResetToDefault(tabKey)}
                                 title="Reset to Default"
                                 disabled={loadingTabs[tabKey]}
                               >
-                                <FaSyncAlt className="me-1" />
-                              </Button> */}
+                                <FaSyncAlt className="me-1" />Reset
+                              </Button>
                             </>
                           ) : (
                             <Button
