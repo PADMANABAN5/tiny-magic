@@ -281,7 +281,7 @@ button:active {
   font-weight: 600;
   border: none;
   border-radius: 8px;
-  background: linear-gradient(135deg, #00b4d8, #0077b6);
+  background-color: #40739e !important;
   color: #fff;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -289,7 +289,7 @@ button:active {
 }
 
 .popup-content .btn:disabled {
-  background: linear-gradient(135deg, #00b4d8, #0077b6);;
+  background-color: #40739e !important;
   cursor: not-allowed;
   box-shadow: none;
 }

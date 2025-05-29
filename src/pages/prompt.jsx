@@ -4,8 +4,16 @@ import { Tab, Nav, Row, Col, Button } from 'react-bootstrap';
 import { FaEdit, FaSave, FaEye, FaSyncAlt } from 'react-icons/fa';
 import axios from 'axios';
 
-const username = sessionStorage.getItem("username");
-console.log(username)
+// Improved username retrieval with fallbacks
+const getUsername = () => {
+  return sessionStorage.getItem("username") || 
+         localStorage.getItem("username") || 
+         localStorage.getItem("selectedModel") || 
+         "guest_user";
+};
+
+const username = getUsername(); 
+
 const initialTexts = {
   tab1: { label: 'Concept mentor', content: '' },
   tab2: { label: 'Assessment prompt', content: '' },
@@ -129,24 +137,10 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
                     <label className="form-label fw-bold text-muted">
                       {formatLabel(key)}
                     </label>
-                    <div className="small text-muted font-monospace bg-light px-2 py-1 rounded">
-                      {key}
-                    </div>
                   </div>
                   <div className={`${isEditable ? 'col-md-8' : 'col-md-9'}`}>
                     {renderFieldInput(key, value)}
                   </div>
-                  {/* {isEditable && (
-                    <div className="col-md-1 text-end">
-                      <button
-                        className="btn btn-outline-danger btn-sm"
-                        onClick={() => handleDeleteField(key)}
-                        title="Delete field"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  )} */}
                 </div>
               </div>
             </div>
@@ -420,7 +414,11 @@ function Prompt() {
       if (axios.isAxiosError(err)) {
         console.error('Axios error details:', err.response?.data, err.response?.status, err.config?.url);
       }
-      alert(`Failed to load ${initialTexts[tabKey].label}: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+      
+      // Show alert after error handling
+      setTimeout(() => {
+        alert(`❌ Failed to load ${initialTexts[tabKey].label}: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+      }, 100);
     } finally {
       setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
     }
@@ -444,47 +442,65 @@ function Prompt() {
   };
 
   const handleSave = async (tabKey) => {
-    // Add debugging to see what content is being sent
-    console.log(`Saving ${tabKey}:`, {
-      tabKey,
-      content: editedTexts[tabKey].content,
-      contentLength: editedTexts[tabKey].content.length
-    });
+    // Validate username before making API call
+    const currentUsername = getUsername();
+    if (!currentUsername || currentUsername === 'null' || currentUsername === '') {
+      alert('❌ Username is required to save templates. Please log in again.');
+      return;
+    }
 
+    // Add debugging to see what content is being sent
+    
     const payload = {
-      username,
+      username: currentUsername,
       templateType: templateMap[tabKey],
       content: editedTexts[tabKey].content,
     }; 
+
     try {
       const res = await axios.post(`${process.env.REACT_APP_API_LINK}/templates`, payload);
       
-      alert('Template saved successfully!');
+      // Show success alert after API response
+      setTimeout(() => {
+        alert('✅ Template saved successfully!');
+      }, 100);
 
       setTexts((prev) => ({ ...prev, [tabKey]: editedTexts[tabKey] }));
       setEditMode((prev) => ({ ...prev, [tabKey]: false }));
 
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        console.error('Axios save error details:', err.response?.data, err.response?.status);
-        if (err.response?.status === 409) {
-          console.warn(`Received 409 Conflict for ${tabKey}. Message: ${err.response.data?.message}. Template with this type/username already exists.`);
-          alert(`Failed to save: Template for '${texts[tabKey].label}' already exists. No new template was created. Please edit the existing template directly.`);
+      console.error('Save error:', err);
+      
+      // Show error alert after API response with delay
+      setTimeout(() => {
+        if (axios.isAxiosError(err)) {
+          console.error('Axios save error details:', err.response?.data, err.response?.status);
+          if (err.response?.status === 409) {
+            console.warn(`Received 409 Conflict for ${tabKey}. Message: ${err.response.data?.message}. Template with this type/username already exists.`);
+            alert(`⚠️ Failed to save: Template for '${texts[tabKey].label}' already exists. No new template was created. Please edit the existing template directly.`);
+          } else {
+            alert(`❌ Failed to save: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+          }
         } else {
-          alert(`Failed to save: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+          alert(`❌ Failed to save: ${err.message || 'An unknown error occurred.'}`);
         }
-      } else {
-        alert(`Failed to save: ${err.message || 'An unknown error occurred.'}`);
-      }
+      }, 100);
     }
   };
 
   const handleResetToDefault = async (tabKey) => {
-    const confirmReset = window.confirm(`Are you sure you want to reset "${texts[tabKey].label}" to its default? This cannot be undone.`);
+    const confirmReset = window.confirm(`⚠️ Are you sure you want to reset "${texts[tabKey].label}" to its default? This cannot be undone.`);
     if (!confirmReset) return;
 
+    // Validate username before making API call
+    const currentUsername = getUsername();
+    if (!currentUsername || currentUsername === 'null' || currentUsername === '') {
+      alert('❌ Username is required to reset templates. Please log in again.');
+      return;
+    }
+
     const payload = {
-      username,
+      username: currentUsername,
       templateType: templateMap[tabKey],
       resetToDefault: true,
     };
@@ -492,17 +508,24 @@ function Prompt() {
     try {
       await axios.post(`${process.env.REACT_APP_API_LINK}/templates/defaults`, payload);
 
-      alert(`${texts[tabKey].label} has been reset to default.`);
+      // Show success alert after API response
+      setTimeout(() => {
+        alert(`✅ ${texts[tabKey].label} has been reset to default.`);
+      }, 100);
       
       await fetchTemplateForTab(tabKey);
       
       setEditMode((prev) => ({ ...prev, [tabKey]: false }));
     } catch (err) {
       console.error('Reset to default error', err);
-      if (axios.isAxiosError(err)) {
-        console.error('Axios reset error details:', err.response?.data, err.response?.status);
-      }
-      alert(`Failed to reset to default: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+      
+      // Show error alert after API response with delay
+      setTimeout(() => {
+        if (axios.isAxiosError(err)) {
+          console.error('Axios reset error details:', err.response?.data, err.response?.status);
+        }
+        alert(`❌ Failed to reset to default: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
+      }, 100);
     }
   };
 
@@ -519,8 +542,8 @@ function Prompt() {
                   <Nav.Item key={tabKey}>
                     <Nav.Link
                       eventKey={tabKey}
-                      className="text-start border prompt-nav"
-                      style={{ borderColor: currentTab === tabKey ? '#0d6efd' : '#dee2e6' }}
+                      className="text-start border prompt-nav nav-link"
+                      
                     >
                       {texts[tabKey].label}
                       {loadingTabs[tabKey] && (
@@ -556,7 +579,7 @@ function Prompt() {
                               >
                                 <FaEdit className="me-1" />
                               </Button>
-                              <Button
+                              {/* <Button
                                 style={{ width: '70px' }}
                                 variant="danger"
                                 size="sm"
@@ -565,7 +588,7 @@ function Prompt() {
                                 disabled={loadingTabs[tabKey]}
                               >
                                 <FaSyncAlt className="me-1" />
-                              </Button>
+                              </Button> */}
                             </>
                           ) : (
                             <Button
