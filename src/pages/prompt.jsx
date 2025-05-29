@@ -153,7 +153,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
                   <div className={`${isEditable ? 'col-md-8' : 'col-md-9'}`}>
                     {renderFieldInput(key, value)}
                   </div>
-                  {isEditable && (
+                  {/* {isEditable && (
                     <div className="col-md-1 text-end">
                       <button
                         className="btn btn-outline-danger btn-sm"
@@ -164,7 +164,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
                         🗑️
                       </button>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
             </div>
