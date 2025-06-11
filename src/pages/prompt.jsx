@@ -6,13 +6,13 @@ import axios from 'axios';
 
 // Improved username retrieval with fallbacks
 const getUsername = () => {
-  return sessionStorage.getItem("username") || 
-         localStorage.getItem("username") || 
-         localStorage.getItem("selectedModel") || 
-         "guest_user";
+  return sessionStorage.getItem("username") ||
+    localStorage.getItem("username") ||
+    localStorage.getItem("selectedModel") ||
+    "guest_user";
 };
 
-const username = getUsername(); 
+const username = getUsername();
 
 const initialTexts = {
   tab1: { label: 'Concept mentor', content: '' },
@@ -53,7 +53,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
 
   const renderFieldInput = (key, value) => {
     const stringValue = String(value || '');
-    
+
     if (stringValue.length > 100 || stringValue.includes('\n') || stringValue.includes('\\n')) {
       const displayValue = stringValue.replace(/\\n/g, '\n');
       return (
@@ -63,7 +63,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
           value={displayValue}
           onChange={(e) => handleFieldChange(key, e.target.value.replace(/\n/g, '\\n'))}
           disabled={!isEditable}
-          style={{ 
+          style={{
             minHeight: '100px',
             fontFamily: 'inherit',
             resize: 'vertical'
@@ -71,7 +71,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
         />
       );
     }
-    
+
     return (
       <input
         type="text"
@@ -96,7 +96,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
 
   return (
     // Scrollable container with fixed height
-    <div 
+    <div
       style={{
         maxHeight: '400px',
         overflowY: 'auto',
@@ -133,7 +133,7 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
       )}
     </div>
   );
-} 
+}
 
 function EditableContent({ tabKey, content, onChange, isEditable }) {
   // Declare all hooks at the top level (before any early returns)
@@ -325,54 +325,44 @@ function Prompt() {
     try {
       // First, try to fetch user's custom template
       const customTemplateUrl = `${process.env.REACT_APP_API_LINK}/templates?username=${currentUsername}&templateType=${templateType}`;
-      console.log(`Fetching custom template for ${tabKey}:`, customTemplateUrl);
-      
+
       const customResponse = await axios.get(customTemplateUrl);
-      console.log(`Custom template response for ${tabKey}:`, customResponse.data);
-      
+
       if (customResponse.status === 200 && customResponse.data.success) {
         if (customResponse.data.data?.template?.content) {
-          console.log(`✅ Found custom template for ${tabKey}`);
           templateContent = customResponse.data.data.template.content;
           templateFound = true;
         } else if (customResponse.data.data?.content) {
-          console.log(`✅ Found custom template for ${tabKey} (alternate structure)`);
           templateContent = customResponse.data.data.content;
           templateFound = true;
         } else {
-          console.log(`❌ Custom template response structure unexpected for ${tabKey}:`, customResponse.data);
         }
       } else {
-        console.log(`❌ Custom template response not successful for ${tabKey}:`, customResponse.data);
       }
     } catch (customErr) {
-      console.log(`⚠️ No custom template found for ${tabKey}, falling back to default. Error:`, customErr.response?.status, customErr.message);
+
     }
 
     // If no custom template found, try default template
     if (!templateFound) {
       try {
         const defaultUrl = `${process.env.REACT_APP_API_LINK}/templates/defaults?templateType=${templateType}`;
-        console.log(`Fetching default template for ${tabKey}:`, defaultUrl);
-        
+
         const response = await axios.get(defaultUrl);
-        console.log(`Default template response for ${tabKey}:`, response.data);
-        
+
         // Handle multiple possible response structures
         if (response.data.success) {
-          templateContent = response.data.data?.content || 
-                           response.data.data?.defaultContent || 
-                           response.data.data?.template?.content || '';
+          templateContent = response.data.data?.content ||
+            response.data.data?.defaultContent ||
+            response.data.data?.template?.content || '';
         } else {
-          templateContent = response.data.content || 
-                           response.data.defaultContent || '';
+          templateContent = response.data.content ||
+            response.data.defaultContent || '';
         }
-        
+
         if (templateContent) {
-          console.log(`✅ Found default template for ${tabKey}`);
           templateFound = true;
         } else {
-          console.log(`❌ Default template response structure unexpected for ${tabKey}:`, response.data);
         }
 
       } catch (err) {
@@ -380,7 +370,7 @@ function Prompt() {
         if (axios.isAxiosError(err)) {
           console.error('Axios error details:', err.response?.data, err.response?.status, err.config?.url);
         }
-        
+
         // Show alert after error handling
         setTimeout(() => {
           alert(`❌ Failed to load ${initialTexts[tabKey].label}: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
@@ -392,7 +382,7 @@ function Prompt() {
     if (templateFound && templateContent) {
       try {
         let processedContent = templateContent;
-        
+
         // Handle tab3 JSON formatting
         if (tabKey === 'tab3') {
           try {
@@ -413,9 +403,6 @@ function Prompt() {
           label: initialTexts[tabKey].label,
           content: processedContent,
         };
-
-        console.log(`✅ Setting content for ${tabKey}:`, processedContent.substring(0, 200) + '...');
-        console.log(`✅ Content length for ${tabKey}:`, processedContent.length);
         setTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
         setEditedTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
       } catch (processingError) {
@@ -423,7 +410,6 @@ function Prompt() {
         alert(`❌ Error processing template content for ${texts[tabKey].label}`);
       }
     } else {
-      console.log(`❌ No template content found for ${tabKey}`);
       // Set empty content to stop loading
       const emptyTabData = {
         label: initialTexts[tabKey].label,
@@ -440,7 +426,7 @@ function Prompt() {
   // Handle tab selection - fetch data when tab is clicked
   const handleTabSelect = (tabKey) => {
     setCurrentTab(tabKey);
-    
+
     if (!texts[tabKey].content) {
       fetchTemplateForTab(tabKey);
     }
@@ -466,11 +452,11 @@ function Prompt() {
       username: currentUsername,
       templateType: templateMap[tabKey],
       content: editedTexts[tabKey].content,
-    }; 
+    };
 
     try {
       const res = await axios.post(`${process.env.REACT_APP_API_LINK}/templates`, payload);
-      
+
       // Show success alert after API response
       setTimeout(() => {
         alert('✅ Template saved successfully!');
@@ -481,7 +467,7 @@ function Prompt() {
 
     } catch (err) {
       console.error('Save error:', err);
-      
+
       // Show error alert after API response with delay
       setTimeout(() => {
         if (axios.isAxiosError(err)) {
@@ -519,19 +505,16 @@ function Prompt() {
     };
 
     try {
-      console.log(`Resetting ${tabKey} to default with payload:`, payload);
       const response = await axios.post(`${process.env.REACT_APP_API_LINK}/templates/defaults`, payload);
-      console.log(`Reset response for ${tabKey}:`, response.data);
 
       // Show success alert after API response
       setTimeout(() => {
         alert(`✅ ${texts[tabKey].label} has been reset to default.`);
       }, 100);
-      
+
       // Extract the default content from the response
       let content = response.data.data?.defaultContent || response.data.data?.content || '';
-      console.log(`Reset content for ${tabKey}:`, content.substring(0, 100) + '...');
-      
+
       // Handle tab3 JSON formatting
       if (tabKey === 'tab3') {
         try {
@@ -553,14 +536,13 @@ function Prompt() {
         content,
       };
 
-      console.log(`✅ Setting reset content for ${tabKey}`);
       setTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
       setEditedTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
       setEditMode((prev) => ({ ...prev, [tabKey]: false }));
-      
+
     } catch (err) {
       console.error('Reset to default error', err);
-      
+
       // Show error alert after API response with delay
       setTimeout(() => {
         if (axios.isAxiosError(err)) {
@@ -614,7 +596,7 @@ function Prompt() {
                           {!editMode[tabKey] ? (
                             <>
                               <Button
-                                style={{ width: '70px', color:'#fff' }}
+                                style={{ width: '70px', color: '#fff' }}
                                 variant="warning"
                                 size="sm"
                                 onClick={() => handleEdit(tabKey)}
@@ -635,7 +617,7 @@ function Prompt() {
                             </>
                           ) : (
                             <Button
-                              style={{ width: '70px' , color:'#fff' }}
+                              style={{ width: '70px', color: '#fff' }}
                               variant="success"
                               size="sm"
                               onClick={() => handleSave(tabKey)}
