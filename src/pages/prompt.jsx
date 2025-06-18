@@ -21,15 +21,47 @@ const initialTexts = {
 };
 
 // Improved JSON Editor Component for tab3
+
 function ImprovedJSONEditor({ content, onChange, isEditable }) {
   const [jsonData, setJsonData] = useState({});
   const [error, setError] = useState('');
+
+  // Helper function to clean quotes and escape characters
+  const cleanValue = (value) => {
+    if (typeof value !== 'string') return value;
+
+    // Trim and remove trailing commas
+    let trimmed = value.trim().replace(/,$/, '');
+
+    try {
+      // Try to parse it as a JSON string (handles escaped quotes correctly)
+      return JSON.parse(trimmed);
+    } catch (e) {
+      // If parsing fails, fallback to manual unescaping
+      return trimmed
+        .replace(/^"(.*)"$/, '$1')  // Remove outer quotes if present
+        .replace(/\\"/g, '"')       // Replace escaped quotes
+        .replace(/\\n/g, '\n')      // Replace \n with newline
+        .replace(/\\t/g, '\t')      // Replace \t with tab
+        .replace(/\\\\/g, '\\');    // Replace escaped backslashes
+    }
+  };
 
   useEffect(() => {
     try {
       if (content.trim()) {
         const parsed = JSON.parse(content);
-        setJsonData(parsed);
+
+        // Clean all the parsed data
+        const cleanedData = {};
+        Object.keys(parsed).forEach(key => {
+          // Clean both key and value
+          const cleanKey = cleanValue(key);
+          const cleanValueData = cleanValue(parsed[key]);
+          cleanedData[cleanKey] = cleanValueData;
+        });
+
+        setJsonData(cleanedData);
         setError('');
       } else {
         setJsonData({});
@@ -48,18 +80,21 @@ function ImprovedJSONEditor({ content, onChange, isEditable }) {
   };
 
   const formatLabel = (key) => {
-    return key.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+    // Clean the key first, then format it
+    const cleanKey = cleanValue(key);
+    return cleanKey.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
   };
 
-  const renderFieldInput = (key, value) => {
-    const stringValue = String(value || '');
+  const renderFieldInput = (key, value) => { 
+    const cleanedValue = cleanValue(value); 
+    const stringValue = String(cleanedValue || '');
 
     if (stringValue.length > 100 || stringValue.includes('\n') || stringValue.includes('\\n')) {
       const displayValue = stringValue.replace(/\\n/g, '\n');
       return (
         <textarea
           className="form-control"
-          rows={Math.max(4, Math.min(10, displayValue.split('\n').length + 1))}
+          rows={Math.max(4, Math.min(10, displayValue.split('\n').length + 2))}
           value={displayValue}
           onChange={(e) => handleFieldChange(key, e.target.value.replace(/\n/g, '\\n'))}
           disabled={!isEditable}
