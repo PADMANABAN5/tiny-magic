@@ -48,12 +48,14 @@ body {
   align-items: center;
   gap: 0.75rem;
   flex-shrink: 0;
+
 }
 
 .model-info-section h5 {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
+  margin-left: 30px;
 }
 
 .model-badge {

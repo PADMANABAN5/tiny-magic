@@ -9,6 +9,7 @@ import html2canvas from "html2canvas";
 import axios from "axios";
 import { callLLM } from "../utils/callLLM.js";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
+import Progressbar from "../components/Progressbar.jsx";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -24,7 +25,8 @@ function Dashboard() {
   const [sessionHistory, setSessionHistory] = useState([]);
   const [isChecked, setIsChecked] = useState(false);
   const navigate = useNavigate();
-
+  // MODIFICATION 1: Initial stage from API response structure (0 implies not started, or Main Stage 1)
+  const [currentStage, setCurrentStage] = useState(0); // Initialize to 0, or determine based on initial API status
   const [isLoading, setIsLoading] = useState(false);
   const [isCountsLoading, setIsCountsLoading] = useState(false);
   const [showApiKeyPopup, setShowApiKeyPopup] = useState(
@@ -55,23 +57,25 @@ function Dashboard() {
   // Handle outside click to close save options
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (showSaveOptions &&
+      if (
+        showSaveOptions &&
         saveButtonRef.current &&
         saveOptionsRef.current &&
         !saveButtonRef.current.contains(event.target) &&
-        !saveOptionsRef.current.contains(event.target)) {
+        !saveOptionsRef.current.contains(event.target)
+      ) {
         setShowSaveOptions(false);
       }
     };
 
     if (showSaveOptions) {
-      document.addEventListener('mousedown', handleClickOutside);
-      document.addEventListener('touchstart', handleClickOutside);
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('touchstart', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
     };
   }, [showSaveOptions]);
 
@@ -80,6 +84,7 @@ function Dashboard() {
     setChatHistory([]);
     setSessionHistory([]);
     setCurrentChatId(null);
+    setCurrentStage(0); // Reset stage to "Main Stage 1" (index 0) on clear
     setSessionType(null);
     setResumedFromStatus(null);
 
@@ -89,20 +94,54 @@ function Dashboard() {
     sessionStorage.removeItem("sessionType");
   };
 
+  // Function to map API's currentStage to Progressbar's index
+  // Progressbar stages:
+  // 0: Main Stage 1
+  // 1: Main Stage 2
+  // 2: Substage 1
+  // 3: Substage 2
+  // 4: Substage 3
+  // 5: Substage 4
+  // 6: Substage 5
+  // 7: Main Stage 3
+  const mapApiStageToProgressbarIndex = (apiCurrentStage, interactionCompleted) => {
+    if (interactionCompleted) {
+      return 7; // Main Stage 3 (Interaction Completed)
+    }
+    switch (apiCurrentStage) {
+      case 0:
+        return 0; // Main Stage 1 (Not started / Initial state)
+      case 1:
+        return 2; // Substage 1 (after Main Stage 2 which is index 1)
+      case 2:
+        return 3; // Substage 2
+      case 3:
+        return 4; // Substage 3
+      case 4:
+        return 5; // Substage 4
+      case 5:
+        return 6; // Substage 5
+      // If the API returns a stage of 0, but a user has initiated the first message,
+      // the `handleSendClick` will set it to Main Stage 2 (index 1).
+      // For resumed chats with API currentStage 0, and chat history, we'll assume Main Stage 2.
+      default:
+        return 0; // Default to Main Stage 1 if something unexpected
+    }
+  };
+
+
   // SCENARIO 1: Start fresh mentor message (AUTOMATICALLY for fresh sessions)
   const initiateFirstMentorMessage = async () => {
-    // Remove the condition checks - always call Groq API for fresh sessions
     if (sessionStorage.getItem(`apiKey_${username}`)) {
       setIsLoading(true);
       try {
-        // CRITICAL: Clear any existing session data first
-        clearSessionData();
+        clearSessionData(); // Ensure a clean slate
 
         const response = await processPromptAndCallLLM({
           username,
           selectedPrompt: "conceptMentor",
           selectedModel,
-          sessionHistory: [], // Always empty for fresh start
+          sessionHistory: [],
           userPrompt: "",
         });
 
@@ -121,15 +160,18 @@ function Dashboard() {
             Mentor: mentorMessage,
           },
         ]);
+        // MODIFICATION: Set initial stage based on API response for fresh start
+        // For a fresh start, currentStage from API might be 0, and interactionCompleted false
+        // This corresponds to Main Stage 1.
+        setCurrentStage(mapApiStageToProgressbarIndex(response.currentStage, response.interactionCompleted));
 
-        setSessionType('fresh');
+
+        setSessionType("fresh");
         setCurrentChatId(null);
         setResumedFromStatus(null);
 
-        // Store fresh session data
         sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
         sessionStorage.setItem("sessionType", "fresh");
-
       } catch (err) {
         console.error("❌ Failed to load initial mentor message:", err);
         alert("Failed to start conversation. Please try again.");
@@ -153,40 +195,52 @@ function Dashboard() {
     setIsInitializing(true);
 
     try {
-      const response = await axios.get(`${BASE_URL}/chat/session-status/${username}`);
+      const response = await axios.get(
+        `${BASE_URL}/chat/session-status/${username}`
+      );
 
       if (response.data && response.data.success) {
-        const { sessionType, hasActiveSession, shouldStartFresh, chat, message } = response.data.data;
+        const { sessionType, hasActiveSession, shouldStartFresh, chat } =
+          response.data.data;
 
         if (hasActiveSession && chat && !shouldStartFresh) {
-
           setChatHistory(chat.conversation);
 
           const loadedSessionHistory = chat.conversation
-            .filter(item => item.user !== undefined && item.system !== undefined)
-            .map(item => ({ Mentee: item.user, Mentor: item.system }));
+            .filter((item) => item.user !== undefined && item.system !== undefined)
+            .map((item) => ({ Mentee: item.user, Mentor: item.system }));
           setSessionHistory(loadedSessionHistory);
 
           setCurrentChatId(chat.id);
-          setSessionType('resume');
+          setSessionType("resume");
           setResumedFromStatus(chat.status);
 
-          // Store resumed session data
+          // MODIFICATION: Set currentStage based on the chat's saved stage from API
+          // You'll need `chat.currentStage` and `chat.interactionCompleted` from your backend response
+          // For now, let's assume `chat` object includes these. If not, you'll need to fetch them or
+          // update your backend response.
+          // For a resumed chat, if `chat.currentStage` is 0, but there's history, assume Main Stage 2 (index 1)
+          let currentChatStageFromAPI = chat.currentStage !== undefined ? chat.currentStage : 0;
+          let interactionCompletedFromAPI = chat.interactionCompleted !== undefined ? chat.interactionCompleted : false;
+
+          if (currentChatStageFromAPI === 0 && chat.conversation.length > 1) { // More than just initial mentor message
+              setCurrentStage(1); // Set to Main Stage 2 if API is 0 but chat has started
+          } else {
+              setCurrentStage(mapApiStageToProgressbarIndex(currentChatStageFromAPI, interactionCompletedFromAPI));
+          }
+
+
           sessionStorage.setItem("chatHistory", JSON.stringify(chat.conversation));
           sessionStorage.setItem("currentChatId", chat.id.toString());
           sessionStorage.setItem("sessionType", "resume");
-
         } else {
           await initiateFirstMentorMessage();
         }
       }
 
-      // Always fetch counts
       await fetchChatCounts();
-
     } catch (error) {
       console.error("❌ Error checking session status:", error);
-
       if (error.response && error.response.status === 404) {
         await initiateFirstMentorMessage();
       } else {
@@ -202,7 +256,7 @@ function Dashboard() {
     const newChecked = !isChecked;
     setIsChecked(newChecked);
     if (newChecked) {
-      navigate('/variables');
+      navigate("/variables");
     }
   };
 
@@ -234,7 +288,6 @@ function Dashboard() {
     setApiKeyError("");
   };
 
-  // PDF Download function
   const handleDownloadPDF = () => {
     const chatDiv = document.getElementById("chat-history");
     if (!chatDiv) {
@@ -242,20 +295,18 @@ function Dashboard() {
       return;
     }
 
-    // Store original styles and scroll position
     const originalMaxHeight = chatDiv.style.maxHeight;
     const originalOverflowY = chatDiv.style.overflowY;
     const originalScrollTop = chatDiv.scrollTop;
     const originalPosition = chatDiv.style.position;
     const originalTop = chatDiv.style.top;
 
-    // Temporarily modify styles to ensure all content is rendered
     chatDiv.style.maxHeight = "none";
     chatDiv.style.overflowY = "visible";
 
     const parentOfChatDiv = chatDiv.parentElement;
     if (parentOfChatDiv) {
-      parentOfChatDiv.style.flexGrow = '0';
+      parentOfChatDiv.style.flexGrow = "0";
     }
 
     chatDiv.style.position = "absolute";
@@ -267,57 +318,56 @@ function Dashboard() {
       html2canvas(chatDiv, {
         scale: 2,
         useCORS: true,
-      }).then((canvas) => {
-        const imgData = canvas.toDataURL("image/png");
-        const pdf = new jsPDF("p", "mm", "a4");
+      })
+        .then((canvas) => {
+          const imgData = canvas.toDataURL("image/png");
+          const pdf = new jsPDF("p", "mm", "a4");
 
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pdfWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          const imgWidth = pdfWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-        let currentHeight = 0;
+          let currentHeight = 0;
 
-        while (currentHeight < imgHeight) {
-          if (currentHeight > 0) {
-            pdf.addPage();
+          while (currentHeight < imgHeight) {
+            if (currentHeight > 0) {
+              pdf.addPage();
+            }
+            pdf.addImage(imgData, "PNG", 0, -currentHeight, imgWidth, imgHeight);
+            currentHeight += pdfHeight;
           }
-          pdf.addImage(imgData, "PNG", 0, -currentHeight, imgWidth, imgHeight);
-          currentHeight += pdfHeight;
-        }
 
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-        const filename = `chat-history-${timestamp}.pdf`;
-        pdf.save(filename);
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+          const filename = `chat-history-${timestamp}.pdf`;
+          pdf.save(filename);
 
-        // Restore original styles
-        chatDiv.style.maxHeight = originalMaxHeight;
-        chatDiv.style.overflowY = originalOverflowY;
-        chatDiv.style.position = originalPosition;
-        chatDiv.style.top = originalTop;
-        chatDiv.style.width = "";
-        chatDiv.scrollTop = originalScrollTop;
+          chatDiv.style.maxHeight = originalMaxHeight;
+          chatDiv.style.overflowY = originalOverflowY;
+          chatDiv.style.position = originalPosition;
+          chatDiv.style.top = originalTop;
+          chatDiv.style.width = "";
+          chatDiv.scrollTop = originalScrollTop;
 
-        if (parentOfChatDiv) {
-          parentOfChatDiv.style.flexGrow = '';
-        }
+          if (parentOfChatDiv) {
+            parentOfChatDiv.style.flexGrow = "";
+          }
+        })
+        .catch((error) => {
+          console.error("❌ PDF generation error:", error);
+          alert("Failed to generate PDF. Please try again.");
 
-      }).catch(error => {
-        console.error("❌ PDF generation error:", error);
-        alert("Failed to generate PDF. Please try again.");
+          chatDiv.style.maxHeight = originalMaxHeight;
+          chatDiv.style.overflowY = originalOverflowY;
+          chatDiv.style.position = originalPosition;
+          chatDiv.style.top = originalTop;
+          chatDiv.style.width = "";
+          chatDiv.scrollTop = originalScrollTop;
 
-        // Restore styles on error
-        chatDiv.style.maxHeight = originalMaxHeight;
-        chatDiv.style.overflowY = originalOverflowY;
-        chatDiv.style.position = originalPosition;
-        chatDiv.style.top = originalTop;
-        chatDiv.style.width = "";
-        chatDiv.scrollTop = originalScrollTop;
-
-        if (parentOfChatDiv) {
-          parentOfChatDiv.style.flexGrow = '';
-        }
-      });
+          if (parentOfChatDiv) {
+            parentOfChatDiv.style.flexGrow = "";
+          }
+        });
     }, 700);
   };
 
@@ -325,7 +375,6 @@ function Dashboard() {
     setPrompt(event.target.value);
   };
 
-  // SCENARIO 3: Save chat with FIXED logic
   const handleSaveChat = async (status) => {
     if (!username) {
       alert("Cannot save chat: User not identified.");
@@ -341,19 +390,17 @@ function Dashboard() {
       let response;
       let actionMessage = "";
 
-      if (currentChatId && sessionType === 'resume') {
-        // Update existing conversation
+      if (currentChatId && sessionType === "resume") {
         response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
           conversation: chatHistory,
-          status: status
+          status: status,
         });
         actionMessage = `Updated existing chat (ID: ${currentChatId})`;
       } else {
-        // Create new conversation
         response = await axios.post(`${BASE_URL}/chat`, {
           user_id: username,
           conversation: chatHistory,
-          status: status
+          status: status,
         });
         actionMessage = "Created new chat";
       }
@@ -361,46 +408,37 @@ function Dashboard() {
 
       alert(` Chat saved as ${status}!`);
 
-      // CRITICAL FIX: Handle post-save logic based on shouldStartFresh
       if (response.data.data.shouldStartFresh) {
         clearSessionData();
 
-        if (status === 'completed' || status === 'stopped') {
+        if (status === "completed" || status === "stopped") {
           setTimeout(async () => {
             await initiateFirstMentorMessage();
-          }, 1000); // Small delay to show the completion message
+          }, 1000);
         }
 
-        // Update UI to show fresh state
-        setSessionType(status === 'completed' || status === 'stopped' ? 'completed' : 'fresh');
+        setSessionType(status === "completed" || status === "stopped" ? "completed" : "fresh");
 
-        // Remove current chat tracking
         setCurrentChatId(null);
         setResumedFromStatus(null);
-
+        setCurrentStage(0); // If starting fresh after completion/stop, reset to Main Stage 1
       } else {
-        // Update current chat ID for future updates (paused chats)
         const newChatId = response.data.data.id || currentChatId;
         setCurrentChatId(newChatId);
-        setSessionType('resume');
+        setSessionType("resume");
         setResumedFromStatus(status);
-
-        if (newChatId) {
-          sessionStorage.setItem("currentChatId", newChatId.toString());
-          sessionStorage.setItem("sessionType", "resume");
-        }
+        // MODIFICATION: Update stage after save if not starting fresh
+        // The stage should reflect the current status of the conversation
+        // For a paused/incomplete session, it should stay at its last known stage.
+        // We'll rely on the API response for currentStage in handleSendClick
       }
 
-      // Update session storage with current state
       sessionStorage.setItem("chatHistory", JSON.stringify(chatHistory));
-
-      // Refresh counts
       await fetchChatCounts();
-
     } catch (error) {
       console.error("❌ Error saving chat:", error);
       if (error.response) {
-        alert(`Failed to save chat: ${error.response.data.message || 'Server error'}`);
+        alert(`Failed to save chat: ${error.response.data.message || "Server error"}`);
       } else {
         alert("Failed to save chat. Please check your connection and try again.");
       }
@@ -433,6 +471,21 @@ function Dashboard() {
         userPrompt: userPrompt,
       });
 
+      // MODIFICATION: Update currentStage based on initialResponse from API
+      // If it's the very first user message and API returns 0 for currentStage,
+      // it means we've moved past "Main Stage 1" and are "In Progress" (Main Stage 2).
+      // Otherwise, use the API's currentStage and interactionCompleted for more specific mapping.
+
+      let newApiCurrentStage = initialResponse.currentStage;
+      let newInteractionCompleted = initialResponse.interactionCompleted;
+
+      // Special case: If first user prompt, and API says stage 0, move to Main Stage 2 (index 1)
+      if (chatHistory.length === 0 && newApiCurrentStage === 0 && !newInteractionCompleted) {
+        setCurrentStage(1); // Main Stage 2
+      } else {
+        setCurrentStage(mapApiStageToProgressbarIndex(newApiCurrentStage, newInteractionCompleted));
+      }
+
       const newChatEntry = {
         user: userPrompt,
         system: initialResponse.apiResponseText,
@@ -451,21 +504,21 @@ function Dashboard() {
         { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
       ]);
 
-      // Auto-save progress for resumed sessions (but not for fresh sessions)
-      if (currentChatId && sessionType === 'resume') {
+      if (currentChatId && sessionType === "resume") {
         try {
           await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
             conversation: currentChatHistory,
-            status: 'incomplete'
+            status: "incomplete",
+            // Also send updated stage info if backend handles it
+            current_stage: newApiCurrentStage, // Pass back the current stage from LLM response
+            interaction_completed: newInteractionCompleted // Pass back interaction status
           });
         } catch (saveError) {
           console.error("⚠️ Failed to auto-save progress:", saveError);
         }
       }
 
-      // Handle assessment if conversation ended
-      if (initialResponse.endRequested || initialResponse.interactionCompleted) {
-
+      if (newInteractionCompleted) { // Use the updated flag directly
         const assessmentResponse = await processPromptAndCallLLM({
           username,
           selectedPrompt: "assessmentPrompt",
@@ -497,24 +550,27 @@ function Dashboard() {
 
         setSelectedPrompt("conceptMentor");
 
-        // Auto-save with assessment for resumed sessions
-        if (currentChatId && sessionType === 'resume') {
+        // Update stage to Main Stage 3 (index 7) when interaction is completed
+        setCurrentStage(7);
+
+        if (currentChatId && sessionType === "resume") {
           try {
             const finalHistory = [...currentChatHistory, assessmentChatEntry];
             await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
               conversation: finalHistory,
-              status: 'incomplete'
+              status: "incomplete", // Or 'completed' if you want to force status here
+              current_stage: 5, // Assuming 5 is the final substage before assessment
+              interaction_completed: true // Mark as completed interaction
             });
           } catch (saveError) {
             console.error("⚠️ Failed to auto-save assessment:", saveError);
           }
         }
       }
-
     } catch (error) {
       console.error("❌ Error in API request:", error);
       if (error.response) {
-        alert(`Failed to process request: ${error.response.data.message || 'Server error'}`);
+        alert(`Failed to process request: ${error.response.data.message || "Server error"}`);
       } else {
         alert("Failed to process request. Please check your connection and try again.");
       }
@@ -536,7 +592,6 @@ function Dashboard() {
     }
   }, [chatHistory]);
 
-  // Fetch chat counts
   const fetchChatCounts = async () => {
     if (!username || !sessionStorage.getItem(`apiKey_${username}`)) {
       return;
@@ -546,11 +601,12 @@ function Dashboard() {
     try {
       const response = await axios.get(`${BASE_URL}/chat/counts/${username}`);
 
-      if (response.data &&
+      if (
+        response.data &&
         response.data.success &&
         response.data.data &&
-        response.data.data.counts) {
-
+        response.data.data.counts
+      ) {
         setChatCounts(response.data.data.counts);
       } else {
         setChatCounts({ stopped: 0, paused: 0, completed: 0, incomplete: 0, archived: 0 });
@@ -563,19 +619,18 @@ function Dashboard() {
     }
   };
 
-  // MAIN INITIALIZATION: Check session status when component mounts
   useEffect(() => {
     if (!showApiKeyPopup) {
       checkSessionStatus();
     }
   }, [username, showApiKeyPopup]);
 
-  // CRITICAL FIX: Don't restore session storage for completed sessions
+
+  // CRITICAL FIX: Ensure currentStage is set correctly on initial load/resume
   useEffect(() => {
     if (!isInitializing && !chatHistory.length) {
       const savedSessionType = sessionStorage.getItem("sessionType");
 
-      // Don't restore if last session was completed
       if (savedSessionType === "completed") {
         clearSessionData();
         return;
@@ -592,7 +647,20 @@ function Dashboard() {
 
             if (savedChatId) {
               setCurrentChatId(parseInt(savedChatId));
-              setSessionType('resume');
+              setSessionType("resume");
+
+              // This useEffect runs after checkSessionStatus has likely already run,
+              // but as a fallback, ensure currentStage is set if chatHistory is loaded from session storage
+              // and checkSessionStatus didn't set it (e.g., if API response was incomplete).
+              // We'll try to infer the stage if API didn't provide it directly in `checkSessionStatus`
+              // For now, if chatHistory exists from resume, it should generally be Main Stage 2 or higher
+              // A more robust solution might involve storing `apiCurrentStage` in sessionStorage as well.
+              // For simplicity, if we have history from a resumed session, it means it's "in progress"
+              if(parsedHistory.length > 1){ // More than just the initial mentor message
+                 setCurrentStage(1); // Set to Main Stage 2
+              } else {
+                 setCurrentStage(0); // Only initial mentor message, still Main Stage 1
+              }
             }
           }
         } catch (error) {
@@ -601,9 +669,8 @@ function Dashboard() {
         }
       }
     }
-  }, [isInitializing]);
+  }, [isInitializing, chatHistory.length]); // Add chatHistory.length to dependency array
 
-  // Assessment data parsing functions
   const extractScoringData = (content) => {
     try {
       const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
@@ -726,9 +793,10 @@ function Dashboard() {
       <Sidebar />
 
       <div className="dashboard-content">
-        {/* Header Section with Everything in One Line */}
         <div className="dashboard-header">
-          {/* Model Info */}
+          <div>
+            <Progressbar currentStage={currentStage} />
+          </div>
           <div className="model-info-section">
             <h5 className="text-primary mb-0">
               <span className="text-dark">Model: </span>
@@ -736,7 +804,6 @@ function Dashboard() {
             </h5>
           </div>
 
-          {/* Count Cards in Horizontal Layout */}
           <div className="counts-container-horizontal">
             {isCountsLoading ? (
               <div className="loading-container-horizontal">
@@ -769,10 +836,8 @@ function Dashboard() {
             )}
           </div>
 
-          {/* Action Buttons in Header */}
           {chatHistory.length > 0 && !isInitializing && (
             <div className="action-buttons-horizontal">
-              {/* Save Button */}
               <button
                 ref={saveButtonRef}
                 className="action-button-horizontal"
@@ -783,27 +848,26 @@ function Dashboard() {
                 <FiSave size={18} />
               </button>
 
-              {/* Save Options Dropdown */}
               {showSaveOptions && (
                 <div ref={saveOptionsRef} className="save-options-dropdown-horizontal">
                   <h6>💾 Save as:</h6>
                   <button
                     className="btn btn-outline-success"
-                    onClick={() => handleSaveChat('completed')}
+                    onClick={() => handleSaveChat("completed")}
                     title="Mark as completed - next session will start fresh"
                   >
                     ✅ Completed
                   </button>
                   <button
                     className="btn btn-outline-info"
-                    onClick={() => handleSaveChat('paused')}
+                    onClick={() => handleSaveChat("paused")}
                     title="Pause session - can be resumed later"
                   >
                     ⏸️ Paused
                   </button>
                   <button
                     className="btn btn-outline-danger"
-                    onClick={() => handleSaveChat('stopped')}
+                    onClick={() => handleSaveChat("stopped")}
                     title="Stop session - next session will start fresh"
                   >
                     ⏹️ Stopped
@@ -811,7 +875,6 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* Download PDF Button */}
               <button
                 className="action-button-horizontal"
                 onClick={handleDownloadPDF}
@@ -824,7 +887,6 @@ function Dashboard() {
           )}
         </div>
 
-        {/* Chat History Section */}
         <div className="chat-history-container">
           <div id="chat-history" className="chat-history">
             {chatHistory.length === 0 ? (
@@ -881,9 +943,7 @@ function Dashboard() {
                           <div className="message-header">
                             <strong className="message-model-name">{selectedModel}:</strong>
                           </div>
-                          <div className="message-content">
-                            {item.system}
-                          </div>
+                          <div className="message-content">{item.system}</div>
                         </div>
                       )}
                     </div>
@@ -895,7 +955,6 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Input Area */}
         <div className="input-area-container">
           {isLoading && (
             <div className="input-loading-indicator">
@@ -924,8 +983,6 @@ function Dashboard() {
           </button>
         </div>
       </div>
-
-      {/* No Action Buttons here anymore - they're in the header */}
     </div>
   );
 }

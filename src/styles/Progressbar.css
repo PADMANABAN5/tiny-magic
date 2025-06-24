@@ -1,0 +1,88 @@
+.milestone-bar {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  position: relative;
+  gap: 41px;
+}
+
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.circle {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: lightgray;
+  color: black;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+.circle.completed.sub {
+  background-color: #4caf50;
+  color: white;
+}
+
+.circle.completed.main {
+  background-color: #2e7d32;
+  color: white;
+}
+
+.circle.main {
+  background-color: #2196f3;
+  color: white;
+}
+
+.circle.current {
+  border: 3px solid orange;
+}
+
+.label {
+  position: absolute;
+  top:40px;
+  width: 100px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.label.top {
+  top: -23px;
+}
+
+.label.bottom {
+  top: 45px;
+}
+
+.main-label {
+  font-weight: bold;
+}
+
+.label-completed {
+  color: #4caf50;
+}
+
+.connector {
+  position: absolute;
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  height: 4px;
+  width: 40px;
+  background-color: #ccc;
+  z-index: 0;
+}
+
+/* Green connector for completed stages */
+.connector-completed {
+  background-color: #28a745;
+}
