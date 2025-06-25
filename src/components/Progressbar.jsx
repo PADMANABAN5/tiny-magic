@@ -3,14 +3,14 @@ import "../styles/Progressbar.css";
 
 const Progressbar = ({ currentStage }) => {
   const stages = [
-    { label: "Main Stage 1", isMain: true, position: "top" },
-    { label: "Main Stage 2", isMain: true, position: "bottom" },
-    { label: "Substage 1", isMain: false, position: "top" },
-    { label: "Substage 2", isMain: false, position: "bottom" },
-    { label: "Substage 3", isMain: false, position: "top" },
-    { label: "Substage 4", isMain: false, position: "bottom" },
-    { label: "Substage 5", isMain: false, position: "top" },
-    { label: "Main Stage 3", isMain: true, position: "bottom" },
+    { label: "Not Started", isMain: true, position: "bottom" },
+    { label: "In Progress", isMain: true, position: "bottom" },
+    { label: "stage 1", isMain: false, position: "bottom" },
+    { label: "stage 2", isMain: false, position: "bottom" },
+    { label: "stage 3", isMain: false, position: "bottom" },
+    { label: "stage 4", isMain: false, position: "bottom" },
+    { label: "stage 5", isMain: false, position: "bottom" },
+    { label: "Completed", isMain: true, position: "bottom" },
   ];
 
   let subStageCounter = 0;
