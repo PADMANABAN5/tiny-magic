@@ -797,12 +797,12 @@ function Dashboard() {
           <div>
             <Progressbar currentStage={currentStage} />
           </div>
-          <div className="model-info-section">
+          {/* <div className="model-info-section">
             <h5 className="text-primary mb-0">
               <span className="text-dark">Model: </span>
               <span className="model-badge">{selectedModel || "No Model Selected"}</span>
             </h5>
-          </div>
+          </div> */}
 
           <div className="counts-container-horizontal">
             {isCountsLoading ? (

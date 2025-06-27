@@ -4,7 +4,8 @@
   align-items: center;
   
   position: relative;
-  gap: 41px;
+  gap: 45px;
+  margin-bottom: 20px;
 }
 
 .stage {

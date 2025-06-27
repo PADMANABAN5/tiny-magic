@@ -48,20 +48,20 @@ function Sidebar() {
                 <FaBook className="me-2" style={{ fontSize: "16px" }} />
                 Prompts
               </Link>
-            </li> 
-            <Link
-              to="/"
-              className="nav-link d-flex align-items-center"
-              onClick={() => { 
-                sessionStorage.removeItem("chatHistory");
-                sessionStorage.clear();
-               
-              }}
+            </li>
+            <li className="nav-item">
+              <Link
+                to="/login"
+                className="nav-link d-flex align-items-center"
+                onClick={() => {
+                  sessionStorage.removeItem("chatHistory");
+                  sessionStorage.clear();
+                }}
             >
               <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
               Log Out
             </Link>
-
+            </li>
           </ul>
         </div>
       </div>

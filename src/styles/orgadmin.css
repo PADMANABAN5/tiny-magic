@@ -1,0 +1,259 @@
+.orgadmin-container {
+  display: flex;
+  min-height: 100vh;
+  background: #f0f2f5;
+  font-family: 'Poppins', sans-serif;
+}
+
+.orgadmin-content {
+  flex: 1;
+  padding: 40px 60px;
+  background-color: #f9f9fb;
+  width: 100rem;
+  margin-top: 15px;
+}
+
+h3 {
+    text-align: center;
+}
+.orgadmin-header h1 {
+  font-size: 32px;
+  color: #2c3e50;
+  margin-bottom: 8px;
+}
+
+.orgadmin-header p {
+  font-size: 16px;
+  color: #7f8c8d;
+  margin-bottom: 30px;
+}
+
+.orgadmin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 30px;
+}
+
+.orgadmin-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 30px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.orgadmin-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+}
+
+.icon {
+  font-size: 40px;
+  margin-bottom: 15px;
+  align-self: center;
+}
+
+.orgadmin-card h3 {
+  font-size: 20px;
+  color: #34495e;
+  margin-bottom: 10px;
+}
+
+.orgadmin-card p {
+  font-size: 14px;
+  color: #7f8c8d;
+  margin-bottom: 20px;
+}
+
+.btn-view {
+  align-self: flex-start;
+  background-color: #4b7bec;
+  color: white;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s ease;
+}
+
+.btn-view:hover {
+  background-color: #3867d6;
+}
+/* Add to your existing orgadmin.css */
+
+/* Superadmin Section Header (Reused with a new class name for consistency) */
+.orgadmin-section-header {
+    margin-top: 60px; /* More space above new sections */
+    margin-bottom: 35px;
+    text-align: center;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.orgadmin-section-header h2 {
+    font-size: 2.2em;
+    color: #2c3e50;
+    margin-bottom: 10px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.orgadmin-section-header .icon-small {
+    font-size: 1.2em;
+    color: #3498db; /* Match primary button color */
+}
+
+.orgadmin-section-header p {
+    font-size: 1em;
+    color: #7f8c8d;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+/* Modifier for smaller cards (if you want them visually distinct) */
+.orgadmin-card.card-small {
+    padding: 30px; /* Slightly reduced padding from main cards */
+}
+
+.orgadmin-card.card-small .icon {
+    font-size: 3.8em; /* Slightly smaller icons for detail cards */
+    margin-bottom: 20px;
+}
+
+.orgadmin-card.card-small h3 {
+    font-size: 1.7em; /* Slightly smaller heading */
+}
+
+.orgadmin-card.card-small p {
+    font-size: 0.95em; /* Slightly smaller text */
+    margin-bottom: 25px;
+}
+
+/* Specific icon colors for new cards */
+.orgadmin-card.settings-card .icon {
+    color: #6a0571; /* Deep purple */
+}
+.orgadmin-card.billing-card .icon {
+    color: #e74c3c; /* Red */
+}
+.orgadmin-card.notifications-card .icon {
+    color: #3498db; /* Blue */
+}
+.orgadmin-card.custom-fields-card .icon {
+    color: #1abc9c; /* Turquoise */
+}
+.orgadmin-card.audit-card .icon {
+    color: #2980b9; /* Darker blue */
+}
+.orgadmin-card.security-policy-card .icon {
+    color: #d35400; /* Dark orange */
+}
+.orgadmin-card.announcements-card .icon {
+    color: #8e44ad; /* Dark purple */
+}
+
+
+/* Quick Links Section (Reused with new class name) */
+.orgadmin-quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 35px;
+    padding: 20px;
+    background-color: #f0f2f5;
+    border-radius: 10px;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.03);
+}
+
+.btn-quick-link {
+    background-color: #e9ecef;
+    color: #34495e;
+    border: 1px solid #ced4da;
+    padding: 12px 25px;
+    border-radius: 50px; /* Pill shape */
+    font-size: 0.98em;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    font-weight: 500;
+}
+
+.btn-quick-link:hover {
+    background-color: #dee2e6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+}
+
+.btn-quick-link:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* --- Responsive Adjustments for new content --- */
+
+/* For Tablets and smaller desktops (already in your CSS, just ensure these apply) */
+@media (max-width: 1024px) {
+    .orgadmin-section-header h2 {
+        font-size: 2em;
+    }
+    .orgadmin-card.card-small {
+        padding: 25px;
+    }
+    .orgadmin-card.card-small .icon {
+        font-size: 3.5em;
+    }
+    .orgadmin-card.card-small h3 {
+        font-size: 1.6em;
+    }
+}
+
+/* For Mobile Devices (already in your CSS, just ensure these apply) */
+@media (max-width: 768px) {
+    .orgadmin-section-header {
+        margin-top: 45px;
+        margin-bottom: 30px;
+    }
+    .orgadmin-section-header h2 {
+        font-size: 1.8em;
+    }
+    .orgadmin-card.card-small {
+        padding: 25px 20px;
+    }
+    .orgadmin-card.card-small .icon {
+        font-size: 3em;
+    }
+    .orgadmin-card.card-small h3 {
+        font-size: 1.5em;
+    }
+    .orgadmin-card.card-small p {
+        font-size: 0.9em;
+    }
+    .orgadmin-quick-links {
+        margin-top: 30px;
+    }
+}
+
+/* Further adjustments for very small mobile screens (already in your CSS, just ensure these apply) */
+@media (max-width: 480px) {
+    .orgadmin-section-header h2 {
+        font-size: 1.5em;
+    }
+    .orgadmin-card.card-small .icon {
+        font-size: 2.5em;
+    }
+    .orgadmin-card.card-small h3 {
+        font-size: 1.3em;
+    }
+    .orgadmin-card.card-small p {
+        font-size: 0.85em;
+    }
+}
