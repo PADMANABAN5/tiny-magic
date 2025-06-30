@@ -1,12 +1,15 @@
 import React from 'react';
-import Sidebar from '../components/Sidebar';
+import Supersidebar from '../components/Supersidebar';
 import '../styles/superadmin.css';
+import { useNavigate } from 'react-router-dom';
 
 function Superadmin() {
     const username = sessionStorage.getItem("username");
-  return (
-    <div className="superadmin-container">
-      <Sidebar />
+    const navigate = useNavigate();
+
+    return (
+        <div className="superadmin-container">
+      <Supersidebar />
       <div className="superadmin-content">
         <div className="superadmin-header">
           <h1>Welcome, Super Admin 👑</h1>
@@ -19,19 +22,19 @@ function Superadmin() {
             <div className="icon">🏢</div>
             <h3>Organizations</h3>
             <p>View, create, edit, and manage all registered organizations on the platform. Control their access and features.</p>
-            <button className="btn-action">View All</button>
+            <button className="btn-action" onClick={() => navigate('/organization')}>View All</button>
           </div>
           <div className="superadmin-card">
             <div className="icon">🧑‍💼</div>
-            <h3>Platform Admins</h3>
-            <p>Create, manage, and assign roles to platform-level administrators. Control their permissions and access rights.</p>
-            <button className="btn-action">Manage Admins</button>
+            <h3>Mentors</h3>
+            <p>Create, manage, and assign roles to mentors. Control their permissions and access rights.</p>
+            <button className="btn-action" onClick={() => navigate('/mentor')}>Manage Mentors</button>
           </div>
           <div className="superadmin-card">
             <div className="icon">📈</div>
-            <h3>Platform Stats</h3>
+            <h3>Concepts</h3>
             <p>Get comprehensive insights into platform usage, user activity, and performance metrics.</p>
-            <button className="btn-action">View Stats</button>
+            <button className="btn-action" onClick={() => navigate('/concepts')}>View Stats</button>
           </div>
         </div>
 
@@ -42,22 +45,22 @@ function Superadmin() {
         </div>
         <div className="superadmin-grid">
           <div className="superadmin-card card-small">
-            <div className="icon">🔒</div>
-            <h3>Security Settings</h3>
-            <p>Manage platform-wide security policies, authentication methods, and data encryption settings.</p>
-            <button className="btn-action">Configure</button>
+            <div className="icon">👥</div>
+            <h3>Batch Management</h3>
+            <p>Manage all aspects of batch creation, modification, and deletion.</p>
+            <button className="btn-action" onClick={() => navigate('/batch')}>Batch</button>
           </div>
           <div className="superadmin-card card-small">
             <div className="icon">📧</div>
-            <h3>Email & Notifications</h3>
-            <p>Set up and manage platform email templates, notification preferences, and communication channels.</p>
-            <button className="btn-action">Setup</button>
+            <h3>Pods</h3>
+            <p>Set up and manage platform pods, including configuration and resource allocation.</p>
+            <button className="btn-action" onClick={() => navigate('/pods')}>Manage Pods</button>
           </div>
           <div className="superadmin-card card-small">
             <div className="icon">💾</div>
-            <h3>Backup & Restore</h3>
+            <h3>Data Management</h3>
             <p>Schedule and manage platform data backups. Perform data restoration operations as needed.</p>
-            <button className="btn-action">Manage</button>
+            <button className="btn-action" onClick={() => navigate('/assign')}>Manage Data</button>
           </div>
           <div className="superadmin-card card-small">
             <div className="icon">🔗</div>
@@ -77,7 +80,7 @@ function Superadmin() {
             <div className="icon">🔎</div>
             <h3>All Users</h3>
             <p>Browse and manage all individual user accounts across all organizations.</p>
-            <button className="btn-action">View Users</button>
+            <button className="btn-action" onClick={() => navigate('/users')}>View Users</button>
           </div>
           <div className="superadmin-card card-small">
             <div className="icon">📜</div>

@@ -1,0 +1,191 @@
+/* Container for the entire form */
+.concepts-container {
+  max-width: 1000px; /* Reduced max-width for a more constrained desktop layout */
+  margin: 40px auto;
+  padding: 40px 50px; /* Adjusted padding */
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  border: 1px solid #e0e0e0;
+}
+
+/* Form heading */
+.concepts-container h2 {
+  text-align: center;
+  color: #004d99;
+  margin-bottom: 40px;
+  font-size: 2.5em;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.concepts-container h3 {
+  margin-top: 40px;
+  margin-bottom: 20px;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 8px;
+  font-size: 1.5em;
+}
+
+/* Style for the form grid layout on desktop */
+.concepts-form {
+  display: grid;
+  /* Use a more robust grid definition with minmax() for better responsiveness */
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); 
+  gap: 30px 40px; /* Spacing between rows and columns */
+}
+
+/* Ensure full-width elements span all available columns */
+.form-group.full-width {
+  grid-column: 1 / -1; /* Spans from the first to the last column line */
+}
+
+/* Style for each form group (label + input) */
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 1em;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #555;
+  transition: color 0.2s ease-in-out;
+}
+
+/* Style for input and textarea elements */
+.form-group input[type="text"],
+.form-group textarea {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #dcdcdc;
+  border-radius: 10px;
+  font-size: 16px;
+  box-sizing: border-box; /* Ensures padding doesn't affect width */
+  background-color: #fcfcfc;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-group input[type="text"]:focus,
+.form-group textarea:focus {
+  border-color: #007bff;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.15);
+  outline: none;
+  background-color: #fff;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Style for the checkbox group */
+.form-group-checkbox {
+  grid-column: 1 / -1; /* Make checkbox span all columns */
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.form-group-checkbox input[type="checkbox"] {
+  width: auto;
+  margin-right: 12px;
+  transform: scale(1.3);
+  cursor: pointer;
+}
+
+.form-group-checkbox label {
+  margin-bottom: 0;
+  user-select: none;
+}
+
+/* Style for the submit button */
+.submit-button {
+  grid-column: 1 / -1; /* Make button span all columns */
+  width: 100%;
+  padding: 18px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.2em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease;
+  margin-top: 30px;
+  letter-spacing: 0.5px;
+}
+
+.submit-button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.submit-button:active {
+  transform: translateY(0);
+}
+
+.submit-button:disabled {
+  background-color: #dcdcdc;
+  color: #999;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Style for the alert message */
+.alert-message {
+  grid-column: 1 / -1; /* Make alert span all columns */
+  padding: 20px;
+  border-radius: 10px;
+  margin-bottom: 25px;
+  font-weight: bold;
+  text-align: center;
+  animation: fadeIn 0.5s ease-in-out;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Specific colors for success and error alerts */
+.alert-message.success {
+  background-color: #e6f7ed; /* Light green */
+  color: #1f6b3e; /* Dark green text */
+  border: 1px solid #c8e6c9;
+}
+
+.alert-message.error {
+  background-color: #fbe6e7; /* Light red */
+  color: #b7373f; /* Dark red text */
+  border: 1px solid #f2c8c9;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Media query for smaller screens (mobile view) */
+@media (max-width: 768px) {
+  .concepts-container {
+    max-width: 100%; /* Ensure it fills the viewport on mobile */
+    padding: 20px;
+    margin: 20px auto;
+  }
+
+  .concepts-form {
+    grid-template-columns: 1fr; /* Stack items into a single column */
+    gap: 20px; /* Reduce gap for mobile */
+  }
+  
+  /* Reset full-width to a single column on mobile */
+  .form-group.full-width,
+  .form-group-checkbox,
+  .submit-button,
+  .alert-message {
+    grid-column: auto;
+  }
+}

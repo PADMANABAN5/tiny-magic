@@ -9,6 +9,13 @@ import Prompt from './pages/prompt.jsx';
 import Superadmin from './pages/Superadmin.jsx'; 
 import Mentor from './pages/Mentor.jsx';
 import Orgadmin from './pages/Orgadmin.jsx';
+import OrgList from './pages/Organistation.jsx';
+import Concepts from './pages/Concepts.jsx';
+import Batch from './pages/Batch.jsx'; // Assuming you have a Batch page
+import Pods from './pages/Pods.jsx'; // Assuming you have a Pods page
+import Assign  from './pages/Assign.jsx';
+import User from './pages/User.jsx';
+
 
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
@@ -45,6 +52,12 @@ function App() {
         <Route path="/superadmin" element={<Superadmin />} />
         <Route path="/mentor" element={<Mentor />} />
         <Route path="/orgadmin" element={<Orgadmin />} />
+        <Route path="/organization" element={<OrgList />} />
+        <Route path="/concepts" element={<Concepts />} />
+        <Route path="/batch" element={<Batch />} />
+        <Route path="/pods" element={<Pods />} />
+        <Route path="/assign" element={<Assign />} />
+        <Route path="/users" element={<User />} />
       </Routes>
     </Router>
   );
