@@ -1,0 +1,354 @@
+/* General Body and Layout */
+
+
+.flex-container {
+    display: flex;
+    min-height: 100vh; /* Ensure it takes full viewport height */
+}
+
+/* Main Content Area */
+.main-content-area {
+    flex: 1;
+    padding: 2.5rem; /* 40px */
+    max-width: 90rem; /* Increased max-width for wider content, e.g., 1440px */
+    margin-left: auto;
+    margin-right: auto;
+    background-color: #ffffff; /* White background for the main content block */
+    border-radius: 0.75rem; /* Rounded corners */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Softer, more pronounced shadow */
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Headings */
+.h2-style {
+    font-size: 2.5rem; /* Larger heading */
+    font-weight: 800; /* Extra bold */
+    text-align: center;
+    margin-bottom: 2.5rem; /* 40px */
+    color: #292c32; /* Darker text for headings */
+    letter-spacing: -0.025em; /* Slight letter spacing */
+}
+
+.h3-style {
+    font-size: 1.875rem; /* Larger sub-heading */
+    font-weight: 700; /* Bold */
+    margin-bottom: 1.5rem; /* 24px */
+    color: #2d3748;
+    border-bottom: 2px solid #e2e8f0; /* Subtle underline */
+    padding-bottom: 0.5rem;
+}
+
+/* Buttons */
+.button-primary {
+    margin-bottom: 2rem;
+   
+    background: linear-gradient(to right, #4a90e2, #5c7cfa); /* Gradient background */
+    color: #fff;
+    border-radius: 0.5rem; /* More rounded corners */
+    font-size: 1rem;
+    font-weight: 500;
+    transition: all 0.3s ease-in-out; /* Smooth transition for all properties */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Deeper shadow */
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    cursor: pointer;
+    border: none; /* Remove default border */
+    text-transform: uppercase; /* Uppercase text */
+    letter-spacing: 0.05em;
+    width: 200px;
+}
+
+.button-primary:hover {
+    background: linear-gradient(to right, #3b82f6, #4c68d7); /* Darker gradient on hover */
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); /* Even deeper shadow on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+}
+
+.button-primary:disabled {
+    background: #a0aec0; /* Gray for disabled state */
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6); /* Darker overlay */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000; /* Higher z-index */
+    padding: 1rem;
+    backdrop-filter: blur(5px); /* Subtle blur effect */
+}
+
+/* Modal Content */
+.modal-content {
+    background-color: #fff;
+    padding: 2.5rem; /* Increased padding */
+    border-radius: 1rem; /* More rounded corners */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.25); /* Stronger, more diffused shadow */
+    width: 100%;
+    max-width: 32rem; /* Slightly wider modal */
+    position: relative;
+    animation: fadeInUp 0.4s ease-out forwards; /* Slightly longer animation */
+    border: 1px solid #e2e8f0; /* Subtle border */
+}
+
+.modal-close-button {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    font-size: 2rem;
+    color: #a0aec0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+}
+
+.modal-close-button:hover {
+    color: #2d3748;
+}
+
+/* Form Elements */
+.form-group {
+    margin-bottom: 1.5rem; /* Increased spacing between form elements */
+}
+
+.form-label {
+    display: block;
+    color: #4a5568; /* Darker label text */
+    font-size: 0.9375rem; /* Slightly larger label font */
+    font-weight: 600; /* Semi-bold labels */
+    margin-bottom: 0.5rem;
+}
+
+.form-input {
+    width: 100%;
+    padding: 0.75rem 1rem; /* Increased padding */
+    border-radius: 0.5rem; /* More rounded */
+    border: 1px solid #cbd5e0; /* Lighter border */
+    font-size: 1rem;
+    color: #2d3748;
+    transition: all 0.2s ease-in-out;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.06); /* Subtle inner shadow */
+}
+
+.form-input:focus {
+    outline: none;
+    border-color: #4a90e2; /* Blue focus border */
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3), inset 0 1px 3px rgba(0, 0, 0, 0.06); /* Blue glow on focus */
+}
+
+.form-input::placeholder {
+    color: #a0aec0; /* Lighter placeholder text */
+}
+
+/* Table Styling */
+.table-container {
+    overflow-x: auto;
+    border-radius: 0.75rem; /* More rounded */
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1); /* Deeper shadow */
+    border: 1px solid #e2e8f0; /* Light border around the container */
+}
+
+.table-full-width {
+    width: 100%; /* Changed from min-w-full to width: 100% for better control */
+    border-collapse: separate; /* Allows for border-radius on cells */
+    border-spacing: 0; /* Remove default cell spacing */
+}
+
+.table-header {
+    background-color: #4a90e2; /* Blue header background */
+}
+
+.table-th {
+    padding: 1rem 1.25rem; /* Increased padding */
+    text-align: left;
+    font-size: 0.8125rem; /* Slightly larger header font */
+    font-weight: 700; /* Bold header text */
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.08em; /* More tracking */
+    border-bottom: 2px solid #3b82f6; /* Darker blue border at bottom of header */
+}
+.table-th:first-child {
+    border-top-left-radius: 0.75rem; /* Match container radius */
+}
+.table-th:last-child {
+    border-top-right-radius: 0.75rem; /* Match container radius */
+}
+
+.table-body {
+    background-color: #fff;
+}
+
+.table-row:nth-child(even) {
+    background-color: #f8fafc; /* Subtle stripe effect */
+}
+
+.table-row:hover {
+    background-color: #e6f0fa; /* Lighter blue on hover */
+    transition: background-color 0.2s ease;
+}
+
+.table-td {
+    padding: 1rem 1.25rem; /* Increased padding */
+    white-space: nowrap;
+    font-size: 0.9375rem; /* Slightly larger body text */
+    color: #4a5568;
+    border-bottom: 1px solid #edf2f7; /* Light border between rows */
+}
+
+.table-row:last-child .table-td {
+    border-bottom: none; /* No border on the last row */
+}
+
+/* Toggle Switch Styles (more refined) */
+.toggle-switch-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none; /* Prevent text selection */
+}
+
+.toggle-switch-input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+.toggle-switch-background {
+    width: 3.2rem; /* Slightly wider toggle */
+    height: 1.7rem; /* Slightly taller toggle */
+    background-color: #cbd5e0; /* Grayish background when off */
+    border-radius: 9999px;
+    position: relative;
+    transition: background-color 0.3s ease-in-out;
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1); /* Inner shadow for depth */
+}
+
+.toggle-switch-input:focus + .toggle-switch-background {
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3); /* Blue glow on focus */
+}
+
+.toggle-switch-input:checked + .toggle-switch-background {
+    background-color: #4a90e2; /* Blue background when on */
+}
+
+.toggle-switch-handle {
+    content: '';
+    position: absolute;
+    top: 3px; /* Adjusted top for centering */
+    left: 3px; /* Adjusted left for centering */
+    background-color: #fff;
+    border: 1px solid #e2e8f0; /* Subtle border */
+    border-radius: 9999px;
+    height: 1.4rem; /* Slightly smaller handle */
+    width: 1.4rem; /* Slightly smaller handle */
+    transition: transform 0.3s ease-in-out, background-color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Shadow for the handle */
+}
+
+.toggle-switch-input:checked + .toggle-switch-background .toggle-switch-handle {
+    transform: translateX(1.5rem); /* Move handle to the right (3.2rem - 1.7rem - 2*3px = 1.5rem) */
+    border-color: #fff;
+}
+
+.toggle-label {
+    margin-left: 0.75rem; /* Spacing for the label */
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+/* Status Badges in Table (already good, but slightly refined) */
+.status-badge {
+    padding: 0.3rem 0.75rem; /* Adjusted padding */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    line-height: 1; /* Ensure single line height */
+    font-weight: 600;
+   
+    text-transform: capitalize; /* Capitalize text */
+}
+
+.status-badge.active {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.status-badge.inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out forwards;
+}
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s ease-out forwards; /* Slightly longer */
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .main-content-area {
+        padding: 1.5rem;
+        margin-left: 1rem;
+        margin-right: 1rem;
+        box-shadow: none; /* Remove shadow on smaller screens */
+        border-radius: 0; /* No border-radius on smaller screens */
+    }
+
+    .h2-style {
+        font-size: 2rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .h3-style {
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .button-primary {
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+    }
+
+    .modal-content {
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+    }
+
+    .form-input {
+        padding: 0.625rem 0.75rem;
+    }
+
+    .table-th, .table-td {
+        padding: 0.75rem 1rem;
+        font-size: 0.8125rem;
+    }
+}

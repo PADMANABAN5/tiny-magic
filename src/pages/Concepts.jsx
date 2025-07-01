@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import '../styles/Concepts.css';
-import Supersidebar from '../components/Supersidebar.jsx';
+import Supersidebar from '../components/Supersidebar';
+import '../styles/OrgList.css';
 
-function Concepts() {
-  // State to hold all form data
-  const [formData, setFormData] = useState({
+export default function Concepts() {
+  const [concepts, setConcepts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedConceptId, setSelectedConceptId] = useState(null);
+
+  const [conceptForm, setConceptForm] = useState({
     concept_name: '',
     concept_content: '',
     concept_enduring_understandings: '',
@@ -18,200 +24,164 @@ function Concepts() {
     stage_5_content: '',
     concept_understanding_rubric: '',
     understanding_skills_rubric: '',
-    learning_assessment_dimensions: '',
-    isActive: true, // This can be a checkbox
+    learning_assessment_dimensions: ''
   });
 
-  const [loading, setLoading] = useState(false);
-  const [alertMessage, setAlertMessage] = useState(null);
-  const [alertType, setAlertType] = useState(null); // 'success' or 'error'
-
-  // Handle input changes
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent the default form submission behavior
-    
+  const fetchConcepts = async () => {
     setLoading(true);
-    setAlertMessage(null); // Clear previous alerts
-
     try {
-      // Make the POST request with the form data
-      const response = await axios.post('http://localhost:5000/api/concepts', formData);
-
-      // On success
-      console.log('Concept created successfully:', response.data);
-      setAlertMessage('Concept created successfully!');
-      setAlertType('success');
-      window.alert('Concept created successfully!');
-
-      // Optionally, reset the form after successful submission
-      setFormData({
-        concept_name: '',
-        concept_content: '',
-        concept_enduring_understandings: '',
-        concept_essential_questions: '',
-        concept_knowledge_skills: '',
-        stage_1_content: '',
-        stage_2_content: '',
-        stage_3_content: '',
-        stage_4_content: '',
-        stage_5_content: '',
-        concept_understanding_rubric: '',
-        understanding_skills_rubric: '',
-        learning_assessment_dimensions: '',
-        isActive: true,
-      });
-
-    } catch (error) {
-      // On failure
-      console.error('Failed to create concept:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'An unexpected error occurred.';
-      setAlertMessage(`Failed to create concept: ${errorMessage}`);
-      setAlertType('error');
-      window.alert(`Failed to create concept: ${errorMessage}`);
-      
+      const res = await axios.get("http://localhost:5000/api/concepts");
+      if (res.data && Array.isArray(res.data.data)) {
+        setConcepts(res.data.data);
+      } else {
+        setError("Unexpected data format.");
+        setConcepts([]);
+      }
+    } catch (err) {
+      console.error("Error fetching concepts:", err);
+      setError("Failed to load concepts.");
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <>
-    <Supersidebar/>
-    <div className="concepts-container">
-      <h2>Create New Concept</h2>
+  const openCreateModal = () => {
+    setConceptForm({
+      concept_name: '',
+      concept_content: '',
+      concept_enduring_understandings: '',
+      concept_essential_questions: '',
+      concept_knowledge_skills: '',
+      stage_1_content: '',
+      stage_2_content: '',
+      stage_3_content: '',
+      stage_4_content: '',
+      stage_5_content: '',
+      concept_understanding_rubric: '',
+      understanding_skills_rubric: '',
+      learning_assessment_dimensions: ''
+    });
+    setIsEditMode(false);
+    setShowModal(true);
+    setSelectedConceptId(null);
+  };
 
-      {/* Alert message display */}
-      {alertMessage && (
-        <div className={`alert-message ${alertType}`}>
-          {alertMessage}
+  const openEditModal = (concept) => {
+    setConceptForm({ ...concept });
+    setIsEditMode(true);
+    setShowModal(true);
+    setSelectedConceptId(concept.concept_id);
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (isEditMode && selectedConceptId) {
+        await axios.put(`http://localhost:5000/api/concepts/${selectedConceptId}`, conceptForm);
+      } else {
+        await axios.post("http://localhost:5000/api/concepts", conceptForm);
+      }
+      setShowModal(false);
+      fetchConcepts();
+    } catch (err) {
+      console.error("Error saving concept:", err);
+      alert("Failed to save concept.");
+    }
+  };
+
+  useEffect(() => {
+    fetchConcepts();
+  }, []);
+
+  return (
+    <div className="main-layout-container">
+      <Supersidebar />
+      <div className="content-area">
+        <div className="container mt-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h3>Concepts</h3>
+            <button className="btn btn-primary" onClick={openCreateModal} style={{ width: '200px' }}>
+              Add Concept
+            </button>
+          </div>
+
+          {loading ? (
+            <p>Loading concepts...</p>
+          ) : error ? (
+            <p className="text-danger">{error}</p>
+          ) : (
+            <table className="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th>Concept ID</th>
+                  <th>Name</th>
+                  <th>Content</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {concepts.length > 0 ? (
+                  concepts.map((concept) => (
+                    <tr key={concept.concept_id}>
+                      <td>{concept.concept_id}</td>
+                      <td>{concept.concept_name}</td>
+                      <td>{concept.concept_content}</td>
+                      <td>
+                        <button
+                          className="btn btn-warning btn-sm"
+                          onClick={() => openEditModal(concept)}
+                        >
+                          Update
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="text-center">No concepts found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {/* === Modal Form === */}
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+            <h4>{isEditMode ? 'Update Concept' : 'Create New Concept'}</h4>
+            <form onSubmit={handleFormSubmit}>
+              {Object.entries(conceptForm).map(([key, value]) => (
+                <div className="mb-3" key={key}>
+                  <label className="form-label" htmlFor={key}>
+                    {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                  </label>
+                  <textarea
+                    className="form-control"
+                    id={key}
+                    rows={2}
+                    value={value}
+                    onChange={(e) =>
+                      setConceptForm((prev) => ({ ...prev, [key]: e.target.value }))
+                    }
+                    required={['concept_name', 'concept_content'].includes(key)}
+                  />
+                </div>
+              ))}
+              <div className="d-flex justify-content-between">
+                <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>
+                  {isEditMode ? 'Update' : 'Create'}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
-
-      <form onSubmit={handleSubmit} className="concepts-form">
-        <div className="form-group">
-          <label htmlFor="concept_name">Concept Name:</label>
-          <input
-            type="text"
-            id="concept_name"
-            name="concept_name"
-            value={formData.concept_name}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="concept_content">Concept Content:</label>
-          <textarea
-            id="concept_content"
-            name="concept_content"
-            value={formData.concept_content}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="concept_enduring_understandings">Enduring Understandings:</label>
-          <textarea
-            id="concept_enduring_understandings"
-            name="concept_enduring_understandings"
-            value={formData.concept_enduring_understandings}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="concept_essential_questions">Essential Questions:</label>
-          <textarea
-            id="concept_essential_questions"
-            name="concept_essential_questions"
-            value={formData.concept_essential_questions}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="concept_knowledge_skills">Knowledge & Skills:</label>
-          <textarea
-            id="concept_knowledge_skills"
-            name="concept_knowledge_skills"
-            value={formData.concept_knowledge_skills}
-            onChange={handleChange}
-          />
-        </div>
-        
-        {/* Stages content */}
-        <h3>Stages of Learning:</h3>
-        {[1, 2, 3, 4, 5].map((stage) => (
-          <div key={`stage_${stage}`} className="form-group">
-            <label htmlFor={`stage_${stage}_content`}>Stage {stage} Content:</label>
-            <input
-              type="text"
-              id={`stage_${stage}_content`}
-              name={`stage_${stage}_content`}
-              value={formData[`stage_${stage}_content`]}
-              onChange={handleChange}
-            />
-          </div>
-        ))}
-        
-        {/* Rubrics and assessment */}
-        <div className="form-group">
-          <label htmlFor="concept_understanding_rubric">Understanding Rubric:</label>
-          <input
-            type="text"
-            id="concept_understanding_rubric"
-            name="concept_understanding_rubric"
-            value={formData.concept_understanding_rubric}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="understanding_skills_rubric">Skills Rubric:</label>
-          <input
-            type="text"
-            id="understanding_skills_rubric"
-            name="understanding_skills_rubric"
-            value={formData.understanding_skills_rubric}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="form-group">
-          <label htmlFor="learning_assessment_dimensions">Assessment Dimensions:</label>
-          <input
-            type="text"
-            id="learning_assessment_dimensions"
-            name="learning_assessment_dimensions"
-            value={formData.learning_assessment_dimensions}
-            onChange={handleChange}
-          />
-        </div>
-
-        {/* isActive checkbox */}
-        <div className="form-group form-group-checkbox">
-          <input
-            type="checkbox"
-            id="isActive"
-            name="isActive"
-            checked={formData.isActive}
-            onChange={handleChange}
-          />
-          <label htmlFor="isActive">Is Active</label>
-        </div>
-
-        <button type="submit" disabled={loading} className="submit-button">
-          {loading ? 'Creating...' : 'Create Concept'}
-        </button>
-      </form>
     </div>
-    </>
   );
 }
-
-export default Concepts;

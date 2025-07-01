@@ -1,0 +1,47 @@
+
+.main-layout-container {
+  display: flex; /* Use flexbox for sidebar and content layout */
+  height: 100vh; /* Make the container take the full viewport height */
+  width: 100vw; /* Make the container take the full viewport width */
+  overflow: hidden; /* Prevent overall scroll if content overflows, let content-area manage */
+}
+
+/* Styles for the sidebar (assuming Supersidebar has a root class like 'supersidebar-container') */
+.supersidebar-container {
+  width: 250px; /* Example fixed width for sidebar */
+  flex-shrink: 0; /* Prevent sidebar from shrinking */
+  background-color: #f8f9fa; /* Example background color for sidebar */
+  overflow-y: auto; /* Allow sidebar to scroll if its content overflows */
+  border-right: 1px solid #dee2e6; /* Optional: Add a border to separate from content */
+}
+
+.content-area {
+  flex-grow: 1; /* Allow content area to take up remaining space */
+  overflow-y: auto; /* Allow content area to scroll if its content overflows */
+  padding: 20px; /* Add some padding around the content */
+  background-color: #ffffff; /* Example background color for content area */
+}
+
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000; /* Ensure modal is on top of everything */
+}
+
+.modal-content {
+  background: white;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  min-width: 350px; /* Minimum width for the modal */
+  max-width: 90%; /* Maximum width for the modal */
+  z-index: 1001; /* Ensure content is above overlay */
+}

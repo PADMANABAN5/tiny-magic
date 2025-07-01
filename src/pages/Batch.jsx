@@ -1,167 +1,270 @@
-import React, { useState, useEffect } from 'react';
-import Supersidebar from '../components/Supersidebar.jsx';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import Supersidebar from '../components/Supersidebar';
+import '../styles/OrgList.css';
 
-function Batch() {
-  const [batchData, setBatchData] = useState({
-    batch_name: '',
+export default function Batch() {
+  const [batches, setBatches] = useState([]);
+  const [concepts, setConcepts] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [selectedBatchId, setSelectedBatchId] = useState(null);
+
+  const [batchForm, setBatchForm] = useState({
     organization_name: '',
-    isActive: true,
+    batch_name: '',
+    batch_size: '',
+    pod_size: '',
+    is_active: true,
+    concept_ids: []
   });
 
-  const [organizations, setOrganizations] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
-
-  useEffect(() => {
-  const fetchOrganizations = async () => {
-    try {
-      const res = await fetch('http://localhost:5000/api/organization');
-      const data = await res.json();
-
-      // Check if data is wrapped in an object
-      const orgList = Array.isArray(data) ? data : data.organizations;
-
-      setOrganizations(orgList || []);
-    } catch (err) {
-      console.error('Failed to fetch organizations:', err);
-      setOrganizations([]); // fallback to empty array
-    }
-  };
-  fetchOrganizations();
-}, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setBatchData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const fetchBatches = async () => {
     setLoading(true);
-    setError(null);
-    setSuccess(false);
-
     try {
-      const response = await fetch('http://localhost:5000/api/batches', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(batchData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to create batch');
+      const res = await axios.get("http://localhost:5000/api/batches");
+      if (res.data && Array.isArray(res.data.data)) {
+        setBatches(res.data.data);
+      } else {
+        setError("Unexpected response format.");
+        setBatches([]);
       }
-
-      const data = await response.json();
-      console.log('Batch created:', data);
-      setSuccess(true);
-      setBatchData({ batch_name: '', organization_name: '', isActive: true });
     } catch (err) {
-      setError(err.message);
+      console.error("Error fetching batches:", err);
+      setError("Failed to load batches.");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchConcepts = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/concepts");
+      if (res.data && Array.isArray(res.data.data)) {
+        setConcepts(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching concepts:", err);
+    }
+  };
+
+  const fetchOrganizations = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/organizations");
+      if (res.data && Array.isArray(res.data.data)) {
+        setOrganizations(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching organizations:", err);
+    }
+  };
+
+  const openCreateModal = () => {
+    setBatchForm({
+      organization_name: '',
+      batch_name: '',
+      batch_size: '',
+      pod_size: '',
+      is_active: true,
+      concept_ids: []
+    });
+    setIsEditMode(false);
+    setSelectedBatchId(null);
+    setShowModal(true);
+  };
+
+  const openEditModal = (batch) => {
+    setBatchForm({
+      ...batch,
+      concept_ids: Array.isArray(batch.concept_ids) ? batch.concept_ids : []
+    });
+    setIsEditMode(true);
+    setSelectedBatchId(batch.batch_id);
+    setShowModal(true);
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      if (isEditMode && selectedBatchId) {
+        await axios.put(`http://localhost:5000/api/batches/${selectedBatchId}`, batchForm);
+      } else {
+        await axios.post("http://localhost:5000/api/batches", batchForm);
+      }
+      setShowModal(false);
+      fetchBatches();
+    } catch (err) {
+      console.error("Error saving batch:", err);
+      alert("Failed to save batch.");
+    }
+  };
+
+  useEffect(() => {
+    fetchBatches();
+    fetchConcepts();
+    fetchOrganizations();
+  }, []);
+
   return (
-    <div style={{ display: 'flex' }}>
+    <div className="main-layout-container">
       <Supersidebar />
-      <div style={{
-        flex: 1,
-        padding: '40px',
-        maxWidth: '600px',
-        margin: '0 auto',
-        fontFamily: 'Arial, sans-serif',
-      }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '30px' }}>📦 Create New Batch</h2>
-
-        <form onSubmit={handleSubmit} style={{
-          backgroundColor: '#f9f9f9',
-          padding: '30px',
-          borderRadius: '10px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ marginBottom: '20px' }}>
-            <label htmlFor="batch_name" style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>
-              Batch Name:
-            </label>
-            <input
-              type="text"
-              id="batch_name"
-              name="batch_name"
-              value={batchData.batch_name}
-              onChange={handleChange}
-              required
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '5px',
-                border: '1px solid #ccc',
-                fontSize: '16px'
-              }}
-            />
+      <div className="content-area">
+        <div className="container mt-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h3>Batches</h3>
+            <button className="btn btn-primary" onClick={openCreateModal} style={{ width: '200px' }}>
+              Add Batch
+            </button>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label htmlFor="organization_name" style={{ fontWeight: 'bold', display: 'block', marginBottom: '5px' }}>
-              Organization:
-            </label>
-            <select
-              id="organization_name"
-              name="organization_name"
-              value={batchData.organization_name}
-              onChange={handleChange}
-              required
-              disabled={loading}
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '5px',
-                border: '1px solid #ccc',
-                fontSize: '16px'
-              }}
-            >
-              <option value="">-- Select Organization --</option>
-              {organizations.map((org, index) => (
-                <option key={index} value={org.name}>
-                  {org.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: loading ? '#ccc' : '#28a745',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '5px',
-              fontSize: '16px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-            }}
-          >
-            {loading ? 'Creating...' : 'Create Batch'}
-          </button>
-
-          {loading && <p style={{ marginTop: '15px', color: '#555' }}>Loading...</p>}
-          {error && <p style={{ marginTop: '15px', color: 'red' }}>Error: {error}</p>}
-          {success && <p style={{ marginTop: '15px', color: 'green' }}>Batch created successfully!</p>}
-        </form>
+          {loading ? (
+            <p>Loading batches...</p>
+          ) : error ? (
+            <p className="text-danger">{error}</p>
+          ) : (
+            <table className="table table-bordered table-striped">
+              <thead>
+                <tr>
+                  <th>Batch ID</th>
+                  <th>Org Name</th>
+                  <th>Batch Name</th>
+                  <th>Size</th>
+                  <th>Pod Size</th>
+                  <th>Status</th>
+                  <th>Concept IDs</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {batches.length > 0 ? (
+                  batches.map((batch) => (
+                    <tr key={batch.batch_id}>
+                      <td>{batch.batch_id}</td>
+                      <td>{batch.organization_name}</td>
+                      <td>{batch.batch_name}</td>
+                      <td>{batch.batch_size}</td>
+                      <td>{batch.pod_size}</td>
+                      <td>{batch.is_active ? 'Active' : 'Inactive'}</td>
+                      <td>{Array.isArray(batch.concept_ids) ? batch.concept_ids.join(', ') : '—'}</td>
+                      <td>
+                        <button
+                          className="btn btn-warning btn-sm"
+                          onClick={() => openEditModal(batch)}
+                        >
+                          Update
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="text-center">No batches found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+            <h4>{isEditMode ? 'Update Batch' : 'Create New Batch'}</h4>
+            <form onSubmit={handleFormSubmit}>
+              <div className="mb-3">
+                <label className="form-label">Organization Name</label>
+                <select
+                  className="form-control"
+                  value={batchForm.organization_name}
+                  onChange={(e) => setBatchForm((prev) => ({ ...prev, organization_name: e.target.value }))}
+                  required
+                >
+                  <option value="">-- Select Organization --</option>
+                  {organizations.map((org) => (
+                    <option key={org.organization_id} value={org.organization_name}>
+                      {org.organization_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Batch Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={batchForm.batch_name}
+                  onChange={(e) => setBatchForm((prev) => ({ ...prev, batch_name: e.target.value }))}
+                  required
+                />
+              </div>
+
+              <div className="mb-3 d-flex gap-3">
+                <div style={{ flex: 1 }}>
+                  <label className="form-label">Batch Size</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={batchForm.batch_size}
+                    onChange={(e) => setBatchForm((prev) => ({ ...prev, batch_size: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label className="form-label">Pod Size</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    value={batchForm.pod_size}
+                    onChange={(e) => setBatchForm((prev) => ({ ...prev, pod_size: parseInt(e.target.value) || 0 }))}
+                  />
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">Concepts</label>
+<select
+  multiple
+  className="form-control"
+  value={batchForm.concept_ids || []}
+  onChange={(e) => {
+    const selectedIds = Array.from(e.target.selectedOptions).map(opt => parseInt(opt.value));
+    setBatchForm((prev) => ({ ...prev, concept_ids: selectedIds }));
+  }}
+>
+  {concepts.map((concept) => (
+    <option key={concept.concept_id} value={concept.concept_id}>
+      {concept.concept_id} - {concept.concept_name}
+    </option>
+  ))}
+</select>
+              </div>
+
+              <div className="mb-3 form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  checked={batchForm.is_active}
+                  onChange={(e) => setBatchForm((prev) => ({ ...prev, is_active: e.target.checked }))}
+                />
+                <label className="form-check-label">Is Active</label>
+              </div>
+
+              <div className="d-flex justify-content-between">
+                <button type="submit" className="btn btn-success" style={{ width: '200px' }}>
+                  {isEditMode ? 'Update' : 'Create'}
+                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default Batch;

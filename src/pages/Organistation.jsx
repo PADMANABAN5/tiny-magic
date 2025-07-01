@@ -1,27 +1,116 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
+import '../styles/OrgList.css';
 
 export default function OrgList() {
-  const [orgs, setOrgs] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const [organizations, setOrganizations] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [newOrgName, setNewOrgName] = useState('');
+  const [newOrgIsActive, setNewOrgIsActive] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchOrganizations = async () => {
     setLoading(true);
-    setMessage('');
-    setError('');
-
+    setError(null);
     try {
-      const res = await axios.get('http://localhost:5000/api/organization');
-      setOrgs(res.data.organizations || res.data);
-      setMessage('Organizations loaded successfully!');
+      const res = await axios.get("http://localhost:5000/api/organizations");
+
+      console.log("API Response (full object):", res);
+      console.log("API Response (data property):", res.data);
+
+      if (res.data && Array.isArray(res.data.data)) {
+        setOrganizations(res.data.data);
+      } else {
+        console.error("Unexpected API response structure. Expected an object with a 'data' array.", res.data);
+        setOrganizations([]);
+        setError("Received unexpected data format from the server. Expected organizations under 'data' property.");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || err.message || 'Failed to load organizations.');
-      setOrgs([]);
+      console.error("Error fetching organizations:", err);
+      if (axios.isAxiosError(err)) {
+        if (err.response) {
+          console.error("Server Response Error:", err.response.data);
+          console.error("Server Status:", err.response.status);
+          setError(`Server error (${err.response.status}): ${err.response.data.message || 'Unknown server error'}`);
+        } else if (err.request) {
+          console.error("No response received:", err.request);
+          setError("No response from server. Please ensure the backend is running and accessible at http://localhost:5000.");
+        } else {
+          console.error("Axios request setup error:", err.message);
+          setError(`Request error: ${err.message}. Check network connection or API URL.`);
+        }
+      } else {
+        console.error("An unexpected error occurred:", err);
+        setError("An unexpected error occurred while fetching data.");
+      }
+      setOrganizations([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // --- MODIFIED toggleIsActive function ---
+  const toggleIsActive = async (org) => {
+    const originalIsActive = org.is_active;
+    const newIsActiveState = !originalIsActive; // This will be the state AFTER the toggle
+
+    // Optimistically update the UI
+    setOrganizations(prevOrgs =>
+      prevOrgs.map(o =>
+        o.organization_id === org.organization_id ? { ...o, is_active: newIsActiveState } : o
+      )
+    );
+
+    try {
+      let endpoint = '';
+      if (newIsActiveState) {
+        // If the new state is 'active', call the /active endpoint
+        endpoint = `http://localhost:5000/api/organizations/${org.organization_id}/active`;
+      } else {
+        // If the new state is 'inactive', call the /inactive endpoint
+        endpoint = `http://localhost:5000/api/organizations/${org.organization_id}/inactive`;
+      }
+
+      // Use a GET request to these specific action endpoints
+      await axios.get(endpoint);
+
+    } catch (err) {
+      console.error("Error toggling organization status:", err);
+      // Revert UI on error
+      setOrganizations(prevOrgs =>
+        prevOrgs.map(o =>
+          o.organization_id === org.organization_id ? { ...o, is_active: originalIsActive } : o
+        )
+      );
+      alert("Failed to update organization status. Please try again.");
+    }
+  };
+  // --- END OF MODIFIED toggleIsActive function ---
+
+  const handleCreateOrganization = async (e) => {
+    e.preventDefault();
+
+    if (!newOrgName.trim()) {
+      alert("Organization name cannot be empty.");
+      return;
+    }
+
+    try {
+      const newOrganizationData = {
+        organization_name: newOrgName,
+        is_active: newOrgIsActive,
+      };
+      await axios.post("http://localhost:5000/api/organizations", newOrganizationData);
+
+      setShowModal(false);
+      setNewOrgName('');
+      setNewOrgIsActive(true);
+      fetchOrganizations(); // Re-fetch to show the new organization
+    } catch (err) {
+      console.error("Error creating organization:", err);
+      alert("Failed to create organization. Please try again.");
     }
   };
 
@@ -30,77 +119,99 @@ export default function OrgList() {
   }, []);
 
   return (
-    <>
+    <div className="main-layout-container">
       <Supersidebar />
-      <div className="w-full py-10 px-4 sm:px-6 lg:px-12 bg-white shadow-lg rounded-none border-t border-gray-200" style={{ maxWidth: '100%', margin: '0 auto' }}>
-        <h2 className="text-4xl font-extrabold text-center text-gray-900 mb-10 tracking-tight">
-          🏢 Organization Dashboard
-        </h2>
-
-      {/* Status messages */}
-      {loading && (
-        <div className="flex items-center justify-center p-4 mb-6 bg-blue-50 text-blue-800 border border-blue-200 rounded-lg animate-pulse">
-          <span className="text-blue-600 font-medium mr-2">Loading...</span>
-          <svg className="w-5 h-5 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-          </svg>
-        </div>
-      )}
-
-      {message && (
-        <div className="flex items-center p-4 mb-6 bg-green-50 text-green-700 border border-green-200 rounded-lg shadow-sm">
-          <svg className="w-6 h-6 mr-2 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-          </svg>
-          <span>{message}</span>
-        </div>
-      )}
-
-      {error && (
-        <div className="flex items-center p-4 mb-6 bg-red-50 text-red-700 border border-red-200 rounded-lg shadow-sm">
-          <svg className="w-6 h-6 mr-2 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span>{error}</span>
-        </div>
-      )}
-
-      {/* Full Width Responsive Grid */}
-      {orgs.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 max-h-[75vh] overflow-y-auto pr-1">
-          {orgs.map((org, idx) => (
-            <div
-              key={idx}
-              className="w-full bg-white p-6 rounded-xl border border-gray-300 shadow-md hover:shadow-xl transition-transform transform hover:scale-[1.02]"
-            >
-              <h3 className="text-xl font-bold text-gray-800 mb-2 truncate">{org.name}</h3>
-              <p className="text-sm text-gray-600 mb-4">{org.description}</p>
-
-              {(org.max_users_per_batch || org.max_users_per_pod) && (
-                <div className="mt-4 pt-4 border-t border-gray-200 text-sm text-gray-700 space-y-1">
-                  {org.max_users_per_batch && (
-                    <p><span className="font-semibold">Max Users/Batch:</span> {org.max_users_per_batch}</p>
-                  )}
-                  {org.max_users_per_pod && (
-                    <p><span className="font-semibold">Max Users/Pod:</span> {org.max_users_per_pod}</p>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        !loading && !error && (
-          <div className="flex flex-col items-center justify-center p-12 bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl mt-10">
-            <svg className="w-12 h-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v1m0 14v1m8-8h1M4 12H3m15.364-6.364l.707.707M5.636 18.364l-.707-.707M18.364 18.364l.707-.707M5.636 5.636l-.707.707" />
-            </svg>
-            <p className="text-lg text-gray-500 font-medium">No organizations available.</p>
+      <div className="content-area">
+        <div className="container mt-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h3>Organizations</h3>
+            <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '200px' }}>
+              Add Organization
+            </button>
           </div>
-        )
+
+          {loading ? (
+            <p>Loading organizations...</p>
+          ) : error ? (
+            <p className="text-danger">{error}</p>
+          ) : (
+            <table className="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th>Organization ID</th>
+                  <th>Organization Name</th>
+                  <th>Action (Is Active)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {Array.isArray(organizations) && organizations.length > 0 ? (
+                  organizations.map((org) => (
+                    <tr key={org.organization_id}>
+                      <td>{org.organization_id}</td>
+                      <td>{org.organization_name}</td>
+                      <td>
+                        <div className="form-check form-switch">
+                          <input
+                            className="form-check-input"
+                            type="checkbox"
+                            id={`toggle-${org.organization_id}`}
+                            checked={org.is_active}
+                            onChange={() => toggleIsActive(org)}
+                            role="switch"
+                          />
+                          <label
+                            className="form-check-label"
+                            htmlFor={`toggle-${org.organization_id}`}
+                          >
+                            {org.is_active ? 'Active' : 'Inactive'}
+                          </label>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="text-center">No organizations found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h4>Create New Organization</h4>
+            <form onSubmit={handleCreateOrganization}>
+              <div className="mb-3">
+                <label htmlFor="orgName" className="form-label">Organization Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="orgName"
+                  value={newOrgName}
+                  onChange={(e) => setNewOrgName(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="mb-3 form-check">
+                <input
+                  type="checkbox"
+                  className="form-check-input"
+                  id="isActive"
+                  checked={newOrgIsActive}
+                  onChange={(e) => setNewOrgIsActive(e.target.checked)}
+                />
+                <label className="form-check-label" htmlFor="isActive">Is Active</label>
+              </div>
+              <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>Create</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>Cancel</button>
+            </form>
+          </div>
+        </div>
       )}
     </div>
-    </>
   );
 }

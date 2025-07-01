@@ -5,76 +5,75 @@ import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 
 function Login() {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState(""); // Can be email or username
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showModelPopup, setShowModelPopup] = useState(false);
   const [selectedModel, setSelectedModel] = useState("");
+
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email.");
-      return;
-    }
+  if (!identifier || !password) {
+    setError("Both fields are required.");
+    return;
+  }
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters long.");
-      return;
-    }
-
-    try {
-      const response = await axios.post("http://localhost:5000/api/auth/login", {
-        email,
-        password,
-      });
-
-      const { token, user } = response.data;
-      sessionStorage.setItem("token", token);
-      sessionStorage.setItem("email", user.email);
-      sessionStorage.setItem("username", `${user.first_name} ${user.last_name}`);
-      sessionStorage.setItem("role_name", user.role_name);
-      sessionStorage.setItem("organization_id", user.organization_id);
-
-      const decoded = jwtDecode(token);
-      const { role_name } = decoded;
-
-      setIsLoggedIn(true);
-
-      if (role_name === "orguser") {
-        setTimeout(() => {
-          setShowModelPopup(true);
-        }, 2000);
-      } else {
-        switch (role_name) {
-          case "superadmin":
-            navigate("/superadmin", {
-              state: {
-                username: sessionStorage.getItem("username") || ""
-              }
-            });
-            
-            break;
-          case "orgadmin":
-            navigate("/orgadmin");
-            break;
-          case "mentor":
-            navigate("/mentor");
-            break;
-          default:
-            setError("Unknown role");
-        }
+  try {
+    const response = await axios.post(
+      "http://localhost:5000/api/users/login",
+      { identifier, password },
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
       }
-    } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
-      setIsLoggedIn(false);
+    );
+
+    console.log("Login success:", response.data);
+
+    const { data: user } = response.data; // ✅ Fix: extract from response.data.data
+
+    sessionStorage.setItem("token", response.data.token || ""); // if token is present
+    sessionStorage.setItem("email", user.email);
+    sessionStorage.setItem("username", user.username);
+    sessionStorage.setItem("role_name", user.role);
+    sessionStorage.setItem("organization_name", user.organization_name || "");
+
+    setIsLoggedIn(true);
+
+    if (user.role === "orguser") {
+      setTimeout(() => {
+        setShowModelPopup(true);
+      }, 2000);
+    } else {
+      switch (user.role) {
+        case "superadmin":
+          navigate("/superadmin", {
+            state: { username: user.username },
+          });
+          break;
+        case "orgadmin":
+          navigate("/orgadmin");
+          break;
+        case "mentor":
+          navigate("/mentor");
+          break;
+        default:
+          setError("Unknown role");
+      }
     }
-  };
+  } catch (err) {
+    console.error("Login error:", err.response?.data || err.message);
+    setError(err.response?.data?.error || "Login failed");
+    setIsLoggedIn(false);
+  }
+};
+
 
   const handleModelSelection = () => {
     if (selectedModel) {
@@ -82,7 +81,7 @@ function Login() {
       navigate("/dashboard", {
         state: {
           selectedModel,
-          username: localStorage.getItem("username") || "",
+          username: sessionStorage.getItem("email") || "",
         },
       });
     }
@@ -106,9 +105,9 @@ function Login() {
             <div className="input-group">
               <label>Email</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
                 required
               />
             </div>

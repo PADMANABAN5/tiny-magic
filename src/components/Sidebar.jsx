@@ -10,7 +10,7 @@ import {
 
 function Sidebar() {
   const location = useLocation();
-  const username = sessionStorage.getItem("username");
+  const username = sessionStorage.getItem("email");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
   useEffect(() => {

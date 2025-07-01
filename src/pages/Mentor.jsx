@@ -1,150 +1,168 @@
-import React, { useState } from 'react';
-import Supersidebar from '../components/Supersidebar.jsx';
+import React, { useEffect, useState } from 'react';
+import axios from 'axios';
+import Supersidebar from '../components/Supersidebar';
+import '../styles/OrgList.css';
 
-function Mentor() {
-  const [mentorData, setMentorData] = useState({
-    mentor_name: '',
-    mentor_email: '',
-    isActive: true,
+export default function Mentor() {
+  const [mentors, setMentors] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [newMentor, setNewMentor] = useState({
+    email: '',
+    first_name: '',
+    last_name: '',
+    password: ''
   });
-
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(false);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setMentorData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const fetchMentors = async () => {
     setLoading(true);
     setError(null);
-    setSuccess(false);
-
     try {
-      const response = await fetch('http://localhost:5000/api/mentors', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(mentorData),
-      });
+      const res = await axios.get("http://localhost:5000/api/users/role/mentor");
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to add mentor. Please try again.');
+      if (res.data && Array.isArray(res.data.data)) {
+        setMentors(res.data.data);
+      } else {
+        setError("Unexpected data format received from server.");
+        setMentors([]);
       }
-
-      const responseData = await response.json();
-      console.log('Mentor added successfully:', responseData);
-      setSuccess(true);
-      setMentorData({
-        mentor_name: '',
-        mentor_email: '',
-        isActive: true,
-      });
     } catch (err) {
-      console.error('Error adding mentor:', err);
-      setError(err.message);
+      console.error("Error fetching mentors:", err);
+      setError("Failed to load mentors.");
+      setMentors([]);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCreateMentor = async (e) => {
+    e.preventDefault();
+
+    const { email, first_name, last_name, password } = newMentor;
+
+    if (!email || !first_name || !last_name || !password) {
+      alert("All fields are required.");
+      return;
+    }
+
+    try {
+      await axios.post("http://localhost:5000/api/users/mentor", newMentor);
+      setShowModal(false);
+      setNewMentor({ email: '', first_name: '', last_name: '', password: '' });
+      fetchMentors();
+    } catch (err) {
+      console.error("Error creating mentor:", err);
+      alert("Failed to create mentor.");
+    }
+  };
+
+  useEffect(() => {
+    fetchMentors();
+  }, []);
+
   return (
-    <div style={{ display: 'flex' }}>
+    <div className="main-layout-container">
       <Supersidebar />
-
-      <div style={{
-        flex: 1,
-        padding: '40px',
-        maxWidth: '600px',
-        margin: '0 auto',
-        fontFamily: 'Arial, sans-serif',
-      }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '30px' }}>Add a New Mentor</h2>
-
-        <form onSubmit={handleSubmit} style={{
-          backgroundColor: '#f9f9f9',
-          padding: '30px',
-          borderRadius: '10px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-        }}>
-          <div style={{ marginBottom: '20px' }}>
-            <label htmlFor="mentor_name" style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>
-              Mentor Name:
-            </label>
-            <input
-              type="text"
-              id="mentor_name"
-              name="mentor_name"
-              value={mentorData.mentor_name}
-              onChange={handleChange}
-              disabled={loading}
-              required
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '5px',
-                border: '1px solid #ccc',
-                fontSize: '16px'
-              }}
-            />
+      <div className="content-area">
+        <div className="container mt-4">
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h3>Mentors</h3>
+            <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '200px' }}>
+              Add Mentor
+            </button>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label htmlFor="mentor_email" style={{ display: 'block', fontWeight: 'bold', marginBottom: '5px' }}>
-              Mentor Email:
-            </label>
-            <input
-              type="email"
-              id="mentor_email"
-              name="mentor_email"
-              value={mentorData.mentor_email}
-              onChange={handleChange}
-              disabled={loading}
-              required
-              style={{
-                width: '100%',
-                padding: '10px',
-                borderRadius: '5px',
-                border: '1px solid #ccc',
-                fontSize: '16px'
-              }}
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              backgroundColor: loading ? '#ccc' : '#007BFF',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '5px',
-              fontSize: '16px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background-color 0.3s'
-            }}
-          >
-            {loading ? 'Submitting...' : 'Submit'}
-          </button>
-
-          {/* Status Messages */}
-          {loading && <p style={{ marginTop: '15px', color: '#555' }}>Loading...</p>}
-          {error && <p style={{ marginTop: '15px', color: 'red' }}>Error: {error}</p>}
-          {success && <p style={{ marginTop: '15px', color: 'green' }}>Mentor added successfully!</p>}
-        </form>
+          {loading ? (
+            <p>Loading mentors...</p>
+          ) : error ? (
+            <p className="text-danger">{error}</p>
+          ) : (
+            <table className="table table-striped table-bordered">
+              <thead>
+                <tr>
+                  <th>User ID</th>
+                  <th>Email</th>
+                  <th>First Name</th>
+                  <th>Last Name</th>
+                </tr>
+              </thead>
+              <tbody>
+                {mentors.length > 0 ? (
+                  mentors.map((mentor) => (
+                    <tr key={mentor.user_id}>
+                      <td>{mentor.user_id}</td>
+                      <td>{mentor.email}</td>
+                      <td>{mentor.first_name}</td>
+                      <td>{mentor.last_name}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="4" className="text-center">No mentors found.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h4>Create New Mentor</h4>
+            <form onSubmit={handleCreateMentor}>
+              <div className="mb-3">
+                <label htmlFor="email" className="form-label">Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  id="email"
+                  value={newMentor.email}
+                  onChange={(e) => setNewMentor({ ...newMentor, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="first_name" className="form-label">First Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="first_name"
+                  value={newMentor.first_name}
+                  onChange={(e) => setNewMentor({ ...newMentor, first_name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="last_name" className="form-label">Last Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  id="last_name"
+                  value={newMentor.last_name}
+                  onChange={(e) => setNewMentor({ ...newMentor, last_name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label htmlFor="password" className="form-label">Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  id="password"
+                  value={newMentor.password}
+                  onChange={(e) => setNewMentor({ ...newMentor, password: e.target.value })}
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>Create</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>Cancel</button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
-
-export default Mentor;
