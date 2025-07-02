@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import Select from 'react-select';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css';
 
@@ -78,8 +79,15 @@ export default function Batch() {
 
   const openEditModal = (batch) => {
     setBatchForm({
-      ...batch,
-      concept_ids: Array.isArray(batch.concept_ids) ? batch.concept_ids : []
+      organization_name: batch.organization_name,
+      batch_name: batch.batch_name,
+      batch_size: batch.batch_size,
+      pod_size: batch.pod_size,
+      is_active: batch.is_active,
+      // When editing, populate concept_ids with the format React-Select expects
+      concept_ids: Array.isArray(batch.concepts)
+        ? batch.concepts.map((c) => ({ value: c.concept_id, label: `${c.concept_id} - ${c.concept_name}` }))
+        : []
     });
     setIsEditMode(true);
     setSelectedBatchId(batch.batch_id);
@@ -88,11 +96,18 @@ export default function Batch() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+
+    const payload = {
+      ...batchForm,
+      // Ensure concept_ids sent to the API are just the IDs
+      concept_ids: batchForm.concept_ids.map((c) => c.value),
+    };
+
     try {
       if (isEditMode && selectedBatchId) {
-        await axios.put(`http://localhost:5000/api/batches/${selectedBatchId}`, batchForm);
+        await axios.put(`http://localhost:5000/api/batches/${selectedBatchId}`, payload);
       } else {
-        await axios.post("http://localhost:5000/api/batches", batchForm);
+        await axios.post("http://localhost:5000/api/batches", payload);
       }
       setShowModal(false);
       fetchBatches();
@@ -103,10 +118,16 @@ export default function Batch() {
   };
 
   useEffect(() => {
-    fetchBatches();
     fetchConcepts();
     fetchOrganizations();
+    fetchBatches();
   }, []);
+
+
+  const conceptOptions = concepts.map((concept) => ({
+    value: concept.concept_id,
+    label: `${concept.concept_id} - ${concept.concept_name}`,
+  }));
 
   return (
     <div className="main-layout-container">
@@ -134,7 +155,7 @@ export default function Batch() {
                   <th>Size</th>
                   <th>Pod Size</th>
                   <th>Status</th>
-                  <th>Concept IDs</th>
+                  <th>Concept IDs</th> {/* Changed column header back to IDs */}
                   <th>Action</th>
                 </tr>
               </thead>
@@ -148,7 +169,12 @@ export default function Batch() {
                       <td>{batch.batch_size}</td>
                       <td>{batch.pod_size}</td>
                       <td>{batch.is_active ? 'Active' : 'Inactive'}</td>
-                      <td>{Array.isArray(batch.concept_ids) ? batch.concept_ids.join(', ') : '—'}</td>
+                      <td>
+                        {/* Display concept IDs directly from the batch.concepts array */}
+                        {Array.isArray(batch.concepts)
+                          ? batch.concepts.map((c) => c.concept_id).join(', ')
+                          : '—'}
+                      </td>
                       <td>
                         <button
                           className="btn btn-warning btn-sm"
@@ -226,21 +252,17 @@ export default function Batch() {
 
               <div className="mb-3">
                 <label className="form-label">Concepts</label>
-<select
-  multiple
-  className="form-control"
-  value={batchForm.concept_ids || []}
-  onChange={(e) => {
-    const selectedIds = Array.from(e.target.selectedOptions).map(opt => parseInt(opt.value));
-    setBatchForm((prev) => ({ ...prev, concept_ids: selectedIds }));
-  }}
->
-  {concepts.map((concept) => (
-    <option key={concept.concept_id} value={concept.concept_id}>
-      {concept.concept_id} - {concept.concept_name}
-    </option>
-  ))}
-</select>
+                <Select
+                  isMulti
+                  options={conceptOptions}
+                  value={batchForm.concept_ids}
+                  onChange={(selected) =>
+                    setBatchForm((prev) => ({
+                      ...prev,
+                      concept_ids: selected || [],
+                    }))
+                  }
+                />
               </div>
 
               <div className="mb-3 form-check">

@@ -12,7 +12,7 @@ function Superadmin() {
       <Supersidebar />
       <div className="superadmin-content">
         <div className="superadmin-header">
-          <h1>Welcome, Super Admin 👑</h1>
+          <h1>Welcome, Super Admin </h1>
           <p>Manage platform-wide settings, organizations, and admin controls. Your central hub for ultimate control.</p>
         </div>
 
@@ -58,16 +58,16 @@ function Superadmin() {
           </div>
           <div className="superadmin-card card-small">
             <div className="icon">💾</div>
-            <h3>Data Management</h3>
+            <h3>User Management</h3>
             <p>Schedule and manage platform data backups. Perform data restoration operations as needed.</p>
-            <button className="btn-action" onClick={() => navigate('/assign')}>Manage Data</button>
+            <button className="btn-action" onClick={() => navigate('/users')}>Manage Users</button>
           </div>
-          <div className="superadmin-card card-small">
+          {/* <div className="superadmin-card card-small">
             <div className="icon">🔗</div>
             <h3>API Integrations</h3>
             <p>Manage API keys, webhooks, and third-party service integrations.</p>
             <button className="btn-action">Configure APIs</button>
-          </div>
+          </div> */}
         </div>
 
         {/* New Section: User Management & Auditing */}

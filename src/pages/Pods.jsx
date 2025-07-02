@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css';
-
+ 
 export default function Pods() {
   const [pods, setPods] = useState([]);
   const [organizations, setOrganizations] = useState([]);
@@ -13,15 +13,36 @@ export default function Pods() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPodId, setSelectedPodId] = useState(null);
-
+ 
   const [podForm, setPodForm] = useState({
-    organization_name: '',
-    batch_name: '',
-    mentor_email: '',
+    organization_id: '',
+    batch_id: '',
+    mentor_id: '',
     pod_name: '',
     is_active: true
   });
-
+ 
+  const [filters, setFilters] = useState({
+    pod_id: '',
+    pod_name: '',
+    organization_id: '',
+    mentor_id: ''
+  });
+ 
+  const handleFilterChange = (e) => {
+    const { name, value } = e.target;
+    setFilters(prev => ({ ...prev, [name]: value }));
+  };
+ 
+  const filteredPods = pods.filter(pod => {
+    return (
+      (filters.pod_id === '' || pod.pod_id?.toString().includes(filters.pod_id)) &&
+      (filters.pod_name === '' || pod.pod_name?.toLowerCase().includes(filters.pod_name.toLowerCase())) &&
+      (filters.organization_id === '' || pod.organization_id?.toString().includes(filters.organization_id)) &&
+      (filters.mentor_id === '' || pod.mentor_id?.toString().includes(filters.mentor_id))
+    );
+  });
+ 
   const fetchPods = async () => {
     setLoading(true);
     try {
@@ -39,7 +60,7 @@ export default function Pods() {
       setLoading(false);
     }
   };
-
+ 
   const fetchOrganizations = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/organizations");
@@ -48,7 +69,7 @@ export default function Pods() {
       console.error("Error fetching organizations:", err);
     }
   };
-
+ 
   const fetchBatches = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/batches");
@@ -57,7 +78,7 @@ export default function Pods() {
       console.error("Error fetching batches:", err);
     }
   };
-
+ 
   const fetchMentors = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/users/role/mentor");
@@ -66,12 +87,12 @@ export default function Pods() {
       console.error("Error fetching mentors:", err);
     }
   };
-
+ 
   const openCreateModal = () => {
     setPodForm({
-      organization_name: '',
-      batch_name: '',
-      mentor_email: '',
+      organization_id: '',
+      batch_id: '',
+      mentor_id: '',
       pod_name: '',
       is_active: true
     });
@@ -79,12 +100,12 @@ export default function Pods() {
     setSelectedPodId(null);
     setShowModal(true);
   };
-
+ 
   const openEditModal = (pod) => {
     setPodForm({
-      organization_name: pod.organization_name || '',
-      batch_name: pod.batch_name || '',
-      mentor_email: pod.mentor_email || '',
+      organization_id: pod.organization_id || '',
+      batch_id: pod.batch_id || '',
+      mentor_id: pod.mentor_id || '',
       pod_name: pod.pod_name || '',
       is_active: pod.is_active || false
     });
@@ -92,7 +113,7 @@ export default function Pods() {
     setSelectedPodId(pod.pod_id);
     setShowModal(true);
   };
-
+ 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -108,14 +129,14 @@ export default function Pods() {
       alert("Failed to save pod.");
     }
   };
-
+ 
   useEffect(() => {
     fetchPods();
     fetchOrganizations();
     fetchBatches();
     fetchMentors();
   }, []);
-
+ 
   return (
     <div className="main-layout-container">
       <Supersidebar />
@@ -127,7 +148,54 @@ export default function Pods() {
               Add Pod
             </button>
           </div>
-
+ 
+          {/* Filter Section */}
+          <div className="card p-3 mb-3">
+            <h5>Filter Pods</h5>
+            <div className="row">
+              <div className="col-md-2">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Pod ID"
+                  name="pod_id"
+                  value={filters.pod_id}
+                  onChange={handleFilterChange}
+                />
+              </div>
+              <div className="col-md-2">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Pod Name"
+                  name="pod_name"
+                  value={filters.pod_name}
+                  onChange={handleFilterChange}
+                />
+              </div>
+              <div className="col-md-3">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Organization ID"
+                  name="organization_id"
+                  value={filters.organization_id}
+                  onChange={handleFilterChange}
+                />
+              </div>
+              <div className="col-md-3">
+                <input
+                  type="text"
+                  className="form-control"
+                  placeholder="Mentor ID"
+                  name="mentor_id"
+                  value={filters.mentor_id}
+                  onChange={handleFilterChange}
+                />
+              </div>
+            </div>
+          </div>
+ 
           {loading ? (
             <p>Loading pods...</p>
           ) : error ? (
@@ -146,7 +214,7 @@ export default function Pods() {
                 </tr>
               </thead>
               <tbody>
-                {pods.map(pod => (
+                {filteredPods.map(pod => (
                   <tr key={pod.pod_id}>
                     <td>{pod.pod_id}</td>
                     <td>{pod.pod_name}</td>
@@ -164,7 +232,7 @@ export default function Pods() {
           )}
         </div>
       </div>
-
+ 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -174,47 +242,53 @@ export default function Pods() {
                 <label className="form-label">Organization</label>
                 <select
                   className="form-control"
-                  value={podForm.organization_name}
-                  onChange={(e) => setPodForm(prev => ({ ...prev, organization_name: e.target.value }))}
+                  value={podForm.organization_id}
+                  onChange={(e) => setPodForm(prev => ({ ...prev, organization_id: e.target.value }))}
                   required
                 >
                   <option value="">-- Select Organization --</option>
                   {organizations.map(org => (
-                    <option key={org.organization_id} value={org.organization_name}>{org.organization_id}</option>
+                    <option key={org.organization_id} value={org.organization_id}>
+                      {org.organization_name}
+                    </option>
                   ))}
                 </select>
               </div>
-
+ 
               <div className="mb-3">
                 <label className="form-label">Batch</label>
                 <select
                   className="form-control"
-                  value={podForm.batch_name}
-                  onChange={(e) => setPodForm(prev => ({ ...prev, batch_name: e.target.value }))}
+                  value={podForm.batch_id}
+                  onChange={(e) => setPodForm(prev => ({ ...prev, batch_id: e.target.value }))}
                   required
                 >
                   <option value="">-- Select Batch --</option>
                   {batches.map(batch => (
-                    <option key={batch.batch_id} value={batch.batch_name}>{batch.batch_id}</option>
+                    <option key={batch.batch_id} value={batch.batch_id}>
+                      {batch.batch_name}
+                    </option>
                   ))}
                 </select>
               </div>
-
+ 
               <div className="mb-3">
-                <label className="form-label">Mentor Email</label>
+                <label className="form-label">Mentor</label>
                 <select
                   className="form-control"
-                  value={podForm.mentor_email}
-                  onChange={(e) => setPodForm(prev => ({ ...prev, mentor_email: e.target.value }))}
+                  value={podForm.mentor_id}
+                  onChange={(e) => setPodForm(prev => ({ ...prev, mentor_id: e.target.value }))}
                   required
                 >
                   <option value="">-- Select Mentor --</option>
                   {mentors.map(mentor => (
-                    <option key={mentor.user_id} value={mentor.email}>{mentor.user_id}</option>
+                    <option key={mentor.user_id} value={mentor.user_id}>
+                      {mentor.full_name || mentor.email}
+                    </option>
                   ))}
                 </select>
               </div>
-
+ 
               <div className="mb-3">
                 <label className="form-label">Pod Name</label>
                 <input
@@ -225,7 +299,7 @@ export default function Pods() {
                   required
                 />
               </div>
-
+ 
               <div className="mb-3 form-check">
                 <input
                   type="checkbox"
@@ -235,7 +309,7 @@ export default function Pods() {
                 />
                 <label className="form-check-label">Is Active</label>
               </div>
-
+ 
               <div className="d-flex gap-2">
                 <button type="submit" className="btn btn-success" style={{ width: '200px' }}>
                   {isEditMode ? 'Update' : 'Create'}

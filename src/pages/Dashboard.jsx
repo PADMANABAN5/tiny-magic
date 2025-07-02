@@ -10,6 +10,7 @@ import axios from "axios";
 import { callLLM } from "../utils/callLLM.js";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
+import Tesseract from 'tesseract.js';
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -289,88 +290,112 @@ function Dashboard() {
   };
 
   const handleDownloadPDF = () => {
-    const chatDiv = document.getElementById("chat-history");
-    if (!chatDiv) {
-      console.error("Chat history div not found");
-      return;
-    }
+  const chatDiv = document.getElementById("chat-history");
+  if (!chatDiv) {
+    console.error("Chat history div not found");
+    return;
+  }
 
-    const originalMaxHeight = chatDiv.style.maxHeight;
-    const originalOverflowY = chatDiv.style.overflowY;
-    const originalScrollTop = chatDiv.scrollTop;
-    const originalPosition = chatDiv.style.position;
-    const originalTop = chatDiv.style.top;
+  const originalMaxHeight = chatDiv.style.maxHeight;
+  const originalOverflowY = chatDiv.style.overflowY;
+  const originalScrollTop = chatDiv.scrollTop;
+  const originalPosition = chatDiv.style.position;
+  const originalTop = chatDiv.style.top;
 
-    chatDiv.style.maxHeight = "none";
-    chatDiv.style.overflowY = "visible";
+  chatDiv.style.maxHeight = "none";
+  chatDiv.style.overflowY = "visible";
 
-    const parentOfChatDiv = chatDiv.parentElement;
-    if (parentOfChatDiv) {
-      parentOfChatDiv.style.flexGrow = "0";
-    }
+  const parentOfChatDiv = chatDiv.parentElement;
+  if (parentOfChatDiv) {
+    parentOfChatDiv.style.flexGrow = "0";
+  }
 
-    chatDiv.style.position = "absolute";
-    chatDiv.style.top = "0";
-    chatDiv.style.width = "auto";
-    chatDiv.scrollTop = 0;
+  chatDiv.style.position = "absolute";
+  chatDiv.style.top = "0";
+  chatDiv.style.width = "auto";
+  chatDiv.scrollTop = 0;
 
-    setTimeout(() => {
-      html2canvas(chatDiv, {
-        scale: 2,
-        useCORS: true,
+  // Add a loading indicator here (e.g., show a spinner)
+  console.log("Generating PDF and performing OCR...");
+
+  setTimeout(() => {
+    html2canvas(chatDiv, {
+      scale: 2,
+      useCORS: true,
+    })
+      .then(async (canvas) => { // Mark as async because we'll use await for Tesseract
+        const imgData = canvas.toDataURL("image/png");
+
+        // --- OCR Integration ---
+        try {
+          const { data: { text } } = await Tesseract.recognize(
+            imgData,
+            'eng', // Language code (e.g., 'eng' for English). You can add more like 'hin' for Hindi.
+            { logger: m => console.log(m) } // Optional: to see progress in console
+          );
+          console.log("Extracted Text:", text);
+         
+        } catch (ocrError) {
+          console.error("❌ OCR error:", ocrError);
+        }
+        
+
+
+        const pdf = new jsPDF("p", "mm", "a4");
+
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = pdfWidth;
+        const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+        let currentHeight = 0;
+
+        while (currentHeight < imgHeight) {
+          if (currentHeight > 0) {
+            pdf.addPage();
+          }
+          pdf.addImage(imgData, "PNG", 0, -currentHeight, imgWidth, imgHeight);
+          currentHeight += pdfHeight;
+        }
+
+        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+        const filename = `chat-history-${timestamp}.pdf`;
+        pdf.save(filename);
+
+        // Restore original styles
+        chatDiv.style.maxHeight = originalMaxHeight;
+        chatDiv.style.overflowY = originalOverflowY;
+        chatDiv.style.position = originalPosition;
+        chatDiv.style.top = originalTop;
+        chatDiv.style.width = "";
+        chatDiv.scrollTop = originalScrollTop;
+
+        if (parentOfChatDiv) {
+          parentOfChatDiv.style.flexGrow = "";
+        }
+
+        // Hide loading indicator here
+        console.log("PDF generated and OCR attempted.");
       })
-        .then((canvas) => {
-          const imgData = canvas.toDataURL("image/png");
-          const pdf = new jsPDF("p", "mm", "a4");
+      .catch((error) => {
+        console.error("❌ PDF generation or OCR error:", error);
+        alert("Failed to generate PDF or perform OCR. Please try again.");
 
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
-          const imgWidth = pdfWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+        // Ensure styles are restored even on error
+        chatDiv.style.maxHeight = originalMaxHeight;
+        chatDiv.style.overflowY = originalOverflowY;
+        chatDiv.style.position = originalPosition;
+        chatDiv.style.top = originalTop;
+        chatDiv.style.width = "";
+        chatDiv.scrollTop = originalScrollTop;
 
-          let currentHeight = 0;
-
-          while (currentHeight < imgHeight) {
-            if (currentHeight > 0) {
-              pdf.addPage();
-            }
-            pdf.addImage(imgData, "PNG", 0, -currentHeight, imgWidth, imgHeight);
-            currentHeight += pdfHeight;
-          }
-
-          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
-          const filename = `chat-history-${timestamp}.pdf`;
-          pdf.save(filename);
-
-          chatDiv.style.maxHeight = originalMaxHeight;
-          chatDiv.style.overflowY = originalOverflowY;
-          chatDiv.style.position = originalPosition;
-          chatDiv.style.top = originalTop;
-          chatDiv.style.width = "";
-          chatDiv.scrollTop = originalScrollTop;
-
-          if (parentOfChatDiv) {
-            parentOfChatDiv.style.flexGrow = "";
-          }
-        })
-        .catch((error) => {
-          console.error("❌ PDF generation error:", error);
-          alert("Failed to generate PDF. Please try again.");
-
-          chatDiv.style.maxHeight = originalMaxHeight;
-          chatDiv.style.overflowY = originalOverflowY;
-          chatDiv.style.position = originalPosition;
-          chatDiv.style.top = originalTop;
-          chatDiv.style.width = "";
-          chatDiv.scrollTop = originalScrollTop;
-
-          if (parentOfChatDiv) {
-            parentOfChatDiv.style.flexGrow = "";
-          }
-        });
-    }, 700);
-  };
-
+        if (parentOfChatDiv) {
+          parentOfChatDiv.style.flexGrow = "";
+        }
+        // Hide loading indicator here
+      });
+  }, 700);
+};
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
