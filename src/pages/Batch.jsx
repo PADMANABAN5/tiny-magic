@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Select from 'react-select';
+import { Pagination } from 'react-bootstrap';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css';
 
@@ -14,11 +15,13 @@ export default function Batch() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState(null);
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const [batchForm, setBatchForm] = useState({
     organization_name: '',
     batch_name: '',
     batch_size: '',
-    pod_size: '',
     is_active: true,
     concept_ids: []
   });
@@ -68,7 +71,6 @@ export default function Batch() {
       organization_name: '',
       batch_name: '',
       batch_size: '',
-      pod_size: '',
       is_active: true,
       concept_ids: []
     });
@@ -82,11 +84,12 @@ export default function Batch() {
       organization_name: batch.organization_name,
       batch_name: batch.batch_name,
       batch_size: batch.batch_size,
-      pod_size: batch.pod_size,
       is_active: batch.is_active,
-      // When editing, populate concept_ids with the format React-Select expects
       concept_ids: Array.isArray(batch.concepts)
-        ? batch.concepts.map((c) => ({ value: c.concept_id, label: `${c.concept_id} - ${c.concept_name}` }))
+        ? batch.concepts.map((c) => ({
+            value: c.concept_id,
+            label: `${c.concept_id} - ${c.concept_name}`
+          }))
         : []
     });
     setIsEditMode(true);
@@ -99,7 +102,6 @@ export default function Batch() {
 
     const payload = {
       ...batchForm,
-      // Ensure concept_ids sent to the API are just the IDs
       concept_ids: batchForm.concept_ids.map((c) => c.value),
     };
 
@@ -123,11 +125,17 @@ export default function Batch() {
     fetchBatches();
   }, []);
 
-
   const conceptOptions = concepts.map((concept) => ({
     value: concept.concept_id,
     label: `${concept.concept_id} - ${concept.concept_name}`,
   }));
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentBatches = batches.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(batches.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="main-layout-container">
@@ -146,59 +154,83 @@ export default function Batch() {
           ) : error ? (
             <p className="text-danger">{error}</p>
           ) : (
-            <table className="table table-bordered table-striped">
-              <thead>
-                <tr>
-                  <th>Batch ID</th>
-                  <th>Org Name</th>
-                  <th>Batch Name</th>
-                  <th>Size</th>
-                  <th>Pod Size</th>
-                  <th>Status</th>
-                  <th>Concept IDs</th> {/* Changed column header back to IDs */}
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {batches.length > 0 ? (
-                  batches.map((batch) => (
-                    <tr key={batch.batch_id}>
-                      <td>{batch.batch_id}</td>
-                      <td>{batch.organization_name}</td>
-                      <td>{batch.batch_name}</td>
-                      <td>{batch.batch_size}</td>
-                      <td>{batch.pod_size}</td>
-                      <td>{batch.is_active ? 'Active' : 'Inactive'}</td>
-                      <td>
-                        {/* Display concept IDs directly from the batch.concepts array */}
-                        {Array.isArray(batch.concepts)
-                          ? batch.concepts.map((c) => c.concept_id).join(', ')
-                          : '—'}
-                      </td>
-                      <td>
-                        <button
-                          className="btn btn-warning btn-sm"
-                          onClick={() => openEditModal(batch)}
-                        >
-                          Update
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
+            <>
+              <table className="table table-bordered table-striped">
+                <thead>
                   <tr>
-                    <td colSpan="8" className="text-center">No batches found.</td>
+                    <th>Batch ID</th>
+                    <th>Org Name</th>
+                    <th>Batch Name</th>
+                    <th>Size</th>
+                    <th>Status</th>
+                    <th>Concept IDs</th>
+                    <th>Action</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {currentBatches.length > 0 ? (
+                    currentBatches.map((batch) => (
+                      <tr key={batch.batch_id}>
+                        <td>{batch.batch_id}</td>
+                        <td>{batch.organization_name}</td>
+                        <td>{batch.batch_name}</td>
+                        <td>{batch.batch_size}</td>
+                        <td>
+                          <span className={`badge ${batch.is_active ? 'bg-success' : 'bg-secondary'}`}>
+                            {batch.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          {Array.isArray(batch.concepts)
+                            ? batch.concepts.map((c) => c.concept_id).join(', ')
+                            : '—'}
+                        </td>
+                        <td>
+                          <button className="btn btn-warning btn-sm" onClick={() => openEditModal(batch)}>
+                            Update
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="8" className="text-center">No batches found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                  <Pagination>
+                    <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                    {[...Array(totalPages).keys()].map((num) => (
+                      <Pagination.Item
+                        key={num + 1}
+                        active={num + 1 === currentPage}
+                        onClick={() => handlePageChange(num + 1)}
+                      >
+                        {num + 1}
+                      </Pagination.Item>
+                    ))}
+                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+          <div
+            className="modal-content modal-lg"
+            onClick={(e) => e.stopPropagation()}
+            style={{ maxHeight: '90vh', overflowY: 'auto' }}
+          >
             <h4>{isEditMode ? 'Update Batch' : 'Create New Batch'}</h4>
             <form onSubmit={handleFormSubmit}>
               <div className="mb-3">
@@ -239,15 +271,6 @@ export default function Batch() {
                     onChange={(e) => setBatchForm((prev) => ({ ...prev, batch_size: parseInt(e.target.value) || 0 }))}
                   />
                 </div>
-                <div style={{ flex: 1 }}>
-                  <label className="form-label">Pod Size</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={batchForm.pod_size}
-                    onChange={(e) => setBatchForm((prev) => ({ ...prev, pod_size: parseInt(e.target.value) || 0 }))}
-                  />
-                </div>
               </div>
 
               <div className="mb-3">
@@ -256,23 +279,24 @@ export default function Batch() {
                   isMulti
                   options={conceptOptions}
                   value={batchForm.concept_ids}
-                  onChange={(selected) =>
-                    setBatchForm((prev) => ({
-                      ...prev,
-                      concept_ids: selected || [],
-                    }))
-                  }
+                  onChange={(selected) => setBatchForm((prev) => ({ ...prev, concept_ids: selected || [] }))}
                 />
               </div>
 
-              <div className="mb-3 form-check">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  checked={batchForm.is_active}
-                  onChange={(e) => setBatchForm((prev) => ({ ...prev, is_active: e.target.checked }))}
-                />
-                <label className="form-check-label">Is Active</label>
+              <div className="mb-3">
+                <label className="form-label d-block" htmlFor="is_active">Active Status</label>
+                <div className="form-check form-switch">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="is_active"
+                    checked={batchForm.is_active}
+                    onChange={(e) => setBatchForm((prev) => ({ ...prev, is_active: e.target.checked }))}
+                  />
+                  <label className="form-check-label" htmlFor="is_active">
+                    {batchForm.is_active ? 'Active' : 'Inactive'}
+                  </label>
+                </div>
               </div>
 
               <div className="d-flex justify-content-between">

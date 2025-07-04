@@ -4,10 +4,12 @@ import Supersidebar from '../components/Supersidebar';
 import { Pagination } from 'react-bootstrap';
 import '../styles/OrgList.css';
 
-export default function Mentor() {
-  const [mentors, setMentors] = useState([]);
+export default function Addorgadmin() {
+  const [orgAdmins, setOrgAdmins] = useState([]);
+  const [organizations, setOrganizations] = useState([]);
   const [showModal, setShowModal] = useState(false);
-  const [newMentor, setNewMentor] = useState({
+  const [newAdmin, setNewAdmin] = useState({
+    organization_name: '',
     email: '',
     first_name: '',
     last_name: '',
@@ -15,62 +17,72 @@ export default function Mentor() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
-  const fetchMentors = async () => {
+  const fetchOrgAdmins = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get("http://localhost:5000/api/users/role/mentor");
-
+      const res = await axios.get("http://localhost:5000/api/users/role/orgadmin");
       if (res.data && Array.isArray(res.data.data)) {
-        setMentors(res.data.data);
+        setOrgAdmins(res.data.data);
       } else {
         setError("Unexpected data format received from server.");
-        setMentors([]);
+        setOrgAdmins([]);
       }
     } catch (err) {
-      console.error("Error fetching mentors:", err);
-      setError("Failed to load mentors.");
-      setMentors([]);
+      console.error("Error fetching org admins:", err);
+      setError("Failed to load organization admins.");
+      setOrgAdmins([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCreateMentor = async (e) => {
-    e.preventDefault();
-    const { email, first_name, last_name, password } = newMentor;
+  const fetchOrganizations = async () => {
+    try {
+      const res = await axios.get("http://localhost:5000/api/organizations");
+      if (res.data && Array.isArray(res.data.data)) {
+        setOrganizations(res.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching organizations:", err);
+    }
+  };
 
-    if (!email || !first_name || !last_name || !password) {
+  const handleCreateAdmin = async (e) => {
+    e.preventDefault();
+    const { organization_name, email, first_name, last_name, password } = newAdmin;
+
+    if (!organization_name || !email || !first_name || !last_name || !password) {
       alert("All fields are required.");
       return;
     }
 
     try {
-      await axios.post("http://localhost:5000/api/users/mentor", newMentor);
+      await axios.post("http://localhost:5000/api/users/orgadmin", newAdmin);
       setShowModal(false);
-      setNewMentor({ email: '', first_name: '', last_name: '', password: '' });
-      fetchMentors();
+      setNewAdmin({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
+      fetchOrgAdmins();
     } catch (err) {
-      console.error("Error creating mentor:", err);
-      alert("Failed to create mentor.");
+      console.error("Error creating org admin:", err);
+      alert("Failed to create admin.");
     }
   };
 
   useEffect(() => {
-    fetchMentors();
+    fetchOrgAdmins();
+    fetchOrganizations();
   }, []);
 
-  // Pagination logic
+  // Pagination Logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentMentors = mentors.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(mentors.length / itemsPerPage);
+  const currentAdmins = orgAdmins.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(orgAdmins.length / itemsPerPage);
 
-  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  const handlePageChange = (pageNum) => setCurrentPage(pageNum);
 
   return (
     <div className="main-layout-container">
@@ -78,14 +90,14 @@ export default function Mentor() {
       <div className="content-area">
         <div className="container mt-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h3>Mentors</h3>
+            <h3>Organization Admins</h3>
             <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '200px' }}>
-              Add Mentor
+              Add Org Admin
             </button>
           </div>
 
           {loading ? (
-            <p>Loading mentors...</p>
+            <p>Loading admins...</p>
           ) : error ? (
             <p className="text-danger">{error}</p>
           ) : (
@@ -94,24 +106,26 @@ export default function Mentor() {
                 <thead>
                   <tr>
                     <th>User ID</th>
+                    <th>Organization</th>
                     <th>Email</th>
                     <th>First Name</th>
                     <th>Last Name</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentMentors.length > 0 ? (
-                    currentMentors.map((mentor) => (
-                      <tr key={mentor.user_id}>
-                        <td>{mentor.user_id}</td>
-                        <td>{mentor.email}</td>
-                        <td>{mentor.first_name}</td>
-                        <td>{mentor.last_name}</td>
+                  {currentAdmins.length > 0 ? (
+                    currentAdmins.map((admin) => (
+                      <tr key={admin.user_id}>
+                        <td>{admin.user_id}</td>
+                        <td>{admin.organization_name}</td>
+                        <td>{admin.email}</td>
+                        <td>{admin.first_name}</td>
+                        <td>{admin.last_name}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="4" className="text-center">No mentors found.</td>
+                      <td colSpan="5" className="text-center">No admins found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -122,13 +136,13 @@ export default function Mentor() {
                   <Pagination>
                     <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
                     <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                    {[...Array(totalPages).keys()].map((num) => (
+                    {[...Array(totalPages)].map((_, index) => (
                       <Pagination.Item
-                        key={num + 1}
-                        active={num + 1 === currentPage}
-                        onClick={() => handlePageChange(num + 1)}
+                        key={index + 1}
+                        active={currentPage === index + 1}
+                        onClick={() => handlePageChange(index + 1)}
                       >
-                        {num + 1}
+                        {index + 1}
                       </Pagination.Item>
                     ))}
                     <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
@@ -144,16 +158,33 @@ export default function Mentor() {
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h4>Create New Mentor</h4>
-            <form onSubmit={handleCreateMentor}>
+            <h4>Create Organization Admin</h4>
+            <form onSubmit={handleCreateAdmin}>
+              <div className="mb-3">
+                <label htmlFor="org" className="form-label">Organization Name</label>
+                <select
+                  className="form-select"
+                  id="org"
+                  value={newAdmin.organization_name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, organization_name: e.target.value })}
+                  required
+                >
+                  <option value="">Select an organization</option>
+                  {organizations.map((org) => (
+                    <option key={org.organization_id} value={org.organization_name}>
+                      {org.organization_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="mb-3">
                 <label htmlFor="email" className="form-label">Email</label>
                 <input
                   type="email"
                   className="form-control"
                   id="email"
-                  value={newMentor.email}
-                  onChange={(e) => setNewMentor({ ...newMentor, email: e.target.value })}
+                  value={newAdmin.email}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
                   required
                 />
               </div>
@@ -163,8 +194,8 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   id="first_name"
-                  value={newMentor.first_name}
-                  onChange={(e) => setNewMentor({ ...newMentor, first_name: e.target.value })}
+                  value={newAdmin.first_name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, first_name: e.target.value })}
                   required
                 />
               </div>
@@ -174,8 +205,8 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   id="last_name"
-                  value={newMentor.last_name}
-                  onChange={(e) => setNewMentor({ ...newMentor, last_name: e.target.value })}
+                  value={newAdmin.last_name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, last_name: e.target.value })}
                   required
                 />
               </div>
@@ -185,8 +216,8 @@ export default function Mentor() {
                   type="password"
                   className="form-control"
                   id="password"
-                  value={newMentor.password}
-                  onChange={(e) => setNewMentor({ ...newMentor, password: e.target.value })}
+                  value={newAdmin.password}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
                   required
                 />
               </div>

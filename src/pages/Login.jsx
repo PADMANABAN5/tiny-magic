@@ -88,11 +88,13 @@ function Login() {
   };
 
   return (
-    <div className="login-container">
-      <div className="sphere sphere1"></div>
-      <div className="sphere sphere2"></div>
-      <div className="sphere sphere3"></div>
-
+    <div className="login-page-wrapper">
+      <div className="login-container">
+        <div className="sphere sphere1"></div>
+        <div className="sphere sphere2"></div>
+        <div className="sphere sphere3"></div>
+        <div className="sphere sphere4"></div>
+      <div className="sphere sphere5"></div>
       <div className="login-card">
         <h2 className="login-title">Login</h2>
 
@@ -154,7 +156,9 @@ function Login() {
         </div>
       )}
     </div>
-  );
+  </div>
+);
+
 }
 
 export default Login;

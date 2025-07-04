@@ -32,6 +32,15 @@ function Sidebar() {
         <div className="collapse navbar-collapse justify-content-end">
           <ul className="navbar-nav">
             <li className="nav-item">
+                          <Link
+                            to="/superadmin"
+                            className={`nav-link d-flex align-items-center ${location.pathname === "/dashboard" ? "active" : ""}`}
+                          >
+                            <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
+                            Dashboard
+                          </Link>
+                        </li>
+            <li className="nav-item">
               <Link
                 to="/login"
                 className="nav-link d-flex align-items-center"

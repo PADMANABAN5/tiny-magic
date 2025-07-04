@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
+import { Pagination } from 'react-bootstrap';
 import '../styles/OrgList.css';
 
 export default function Concepts() {
@@ -10,6 +11,8 @@ export default function Concepts() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedConceptId, setSelectedConceptId] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [conceptForm, setConceptForm] = useState({
     concept_name: '',
@@ -24,7 +27,8 @@ export default function Concepts() {
     stage_5_content: '',
     concept_understanding_rubric: '',
     understanding_skills_rubric: '',
-    learning_assessment_dimensions: ''
+    learning_assessment_dimensions: '',
+    is_active: true
   });
 
   const fetchConcepts = async () => {
@@ -59,7 +63,8 @@ export default function Concepts() {
       stage_5_content: '',
       concept_understanding_rubric: '',
       understanding_skills_rubric: '',
-      learning_assessment_dimensions: ''
+      learning_assessment_dimensions: '',
+      is_active: true
     });
     setIsEditMode(false);
     setShowModal(true);
@@ -93,6 +98,14 @@ export default function Concepts() {
     fetchConcepts();
   }, []);
 
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentConcepts = concepts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(concepts.length / itemsPerPage);
+
+  const handlePageChange = (pageNum) => setCurrentPage(pageNum);
+
   return (
     <div className="main-layout-container">
       <Supersidebar />
@@ -110,66 +123,115 @@ export default function Concepts() {
           ) : error ? (
             <p className="text-danger">{error}</p>
           ) : (
-            <table className="table table-bordered table-striped">
-              <thead>
-                <tr>
-                  <th>Concept ID</th>
-                  <th>Name</th>
-                  <th>Content</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {concepts.length > 0 ? (
-                  concepts.map((concept) => (
-                    <tr key={concept.concept_id}>
-                      <td>{concept.concept_id}</td>
-                      <td>{concept.concept_name}</td>
-                      <td>{concept.concept_content}</td>
-                      <td>
-                        <button
-                          className="btn btn-warning btn-sm"
-                          onClick={() => openEditModal(concept)}
-                        >
-                          Update
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
+            <>
+              <table className="table table-bordered table-striped">
+                <thead>
                   <tr>
-                    <td colSpan="4" className="text-center">No concepts found.</td>
+                    <th>Concept ID</th>
+                    <th>Name</th>
+                    <th>Content</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {currentConcepts.length > 0 ? (
+                    currentConcepts.map((concept) => (
+                      <tr key={concept.concept_id}>
+                        <td>{concept.concept_id}</td>
+                        <td>{concept.concept_name}</td>
+                        <td>{concept.concept_content}</td>
+                        <td>
+                          <span className={`badge ${concept.is_active ? 'bg-success' : 'bg-secondary'}`}>
+                            {concept.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          <button className="btn btn-warning btn-sm" onClick={() => openEditModal(concept)}>
+                            Update
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="5" className="text-center">No concepts found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                  <Pagination>
+                    <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                    {[...Array(totalPages)].map((_, index) => (
+                      <Pagination.Item
+                        key={index + 1}
+                        active={currentPage === index + 1}
+                        onClick={() => handlePageChange(index + 1)}
+                      >
+                        {index + 1}
+                      </Pagination.Item>
+                    ))}
+                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* === Modal Form === */}
+      {/* Modal Form */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
             <h4>{isEditMode ? 'Update Concept' : 'Create New Concept'}</h4>
             <form onSubmit={handleFormSubmit}>
-              {Object.entries(conceptForm).map(([key, value]) => (
-                <div className="mb-3" key={key}>
-                  <label className="form-label" htmlFor={key}>
-                    {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                  </label>
-                  <textarea
-                    className="form-control"
-                    id={key}
-                    rows={2}
-                    value={value}
-                    onChange={(e) =>
-                      setConceptForm((prev) => ({ ...prev, [key]: e.target.value }))
-                    }
-                    required={['concept_name', 'concept_content'].includes(key)}
-                  />
-                </div>
-              ))}
+              {Object.entries(conceptForm).map(([key, value]) => {
+                if (key === 'is_active') {
+                  return (
+                    <div className="mb-3" key={key}>
+                      <label className="form-label d-block" htmlFor={key}>Active Status</label>
+                      <div className="form-check form-switch">
+                        <input
+                          className="form-check-input"
+                          type="checkbox"
+                          id={key}
+                          checked={value}
+                          onChange={(e) =>
+                            setConceptForm((prev) => ({ ...prev, [key]: e.target.checked }))
+                          }
+                        />
+                        <label className="form-check-label" htmlFor={key}>
+                          {value ? 'Active' : 'Inactive'}
+                        </label>
+                      </div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="mb-3" key={key}>
+                    <label className="form-label" htmlFor={key}>
+                      {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
+                    </label>
+                    <textarea
+                      className="form-control"
+                      id={key}
+                      rows={2}
+                      value={value}
+                      onChange={(e) =>
+                        setConceptForm((prev) => ({ ...prev, [key]: e.target.value }))
+                      }
+                      required={['concept_name', 'concept_content'].includes(key)}
+                    />
+                  </div>
+                );
+              })}
               <div className="d-flex justify-content-between">
                 <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>
                   {isEditMode ? 'Update' : 'Create'}

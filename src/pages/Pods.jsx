@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css';
- 
+
 export default function Pods() {
   const [pods, setPods] = useState([]);
   const [organizations, setOrganizations] = useState([]);
@@ -13,7 +13,7 @@ export default function Pods() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPodId, setSelectedPodId] = useState(null);
- 
+
   const [podForm, setPodForm] = useState({
     organization_id: '',
     batch_id: '',
@@ -21,19 +21,19 @@ export default function Pods() {
     pod_name: '',
     is_active: true
   });
- 
+
   const [filters, setFilters] = useState({
     pod_id: '',
     pod_name: '',
     organization_id: '',
     mentor_id: ''
   });
- 
+
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
   };
- 
+
   const filteredPods = pods.filter(pod => {
     return (
       (filters.pod_id === '' || pod.pod_id?.toString().includes(filters.pod_id)) &&
@@ -42,7 +42,7 @@ export default function Pods() {
       (filters.mentor_id === '' || pod.mentor_id?.toString().includes(filters.mentor_id))
     );
   });
- 
+
   const fetchPods = async () => {
     setLoading(true);
     try {
@@ -60,7 +60,7 @@ export default function Pods() {
       setLoading(false);
     }
   };
- 
+
   const fetchOrganizations = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/organizations");
@@ -69,7 +69,7 @@ export default function Pods() {
       console.error("Error fetching organizations:", err);
     }
   };
- 
+
   const fetchBatches = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/batches");
@@ -78,7 +78,7 @@ export default function Pods() {
       console.error("Error fetching batches:", err);
     }
   };
- 
+
   const fetchMentors = async () => {
     try {
       const res = await axios.get("http://localhost:5000/api/users/role/mentor");
@@ -87,7 +87,7 @@ export default function Pods() {
       console.error("Error fetching mentors:", err);
     }
   };
- 
+
   const openCreateModal = () => {
     setPodForm({
       organization_id: '',
@@ -100,7 +100,7 @@ export default function Pods() {
     setSelectedPodId(null);
     setShowModal(true);
   };
- 
+
   const openEditModal = (pod) => {
     setPodForm({
       organization_id: pod.organization_id || '',
@@ -113,14 +113,27 @@ export default function Pods() {
     setSelectedPodId(pod.pod_id);
     setShowModal(true);
   };
- 
+
   const handleFormSubmit = async (e) => {
     e.preventDefault();
+
+    const selectedOrg = organizations.find(org => org.organization_id === parseInt(podForm.organization_id));
+    const selectedBatch = batches.find(batch => batch.batch_id === parseInt(podForm.batch_id));
+    const selectedMentor = mentors.find(mentor => mentor.user_id === parseInt(podForm.mentor_id));
+
+    const payload = {
+      organization_name: selectedOrg ? selectedOrg.organization_name : '',
+      batch_name: selectedBatch ? selectedBatch.batch_name : '',
+      mentor_email: selectedMentor ? selectedMentor.email : '',
+      pod_name: podForm.pod_name,
+      is_active: podForm.is_active
+    };
+
     try {
       if (isEditMode && selectedPodId) {
-        await axios.put(`http://localhost:5000/api/pods/${selectedPodId}`, podForm);
+        await axios.put(`http://localhost:5000/api/pods/${selectedPodId}`, payload);
       } else {
-        await axios.post("http://localhost:5000/api/pods", podForm);
+        await axios.post("http://localhost:5000/api/pods", payload);
       }
       setShowModal(false);
       fetchPods();
@@ -129,14 +142,14 @@ export default function Pods() {
       alert("Failed to save pod.");
     }
   };
- 
+
   useEffect(() => {
     fetchPods();
     fetchOrganizations();
     fetchBatches();
     fetchMentors();
   }, []);
- 
+
   return (
     <div className="main-layout-container">
       <Supersidebar />
@@ -148,8 +161,7 @@ export default function Pods() {
               Add Pod
             </button>
           </div>
- 
-          {/* Filter Section */}
+
           <div className="card p-3 mb-3">
             <h5>Filter Pods</h5>
             <div className="row">
@@ -195,7 +207,7 @@ export default function Pods() {
               </div>
             </div>
           </div>
- 
+
           {loading ? (
             <p>Loading pods...</p>
           ) : error ? (
@@ -221,7 +233,13 @@ export default function Pods() {
                     <td>{pod.organization_id || '—'}</td>
                     <td>{pod.batch_id || '—'}</td>
                     <td>{pod.mentor_id || '—'}</td>
-                    <td>{pod.is_active ? 'Active' : 'Inactive'}</td>
+                    <td>
+                  <span
+                    className={`badge ${pod.is_active ? 'bg-success text-white' : 'bg-secondary text-white'}`}
+                  >
+                    {pod.is_active ? 'Active' : 'Inactive'}
+                  </span>
+                </td>
                     <td>
                       <button className="btn btn-warning btn-sm" onClick={() => openEditModal(pod)}>Update</button>
                     </td>
@@ -232,7 +250,7 @@ export default function Pods() {
           )}
         </div>
       </div>
- 
+
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -254,7 +272,7 @@ export default function Pods() {
                   ))}
                 </select>
               </div>
- 
+
               <div className="mb-3">
                 <label className="form-label">Batch</label>
                 <select
@@ -271,7 +289,7 @@ export default function Pods() {
                   ))}
                 </select>
               </div>
- 
+
               <div className="mb-3">
                 <label className="form-label">Mentor</label>
                 <select
@@ -288,7 +306,7 @@ export default function Pods() {
                   ))}
                 </select>
               </div>
- 
+
               <div className="mb-3">
                 <label className="form-label">Pod Name</label>
                 <input
@@ -299,17 +317,26 @@ export default function Pods() {
                   required
                 />
               </div>
- 
-              <div className="mb-3 form-check">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  checked={podForm.is_active}
-                  onChange={(e) => setPodForm(prev => ({ ...prev, is_active: e.target.checked }))}
-                />
-                <label className="form-check-label">Is Active</label>
+
+              {/* ✅ Bootstrap toggle switch */}
+              <div className="mb-3">
+                <label className="form-label d-block" htmlFor="is_active">Active Status</label>
+                <div className="form-check form-switch">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="is_active"
+                    checked={podForm.is_active}
+                    onChange={(e) =>
+                      setPodForm((prev) => ({ ...prev, is_active: e.target.checked }))
+                    }
+                  />
+                  <label className="form-check-label" htmlFor="is_active">
+                    {podForm.is_active ? 'Active' : 'Inactive'}
+                  </label>
+                </div>
               </div>
- 
+
               <div className="d-flex gap-2">
                 <button type="submit" className="btn btn-success" style={{ width: '200px' }}>
                   {isEditMode ? 'Update' : 'Create'}

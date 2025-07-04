@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
+import { Pagination } from 'react-bootstrap';
 import '../styles/OrgList.css';
 
 export default function OrgList() {
@@ -10,6 +11,8 @@ export default function OrgList() {
   const [newOrgIsActive, setNewOrgIsActive] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const fetchOrganizations = async () => {
     setLoading(true);
@@ -17,33 +20,24 @@ export default function OrgList() {
     try {
       const res = await axios.get("http://localhost:5000/api/organizations");
 
-      console.log("API Response (full object):", res);
-      console.log("API Response (data property):", res.data);
-
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       } else {
-        console.error("Unexpected API response structure. Expected an object with a 'data' array.", res.data);
+        console.error("Unexpected API response structure.", res.data);
         setOrganizations([]);
-        setError("Received unexpected data format from the server. Expected organizations under 'data' property.");
+        setError("Unexpected data format from server.");
       }
     } catch (err) {
-      console.error("Error fetching organizations:", err);
       if (axios.isAxiosError(err)) {
         if (err.response) {
-          console.error("Server Response Error:", err.response.data);
-          console.error("Server Status:", err.response.status);
           setError(`Server error (${err.response.status}): ${err.response.data.message || 'Unknown server error'}`);
         } else if (err.request) {
-          console.error("No response received:", err.request);
-          setError("No response from server. Please ensure the backend is running and accessible at http://localhost:5000.");
+          setError("No response from server.");
         } else {
-          console.error("Axios request setup error:", err.message);
-          setError(`Request error: ${err.message}. Check network connection or API URL.`);
+          setError(`Request error: ${err.message}`);
         }
       } else {
-        console.error("An unexpected error occurred:", err);
-        setError("An unexpected error occurred while fetching data.");
+        setError("Unexpected error occurred.");
       }
       setOrganizations([]);
     } finally {
@@ -51,12 +45,10 @@ export default function OrgList() {
     }
   };
 
-  // --- MODIFIED toggleIsActive function ---
   const toggleIsActive = async (org) => {
     const originalIsActive = org.is_active;
-    const newIsActiveState = !originalIsActive; // This will be the state AFTER the toggle
+    const newIsActiveState = !originalIsActive;
 
-    // Optimistically update the UI
     setOrganizations(prevOrgs =>
       prevOrgs.map(o =>
         o.organization_id === org.organization_id ? { ...o, is_active: newIsActiveState } : o
@@ -64,59 +56,56 @@ export default function OrgList() {
     );
 
     try {
-      let endpoint = '';
-      if (newIsActiveState) {
-        // If the new state is 'active', call the /active endpoint
-        endpoint = `http://localhost:5000/api/organizations/${org.organization_id}/active`;
-      } else {
-        // If the new state is 'inactive', call the /inactive endpoint
-        endpoint = `http://localhost:5000/api/organizations/${org.organization_id}/inactive`;
-      }
+      const endpoint = newIsActiveState
+        ? `http://localhost:5000/api/organizations/${org.organization_id}/active`
+        : `http://localhost:5000/api/organizations/${org.organization_id}/inactive`;
 
-      // Use a GET request to these specific action endpoints
       await axios.get(endpoint);
-
     } catch (err) {
-      console.error("Error toggling organization status:", err);
-      // Revert UI on error
+      console.error("Error toggling status:", err);
       setOrganizations(prevOrgs =>
         prevOrgs.map(o =>
           o.organization_id === org.organization_id ? { ...o, is_active: originalIsActive } : o
         )
       );
-      alert("Failed to update organization status. Please try again.");
+      alert("Failed to update status.");
     }
   };
-  // --- END OF MODIFIED toggleIsActive function ---
 
   const handleCreateOrganization = async (e) => {
     e.preventDefault();
-
     if (!newOrgName.trim()) {
       alert("Organization name cannot be empty.");
       return;
     }
 
     try {
-      const newOrganizationData = {
+      await axios.post("http://localhost:5000/api/organizations", {
         organization_name: newOrgName,
         is_active: newOrgIsActive,
-      };
-      await axios.post("http://localhost:5000/api/organizations", newOrganizationData);
+      });
 
       setShowModal(false);
       setNewOrgName('');
       setNewOrgIsActive(true);
-      fetchOrganizations(); // Re-fetch to show the new organization
+      fetchOrganizations();
     } catch (err) {
       console.error("Error creating organization:", err);
-      alert("Failed to create organization. Please try again.");
+      alert("Failed to create organization.");
     }
   };
 
   useEffect(() => {
     fetchOrganizations();
   }, []);
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentOrganizations = organizations.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(organizations.length / itemsPerPage);
+
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
     <div className="main-layout-container">
@@ -135,47 +124,65 @@ export default function OrgList() {
           ) : error ? (
             <p className="text-danger">{error}</p>
           ) : (
-            <table className="table table-striped table-bordered">
-              <thead>
-                <tr>
-                  <th>Organization ID</th>
-                  <th>Organization Name</th>
-                  <th>Action (Is Active)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.isArray(organizations) && organizations.length > 0 ? (
-                  organizations.map((org) => (
-                    <tr key={org.organization_id}>
-                      <td>{org.organization_id}</td>
-                      <td>{org.organization_name}</td>
-                      <td>
-                        <div className="form-check form-switch">
-                          <input
-                            className="form-check-input"
-                            type="checkbox"
-                            id={`toggle-${org.organization_id}`}
-                            checked={org.is_active}
-                            onChange={() => toggleIsActive(org)}
-                            role="switch"
-                          />
-                          <label
-                            className="form-check-label"
-                            htmlFor={`toggle-${org.organization_id}`}
-                          >
-                            {org.is_active ? 'Active' : 'Inactive'}
-                          </label>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
+            <>
+              <table className="table table-striped table-bordered">
+                <thead>
                   <tr>
-                    <td colSpan="3" className="text-center">No organizations found.</td>
+                    <th>Organization ID</th>
+                    <th>Organization Name</th>
+                    <th>Action (Is Active)</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {currentOrganizations.length > 0 ? (
+                    currentOrganizations.map((org) => (
+                      <tr key={org.organization_id}>
+                        <td>{org.organization_id}</td>
+                        <td>{org.organization_name}</td>
+                        <td>
+                          <div className="form-check form-switch">
+                            <input
+                              className="form-check-input"
+                              type="checkbox"
+                              id={`toggle-${org.organization_id}`}
+                              checked={org.is_active}
+                              onChange={() => toggleIsActive(org)}
+                            />
+                            <label className="form-check-label" htmlFor={`toggle-${org.organization_id}`}>
+                              {org.is_active ? 'Active' : 'Inactive'}
+                            </label>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="3" className="text-center">No organizations found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                  <Pagination>
+                    <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                    {[...Array(totalPages).keys()].map((num) => (
+                      <Pagination.Item
+                        key={num + 1}
+                        active={num + 1 === currentPage}
+                        onClick={() => handlePageChange(num + 1)}
+                      >
+                        {num + 1}
+                      </Pagination.Item>
+                    ))}
+                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

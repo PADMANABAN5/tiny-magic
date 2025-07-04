@@ -15,7 +15,8 @@ import Batch from './pages/Batch.jsx'; // Assuming you have a Batch page
 import Pods from './pages/Pods.jsx'; // Assuming you have a Pods page
 import Assign  from './pages/Assign.jsx';
 import User from './pages/User.jsx';
-
+import Addusers from './pages/Addusers.jsx'; // Assuming you have an Addusers page
+import Addorgadmin from './pages/Addorgadmin.jsx';
 
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
@@ -58,6 +59,8 @@ function App() {
         <Route path="/pods" element={<Pods />} />
         <Route path="/assign" element={<Assign />} />
         <Route path="/users" element={<User />} />
+        <Route path="/addusers" element={<Addusers />} />
+        <Route path="/addorgadmin" element={<Addorgadmin />} />
       </Routes>
     </Router>
   );

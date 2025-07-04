@@ -42,11 +42,10 @@ function Dashboard() {
   const [sessionType, setSessionType] = useState(null); // 'fresh' or 'resume'
   const [resumedFromStatus, setResumedFromStatus] = useState(null);
   const [isInitializing, setIsInitializing] = useState(true);
-
   // Refs for outside click detection
   const saveButtonRef = useRef(null);
   const saveOptionsRef = useRef(null);
-
+  
   const [chatCounts, setChatCounts] = useState({
     stopped: 0,
     paused: 0,
@@ -215,12 +214,6 @@ function Dashboard() {
           setCurrentChatId(chat.id);
           setSessionType("resume");
           setResumedFromStatus(chat.status);
-
-          // MODIFICATION: Set currentStage based on the chat's saved stage from API
-          // You'll need `chat.currentStage` and `chat.interactionCompleted` from your backend response
-          // For now, let's assume `chat` object includes these. If not, you'll need to fetch them or
-          // update your backend response.
-          // For a resumed chat, if `chat.currentStage` is 0, but there's history, assume Main Stage 2 (index 1)
           let currentChatStageFromAPI = chat.currentStage !== undefined ? chat.currentStage : 0;
           let interactionCompletedFromAPI = chat.interactionCompleted !== undefined ? chat.interactionCompleted : false;
 
