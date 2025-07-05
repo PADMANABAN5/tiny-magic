@@ -15,26 +15,26 @@ function Assign() {
 
   useEffect(() => {
     // Replace with your actual endpoints
-    axios.get('http://localhost:5000/api/pods').then(res => setPods(res.data))
-    axios.get('http://localhost:5000/api/batches').then(res => setBatches(res.data))
-    axios.get('http://localhost:5000/api/organizations').then(res => setOrganizations(res.data))
-    axios.get('http://localhost:5000/api/concepts').then(res => setConcepts(res.data))
-    axios.get('http://localhost:5000/api/mentors').then(res => setMentors(res.data))
-    axios.get('http://localhost:5000/api/orgusers').then(res => setOrgUsers(res.data))
+    axios.get(`${process.env.REACT_APP_API_LINK}/pods`).then(res => setPods(res.data))
+    axios.get(`${process.env.REACT_APP_API_LINK}/batches`).then(res => setBatches(res.data))
+    axios.get(`${process.env.REACT_APP_API_LINK}/organizations`).then(res => setOrganizations(res.data))
+    axios.get(`${process.env.REACT_APP_API_LINK}/concepts`).then(res => setConcepts(res.data))
+    axios.get(`${process.env.REACT_APP_API_LINK}/mentors`).then(res => setMentors(res.data))
+    axios.get(`${process.env.REACT_APP_API_LINK}/orgusers`).then(res => setOrgUsers(res.data))
   }, [])
 
   const handleConceptAssign = async () => {
-    await axios.post('http://localhost:5000/api/batch-concepts', conceptAssign)
+    await axios.post(`${process.env.REACT_APP_API_LINK}/batch-concepts`, conceptAssign)
     alert('Concept assigned to batch')
   }
 
   const handleMentorAssign = async () => {
-    await axios.post('http://localhost:5000/api/pod-mentors', mentorAssign)
+    await axios.post(`${process.env.REACT_APP_API_LINK}/pod-mentors`, mentorAssign)
     alert('Mentor assigned to pod')
   }
 
   const handleOrgUserAssign = async () => {
-    await axios.post('http://localhost:5000/api/pod-users', orgUserAssign)
+    await axios.post(`${process.env.REACT_APP_API_LINK}/pod-users`, orgUserAssign)
     alert('User assigned to pod')
   }
 

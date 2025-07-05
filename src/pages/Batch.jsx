@@ -29,7 +29,7 @@ export default function Batch() {
   const fetchBatches = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/batches");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`);
       if (res.data && Array.isArray(res.data.data)) {
         setBatches(res.data.data);
       } else {
@@ -46,7 +46,7 @@ export default function Batch() {
 
   const fetchConcepts = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/concepts");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/concepts`);
       if (res.data && Array.isArray(res.data.data)) {
         setConcepts(res.data.data);
       }
@@ -57,7 +57,7 @@ export default function Batch() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/organizations");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       }
@@ -107,9 +107,9 @@ export default function Batch() {
 
     try {
       if (isEditMode && selectedBatchId) {
-        await axios.put(`http://localhost:5000/api/batches/${selectedBatchId}`, payload);
+        await axios.put(`${process.env.REACT_APP_API_LINK}/batches/${selectedBatchId}`, payload);
       } else {
-        await axios.post("http://localhost:5000/api/batches", payload);
+        await axios.post(`${process.env.REACT_APP_API_LINK}/batches`, payload);
       }
       setShowModal(false);
       fetchBatches();

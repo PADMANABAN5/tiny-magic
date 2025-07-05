@@ -24,7 +24,7 @@ export default function Addorgadmin() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get("http://localhost:5000/api/users/role/orgadmin");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orgadmin`);
       if (res.data && Array.isArray(res.data.data)) {
         setOrgAdmins(res.data.data);
       } else {
@@ -42,7 +42,7 @@ export default function Addorgadmin() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/organizations");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       }
@@ -61,7 +61,7 @@ export default function Addorgadmin() {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/users/orgadmin", newAdmin);
+      await axios.post(`${process.env.REACT_APP_API_LINK}/users/orgadmin`, newAdmin);
       setShowModal(false);
       setNewAdmin({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
       fetchOrgAdmins();

@@ -24,7 +24,7 @@ export default function Addusers() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get("http://localhost:5000/api/users/role/orguser");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orguser`);
       if (res.data && Array.isArray(res.data.data)) {
         setOrgUsers(res.data.data);
       } else {
@@ -42,7 +42,7 @@ export default function Addusers() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/organizations");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       }
@@ -61,7 +61,7 @@ export default function Addusers() {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/users/orguser", newUser);
+      await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, newUser);
       setShowModal(false);
       setNewUser({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
       fetchOrgUsers();

@@ -18,7 +18,7 @@ export default function OrgList() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get("http://localhost:5000/api/organizations");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
 
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
@@ -57,8 +57,8 @@ export default function OrgList() {
 
     try {
       const endpoint = newIsActiveState
-        ? `http://localhost:5000/api/organizations/${org.organization_id}/active`
-        : `http://localhost:5000/api/organizations/${org.organization_id}/inactive`;
+        ? `${process.env.REACT_APP_API_LINK}/organizations/${org.organization_id}/active`
+        : `${process.env.REACT_APP_API_LINK}/organizations/${org.organization_id}/inactive`;
 
       await axios.get(endpoint);
     } catch (err) {
@@ -80,7 +80,7 @@ export default function OrgList() {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/organizations", {
+      await axios.post(`${process.env.REACT_APP_API_LINK}/organizations`, {
         organization_name: newOrgName,
         is_active: newOrgIsActive,
       });

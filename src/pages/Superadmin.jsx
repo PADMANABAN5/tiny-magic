@@ -1,13 +1,16 @@
 import React from 'react';
 import { BrowserRouter as Router, useNavigate } from 'react-router-dom'; // Import BrowserRouter
 import {
-  Building2, User, Users, LineChart, Settings, LayoutGrid, Mail, Database, ShieldCheck,
+  Building2, User, Users, LineChart, Settings, LayoutGrid, Key, Database, ShieldCheck,
   Monitor, BookOpen, Clock
 } from 'lucide-react'; 
 import Supersidebar from '../components/Supersidebar'; // Import the sidebar component
 import { Container, Row, Col, Card, Button, Nav, Navbar } from 'react-bootstrap'; // React-Bootstrap components
 function Superadmin() {
   const username = sessionStorage.getItem("username");
+  const firstname = sessionStorage.getItem("firstname");
+  const lastname = sessionStorage.getItem("lastname");
+  const fullName = `${firstname || ''} ${lastname || ''}`.trim() || 'User';
   const navigate = useNavigate();
 
   return (
@@ -20,7 +23,7 @@ function Superadmin() {
         <Card className="shadow-sm mb-3 mt-4 border-0 rounded-3">
           <Card.Body className="p-4">
             <h1 className="fs-2 fw-bold text-dark mb-2">
-              Welcome, <span className="text-primary">{username || 'Super Admin'}</span>!
+              Welcome, <span className="text-primary">{fullName || 'Super Admin'}</span>!👋 from <span className="text-primary">{'Tiny Magiq'}</span>
             </h1>
             <p className="text-secondary fs-5">
               Manage platform-wide settings, organizations, and admin controls. Your central hub for ultimate control.
@@ -182,7 +185,7 @@ function Superadmin() {
               <Card className="shadow-sm h-100 border-0 rounded-3">
                 <Card.Body className="p-4">
                   <div className="p-3 bg-warning-subtle rounded-circle d-inline-flex mb-3">
-                    <Mail className="text-warning" size={32} />
+                    <Key className="text-warning" size={32} />
                   </div>
                   <Card.Title className="fs-5 fw-semibold text-dark mb-2">Pods</Card.Title>
                   <Card.Text className="text-secondary mb-4 fs-6">

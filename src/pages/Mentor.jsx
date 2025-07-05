@@ -23,7 +23,7 @@ export default function Mentor() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get("http://localhost:5000/api/users/role/mentor");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`);
 
       if (res.data && Array.isArray(res.data.data)) {
         setMentors(res.data.data);
@@ -50,7 +50,7 @@ export default function Mentor() {
     }
 
     try {
-      await axios.post("http://localhost:5000/api/users/mentor", newMentor);
+      await axios.post(`${process.env.REACT_APP_API_LINK}/users/mentor`, newMentor);
       setShowModal(false);
       setNewMentor({ email: '', first_name: '', last_name: '', password: '' });
       fetchMentors();

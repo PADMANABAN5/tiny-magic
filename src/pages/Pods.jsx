@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
+import { Pagination } from 'react-bootstrap';
 import '../styles/OrgList.css';
 
 export default function Pods() {
@@ -13,6 +14,9 @@ export default function Pods() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPodId, setSelectedPodId] = useState(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 6;
 
   const [podForm, setPodForm] = useState({
     organization_id: '',
@@ -32,6 +36,7 @@ export default function Pods() {
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters(prev => ({ ...prev, [name]: value }));
+    setCurrentPage(1); // Reset to first page when filters change
   };
 
   const filteredPods = pods.filter(pod => {
@@ -43,10 +48,17 @@ export default function Pods() {
     );
   });
 
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentPods = filteredPods.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredPods.length / itemsPerPage);
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
   const fetchPods = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/pods");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods`);
       if (res.data && Array.isArray(res.data.data)) {
         setPods(res.data.data);
       } else {
@@ -63,7 +75,7 @@ export default function Pods() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/organizations");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
       setOrganizations(res.data.data || []);
     } catch (err) {
       console.error("Error fetching organizations:", err);
@@ -72,7 +84,7 @@ export default function Pods() {
 
   const fetchBatches = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/batches");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`);
       setBatches(res.data.data || []);
     } catch (err) {
       console.error("Error fetching batches:", err);
@@ -81,7 +93,7 @@ export default function Pods() {
 
   const fetchMentors = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/users/role/mentor");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`);
       setMentors(res.data.data || []);
     } catch (err) {
       console.error("Error fetching mentors:", err);
@@ -131,9 +143,9 @@ export default function Pods() {
 
     try {
       if (isEditMode && selectedPodId) {
-        await axios.put(`http://localhost:5000/api/pods/${selectedPodId}`, payload);
+        await axios.put(`${process.env.REACT_APP_API_LINK}/pods/${selectedPodId}`, payload);
       } else {
-        await axios.post("http://localhost:5000/api/pods", payload);
+        await axios.post(`${process.env.REACT_APP_API_LINK}/pods`, payload);
       }
       setShowModal(false);
       fetchPods();
@@ -213,40 +225,68 @@ export default function Pods() {
           ) : error ? (
             <p className="text-danger">{error}</p>
           ) : (
-            <table className="table table-bordered table-striped">
-              <thead>
-                <tr>
-                  <th>Pod ID</th>
-                  <th>Pod Name</th>
-                  <th>Organization ID</th>
-                  <th>Batch ID</th>
-                  <th>Mentor ID</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredPods.map(pod => (
-                  <tr key={pod.pod_id}>
-                    <td>{pod.pod_id}</td>
-                    <td>{pod.pod_name}</td>
-                    <td>{pod.organization_id || '—'}</td>
-                    <td>{pod.batch_id || '—'}</td>
-                    <td>{pod.mentor_id || '—'}</td>
-                    <td>
-                  <span
-                    className={`badge ${pod.is_active ? 'bg-success text-white' : 'bg-secondary text-white'}`}
-                  >
-                    {pod.is_active ? 'Active' : 'Inactive'}
-                  </span>
-                </td>
-                    <td>
-                      <button className="btn btn-warning btn-sm" onClick={() => openEditModal(pod)}>Update</button>
-                    </td>
+            <>
+              <table className="table table-bordered table-striped">
+                <thead>
+                  <tr>
+                    <th>Pod ID</th>
+                    <th>Pod Name</th>
+                    <th>Organization ID</th>
+                    <th>Batch ID</th>
+                    <th>Mentor ID</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {currentPods.length > 0 ? (
+                    currentPods.map(pod => (
+                      <tr key={pod.pod_id}>
+                        <td>{pod.pod_id}</td>
+                        <td>{pod.pod_name}</td>
+                        <td>{pod.organization_id || '—'}</td>
+                        <td>{pod.batch_id || '—'}</td>
+                        <td>{pod.mentor_id || '—'}</td>
+                        <td>
+                          <span
+                            className={`badge ${pod.is_active ? 'bg-success text-white' : 'bg-secondary text-white'}`}
+                          >
+                            {pod.is_active ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td>
+                          <button className="btn btn-warning btn-sm" onClick={() => openEditModal(pod)}>Update</button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan="7" className="text-center">No pods found.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                  <Pagination>
+                    <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                    {[...Array(totalPages).keys()].map(num => (
+                      <Pagination.Item
+                        key={num + 1}
+                        active={currentPage === num + 1}
+                        onClick={() => handlePageChange(num + 1)}
+                      >
+                        {num + 1}
+                      </Pagination.Item>
+                    ))}
+                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                  </Pagination>
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

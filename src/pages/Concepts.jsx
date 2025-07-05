@@ -34,7 +34,7 @@ export default function Concepts() {
   const fetchConcepts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/concepts");
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/concepts`);
       if (res.data && Array.isArray(res.data.data)) {
         setConcepts(res.data.data);
       } else {
@@ -82,9 +82,9 @@ export default function Concepts() {
     e.preventDefault();
     try {
       if (isEditMode && selectedConceptId) {
-        await axios.put(`http://localhost:5000/api/concepts/${selectedConceptId}`, conceptForm);
+        await axios.put(`${process.env.REACT_APP_API_LINK}/concepts/${selectedConceptId}`, conceptForm);
       } else {
-        await axios.post("http://localhost:5000/api/concepts", conceptForm);
+        await axios.post(`${process.env.REACT_APP_API_LINK}/concepts`, conceptForm);
       }
       setShowModal(false);
       fetchConcepts();

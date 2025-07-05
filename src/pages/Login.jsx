@@ -25,7 +25,7 @@ function Login() {
 
   try {
     const response = await axios.post(
-      "http://localhost:5000/api/users/login",
+      `${process.env.REACT_APP_API_LINK}/users/login`,
       { identifier, password },
       {
         headers: {
@@ -43,6 +43,8 @@ function Login() {
     sessionStorage.setItem("username", user.username);
     sessionStorage.setItem("role_name", user.role);
     sessionStorage.setItem("organization_name", user.organization_name || "");
+    sessionStorage.setItem("firstname", user.first_name || "");
+    sessionStorage.setItem("lastname", user.last_name || "");
 
     setIsLoggedIn(true);
 

@@ -1,123 +1,123 @@
-import React from 'react';
-import Sidebar from '../components/Sidebar';
-import '../styles/orgadmin.css';
+import React,{useEffect,useState} from 'react';
+import { Container, Row, Col, Card, Button, Badge } from 'react-bootstrap';
+import {
+  User, Users, Building2, BarChart2, Settings, Key, CreditCard, Bell, FileText,
+  ClipboardList, ShieldCheck, Megaphone, Plus, Download, Info, LayoutGrid
+} from 'lucide-react';
+import Orgadminsidebar from '../components/Orgadminsidebar';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 function Orgadmin() {
-    const username = sessionStorage.getItem("username");
+  const navigate = useNavigate();
+  const username = sessionStorage.getItem("username");
+  const firstname = sessionStorage.getItem("firstname");
+  const lastname = sessionStorage.getItem("lastname");
+  const fullName = `${firstname || ''} ${lastname || ''}`.trim() || 'User';
+  const organizationName = sessionStorage.getItem("organization_name") || "Your Organization";
+  const email = sessionStorage.getItem("email");
+
+  const [batchesData, setBatchesData] = useState([]);
+
+  useEffect(() => {
+    if (email) {
+      axios
+        .get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`)
+        .then(res => {
+          if (res.data.success && Array.isArray(res.data.data) && res.data.data.length > 0) {
+            setBatchesData(res.data.data);
+          } else {
+            setBatchesData([]);
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch batch info", err);
+          setBatchesData([]);
+        });
+    }
+  }, [email]);
+   const handleCardClick = (batchId) => {
+  navigate(`/orgadminpods/${batchId}`);
+};
+
   return (
-    <div className="orgadmin-container">
-      <Sidebar />
-      <div className="orgadmin-content">
-        <div className="orgadmin-header" style={{ textAlign: 'center' }}>
-          <h1>Welcome, Org Admin 👋</h1>
-          <p>Manage users, monitor activities, and oversee your organization efficiently. This dashboard is your central control point.</p>
-        </div>
+    <div className="d-flex bg-light min-vh-100">
+      <Orgadminsidebar />
 
-        {/* Core Management Sections */}
-        <div className="orgadmin-grid">
-          <div className="orgadmin-card user-card">
-            <div className="icon" >👥</div>
-            <h3>Manage Users</h3>
-            <p>View, create, edit, and deactivate user accounts within your organization. Assign roles and permissions.</p>
-            <button className="btn-view">View Users</button>
-          </div>
+      <Container fluid className="p-4 p-md-5">
+        {/* Header Section - Welcome Card */}
+        <Card className="shadow-sm mb-3 mt-4 border-0 rounded-3">
+          <Card.Body className="p-4">
+            <h1 className="fs-2 fw-bold text-dark mb-2">
+              Welcome, <span className="text-primary">{fullName || 'Org Admin'}</span>👋 from <span className="text-primary">{organizationName}</span>
+            </h1>
+            <p className="text-secondary fs-5">
+              Manage users, monitor activities, and oversee your organization efficiently. Your central control point.
+            </p>
+          </Card.Body>
+        </Card>
 
-          <div className="orgadmin-card org-card">
-            <div className="icon">🏢</div>
-            <h3>Organization Profile</h3>
-            <p>Update your organization’s fundamental details, contact information, and branding assets.</p>
-            <button className="btn-view">Edit Profile</button>
-          </div>
+        {/* --- Batch Information Cards --- */}
+        <h2 className="mt-4 mb-3 fs-3 fw-bold text-dark">Your Batches</h2>
+        <Row className="g-4">
+          {batchesData.length > 0 ? (
+            batchesData.map((batch) => (
+                                <Col key={batch.batch_id} xs={12} md={6} lg={4}>
+                  <Card
+                    border="primary"
+                    className="h-100 shadow-sm rounded-3 clickable-card shadow-sm"
+                    style={{
+    backgroundColor: '#fff', // ✅ Ensure white background
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease-in-out, box-shadow 0.3s ease',
+    boxShadow: '0 4px 20px rgba(33, 180, 234, 0.3)', // ✅ Custom shadow
+  }}
+                    onClick={() => handleCardClick(batch.batch_id)}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = 'scale(1.03)';
+                      e.currentTarget.style.boxShadow = '0 12px 20px rgba(33, 180, 234, 0.3)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = 'scale(1)';
+                      e.currentTarget.style.boxShadow = '0 10px 10px rgba(33, 180, 234, 0.1)';
+                    }}
+                  >
+                  <Card.Header className="fw-bold fs-5 bg-primary text-center text-white">{batch.batch_name}
+                    <Badge bg={batch.is_active ? "success" : "secondary"} className="ms-2">
+                      {batch.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </Card.Header>
+                  <Card.Body>
+                    <Card.Title className="text-center">Batch Overview</Card.Title>
+                    {/* Changed this div to use d-flex for same line and justify-content-around for spacing */}
+                    <div className="d-flex gap-2 justify-content-around flex-wrap">
+                      <Badge bg="info" className="p-2">
+                        Batch Size: {batch.batch_size}
+                      </Badge>
+                      <Badge bg="success" className="p-2">
+                        Pod Count: {batch.pod_count}
+                      </Badge>
+                      <Badge bg="warning" text="dark" className="p-2">
+                        User Count: {batch.user_count}
+                      </Badge>
+                    </div>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))
+          ) : (
+            <Col xs={12}>
+              <Card className="text-center p-3 shadow-sm rounded-3">
+                <Card.Body>
+                  <p className="lead mb-0">No batches found for your organization.</p>
+                </Card.Body>
+              </Card>
+            </Col>
+          )}
+        </Row>
+        {/* --- End Batch Information Cards --- */}
 
-          <div className="orgadmin-card report-card">
-            <div className="icon">📊</div>
-            <h3>Reports & Analytics</h3>
-            <p>Generate detailed reports on user activity, resource usage, and overall organizational performance.</p>
-            <button className="btn-view">View Reports</button>
-          </div>
-        </div>
-
-    
-
-        {/* New Section: Advanced Organization Settings */}
-        <div className="orgadmin-section-header">
-          <h2><span className="icon-small">⚙️</span> Organization Settings</h2>
-          <p>Configure advanced settings specific to your organization's operations.</p>
-        </div>
-        <div className="orgadmin-grid">
-          <div className="orgadmin-card settings-card card-small">
-            <div className="icon">🔑</div>
-            <h3>API & Integrations</h3>
-            <p>Manage API keys, webhooks, and integrate with third-party applications securely.</p>
-            <button className="btn-view">Manage Integrations</button>
-          </div>
-
-          <div className="orgadmin-card billing-card card-small">
-            <div className="icon">💳</div>
-            <h3>Billing & Subscriptions</h3>
-            <p>Review your subscription plan, view invoices, and manage payment methods.</p>
-            <button className="btn-view">Manage Billing</button>
-          </div>
-
-          <div className="orgadmin-card notifications-card card-small">
-            <div className="icon">🔔</div>
-            <h3>Notification Preferences</h3>
-            <p>Customize email and in-app notification settings for your organization's alerts.</p>
-            <button className="btn-view">Edit Preferences</button>
-          </div>
-
-          <div className="orgadmin-card custom-fields-card card-small">
-            <div className="icon">📝</div>
-            <h3>Custom Fields</h3>
-            <p>Define and manage custom fields for users or other data within your organization.</p>
-            <button className="btn-view">Configure Fields</button>
-          </div>
-        </div>
-
-        
-
-        {/* New Section: Activity & Compliance */}
-        <div className="orgadmin-section-header">
-          <h2><span className="icon-small">📜</span> Activity & Compliance</h2>
-          <p>Monitor all activities and ensure compliance within your organization.</p>
-        </div>
-        <div className="orgadmin-grid">
-          <div className="orgadmin-card audit-card card-small">
-            <div className="icon">📋</div>
-            <h3>Audit Logs</h3>
-            <p>Access detailed logs of all administrative and user actions for compliance and troubleshooting.</p>
-            <button className="btn-view">View Logs</button>
-          </div>
-
-          <div className="orgadmin-card security-policy-card card-small">
-            <div className="icon">🛡️</div>
-            <h3>Security Policy</h3>
-            <p>Review and set security policies like password complexity and multi-factor authentication for your organization.</p>
-            <button className="btn-view">Manage Policy</button>
-          </div>
-
-          <div className="orgadmin-card announcements-card card-small">
-            <div className="icon">📢</div>
-            <h3>Announcements</h3>
-            <p>Create and manage announcements or messages visible to all users in your organization.</p>
-            <button className="btn-view">Post Announcements</button>
-          </div>
-        </div>
-
-        
-
-        {/* Quick Actions (Optional) */}
-        <div className="orgadmin-section-header">
-          <h2><span className="icon-small">⚡</span> Quick Actions</h2>
-          <p>Common tasks you might want to perform immediately.</p>
-        </div>
-        <div className="orgadmin-quick-links">
-          <button className="btn-quick-link">Add New User</button>
-          <button className="btn-quick-link">Download Activity Report</button>
-          <button className="btn-quick-link">Update Org Contact Info</button>
-        </div>
-
-      </div>
+      </Container>
     </div>
   );
 }
