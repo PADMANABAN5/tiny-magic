@@ -20,6 +20,7 @@ import Addorgadmin from './pages/Addorgadmin.jsx';
 import OrgadminBatch from './pages/OrgadminBatch.jsx';
 import OrgadminPods from './pages/Orgadminpods.jsx'; // Assuming you have an OrgadminPods page
 import OrgadminUsers from './pages/OrgadminUsers.jsx';
+import Orgadminuserprogress from './pages/Orgadminuserprogress.jsx';
 
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
@@ -67,6 +68,7 @@ function App() {
         <Route path="/orgadminbatch" element={<OrgadminBatch />} />
         <Route path="/orgadminpods/:batchId" element={<OrgadminPods />} />
         <Route path="/orgadminusers/:podId" element={<OrgadminUsers />} />
+        <Route path="/orgadminuserprogress/:userId" element={<Orgadminuserprogress />} />
 
       </Routes>
     </Router>

@@ -59,10 +59,11 @@ function OrgadminBatch() {
     }
 
     return (
-        <div className="d-flex bg-light min-vh-100">
+        <div className="main-layout-container">
       {/* Sidebar component for navigation */}
       <Orgadminsidebar />
-        <Container fluid className="p-4 p-md-5">
+        <div className="content-area">
+      <div className="container mt-4">
             <h2 className="mb-4 text-center" style={{marginTop:'20px'}}>Organization Batches</h2>
             <Row xs={1} md={1} lg={1} className="g-4">
                 {batches.map((batch) => (
@@ -121,7 +122,8 @@ function OrgadminBatch() {
                     </Col>
                 ))}
             </Row>
-        </Container>
+            </div>
+        </div>
         </div>
     );
 }

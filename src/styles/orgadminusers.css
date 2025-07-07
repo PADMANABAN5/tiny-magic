@@ -4,7 +4,6 @@
   height: 100vh; /* Make the container take the full viewport height */
   width: 100vw; /* Make the container take the full viewport width */
   overflow: hidden; /* Prevent overall scroll if content overflows, let content-area manage */
-  
 }
 
 /* Styles for the sidebar (assuming Supersidebar has a root class like 'supersidebar-container') */
@@ -14,15 +13,16 @@
   background-color: #f8f9fa; /* Example background color for sidebar */
   overflow-y: auto; /* Allow sidebar to scroll if its content overflows */
   border-right: 1px solid #dee2e6; /* Optional: Add a border to separate from content */
-  
 }
 
 .content-area {
   flex-grow: 1; /* Allow content area to take up remaining space */
   overflow-y: auto; /* Allow content area to scroll if its content overflows */
   padding: 20px; /* Add some padding around the content */
-  background-color: #ffffff; 
-  margin-top: 20px;/* Example background color for content area */
+  background-color: #ffffff; /* Example background color for content area */
+}
+.container{
+  overflow-y: auto;
 }
 /* Modal Styles */
 .modal-overlay {

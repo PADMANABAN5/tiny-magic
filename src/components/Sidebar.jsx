@@ -57,9 +57,9 @@ function Sidebar() {
               onClick={() => setShowDropdown(!showDropdown)}
               aria-expanded={showDropdown}
             >
-              <FaUser className="me-2" />
-              <span>{getShortenedUsername(username)}</span>
-              <FaCaretDown className="ms-2" />
+              <FaUser className="me-2 text-white" />
+              <span className="text-white">{getShortenedUsername(username)}</span>
+              <FaCaretDown className="ms-2 text-white" />
             </button>
             
             {showDropdown && (

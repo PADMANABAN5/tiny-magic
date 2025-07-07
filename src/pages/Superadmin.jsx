@@ -18,9 +18,9 @@ function Superadmin() {
       <Supersidebar /> {/* Sidebar component for navigation */}
 
       {/* Main Content Area */}
-      <Container fluid className="p-4 p-md-5"> {/* Adjust margin for fixed sidebar */}
+      <Container fluid className="p-4 p-md-5" style={{marginTop: '30px'}}> {/* Adjust margin for fixed sidebar */}
         {/* Header Section */}
-        <Card className="shadow-sm mb-3 mt-4 border-0 rounded-3">
+        <Card className="shadow-sm mb-3 mt-4 border-0 rounded-3" >
           <Card.Body className="p-4">
             <h1 className="fs-2 fw-bold text-dark mb-2">
               Welcome, <span className="text-primary">{fullName || 'Super Admin'}</span>!👋 from <span className="text-primary">{'Tiny Magiq'}</span>
