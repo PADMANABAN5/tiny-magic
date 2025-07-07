@@ -75,6 +75,16 @@ function Sidebar() {
                     <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
                     Dashboard
                   </Link>
+                  <Link
+                    to="/conversationhistory"
+                    className={`dropdown-item d-flex align-items-center ${
+                      location.pathname === "/conversationhistory" ? "active" : ""
+                    }`}
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
+                    History
+                  </Link>
                 </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>

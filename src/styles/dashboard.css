@@ -31,8 +31,7 @@ html, body {
 
 .dashboard-layout {
   flex: 1;
-  display: flex;
-  margin-left: 250px; /* Account for main sidebar */
+  display: flex; 
   height: 100vh;
   width: calc(100% - 250px); /* Ensure it takes remaining space */
   min-width: calc(100vw - 250px);
@@ -170,8 +169,7 @@ html, body {
 
 .dashboard-layout {
   flex: 1;
-  display: flex;
-  margin-left: 250px; /* Account for main sidebar */
+  display: flex; 
   height: 100vh;
   overflow: hidden;
 }
@@ -1700,8 +1698,7 @@ body {
 
 .dashboard-layout {
   flex: 1;
-  display: flex;
-  margin-left: 250px; /* Account for main sidebar */
+  display: flex; 
   height: 100vh;
   overflow: hidden;
 }

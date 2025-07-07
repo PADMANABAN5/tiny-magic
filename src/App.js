@@ -21,6 +21,7 @@ import OrgadminBatch from './pages/OrgadminBatch.jsx';
 import OrgadminPods from './pages/Orgadminpods.jsx'; // Assuming you have an OrgadminPods page
 import OrgadminUsers from './pages/OrgadminUsers.jsx';
 import Orgadminuserprogress from './pages/Orgadminuserprogress.jsx';
+import ConversationHistory from './pages/ConversationHistory.jsx';
 
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
@@ -52,6 +53,7 @@ function App() {
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/conversationhistory" element={<ConversationHistory />} />
         <Route path="/variables" element={<Variables />} />
         <Route path="/prompt" element={<Prompt />} />
         <Route path="/superadmin" element={<Superadmin />} />
