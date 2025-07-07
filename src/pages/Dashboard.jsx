@@ -2,12 +2,27 @@ import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
 import "../styles/dashboard.css";
-import { FiSend, FiDownload, FiSave } from "react-icons/fi";
+import {
+  FiSend,
+  FiDownload,
+  FiSave,
+  FiBook,
+  FiCheckCircle,
+  FiClock,
+  FiPlay,
+  FiUser,
+  FiMessageCircle,
+  FiChevronDown,
+  FiTarget,
+  FiTrendingUp,
+  FiStopCircle,
+  FiRefreshCw,
+  FiAlertCircle
+} from "react-icons/fi";
 import jsPDF from "jspdf";
 import { useNavigate } from "react-router-dom";
 import html2canvas from "html2canvas";
 import axios from "axios";
-import { callLLM } from "../utils/callLLM.js";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
 import Tesseract from 'tesseract.js';
@@ -18,382 +33,646 @@ function Dashboard() {
   const [prompt, setPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const chatEndRef = useRef(null);
-  const model = sessionStorage.getItem("selectedModel");
-  const [selectedModel, setSelectedModel] = useState(model);
   const [selectedPrompt, setSelectedPrompt] = useState("conceptMentor");
   const username = sessionStorage.getItem("username");
+  const userId = sessionStorage.getItem("userId");
   const [llmContent, setLlmContent] = useState("");
   const [sessionHistory, setSessionHistory] = useState([]);
   const [isChecked, setIsChecked] = useState(false);
   const navigate = useNavigate();
-  // MODIFICATION 1: Initial stage from API response structure (0 implies not started, or Main Stage 1)
-  const [currentStage, setCurrentStage] = useState(0); // Initialize to 0, or determine based on initial API status
+  const [currentStage, setCurrentStage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isCountsLoading, setIsCountsLoading] = useState(false);
-  const [showApiKeyPopup, setShowApiKeyPopup] = useState(
-    !sessionStorage.getItem(`apiKey_${username}`)
-  );
-  const [apiKey, setApiKey] = useState("");
-  const [apiKeyError, setApiKeyError] = useState("");
   const [showSaveOptions, setShowSaveOptions] = useState(false);
 
   // Enhanced state for proper session management
   const [currentChatId, setCurrentChatId] = useState(null);
-  const [sessionType, setSessionType] = useState(null); // 'fresh' or 'resume'
+  const [sessionType, setSessionType] = useState(null);
   const [resumedFromStatus, setResumedFromStatus] = useState(null);
+  const [currentChatStatus, setCurrentChatStatus] = useState('not_started');
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // New states for chat ending functionality
+  const [isChatEnded, setIsChatEnded] = useState(false);
+  const [showRestartDialog, setShowRestartDialog] = useState(false);
+  const [endReason, setEndReason] = useState(null); // 'endRequested' or 'interactionCompleted'
+
+  const [concepts, setConcepts] = useState([]);
+  const [conceptsLoading, setConceptsLoading] = useState(false);
+  const [selectedConcept, setSelectedConcept] = useState(null);
+  const [showConceptDropdown, setShowConceptDropdown] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
   // Refs for outside click detection
-  const saveButtonRef = useRef(null);
-  const saveOptionsRef = useRef(null);
-  
+  const conceptDropdownRef = useRef(null);
+  const topSaveButtonRef = useRef(null);
+  const topSaveOptionsRef = useRef(null);
+
   const [chatCounts, setChatCounts] = useState({
-    stopped: 0,
-    paused: 0,
+    not_started: 0,
+    inprogress: 0,
     completed: 0,
-    incomplete: 0,
     archived: 0,
   });
 
-  // Handle outside click to close save options
+  // ✅ Function to fetch API key from API
+  const fetchApiKey = async () => {
+    try {
+      console.log("🔑 Fetching API key from server...");
+      const response = await axios.get(`${BASE_URL}/apikey`);
+
+      if (response.data && response.data.apiKey) {
+        const apiKey = response.data.apiKey;
+        sessionStorage.setItem(`apiKey_${username}`, apiKey);
+        console.log("✅ API key fetched and stored successfully");
+        return apiKey;
+      } else {
+        throw new Error("No API key received from server");
+      }
+    } catch (error) {
+      console.error("❌ Error fetching API key:", error);
+      alert("Failed to fetch API key from server. Please try again or contact support.");
+      return null;
+    }
+  };
+
+  // Handle outside click to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
         showSaveOptions &&
-        saveButtonRef.current &&
-        saveOptionsRef.current &&
-        !saveButtonRef.current.contains(event.target) &&
-        !saveOptionsRef.current.contains(event.target)
+        topSaveButtonRef.current &&
+        topSaveOptionsRef.current &&
+        !topSaveButtonRef.current.contains(event.target) &&
+        !topSaveOptionsRef.current.contains(event.target)
       ) {
         setShowSaveOptions(false);
       }
-    };
 
-    if (showSaveOptions) {
-      document.addEventListener("mousedown", handleClickOutside);
-      document.addEventListener("touchstart", handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [showSaveOptions]);
-
-  // CRITICAL FIX: Clear all session data when starting fresh
-  const clearSessionData = () => {
-    setChatHistory([]);
-    setSessionHistory([]);
-    setCurrentChatId(null);
-    setCurrentStage(0); // Reset stage to "Main Stage 1" (index 0) on clear
-    setSessionType(null);
-    setResumedFromStatus(null);
-
-    // Clear session storage
-    sessionStorage.removeItem("chatHistory");
-    sessionStorage.removeItem("currentChatId");
-    sessionStorage.removeItem("sessionType");
-  };
-
-  // Function to map API's currentStage to Progressbar's index
-  // Progressbar stages:
-  // 0: Main Stage 1
-  // 1: Main Stage 2
-  // 2: Substage 1
-  // 3: Substage 2
-  // 4: Substage 3
-  // 5: Substage 4
-  // 6: Substage 5
-  // 7: Main Stage 3
-  const mapApiStageToProgressbarIndex = (apiCurrentStage, interactionCompleted) => {
-    if (interactionCompleted) {
-      return 7; // Main Stage 3 (Interaction Completed)
-    }
-    switch (apiCurrentStage) {
-      case 0:
-        return 0; // Main Stage 1 (Not started / Initial state)
-      case 1:
-        return 2; // Substage 1 (after Main Stage 2 which is index 1)
-      case 2:
-        return 3; // Substage 2
-      case 3:
-        return 4; // Substage 3
-      case 4:
-        return 5; // Substage 4
-      case 5:
-        return 6; // Substage 5
-      // If the API returns a stage of 0, but a user has initiated the first message,
-      // the `handleSendClick` will set it to Main Stage 2 (index 1).
-      // For resumed chats with API currentStage 0, and chat history, we'll assume Main Stage 2.
-      default:
-        return 0; // Default to Main Stage 1 if something unexpected
-    }
-  };
-
-
-  // SCENARIO 1: Start fresh mentor message (AUTOMATICALLY for fresh sessions)
-  const initiateFirstMentorMessage = async () => {
-    if (sessionStorage.getItem(`apiKey_${username}`)) {
-      setIsLoading(true);
-      try {
-        clearSessionData(); // Ensure a clean slate
-
-        const response = await processPromptAndCallLLM({
-          username,
-          selectedPrompt: "conceptMentor",
-          selectedModel,
-          sessionHistory: [],
-          userPrompt: "",
-        });
-
-        const mentorMessage = response.apiResponseText;
-        const updatedHistory = [
-          {
-            user: "",
-            system: mentorMessage,
-          },
-        ];
-
-        setChatHistory(updatedHistory);
-        setSessionHistory([
-          {
-            Mentee: "",
-            Mentor: mentorMessage,
-          },
-        ]);
-        // MODIFICATION: Set initial stage based on API response for fresh start
-        // For a fresh start, currentStage from API might be 0, and interactionCompleted false
-        // This corresponds to Main Stage 1.
-        setCurrentStage(mapApiStageToProgressbarIndex(response.currentStage, response.interactionCompleted));
-
-
-        setSessionType("fresh");
-        setCurrentChatId(null);
-        setResumedFromStatus(null);
-
-        sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
-        sessionStorage.setItem("sessionType", "fresh");
-      } catch (err) {
-        console.error("❌ Failed to load initial mentor message:", err);
-        alert("Failed to start conversation. Please try again.");
-      } finally {
-        setIsLoading(false);
-        setIsInitializing(false);
+      if (
+        showConceptDropdown &&
+        conceptDropdownRef.current &&
+        !conceptDropdownRef.current.contains(event.target)
+      ) {
+        setShowConceptDropdown(false);
       }
-    } else {
-      setIsInitializing(false);
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSaveOptions, showConceptDropdown]);
+
+  // ✅ Helper function to fetch concepts and return them
+  const fetchAndReturnConcepts = async () => {
+    if (!username || conceptsLoading) return [];
+
+    try {
+      console.log("🎯 Fetching concepts for fresh session:", username);
+      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`);
+
+      if (response.data && response.data.success && response.data.data) {
+        const conceptsData = response.data.data.batch?.concepts || [];
+        console.log("✅ Concepts fetched for fresh session:", conceptsData.length);
+        setConcepts(conceptsData);
+        return conceptsData;
+      } else {
+        console.warn("⚠️ No concepts data in response for fresh session");
+        return [];
+      }
+    } catch (error) {
+      console.error("❌ Error fetching concepts for fresh session:", error);
+      return [];
     }
   };
 
-  // SCENARIO 2: Check session status on login
-  const checkSessionStatus = async () => {
-    if (!username || !sessionStorage.getItem(`apiKey_${username}`)) {
+  // ✅ Fetch concepts from API
+  const fetchConcepts = async () => {
+    if (!username || conceptsLoading) return;
+
+    setConceptsLoading(true);
+    try {
+      console.log("🎯 Fetching concepts for user:", username);
+      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`);
+
+      if (response.data && response.data.success && response.data.data) {
+        const conceptsData = response.data.data.batch?.concepts || [];
+        console.log("✅ Concepts loaded:", conceptsData.length);
+        setConcepts(conceptsData);
+
+        // Auto-select first active concept if none selected and auto-start conversation
+        const firstActiveConcept = conceptsData.find(concept => concept.is_active) || conceptsData[0];
+        if (firstActiveConcept && !selectedConcept) {
+          console.log("🎯 Auto-selecting concept:", firstActiveConcept.concept_name);
+          setSelectedConcept(firstActiveConcept);
+
+          // If we have API key and no chat history, auto-start conversation
+          if (sessionStorage.getItem(`apiKey_${username}`) && chatHistory.length === 0 && !isInitializing) {
+            console.log("🚀 Auto-starting conversation after concept selection");
+            setTimeout(async () => {
+              await initiateFirstMentorMessageWithConcept(firstActiveConcept);
+            }, 500);
+          }
+        }
+      } else {
+        console.warn("⚠️ No concepts data in response");
+        setConcepts([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching concepts:", error);
+      setConcepts([]);
+      if (error.response?.status !== 404) {
+        alert("Failed to load concepts. Please try again.");
+      }
+    } finally {
+      setConceptsLoading(false);
+    }
+  };
+
+  // ✅ Initiate first mentor message with specific concept
+  const initiateFirstMentorMessageWithConcept = async (concept) => {
+    if (!sessionStorage.getItem(`apiKey_${username}`) || !concept) {
       setIsInitializing(false);
       return;
     }
 
+    console.log("🚀 Initiating first mentor message with concept:", concept.concept_name);
     setIsLoading(true);
-    setIsInitializing(true);
-
     try {
-      const response = await axios.get(
-        `${BASE_URL}/chat/session-status/${username}`
-      );
+      clearSessionData();
+      const response = await processPromptAndCallLLM({
+        username,
+        selectedPrompt: "conceptMentor",
+        selectedModel: "gpt-4o",
+        sessionHistory: [],
+        userPrompt: "",
+        selectedConcept: concept,
+      });
 
-      if (response.data && response.data.success) {
-        const { sessionType, hasActiveSession, shouldStartFresh, chat } =
-          response.data.data;
+      const mentorMessage = response.apiResponseText;
+      const updatedHistory = [{ user: "", system: mentorMessage }];
 
-        if (hasActiveSession && chat && !shouldStartFresh) {
-          setChatHistory(chat.conversation);
+      setChatHistory(updatedHistory);
+      setSessionHistory([{ Mentee: "", Mentor: mentorMessage }]);
+      setCurrentStage(0);
+      setCurrentChatStatus('not_started');
+      setSessionType("fresh");
+      setCurrentChatId(null);
+      setResumedFromStatus(null);
+      setIsChatEnded(false);
+      setEndReason(null);
+      sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+      sessionStorage.setItem("sessionType", "fresh");
 
-          const loadedSessionHistory = chat.conversation
-            .filter((item) => item.user !== undefined && item.system !== undefined)
-            .map((item) => ({ Mentee: item.user, Mentor: item.system }));
-          setSessionHistory(loadedSessionHistory);
-
-          setCurrentChatId(chat.id);
-          setSessionType("resume");
-          setResumedFromStatus(chat.status);
-          let currentChatStageFromAPI = chat.currentStage !== undefined ? chat.currentStage : 0;
-          let interactionCompletedFromAPI = chat.interactionCompleted !== undefined ? chat.interactionCompleted : false;
-
-          if (currentChatStageFromAPI === 0 && chat.conversation.length > 1) { // More than just initial mentor message
-              setCurrentStage(1); // Set to Main Stage 2 if API is 0 but chat has started
-          } else {
-              setCurrentStage(mapApiStageToProgressbarIndex(currentChatStageFromAPI, interactionCompletedFromAPI));
-          }
-
-
-          sessionStorage.setItem("chatHistory", JSON.stringify(chat.conversation));
-          sessionStorage.setItem("currentChatId", chat.id.toString());
-          sessionStorage.setItem("sessionType", "resume");
-        } else {
-          await initiateFirstMentorMessage();
-        }
-      }
-
-      await fetchChatCounts();
-    } catch (error) {
-      console.error("❌ Error checking session status:", error);
-      if (error.response && error.response.status === 404) {
-        await initiateFirstMentorMessage();
-      } else {
-        await initiateFirstMentorMessage();
-      }
+      console.log("✅ First mentor message initiated successfully");
+    } catch (err) {
+      console.error("❌ Failed to load initial mentor message:", err);
+      alert("Failed to start conversation. Please try again.");
     } finally {
       setIsLoading(false);
       setIsInitializing(false);
     }
   };
 
-  const handleToggle = () => {
-    const newChecked = !isChecked;
-    setIsChecked(newChecked);
-    if (newChecked) {
-      navigate("/variables");
+  const clearSessionData = () => {
+    setChatHistory([]);
+    setSessionHistory([]);
+    setCurrentChatId(null);
+    setCurrentStage(0);
+    setSessionType(null);
+    setResumedFromStatus(null);
+    setCurrentChatStatus('not_started');
+    setIsChatEnded(false);
+    setEndReason(null);
+    sessionStorage.removeItem("chatHistory");
+    sessionStorage.removeItem("currentChatId");
+    sessionStorage.removeItem("sessionType");
+  };
+
+  // Updated stage mapping to match API response
+  const mapApiStageToProgressbarIndex = (apiCurrentStage, status, interactionCompleted) => {
+    if (interactionCompleted || status === 'completed') return 7;
+    if (status === 'not_started') return 0;
+
+    // For inprogress status, map API stages 0-5 to progress stages 0-6
+    switch (apiCurrentStage) {
+      case 0: return 1; // Stage 0 -> Progress 1 (just started)
+      case 1: return 2; // Stage 1 -> Progress 2
+      case 2: return 3; // Stage 2 -> Progress 3
+      case 3: return 4; // Stage 3 -> Progress 4
+      case 4: return 5; // Stage 4 -> Progress 5
+      case 5: return 6; // Stage 5 -> Progress 6
+      default: return 1;
     }
   };
 
-  const handleApiKeySubmit = async () => {
-    if (apiKey.length < 10) {
-      setApiKeyError("API Key must be at least 10 characters long");
+  const initiateFirstMentorMessage = async () => {
+    if (!sessionStorage.getItem(`apiKey_${username}`) || !selectedConcept) {
+      setIsInitializing(false);
       return;
     }
 
-    const existingApiKeys = JSON.parse(
-      sessionStorage.getItem("apiKeys") || "{}"
-    );
+    console.log("🚀 Initiating first mentor message");
+    setIsLoading(true);
+    try {
+      const response = await processPromptAndCallLLM({
+        username,
+        selectedPrompt: "conceptMentor",
+        selectedModel: "gpt-4o",
+        sessionHistory: [],
+        userPrompt: "",
+        selectedConcept: selectedConcept,
+      });
 
-    const isKeyUsed = Object.entries(existingApiKeys).some(
-      ([storedUsername, storedApiKey]) =>
-        storedApiKey === apiKey && storedUsername !== username
-    );
+      const mentorMessage = response.apiResponseText;
+      const updatedHistory = [{ user: "", system: mentorMessage }];
 
-    if (isKeyUsed) {
-      setApiKeyError("This API Key is already used by another user");
-      return;
+      setChatHistory(updatedHistory);
+      setSessionHistory([{ Mentee: "", Mentor: mentorMessage }]);
+      setCurrentStage(0);
+      setCurrentChatStatus('not_started');
+      setSessionType("fresh");
+      setCurrentChatId(null);
+      setResumedFromStatus(null);
+      setIsChatEnded(false);
+      setEndReason(null);
+      sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
+      sessionStorage.setItem("sessionType", "fresh");
+    } catch (err) {
+      console.error("❌ Failed to load initial mentor message:", err);
+      alert("Failed to start conversation. Please try again.");
+    } finally {
+      setIsLoading(false);
+      setIsInitializing(false);
     }
+  };
 
-    sessionStorage.setItem(`apiKey_${username}`, apiKey);
-    existingApiKeys[username] = apiKey;
-    sessionStorage.setItem("apiKeys", JSON.stringify(existingApiKeys));
+  // Function to handle chat restart with save dialog
+  const handleRestartChat = () => {
+    setShowRestartDialog(true);
+  };
 
-    setShowApiKeyPopup(false);
-    setApiKeyError("");
+  // Function to restart without saving
+  const restartWithoutSaving = async () => {
+    setShowRestartDialog(false);
+    console.log("🔄 Restarting chat without saving");
+
+    clearSessionData();
+    setIsLoading(true);
+
+    try {
+      // Start fresh conversation with current selected concept
+      if (selectedConcept) {
+        await initiateFirstMentorMessageWithConcept(selectedConcept);
+      } else {
+        // If no concept selected, fetch concepts and start with first one
+        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+        if (currentConcepts.length > 0) {
+          const conceptToUse = currentConcepts[0];
+          setSelectedConcept(conceptToUse);
+          await initiateFirstMentorMessageWithConcept(conceptToUse);
+        }
+      }
+
+      // Refresh chat counts
+      await fetchChatCounts();
+    } catch (error) {
+      console.error("❌ Error restarting chat:", error);
+      alert("Failed to restart conversation. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Function to restart with saving current session
+  const restartWithSaving = async () => {
+    setShowRestartDialog(false);
+    console.log("💾 Saving session before restart");
+
+    setIsLoading(true);
+
+    try {
+      // Save current session with appropriate status
+      const statusToSave = 'completed';
+      await handleSaveChat(statusToSave);
+
+      // Clear session data and start fresh
+      clearSessionData();
+
+      // Start fresh conversation
+      if (selectedConcept) {
+        await initiateFirstMentorMessageWithConcept(selectedConcept);
+      } else {
+        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+        if (currentConcepts.length > 0) {
+          const conceptToUse = currentConcepts[0];
+          setSelectedConcept(conceptToUse);
+          await initiateFirstMentorMessageWithConcept(conceptToUse);
+        }
+      }
+
+      // Refresh chat counts
+      await fetchChatCounts();
+    } catch (error) {
+      console.error("❌ Error saving and restarting chat:", error);
+      alert("Failed to save and restart conversation. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleDownloadPDF = () => {
-  const chatDiv = document.getElementById("chat-history");
-  if (!chatDiv) {
-    console.error("Chat history div not found");
-    return;
-  }
+    const chatDiv = document.getElementById("chat-history");
+    if (!chatDiv) {
+      console.error("Chat history div not found");
+      return;
+    }
 
-  const originalMaxHeight = chatDiv.style.maxHeight;
-  const originalOverflowY = chatDiv.style.overflowY;
-  const originalScrollTop = chatDiv.scrollTop;
-  const originalPosition = chatDiv.style.position;
-  const originalTop = chatDiv.style.top;
+    const originalMaxHeight = chatDiv.style.maxHeight;
+    const originalOverflowY = chatDiv.style.overflowY;
+    const originalScrollTop = chatDiv.scrollTop;
+    const originalPosition = chatDiv.style.position;
+    const originalTop = chatDiv.style.top;
 
-  chatDiv.style.maxHeight = "none";
-  chatDiv.style.overflowY = "visible";
+    chatDiv.style.maxHeight = "none";
+    chatDiv.style.overflowY = "visible";
 
-  const parentOfChatDiv = chatDiv.parentElement;
-  if (parentOfChatDiv) {
-    parentOfChatDiv.style.flexGrow = "0";
-  }
+    const parentOfChatDiv = chatDiv.parentElement;
+    if (parentOfChatDiv) {
+      parentOfChatDiv.style.flexGrow = "0";
+    }
 
-  chatDiv.style.position = "absolute";
-  chatDiv.style.top = "0";
-  chatDiv.style.width = "auto";
-  chatDiv.scrollTop = 0;
+    chatDiv.style.position = "absolute";
+    chatDiv.style.top = "0";
+    chatDiv.style.width = "auto";
+    chatDiv.scrollTop = 0;
 
-  // Add a loading indicator here (e.g., show a spinner)
-  console.log("Generating PDF and performing OCR...");
+    console.log("Generating PDF and performing OCR...");
 
-  setTimeout(() => {
-    html2canvas(chatDiv, {
-      scale: 2,
-      useCORS: true,
-    })
-      .then(async (canvas) => { // Mark as async because we'll use await for Tesseract
-        const imgData = canvas.toDataURL("image/png");
-
-        // --- OCR Integration ---
-        try {
-          const { data: { text } } = await Tesseract.recognize(
-            imgData,
-            'eng', // Language code (e.g., 'eng' for English). You can add more like 'hin' for Hindi.
-            { logger: m => console.log(m) } // Optional: to see progress in console
-          );
-          console.log("Extracted Text:", text);
-         
-        } catch (ocrError) {
-          console.error("❌ OCR error:", ocrError);
-        }
-        
-
-
-        const pdf = new jsPDF("p", "mm", "a4");
-
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = pdf.internal.pageSize.getHeight();
-        const imgWidth = pdfWidth;
-        const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-        let currentHeight = 0;
-
-        while (currentHeight < imgHeight) {
-          if (currentHeight > 0) {
-            pdf.addPage();
-          }
-          pdf.addImage(imgData, "PNG", 0, -currentHeight, imgWidth, imgHeight);
-          currentHeight += pdfHeight;
-        }
-
-        const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
-        const filename = `chat-history-${timestamp}.pdf`;
-        pdf.save(filename);
-
-        // Restore original styles
-        chatDiv.style.maxHeight = originalMaxHeight;
-        chatDiv.style.overflowY = originalOverflowY;
-        chatDiv.style.position = originalPosition;
-        chatDiv.style.top = originalTop;
-        chatDiv.style.width = "";
-        chatDiv.scrollTop = originalScrollTop;
-
-        if (parentOfChatDiv) {
-          parentOfChatDiv.style.flexGrow = "";
-        }
-
-        // Hide loading indicator here
-        console.log("PDF generated and OCR attempted.");
+    setTimeout(() => {
+      html2canvas(chatDiv, {
+        scale: 2,
+        useCORS: true,
       })
-      .catch((error) => {
-        console.error("❌ PDF generation or OCR error:", error);
-        alert("Failed to generate PDF or perform OCR. Please try again.");
+        .then(async (canvas) => {
+          const imgData = canvas.toDataURL("image/png");
 
-        // Ensure styles are restored even on error
-        chatDiv.style.maxHeight = originalMaxHeight;
-        chatDiv.style.overflowY = originalOverflowY;
-        chatDiv.style.position = originalPosition;
-        chatDiv.style.top = originalTop;
-        chatDiv.style.width = "";
-        chatDiv.scrollTop = originalScrollTop;
+          try {
+            const { data: { text } } = await Tesseract.recognize(
+              imgData,
+              'eng',
+              { logger: m => console.log(m) }
+            );
+            console.log("Extracted Text:", text);
+          } catch (ocrError) {
+            console.error("❌ OCR error:", ocrError);
+          }
 
-        if (parentOfChatDiv) {
-          parentOfChatDiv.style.flexGrow = "";
-        }
-        // Hide loading indicator here
-      });
-  }, 700);
-};
-  const handleInputChange = (event) => {
-    setPrompt(event.target.value);
+          const pdf = new jsPDF("p", "mm", "a4");
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = pdf.internal.pageSize.getHeight();
+          const imgWidth = pdfWidth;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+          let currentHeight = 0;
+
+          while (currentHeight < imgHeight) {
+            if (currentHeight > 0) {
+              pdf.addPage();
+            }
+            pdf.addImage(imgData, "PNG", 0, -currentHeight, imgWidth, imgHeight);
+            currentHeight += pdfHeight;
+          }
+
+          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+          const filename = `chat-history-${timestamp}.pdf`;
+          pdf.save(filename);
+
+          // Restore original styles
+          chatDiv.style.maxHeight = originalMaxHeight;
+          chatDiv.style.overflowY = originalOverflowY;
+          chatDiv.style.position = originalPosition;
+          chatDiv.style.top = originalTop;
+          chatDiv.style.width = "";
+          chatDiv.scrollTop = originalScrollTop;
+
+          if (parentOfChatDiv) {
+            parentOfChatDiv.style.flexGrow = "";
+          }
+
+          console.log("PDF generated and OCR attempted.");
+        })
+        .catch((error) => {
+          console.error("❌ PDF generation or OCR error:", error);
+          alert("Failed to generate PDF or perform OCR. Please try again.");
+
+          // Ensure styles are restored even on error
+          chatDiv.style.maxHeight = originalMaxHeight;
+          chatDiv.style.overflowY = originalOverflowY;
+          chatDiv.style.position = originalPosition;
+          chatDiv.style.top = originalTop;
+          chatDiv.style.width = "";
+          chatDiv.scrollTop = originalScrollTop;
+
+          if (parentOfChatDiv) {
+            parentOfChatDiv.style.flexGrow = "";
+          }
+        });
+    }, 700);
   };
 
-  const handleSaveChat = async (status) => {
+  const handleSendClick = async () => {
+    if (!prompt.trim() || !selectedConcept || isChatEnded) {
+      if (isChatEnded) {
+        alert("This conversation has ended. Please restart to begin a new session.");
+        return;
+      }
+      alert("Please enter a prompt and select a concept.");
+      return;
+    }
+
+    const isFirstUserMessage = currentStage === 0;
+
+    if (isFirstUserMessage) {
+      setIsTransitioning(true);
+      setCurrentStage(1);
+      setTimeout(() => setIsTransitioning(false), 800);
+    }
+
+    setIsLoading(true);
+    const userPrompt = prompt.trim();
+    setPrompt("");
+
+    try {
+      const initialResponse = await processPromptAndCallLLM({
+        username,
+        selectedPrompt,
+        selectedModel: "gpt-4o",
+        sessionHistory,
+        userPrompt: userPrompt,
+        selectedConcept: selectedConcept,
+      });
+
+      console.log("📡 Raw API Response:", initialResponse);
+
+      let newApiCurrentStage = initialResponse.currentStage || 0;
+      let newInteractionCompleted = initialResponse.interactionCompleted || false;
+      let newEndRequested = initialResponse.endRequested || false;
+
+      console.log("🔍 API Response Details:", {
+        apiCurrentStage: newApiCurrentStage,
+        interactionCompleted: newInteractionCompleted,
+        endRequested: newEndRequested,
+        currentProgressStage: currentStage,
+        isFirstUserMessage
+      });
+
+      const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
+
+      if (isFirstUserMessage || newProgressStage >= currentStage) {
+        setCurrentStage(newProgressStage);
+        setCurrentChatStatus('inprogress');
+        console.log("✅ Progress updated:", {
+          from: currentStage,
+          to: newProgressStage,
+          apiStage: newApiCurrentStage,
+          status: 'inprogress'
+        });
+      }
+
+      const newChatEntry = {
+        user: userPrompt,
+        system: initialResponse.apiResponseText,
+      };
+
+      let currentChatHistory = [];
+      setChatHistory((prev) => {
+        currentChatHistory = [...prev, newChatEntry];
+        sessionStorage.setItem("chatHistory", JSON.stringify(currentChatHistory));
+        return currentChatHistory;
+      });
+
+      setSessionHistory((prev) => [
+        ...prev,
+        { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
+      ]);
+
+      // Removed auto-save functionality - only save when user explicitly clicks save button
+
+      // Check for end conditions - both endRequested and interactionCompleted trigger assessment
+      // Replace this part in your handleSendClick function:
+
+      // Check for end conditions - both endRequested and interactionCompleted trigger assessment
+      if (newEndRequested || newInteractionCompleted) {
+        console.log(newInteractionCompleted ? "🎉 Interaction completed! Triggering assessment..." : "🛑 End requested by mentor, triggering assessment...");
+
+        // Always call assessment when ending
+        const assessmentResponse = await processPromptAndCallLLM({
+          username,
+          selectedPrompt: "assessmentPrompt",
+          selectedModel: "gpt-4o",
+          sessionHistory: [
+            ...sessionHistory,
+            { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
+          ],
+          userPrompt: userPrompt,
+          selectedConcept: selectedConcept,
+        });
+
+        setLlmContent(assessmentResponse.apiResponseText);
+
+        const assessmentChatEntry = {
+          user: "",
+          system: assessmentResponse.apiResponseText,
+        };
+
+        let finalChatHistory = [];
+        setChatHistory((prev) => {
+          finalChatHistory = [...prev, assessmentChatEntry];
+          sessionStorage.setItem("chatHistory", JSON.stringify(finalChatHistory));
+          return finalChatHistory;
+        });
+
+        setSessionHistory((prev) => [
+          ...prev,
+          { Mentee: "", Mentor: assessmentResponse.apiResponseText },
+        ]);
+
+        // UPDATED: Both scenarios move to completed stage and status
+        setCurrentStage(7); // Always move to completed stage (7)
+        setCurrentChatStatus('completed'); // Always set status to completed
+
+        // Set the end reason for UI messaging
+        if (newInteractionCompleted) {
+          setEndReason('interactionCompleted');
+        } else {
+          setEndReason('endRequested');
+        }
+
+        // REMOVED: Auto-save functionality - only save when user manually clicks save
+
+        setSelectedPrompt("conceptMentor");
+
+        // Important: Set chat as ended AFTER assessment is added to chat history
+        // This ensures the assessment is displayed before input is restricted
+        setTimeout(() => {
+          setIsChatEnded(true);
+          console.log("🔒 Chat input restricted after assessment display");
+        }, 100); // Small delay to ensure UI updates properly
+      }
+
+    } catch (error) {
+      console.error("❌ Error in API request:", error);
+      if (error.response) {
+        alert(`Failed to process request: ${error.response.data.message || "Server error"}`);
+      } else {
+        alert("Failed to process request. Please check your connection and try again.");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getCurrentStageForAPI = (saveStatus) => {
+    // If user is manually setting status, use that
+    if (saveStatus === "not_started") {
+      return 0;
+    } else if (saveStatus === "completed") {
+      return 5;
+    } else if (saveStatus === "inprogress") {
+      // For inprogress, calculate stage based on current frontend state
+      if (currentStage === 0) return 0; // Just started, no progress yet
+      if (currentStage === 7) return 5; // Assessment completed = stage 5
+      return Math.min(Math.max(currentStage - 1, 0), 5); // Convert progress stages 1-6 to API stages 0-5
+    }
+
+    // Fallback: determine from current frontend state
+    const frontendStatus = getStageStatus();
+    if (frontendStatus === 'not-started') return 0;
+    if (frontendStatus === 'completed') return 5;
+
+    // For in-progress, map currentStage to API stage
+    if (currentStage === 0) return 0;
+    if (currentStage === 7) return 5;
+    return Math.min(Math.max(currentStage - 1, 0), 5);
+  };
+
+  // Replace your getFrontendStatusForSave function with this:
+
+  const getFrontendStatusForSave = () => {
+    // If chat has ended (either interactionCompleted or endRequested), save as completed
+    if (isChatEnded) {
+      return 'completed';
+    }
+
+    // Determine current frontend status based on stage and chat state
+    if (currentStage === 0 && chatHistory.length <= 1) {
+      return 'not_started';
+    } else {
+      return 'inprogress';
+    }
+  };
+
+  const handleSaveChat = async (requestedStatus = null) => {
     if (!username) {
       alert("Cannot save chat: User not identified.");
       return;
@@ -403,6 +682,20 @@ function Dashboard() {
       return;
     }
 
+    // Determine the status to save
+    const statusToSave = requestedStatus || getFrontendStatusForSave();
+    const stageToSave = getCurrentStageForAPI(statusToSave);
+
+    console.log("💾 Saving chat with:", {
+      requestedStatus,
+      statusToSave,
+      stageToSave,
+      currentStage,
+      frontendStatus: getStageStatus(),
+      currentChatStatus,
+      chatHistoryLength: chatHistory.length
+    });
+
     setIsLoading(true);
     try {
       let response;
@@ -411,44 +704,49 @@ function Dashboard() {
       if (currentChatId && sessionType === "resume") {
         response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
           conversation: chatHistory,
-          status: status,
+          status: statusToSave,
+          current_stage: stageToSave,
         });
         actionMessage = `Updated existing chat (ID: ${currentChatId})`;
       } else {
         response = await axios.post(`${BASE_URL}/chat`, {
-          user_id: username,
+          user_id: userId,
           conversation: chatHistory,
-          status: status,
+          status: statusToSave,
+          current_stage: stageToSave,
         });
         actionMessage = "Created new chat";
       }
       setShowSaveOptions(false);
 
-      alert(` Chat saved as ${status}!`);
+      console.log("✅ Chat saved successfully:", {
+        status: statusToSave,
+        stage: stageToSave,
+        chatId: response.data.data.id
+      });
+
+      alert(`Chat saved as ${statusToSave}!`);
 
       if (response.data.data.shouldStartFresh) {
         clearSessionData();
 
-        if (status === "completed" || status === "stopped") {
+        if (statusToSave === "completed") {
           setTimeout(async () => {
             await initiateFirstMentorMessage();
           }, 1000);
         }
 
-        setSessionType(status === "completed" || status === "stopped" ? "completed" : "fresh");
-
+        setSessionType(statusToSave === "completed" ? "completed" : "fresh");
         setCurrentChatId(null);
         setResumedFromStatus(null);
-        setCurrentStage(0); // If starting fresh after completion/stop, reset to Main Stage 1
+        setCurrentStage(0);
+        setCurrentChatStatus(statusToSave);
       } else {
         const newChatId = response.data.data.id || currentChatId;
         setCurrentChatId(newChatId);
         setSessionType("resume");
-        setResumedFromStatus(status);
-        // MODIFICATION: Update stage after save if not starting fresh
-        // The stage should reflect the current status of the conversation
-        // For a paused/incomplete session, it should stay at its last known stage.
-        // We'll rely on the API response for currentStage in handleSendClick
+        setResumedFromStatus(statusToSave);
+        setCurrentChatStatus(statusToSave);
       }
 
       sessionStorage.setItem("chatHistory", JSON.stringify(chatHistory));
@@ -465,159 +763,14 @@ function Dashboard() {
     }
   };
 
-  // SCENARIO 4: Continue conversation
-  const handleSendClick = async () => {
-    if (
-      !prompt.trim() ||
-      !selectedPrompt ||
-      selectedModel === "Choose a model"
-    ) {
-      alert("Please enter a prompt, select a prompt type, and choose a model.");
-      return;
-    }
-
-    setIsLoading(true);
-    const userPrompt = prompt.trim();
-    setPrompt("");
-
-    try {
-      const initialResponse = await processPromptAndCallLLM({
-        username,
-        selectedPrompt,
-        selectedModel,
-        sessionHistory,
-        userPrompt: userPrompt,
-      });
-
-      // MODIFICATION: Update currentStage based on initialResponse from API
-      // If it's the very first user message and API returns 0 for currentStage,
-      // it means we've moved past "Main Stage 1" and are "In Progress" (Main Stage 2).
-      // Otherwise, use the API's currentStage and interactionCompleted for more specific mapping.
-
-      let newApiCurrentStage = initialResponse.currentStage;
-      let newInteractionCompleted = initialResponse.interactionCompleted;
-
-      // Special case: If first user prompt, and API says stage 0, move to Main Stage 2 (index 1)
-      if (chatHistory.length === 0 && newApiCurrentStage === 0 && !newInteractionCompleted) {
-        setCurrentStage(1); // Main Stage 2
-      } else {
-        setCurrentStage(mapApiStageToProgressbarIndex(newApiCurrentStage, newInteractionCompleted));
-      }
-
-      const newChatEntry = {
-        user: userPrompt,
-        system: initialResponse.apiResponseText,
-      };
-
-      let currentChatHistory = [];
-
-      setChatHistory((prev) => {
-        currentChatHistory = [...prev, newChatEntry];
-        sessionStorage.setItem("chatHistory", JSON.stringify(currentChatHistory));
-        return currentChatHistory;
-      });
-
-      setSessionHistory((prev) => [
-        ...prev,
-        { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
-      ]);
-
-      if (currentChatId && sessionType === "resume") {
-        try {
-          await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
-            conversation: currentChatHistory,
-            status: "incomplete",
-            // Also send updated stage info if backend handles it
-            current_stage: newApiCurrentStage, // Pass back the current stage from LLM response
-            interaction_completed: newInteractionCompleted // Pass back interaction status
-          });
-        } catch (saveError) {
-          console.error("⚠️ Failed to auto-save progress:", saveError);
-        }
-      }
-
-      if (newInteractionCompleted) { // Use the updated flag directly
-        const assessmentResponse = await processPromptAndCallLLM({
-          username,
-          selectedPrompt: "assessmentPrompt",
-          selectedModel,
-          sessionHistory: [
-            ...sessionHistory,
-            { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
-          ],
-          userPrompt: userPrompt,
-        });
-
-        setLlmContent(assessmentResponse.apiResponseText);
-
-        const assessmentChatEntry = {
-          user: "",
-          system: assessmentResponse.apiResponseText,
-        };
-
-        setChatHistory((prev) => {
-          const updatedHistory = [...prev, assessmentChatEntry];
-          sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
-          return updatedHistory;
-        });
-
-        setSessionHistory((prev) => [
-          ...prev,
-          { Mentee: "", Mentor: assessmentResponse.apiResponseText },
-        ]);
-
-        setSelectedPrompt("conceptMentor");
-
-        // Update stage to Main Stage 3 (index 7) when interaction is completed
-        setCurrentStage(7);
-
-        if (currentChatId && sessionType === "resume") {
-          try {
-            const finalHistory = [...currentChatHistory, assessmentChatEntry];
-            await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
-              conversation: finalHistory,
-              status: "incomplete", // Or 'completed' if you want to force status here
-              current_stage: 5, // Assuming 5 is the final substage before assessment
-              interaction_completed: true // Mark as completed interaction
-            });
-          } catch (saveError) {
-            console.error("⚠️ Failed to auto-save assessment:", saveError);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("❌ Error in API request:", error);
-      if (error.response) {
-        alert(`Failed to process request: ${error.response.data.message || "Server error"}`);
-      } else {
-        alert("Failed to process request. Please check your connection and try again.");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleKeyPress = (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      handleSendClick();
-    }
-  };
-
-  useEffect(() => {
-    if (chatEndRef.current) {
-      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [chatHistory]);
-
   const fetchChatCounts = async () => {
-    if (!username || !sessionStorage.getItem(`apiKey_${username}`)) {
+    if (!userId || !sessionStorage.getItem(`apiKey_${username}`)) {
       return;
     }
 
     setIsCountsLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/chat/counts/${username}`);
+      const response = await axios.get(`${BASE_URL}/chat/counts/${userId}`);
 
       if (
         response.data &&
@@ -627,24 +780,224 @@ function Dashboard() {
       ) {
         setChatCounts(response.data.data.counts);
       } else {
-        setChatCounts({ stopped: 0, paused: 0, completed: 0, incomplete: 0, archived: 0 });
+        setChatCounts({ not_started: 0, inprogress: 0, completed: 0, archived: 0 });
       }
     } catch (error) {
       console.error("❌ Error loading chat counts:", error);
-      setChatCounts({ stopped: 0, paused: 0, completed: 0, incomplete: 0, archived: 0 });
+      setChatCounts({ not_started: 0, inprogress: 0, completed: 0, archived: 0 });
     } finally {
       setIsCountsLoading(false);
     }
   };
 
+  const checkSessionStatus = async () => {
+    if (!username || !userId) {
+      setIsInitializing(false);
+      await fetchConcepts();
+      return;
+    }
+
+    // Check if we already have an API key, if not fetch it
+    if (!sessionStorage.getItem(`apiKey_${username}`)) {
+      const apiKey = await fetchApiKey();
+      if (!apiKey) {
+        setIsInitializing(false);
+        await fetchConcepts();
+        return;
+      }
+    }
+
+    setIsLoading(true);
+    setIsInitializing(true);
+
+    try { 
+      const response = await axios.get(`${BASE_URL}/chat/session-status/${userId}`);
+
+      if (response.data && response.data.success) {
+        const { sessionType, hasActiveSession, shouldStartFresh, chat } = response.data.data;
+
+        if (chat.status === 'completed') {
+      console.log("🎯 Resumed session is completed, starting fresh conversation instead");
+      clearSessionData();
+      setCurrentChatStatus('not_started');
+      
+      await fetchConcepts();
+      
+      setTimeout(async () => {
+        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+        if (currentConcepts.length > 0) {
+          const conceptToUse = selectedConcept || currentConcepts[0];
+          console.log("🚀 Starting fresh conversation for completed session:", conceptToUse.concept_name);
+          setSelectedConcept(conceptToUse);
+          await initiateFirstMentorMessageWithConcept(conceptToUse);
+        }
+      }, 1000);
+      return; // Exit early to avoid resuming the completed session
+    }
+
+        if (sessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
+          // Resume existing session
+          console.log("🔄 Resuming existing session:", chat);
+
+          setChatHistory(chat.conversation);
+
+          const loadedSessionHistory = chat.conversation
+            .filter((item) => item.user !== undefined && item.system !== undefined)
+            .map((item) => ({ Mentee: item.user, Mentor: item.system }));
+          setSessionHistory(loadedSessionHistory);
+
+          setCurrentChatId(chat.id);
+          setSessionType("resume");
+          setResumedFromStatus(chat.status);
+          setCurrentChatStatus(chat.status);
+
+          // Map API stage to progress stage
+          const progressStage = mapApiStageToProgressbarIndex(
+            chat.current_stage,
+            chat.status,
+            false // Assuming not completed if we're resuming
+          );
+          setCurrentStage(progressStage);
+
+          console.log("✅ Session resumed with stage:", {
+            apiStage: chat.current_stage,
+            status: chat.status,
+            progressStage: progressStage
+          });
+
+          sessionStorage.setItem("chatHistory", JSON.stringify(chat.conversation));
+          sessionStorage.setItem("currentChatId", chat.id.toString());
+          sessionStorage.setItem("sessionType", "resume");
+
+          // Fetch concepts after resuming session
+          await fetchConcepts();
+
+        } else if (sessionType === "fresh") {
+          // Start fresh session
+          console.log("🆕 Starting fresh session");
+          clearSessionData();
+          setCurrentChatStatus('not_started');
+
+          // Load concepts first, then initiate conversation
+          await fetchConcepts();
+
+          // Automatically start conversation for fresh session
+          if (concepts.length > 0 || selectedConcept) {
+            const conceptToUse = selectedConcept || concepts[0];
+            if (conceptToUse) {
+              console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
+              setSelectedConcept(conceptToUse);
+              await initiateFirstMentorMessageWithConcept(conceptToUse);
+            }
+          } else {
+            // If no concepts available, at least fetch them
+            setTimeout(async () => {
+              const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+              if (currentConcepts.length > 0) {
+                const conceptToUse = currentConcepts[0];
+                console.log("🚀 Auto-starting fresh conversation after concept fetch:", conceptToUse.concept_name);
+                setSelectedConcept(conceptToUse);
+                await initiateFirstMentorMessageWithConcept(conceptToUse);
+              }
+            }, 1000);
+          }
+        }
+      } else {
+        // Fallback to fresh session
+        console.log("⚠️ No session data, starting fresh");
+        clearSessionData();
+        setCurrentChatStatus('not_started');
+
+        await fetchConcepts();
+
+        // Force start fresh conversation
+        setTimeout(async () => {
+          const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+          if (currentConcepts.length > 0) {
+            const conceptToUse = selectedConcept || currentConcepts[0];
+            console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
+            setSelectedConcept(conceptToUse);
+            await initiateFirstMentorMessageWithConcept(conceptToUse);
+          } else {
+            console.error("❌ No concepts available for fresh conversation");
+          }
+        }, 1000);
+      }
+
+      await fetchChatCounts();
+    } catch (error) {
+      console.error("❌ Error checking session status:", error);
+      // On error, force fresh session start
+      clearSessionData();
+      setCurrentChatStatus('not_started');
+
+      await fetchConcepts();
+
+      setTimeout(async () => {
+        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+        if (currentConcepts.length > 0) {
+          const conceptToUse = selectedConcept || currentConcepts[0];
+          console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
+          setSelectedConcept(conceptToUse);
+          await initiateFirstMentorMessageWithConcept(conceptToUse);
+        } else {
+          console.error("❌ No concepts available for error recovery");
+        }
+      }, 1000);
+    } finally {
+      setIsLoading(false);
+      setIsInitializing(false);
+    }
+  };
+
+  const handleKeyPress = (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      if (!isChatEnded) {
+        handleSendClick();
+      }
+    }
+  };
+
+  const handleConceptSelect = (concept) => {
+    console.log("🎯 Concept selected:", concept.concept_name);
+    setSelectedConcept(concept);
+    setShowConceptDropdown(false);
+
+    clearSessionData();
+    setCurrentChatStatus('not_started');
+
+    if (sessionStorage.getItem(`apiKey_${username}`)) {
+      setTimeout(async () => {
+        await initiateFirstMentorMessageWithConcept(concept);
+      }, 100);
+    }
+  };
+
+  const getStageStatus = () => {
+    // Priority: Use currentChatStatus from API, fallback to currentStage logic
+    if (currentChatStatus === 'completed') return 'completed';
+    if (currentChatStatus === 'not_started') return 'not-started';
+    if (currentChatStatus === 'inprogress') return 'in-progress';
+
+    // Fallback to stage-based logic
+    if (currentStage === 0) return 'not-started';
+    if (currentStage === 7) return 'completed';
+    return 'in-progress';
+  };
+
   useEffect(() => {
-    if (!showApiKeyPopup) {
+    if (username && userId) {
       checkSessionStatus();
     }
-  }, [username, showApiKeyPopup]);
+  }, [username, userId]);
 
+  useEffect(() => {
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [chatHistory]);
 
-  // CRITICAL FIX: Ensure currentStage is set correctly on initial load/resume
   useEffect(() => {
     if (!isInitializing && !chatHistory.length) {
       const savedSessionType = sessionStorage.getItem("sessionType");
@@ -667,17 +1020,10 @@ function Dashboard() {
               setCurrentChatId(parseInt(savedChatId));
               setSessionType("resume");
 
-              // This useEffect runs after checkSessionStatus has likely already run,
-              // but as a fallback, ensure currentStage is set if chatHistory is loaded from session storage
-              // and checkSessionStatus didn't set it (e.g., if API response was incomplete).
-              // We'll try to infer the stage if API didn't provide it directly in `checkSessionStatus`
-              // For now, if chatHistory exists from resume, it should generally be Main Stage 2 or higher
-              // A more robust solution might involve storing `apiCurrentStage` in sessionStorage as well.
-              // For simplicity, if we have history from a resumed session, it means it's "in progress"
-              if(parsedHistory.length > 1){ // More than just the initial mentor message
-                 setCurrentStage(1); // Set to Main Stage 2
+              if (parsedHistory.length > 1) {
+                setCurrentStage(1);
               } else {
-                 setCurrentStage(0); // Only initial mentor message, still Main Stage 1
+                setCurrentStage(0);
               }
             }
           }
@@ -687,54 +1033,14 @@ function Dashboard() {
         }
       }
     }
-  }, [isInitializing, chatHistory.length]); // Add chatHistory.length to dependency array
+  }, [isInitializing, chatHistory.length]);
 
-  const extractScoringData = (content) => {
-    try {
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch && jsonMatch[1]) {
-        return JSON.parse(jsonMatch[1]);
-      }
-      const possibleJson = content.match(/\{[\s\S]*"OverallScore"[\s\S]*\}/);
-      if (possibleJson) {
-        return JSON.parse(possibleJson[0]);
-      }
-      return {};
-    } catch (e) {
-      console.error("Error parsing scoring JSON:", e);
-      return {};
-    }
-  };
-
-  const renderScoringTable = (content) => {
-    const scoringData = extractScoringData(content);
-    return Object.keys(scoringData)
-      .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary")
-      .map((key) => (
-        <tr key={key}>
-          <td className="scoring-table">{key}</td>
-          <td className="score-cell">{scoringData[key].score}</td>
-          <td className="evidence-cell">{scoringData[key].evidence}</td>
-        </tr>
-      ));
-  };
-
-  const renderOverallScoreAndSummary = (content) => {
-    const scoringData = extractScoringData(content);
-    const overallScore = scoringData.OverallScore || "N/A";
-    const evaluationSummary = scoringData.EvaluationSummary || "N/A";
-
+  // Assessment helper functions
+  const hasAssessmentData = (content) => {
     return (
-      <div className="overall-score-summary">
-        <div className="overall-score-item">
-          <strong className="overall-score-label">🎯 Overall Score:</strong>
-          <span className="overall-score-value">{overallScore}</span>
-        </div>
-        <div className="overall-score-item">
-          <strong className="overall-score-label">📋 Evaluation Summary:</strong>
-          <span className="overall-summary-value">{evaluationSummary}</span>
-        </div>
-      </div>
+      content &&
+      content.includes("Detailed Assessment") &&
+      content.includes("Deterministic Scoring")
     );
   };
 
@@ -765,240 +1071,484 @@ function Dashboard() {
     return content.slice(assessmentStart, part2Index).trim();
   };
 
-  const hasAssessmentData = (content) => {
+  const extractScoringData = (content) => {
+    try {
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        return JSON.parse(jsonMatch[1]);
+      }
+      const possibleJson = content.match(/\{[\s\S]*"OverallScore"[\s\S]*\}/);
+      if (possibleJson) {
+        return JSON.parse(possibleJson[0]);
+      }
+      return {};
+    } catch (e) {
+      console.error("Error parsing scoring JSON:", e);
+      return {};
+    }
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 4) return '#10b981';
+    if (score >= 3) return '#3b82f6';
+    if (score >= 2) return '#f59e0b';
+    return '#ef4444';
+  };
+
+  const getScoreLabel = (score) => {
+    if (score >= 4) return 'Excellent';
+    if (score >= 3) return 'Good';
+    if (score >= 2) return 'Fair';
+    return 'Needs Improvement';
+  };
+
+  const formatCriterionName = (name) => {
+    return name.replace(/([A-Z])/g, ' $1').trim();
+  };
+
+  const renderScoringTable = (content) => {
+    const scoringData = extractScoringData(content);
+
     return (
-      content &&
-      content.includes("Detailed Assessment") &&
-      content.includes("Deterministic Scoring")
+      <div className="assessment-scoring-table">
+        <div className="scoring-header">
+          <h4>📊 Learning Assessment Scores</h4>
+        </div>
+
+        <div className="scoring-grid">
+          {Object.keys(scoringData)
+            .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary")
+            .map((key) => {
+              const scoreValue = scoringData[key].score;
+              const scoreColor = getScoreColor(scoreValue);
+              const scoreLabel = getScoreLabel(scoreValue);
+
+              return (
+                <div key={key} className="score-card">
+                  <div className="score-card-header">
+                    <h5 className="criterion-name">{formatCriterionName(key)}</h5>
+                    <div
+                      className="score-badge"
+                      style={{ backgroundColor: scoreColor }}
+                    >
+                      {scoreValue}/5
+                    </div>
+                  </div>
+                  <div className="score-performance">
+                    <span
+                      className="performance-label"
+                      style={{ color: scoreColor }}
+                    >
+                      {scoreLabel}
+                    </span>
+                  </div>
+                  <div className="score-evidence">
+                    <p>{scoringData[key].evidence}</p>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderOverallScoreAndSummary = (content) => {
+    const scoringData = extractScoringData(content);
+    const overallScore = scoringData.OverallScore || 0;
+    const evaluationSummary = scoringData.EvaluationSummary || "N/A";
+    const overallColor = getScoreColor(overallScore);
+    const overallLabel = getScoreLabel(overallScore);
+
+    return (
+      <div className="overall-assessment">
+        <div className="overall-score-card">
+          <div className="overall-header">
+            <h4>🎯 Overall Assessment</h4>
+            <div
+              className="overall-score-badge"
+              style={{ backgroundColor: overallColor }}
+            >
+              <span className="score-value">{overallScore}/5</span>
+              <span className="score-label">{overallLabel}</span>
+            </div>
+          </div>
+          <div className="overall-summary">
+            <h5>📋 Summary</h5>
+            <p>{evaluationSummary}</p>
+          </div>
+        </div>
+      </div>
     );
   };
 
   return (
-    <div className="dashboard-container bg-light">
-      {showApiKeyPopup && (
-        <div className="modal d-block api-modal-backdrop">
-          <div className="modal-dialog modal-dialog-centered">
-            <div className="modal-content api-modal-content">
-              <div className="modal-header api-modal-header">
-                <h5 className="modal-title api-modal-title">🔐 Enter API Key</h5>
-              </div>
-              <div className="modal-body api-modal-body">
-                <input
-                  type="text"
-                  className="form-control api-modal-input"
-                  placeholder="Enter your API Key"
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                />
-                {apiKeyError && (
-                  <div className="text-danger mt-2 api-modal-error">{apiKeyError}</div>
-                )}
-              </div>
-              <div className="modal-footer api-modal-footer">
-                <button
-                  className="btn btn-primary api-modal-submit"
-                  onClick={handleApiKeySubmit}
-                  disabled={apiKey.length < 10}
-                >
-                  Submit
-                </button>
-              </div>
+    <div className="learning-dashboard">
+      <Sidebar />
+
+      {/* Restart Dialog Modal */}
+      {showRestartDialog && (
+        <div className="restart-dialog-overlay">
+          <div className="restart-dialog">
+            <div className="restart-dialog-header">
+              <FiAlertCircle className="restart-dialog-icon" />
+              <h3>Save Current Session?</h3>
+            </div>
+            <div className="restart-dialog-content">
+              <p>
+                You're about to start a new conversation. Would you like to save your current session before restarting?
+              </p>
+
+            </div>
+            <div className="restart-dialog-actions">
+              <button
+                className="restart-btn save-and-restart"
+                onClick={restartWithSaving}
+                disabled={isLoading}
+              >
+                <FiSave /> Save & Restart
+              </button>
+              <button
+                className="restart-btn restart-only"
+                onClick={restartWithoutSaving}
+                disabled={isLoading}
+              >
+                <FiRefreshCw /> Just Restart
+              </button>
+              <button
+                className="restart-btn cancel"
+                onClick={() => setShowRestartDialog(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <Sidebar />
-
-      <div className="dashboard-content">
-        <div className="dashboard-header">
-          <div>
-            <Progressbar currentStage={currentStage} />
-          </div>
-          {/* <div className="model-info-section">
-            <h5 className="text-primary mb-0">
-              <span className="text-dark">Model: </span>
-              <span className="model-badge">{selectedModel || "No Model Selected"}</span>
-            </h5>
-          </div> */}
-
-          <div className="counts-container-horizontal">
-            {isCountsLoading ? (
-              <div className="loading-container-horizontal">
-                <div className="spinner-border text-info" role="status">
-                  <span className="visually-hidden">Loading counts...</span>
-                </div>
-                <span>Loading...</span>
-              </div>
-            ) : (
-              <>
-                <div className="chat-count-card-horizontal stopped">
-                  <div className="card-content">
-                    <p className="card-title">Stopped</p>
-                    <p className="card-text">{chatCounts.stopped || 0}</p>
-                  </div>
-                </div>
-                <div className="chat-count-card-horizontal paused">
-                  <div className="card-content">
-                    <p className="card-title">Paused</p>
-                    <p className="card-text">{chatCounts.paused || 0}</p>
-                  </div>
-                </div>
-                <div className="chat-count-card-horizontal completed">
-                  <div className="card-content">
-                    <p className="card-title">Completed</p>
-                    <p className="card-text">{chatCounts.completed || 0}</p>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-
-          {chatHistory.length > 0 && !isInitializing && (
-            <div className="action-buttons-horizontal">
-              <button
-                ref={saveButtonRef}
-                className="action-button-horizontal"
-                onClick={() => setShowSaveOptions(!showSaveOptions)}
-                disabled={showApiKeyPopup || isLoading}
-                title="💾 Save Chat"
+      {/* Main Dashboard Layout */}
+      <div className="dashboard-layout">
+        {/* Left Control Panel */}
+        <div className="control-panel">
+          {/* Concept Selection */}
+          <div className="control-section">
+            <div className="section-header">
+              <FiTarget className="section-icon" />
+              <h3>Select Concept</h3>
+            </div>
+            <div className="concept-selector" ref={conceptDropdownRef}>
+              <div
+                className="concept-dropdown-trigger"
+                onClick={() => setShowConceptDropdown(!showConceptDropdown)}
               >
-                <FiSave size={18} />
-              </button>
+                <span className="concept-text">
+                  {conceptsLoading
+                    ? "Loading concepts..."
+                    : selectedConcept
+                      ? selectedConcept.concept_name
+                      : concepts.length > 0
+                        ? "Choose a concept to learn"
+                        : "No concepts available"
+                  }
+                </span>
+                <FiChevronDown className={`dropdown-arrow ${showConceptDropdown ? 'open' : ''}`} />
+              </div>
 
-              {showSaveOptions && (
-                <div ref={saveOptionsRef} className="save-options-dropdown-horizontal">
-                  <h6>💾 Save as:</h6>
-                  <button
-                    className="btn btn-outline-success"
-                    onClick={() => handleSaveChat("completed")}
-                    title="Mark as completed - next session will start fresh"
-                  >
-                    ✅ Completed
-                  </button>
-                  <button
-                    className="btn btn-outline-info"
-                    onClick={() => handleSaveChat("paused")}
-                    title="Pause session - can be resumed later"
-                  >
-                    ⏸️ Paused
-                  </button>
-                  <button
-                    className="btn btn-outline-danger"
-                    onClick={() => handleSaveChat("stopped")}
-                    title="Stop session - next session will start fresh"
-                  >
-                    ⏹️ Stopped
-                  </button>
+              {showConceptDropdown && (
+                <div className="concept-dropdown">
+                  {conceptsLoading ? (
+                    <div className="concept-option">
+                      <div className="concept-name">Loading...</div>
+                    </div>
+                  ) : concepts.length > 0 ? (
+                    concepts.map((concept) => (
+                      <div
+                        key={concept.concept_id}
+                        className="concept-option"
+                        onClick={() => handleConceptSelect(concept)}
+                      >
+                        <div className="concept-name">{concept.concept_name}</div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="concept-option">
+                      <div className="concept-name">No concepts available</div>
+                      <div className="concept-description">Contact your administrator</div>
+                    </div>
+                  )}
                 </div>
               )}
-
-              <button
-                className="action-button-horizontal"
-                onClick={handleDownloadPDF}
-                disabled={showApiKeyPopup || isLoading}
-                title="📄 Download PDF"
-              >
-                <FiDownload size={18} />
-              </button>
             </div>
-          )}
-        </div>
+          </div>
 
-        <div className="chat-history-container">
-          <div id="chat-history" className="chat-history">
-            {chatHistory.length === 0 ? (
-              <></>
-            ) : (
-              chatHistory.map((item, index) => (
-                <div key={index}>
-                  {item.user && (
-                    <div className="chat-message user">
-                      <div className="message-bubble user">
-                        <strong>👤 You:</strong> {item.user}
+          {/* Learning Stages */}
+          <div className="control-section">
+            <div className="section-header">
+              <FiTrendingUp className="section-icon" />
+              <h3>Learning Progress</h3>
+            </div>
+
+            <div className="stage-cards">
+              {/* Not Started */}
+              <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
+                <div className="stage-icon not-started">
+                  <FiClock />
+                </div>
+                <div className="stage-content">
+                  <h4>Not Started</h4>
+                </div>
+              </div>
+
+              {/* In Progress */}
+              <div className={`stage-card ${getStageStatus() === 'in-progress' ? 'active' : ''} ${isTransitioning ? 'transitioning' : ''}`}>
+                <div className="stage-icon in-progress">
+                  <FiPlay />
+                </div>
+                <div className="stage-content">
+                  <div className="stage-header">
+                    <h4>In Progress</h4>
+                  </div>
+
+                  {getStageStatus() === 'in-progress' && (
+                    <div className="stage-progress-content">
+                      <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
+                        <div className="progress-info">
+                          <span>
+                            {currentStage <= 1 ? "Starting..." :
+                              currentStage === 7 ? "Completed" :
+                                `Stage ${currentStage - 1}/5`}
+                          </span>
+                          <span>
+                            {currentStage <= 1 ? "0%" :
+                              currentStage === 7 ? "100%" :
+                                `${Math.round(((currentStage - 1) / 5) * 100)}%`}
+                          </span>
+                        </div>
+                        <div className="progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{
+                              width: `${currentStage <= 1 ? 0 :
+                                currentStage === 7 ? 100 :
+                                  Math.round(((currentStage - 1) / 5) * 100)}%`
+                            }}
+                          ></div>
+                        </div>
+                        <div className="substages">
+                          <Progressbar currentStage={currentStage} showOnlyStages={true} />
+                        </div>
                       </div>
                     </div>
                   )}
-
-                  <div className="chat-message system">
-                    <div className="message-bubble system">
-                      {hasAssessmentData(item.system) ? (
-                        <div>
-                          <div className="message-header">
-                            <strong className="message-model-name">{selectedModel}:</strong>
-                          </div>
-
-                          <div className="assessment-section">
-                            <h6 className="assessment-title">
-                              📊 Detailed Assessment:
-                            </h6>
-                            <p className="assessment-content">
-                              {parseAssessmentContent(item.system)}
-                            </p>
-                          </div>
-
-                          <div>
-                            <h6 className="scoring-title">
-                              🎯 Deterministic Scoring:
-                            </h6>
-                            <div className="scoring-table-wrapper">
-                              <table className="table table-hover scoring-table">
-                                <thead>
-                                  <tr>
-                                    <th>📝 Category</th>
-                                    <th>⭐ Score</th>
-                                    <th>📋 Evidence</th>
-                                  </tr>
-                                </thead>
-                                <tbody>{renderScoringTable(item.system)}</tbody>
-                              </table>
-                            </div>
-                            {renderOverallScoreAndSummary(item.system)}
-                          </div>
-                        </div>
-                      ) : (
-                        <div>
-                          <div className="message-header">
-                            <strong className="message-model-name">{selectedModel}:</strong>
-                          </div>
-                          <div className="message-content">{item.system}</div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
                 </div>
-              ))
-            )}
-            <div ref={chatEndRef} />
+              </div>
+
+              {/* Completed */}
+              <div className={`stage-card ${getStageStatus() === 'completed' ? 'active' : ''}`}>
+                <div className="stage-icon completed">
+                  <FiCheckCircle />
+                </div>
+                <div className="stage-content">
+                  <h4>Completed</h4>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div className="input-area-container">
-          {isLoading && (
-            <div className="input-loading-indicator">
-              <div className="spinner-border text-primary input-loading-spinner" role="status">
-                <span className="visually-hidden">Loading...</span>
-              </div>
-              <span className="input-loading-text">AI is thinking...</span>
-            </div>
-          )}
+        {/* Right Chat Panel */}
+        <div className="chat-panel">
+          {/* Top Right Action Icons */}
+          <div className="top-right-actions">
+            <div className="save-section">
+              <button
+                ref={topSaveButtonRef}
+                className="top-action-btn top-save-btn"
+                onClick={() => setShowSaveOptions(!showSaveOptions)}
+                disabled={chatHistory.length === 0}
+                data-tooltip="Save Progress"
+              >
+                <FiSave />
+              </button>
 
-          <textarea
-            className="form-control"
-            placeholder="💭 Type your message here..."
-            value={prompt}
-            onChange={handleInputChange}
-            onKeyPress={handleKeyPress}
-            disabled={showApiKeyPopup || isLoading || isInitializing}
-          />
-          <button
-            className="btn btn-primary"
-            onClick={handleSendClick}
-            disabled={!prompt.trim() || showApiKeyPopup || isLoading || isInitializing}
-            title="Send message"
-          >
-            <FiSend size={20} />
-          </button>
+              {showSaveOptions && (
+                <div ref={topSaveOptionsRef} className="top-save-dropdown">
+                  <button className="top-save-option current" onClick={() => handleSaveChat()}>
+                    <FiSave /> Save Current Progress
+                  </button>                   
+                </div>
+              )}
+            </div>
+
+            <button
+              className="top-action-btn top-download-btn"
+              onClick={handleDownloadPDF}
+              disabled={chatHistory.length === 0}
+              data-tooltip="Export Chat"
+            >
+              <FiDownload />
+            </button>
+          </div>
+
+          <div className="chat-container">
+            <div className="chat-messages" id="chat-history">
+              {chatHistory.length === 0 ? (
+                <div className="chat-empty">
+                  <div className="empty-icon">
+                    <FiMessageCircle />
+                  </div>
+                  <h3>Ready to start learning?</h3>
+                  <p>
+                    {conceptsLoading
+                      ? "Loading your concepts..."
+                      : selectedConcept
+                        ? "Your AI mentor is ready! Type a message to begin."
+                        : concepts.length > 0
+                          ? "Select a concept from the left panel and begin your AI-mentored journey!"
+                          : "No concepts available. Please contact your administrator."
+                    }
+                  </p>
+                  {isInitializing && (
+                    <div className="loading-indicator">
+                      <div className="loading-spinner"></div>
+                      <span>Initializing your learning session...</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                chatHistory.map((item, index) => (
+                  <div key={index} className="message-group">
+                    {item.user && (
+                      <div className="message user-message">
+                        <div className="message-avatar user">
+                          <FiUser />
+                        </div>
+                        <div className="message-content">
+                          <div className="message-text">{item.user}</div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="message mentor-message">
+                      <div className="message-avatar mentor">
+                        <FiMessageCircle />
+                      </div>
+                      <div className="message-content">
+                        <div className="message-header">
+                          <span className="message-author">AI Mentor</span>
+                        </div>
+                        <div className="message-text">
+                          {hasAssessmentData(item.system) ? (
+                            <div className="assessment-display">
+                              {/* Detailed Assessment Section */}
+                              <div className="assessment-section">
+                                <h4 className="assessment-title">
+                                  📝 Detailed Assessment
+                                </h4>
+                                <div className="assessment-content">
+                                  {parseAssessmentContent(item.system)}
+                                </div>
+                              </div>
+
+                              {/* Overall Score and Summary */}
+                              {renderOverallScoreAndSummary(item.system)}
+
+                              {/* Scoring Table */}
+                              {renderScoringTable(item.system)}
+                            </div>
+                          ) : (
+                            item.system
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+
+              {/* Chat End Message and Restart Button */}
+              {isChatEnded && (
+                <div className="chat-end-section">
+                  <div className="chat-end-message">
+                    {/* <div className="end-icon">
+                      {endReason === 'interactionCompleted' ? <FiCheckCircle /> : <FiStopCircle />}
+                    </div> */}
+                    <div className="end-content">
+                      <h4>
+                        {endReason === 'interactionCompleted'
+                          ? '🎉 Learning Session Complete!'
+                          : '⏸️ Session Ended with Assessment'
+                        }
+                      </h4>
+
+                      <p className="end-action-hint">
+                        Ready to start a new learning session? Click the button below to begin fresh!
+                      </p>
+                    </div>
+                  </div>
+                  <div className="restart-button-container">
+                    <button
+                      className="restart-session-btn"
+                      onClick={handleRestartChat}
+                      disabled={isLoading}
+                    >
+                      <FiRefreshCw />
+                      Start New Session
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Chat Input */}
+            <div className="chat-input-container">
+              {isLoading && (
+                <div className="loading-indicator">
+                  <div className="loading-spinner"></div>
+                  <span>AI is thinking...</span>
+                </div>
+              )}
+
+              <div className="chat-input-wrapper">
+                <textarea
+                  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
+                  placeholder={
+                    isChatEnded
+                      ? "This conversation has ended. Please restart to begin a new session."
+                      : isInitializing
+                        ? "Initializing..."
+                        : selectedConcept
+                          ? "Ask your mentor anything..."
+                          : conceptsLoading
+                            ? "Loading concepts..."
+                            : "Please select a concept first..."
+                  }
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+                  rows="1"
+                />
+                <button
+                  className="send-button"
+                  onClick={handleSendClick}
+                  disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
+                >
+                  <FiSend />
+                </button>
+              </div>
+
+              {isChatEnded && (
+                <div className="chat-ended-notice">
+                  <FiAlertCircle />
+                  <span>Conversation ended. Use "Start New Session" to continue learning.</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>

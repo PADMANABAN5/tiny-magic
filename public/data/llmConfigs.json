@@ -1,0 +1,32 @@
+{
+  "gpt4o": {
+    "model": "gpt-4o",
+    "temperature": 0.7,
+    "maxTokens": 8192,
+    "topP": 1
+  },
+  "mistral": {
+    "model": "mistral-saba-24b",
+    "temperature": 1,
+    "maxTokens": 32768,
+    "topP": 1
+  },
+  "llama3": {
+    "model": "llama-3.3-70b-versatile",
+    "temperature": 1,
+    "maxTokens": 32768,
+    "topP": 1
+  },
+  "llama4": {
+    "model": "meta-llama/llama-4-maverick-17b-128e-instruct",
+    "temperature": 1,
+    "maxTokens": 8192,
+    "topP": 1
+  },
+  "default": {
+    "model": "llama-3.3-70b-versatile",
+    "temperature": 1,
+    "maxTokens": 32768,
+    "topP": 1
+  }
+}

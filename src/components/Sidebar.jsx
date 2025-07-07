@@ -6,12 +6,21 @@ import {
   FaBook,
   FaSignOutAlt,
   FaUser,
+  FaCaretDown,
 } from "react-icons/fa";
 
 function Sidebar() {
   const location = useLocation();
   const username = sessionStorage.getItem("email");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // Function to shorten username
+  const getShortenedUsername = (email) => {
+    if (!email) return "User";
+    const parts = email.split("@");
+    return parts[0]; // Returns only the part before @
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -21,48 +30,73 @@ function Sidebar() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('.dropdown')) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
       <div className="container-fluid">
-        <span className="navbar-brand d-flex align-items-center">
-          <FaUser className="me-2" />
-          <strong>{username}</strong>
-        </span>
+        {/* Logo on the left */}
+        <Link to="/dashboard" className="navbar-brand d-flex align-items-center">
+          <div className="logo-container">
+            <img src="/logo.png" alt="Logo" className="logo-image" /> 
+          </div>
+        </Link>
 
-        <div className="collapse navbar-collapse justify-content-end">
-          <ul className="navbar-nav">
-            <li className="nav-item">
-              <Link
-                to="/dashboard"
-                className={`nav-link d-flex align-items-center ${location.pathname === "/dashboard" ? "active" : ""}`}
-              >
-                <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
-                Dashboard
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link
-                to="/prompt"
-                className={`nav-link d-flex align-items-center ${location.pathname === "/prompt" ? "active" : ""}`}
-              >
-                <FaBook className="me-2" style={{ fontSize: "16px" }} />
-                Prompts
-              </Link>
-            </li>
-            <li className="nav-item">
-              <Link
-                to="/login"
-                className="nav-link d-flex align-items-center"
-                onClick={() => {
-                  sessionStorage.removeItem("chatHistory");
-                  sessionStorage.clear();
-                }}
+        {/* Username dropdown on the right */}
+        <div className="ms-auto">
+          <div className="sidebar-dropdown">
+            <button
+              className="btn btn-outline-secondary d-flex align-items-center"
+              type="button"
+              onClick={() => setShowDropdown(!showDropdown)}
+              aria-expanded={showDropdown}
             >
-              <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
-              Log Out
-            </Link>
-            </li>
-          </ul>
+              <FaUser className="me-2" />
+              <span>{getShortenedUsername(username)}</span>
+              <FaCaretDown className="ms-2" />
+            </button>
+            
+            {showDropdown && (
+              <ul className="dropdown-menu dropdown-menu-end show">
+                <li>
+                  <Link
+                    to="/dashboard"
+                    className={`dropdown-item d-flex align-items-center ${
+                      location.pathname === "/dashboard" ? "active" : ""
+                    }`}
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
+                    Dashboard
+                  </Link>
+                </li>
+                <li><hr className="dropdown-divider" /></li>
+                <li>
+                  <Link
+                    to="/login"
+                    className="dropdown-item d-flex align-items-center text-danger"
+                    onClick={() => {
+                      sessionStorage.removeItem("chatHistory");
+                      sessionStorage.clear();
+                      setShowDropdown(false);
+                    }}
+                  >
+                    <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
+                    Log Out
+                  </Link>
+                </li>
+              </ul>
+            )}
+          </div>
         </div>
       </div>
     </nav>
