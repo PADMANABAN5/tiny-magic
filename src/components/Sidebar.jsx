@@ -7,6 +7,7 @@ import {
   FaSignOutAlt,
   FaUser,
   FaCaretDown,
+  FaHistory,
 } from "react-icons/fa";
 
 function Sidebar() {
@@ -82,7 +83,7 @@ function Sidebar() {
                     }`}
                     onClick={() => setShowDropdown(false)}
                   >
-                    <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
+                    <FaHistory className="me-2" style={{ fontSize: "16px" }} />
                     History
                   </Link>
                 </li>

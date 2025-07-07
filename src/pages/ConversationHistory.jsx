@@ -454,7 +454,7 @@ const ConversationHistory = () => {
     switch (status) {
       case 'completed': return 'Completed';
       case 'inprogress': return 'In Progress';
-      // case 'not_started': return 'Not Started';
+      case 'not_started': return 'Not Started';
       default: return 'Unknown';
     }
   };
@@ -611,7 +611,7 @@ const ConversationHistory = () => {
         <div className="page-header">
           <div className="header-title">
            <div className="stats-section">
-          {/* <div className="stat-card">
+          <div className="stat-card">
             <div className="stat-icon not-started">
               <FiClock />
             </div>
@@ -621,7 +621,7 @@ const ConversationHistory = () => {
               </div>
               <div className="stat-label">Not Started</div>
             </div>
-          </div> */}
+          </div>
 
           <div className="stat-card">
             <div className="stat-icon in-progress">
@@ -701,7 +701,7 @@ const ConversationHistory = () => {
                 onChange={(e) => setFilterStatus(e.target.value)}
               >
                 <option value="all">All Statuses</option>
-                {/* <option value="not_started">Not Started</option> */}
+                <option value="not_started">Not Started</option>
                 <option value="inprogress">In Progress</option>
                 <option value="completed">Completed</option>
               </select>

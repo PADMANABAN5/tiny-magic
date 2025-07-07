@@ -2965,6 +2965,8 @@ body {
 
 .top-save-option:hover {
   background-color: #f8f9fa;
+  box-shadow: none;
+  transform: none;
 }
 
 .top-save-option.completed {
