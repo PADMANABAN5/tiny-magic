@@ -29,8 +29,7 @@ function Sidebar() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // Close dropdown when clicking outside
+ 
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.dropdown')) {
@@ -43,17 +42,15 @@ function Sidebar() {
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
-      <div className="container-fluid">
-        {/* Logo on the left */}
+      <div className="container-fluid"> 
         <Link to="/dashboard" className="navbar-brand d-flex align-items-center">
           <div className="logo-container">
             <img src="/logo.png" alt="Logo" className="logo-image" /> 
           </div>
         </Link>
-
-        {/* Username dropdown on the right */}
+ 
         <div className="ms-auto">
-          <div className="sidebar-dropdown">
+          <div className="dropdown">
             <button
               className="btn btn-outline-secondary d-flex align-items-center"
               type="button"
