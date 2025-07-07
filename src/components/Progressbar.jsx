@@ -3,10 +3,10 @@ import "../styles/Progressbar.css";
 
 const Progressbar = ({ currentStage, showOnlyStages = false }) => {
   const stages = [
-    { stage: 1, icon: "🏗️" },
-    { stage: 2, icon: "🔬"  },
-    { stage: 3, icon: "⚖️"  },
-    { stage: 4, icon: "🚀"  },
+    { stage: 1, icon: "🥇" },
+    { stage: 2, icon: "🥈"  },
+    { stage: 3, icon: "🥉"  },
+    { stage: 4, icon: "🎖️"  },
     { stage: 5, icon: "🏆"  },
   ];
 

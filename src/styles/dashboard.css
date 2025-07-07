@@ -1,5 +1,5 @@
 /* New Learning Dashboard Layout - Complete CSS */
-
+/* My Code */
 /* Reset and base styles */
 * {
   margin: 0;
@@ -31,7 +31,8 @@ html, body {
 
 .dashboard-layout {
   flex: 1;
-  display: flex; 
+  display: flex;
+
   height: 100vh;
   width: calc(100% - 250px); /* Ensure it takes remaining space */
   min-width: calc(100vw - 250px);
@@ -43,14 +44,15 @@ html, body {
   width: 400px;
   min-width: 400px; /* Prevent shrinking */
   max-width: 400px; /* Prevent growing */
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(226, 232, 240, 0.8);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.95)); /* Subtle gradient for depth */
+  backdrop-filter: blur(20px); /* Maintain glassmorphism effect */
+  border-right: 1px solid rgba(226, 232, 240, 0.8); /* Subtle border */
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.05);
-  flex-shrink: 0; /* Prevent shrinking */
+  overflow-y: auto; /* Scrollable content */
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08); /* Slightly stronger shadow for prominence */
+  flex-shrink: 0; /* Prevent flexbox shrinking */
+  transition: transform 0.3s ease; /* Smooth transition for responsive collapse */
 }
 
 /* Right Chat Panel - Takes remaining space */
@@ -169,7 +171,8 @@ html, body {
 
 .dashboard-layout {
   flex: 1;
-  display: flex; 
+  display: flex;
+  
   height: 100vh;
   overflow: hidden;
 }
@@ -177,20 +180,27 @@ html, body {
 /* Left Control Panel */
 .control-panel {
   width: 400px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  border-right: 1px solid rgba(226, 232, 240, 0.8);
+  min-width: 400px; /* Prevent shrinking */
+  max-width: 400px; /* Prevent growing */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.95)); /* Subtle gradient for depth */
+  backdrop-filter: blur(20px); /* Maintain glassmorphism effect */
+  border-right: 1px solid rgba(226, 232, 240, 0.8); /* Subtle border */
   display: flex;
   flex-direction: column;
-  overflow-y: auto;
-  box-shadow: 2px 0 20px rgba(0, 0, 0, 0.05);
+  overflow-y: auto; /* Scrollable content */
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08); /* Slightly stronger shadow for prominence */
+  flex-shrink: 0; /* Prevent flexbox shrinking */
+  transition: transform 0.3s ease; /* Smooth transition for responsive collapse */
 }
 
 /* Control Panel Header */
 .control-header {
-  padding: 2rem;
-  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.02));
+  padding: 1.5rem 2rem; /* Adjusted padding for better spacing */
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6); /* Consistent border */
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.04)); /* Slightly stronger gradient */
+  position: sticky; /* Keep header fixed at top */
+  top: 0;
+  z-index: 10; /* Ensure header stays above content */
 }
 
 .header-content {
@@ -660,14 +670,28 @@ html, body {
   box-shadow: 2px 0 20px rgba(0, 0, 0, 0.05);
   height: 100vh; /* Full viewport height */
 }
-
-/* Learning Progress Section - Use available space */
-.control-section:last-child {
-  flex: 1; /* Take remaining space */
+.control-section {
+  padding: 1.5rem 2rem; /* Consistent padding with header */
+  border-bottom: 1px solid rgba(241, 245, 249, 0.8); /* Subtle section separator */
+  flex-grow: 1; /* Allow sections to expand */
   display: flex;
   flex-direction: column;
-  min-height: 0;
+  gap: 1rem; /* Space between internal elements */
+  transition: background-color 0.3s ease; /* Smooth hover effect */
 }
+
+/* Last Control Section - Take remaining space */
+.control-section:last-child {
+  flex: 1; /* Expand to fill remaining space */
+  min-height: 0; /* Allow shrinking */
+  margin-bottom: 115%;
+}
+
+/* Hover Effect for Control Sections */
+.control-section:hover {
+  background: rgba(248, 250, 252, 0.5); /* Subtle hover background */
+}
+/* Learning Progress Section - Use available space */
 
 .control-section:last-child .stage-cards {
   flex: 1; /* Use remaining space in the section */
@@ -1698,7 +1722,7 @@ body {
 
 .dashboard-layout {
   flex: 1;
-  display: flex; 
+  display: flex;
   height: 100vh;
   overflow: hidden;
 }
@@ -1899,6 +1923,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  
 }
 
 .stage-card {
@@ -1911,6 +1936,7 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 1rem;
+  box-shadow: 0 10px 10px rgba(0, 0, 0, 0.195);
 }
 
 .stage-card.active {

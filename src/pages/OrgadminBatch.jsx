@@ -11,7 +11,7 @@ function OrgadminBatch() {
     useEffect(() => {
         const fetchBatches = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/orgadmin/batches/${email}`);
+                const response = await axios.get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`);
                 if (response.data.success) {
                     setBatches(response.data.data);
                 } else {
