@@ -799,161 +799,197 @@ function Dashboard() {
   };
 
   const checkSessionStatus = async (conceptName = null) => {
-  if (!username || !userId) {
-    setIsInitializing(false);
-    await fetchConcepts();
-    return;
-  }
-
-  // Check if we already have an API key, if not fetch it
-  if (!sessionStorage.getItem(`apiKey_${username}`)) {
-    const apiKey = await fetchApiKey();
-    if (!apiKey) {
+    if (!username || !userId) {
       setIsInitializing(false);
       await fetchConcepts();
       return;
     }
-  }
 
-  setIsLoading(true);
-  setIsInitializing(true);
-
-  try {
-    // Build API URL with concept_name parameter if provided
-    let apiUrl = `${BASE_URL}/chat/session-status/${userId}`;
-    if (conceptName) {
-      apiUrl += `?concept_name=${encodeURIComponent(conceptName)}`;
-    }
-
-    const response = await axios.get(apiUrl);
-
-    if (response.data && response.data.success) {
-      const { sessionType, hasActiveSession, shouldStartFresh, chat } = response.data.data;
-
-      // Check if resumed session is completed
-      if (chat && chat.status === 'completed') {
-        console.log("🎯 Resumed session is completed, starting fresh conversation instead");
-        clearSessionData();
-        setCurrentChatStatus('not_started');
-
+    // Check if we already have an API key, if not fetch it
+    if (!sessionStorage.getItem(`apiKey_${username}`)) {
+      const apiKey = await fetchApiKey();
+      if (!apiKey) {
+        setIsInitializing(false);
         await fetchConcepts();
-
-        setTimeout(async () => {
-          const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
-          if (currentConcepts.length > 0) {
-            const conceptToUse = selectedConcept || currentConcepts[0];
-            console.log("🚀 Starting fresh conversation for completed session:", conceptToUse.concept_name);
-            setSelectedConcept(conceptToUse);
-            await initiateFirstMentorMessageWithConcept(conceptToUse);
-          }
-        }, 1000);
         return;
       }
+    }
 
-      if (sessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
-        // Resume existing session
-        console.log("🔄 Resuming existing session:", chat);
+    setIsLoading(true);
+    setIsInitializing(true);
 
-        setChatHistory(chat.conversation);
+    try {
+      // Build API URL with concept_name parameter if provided
+      let apiUrl = `${BASE_URL}/chat/session-status/${userId}`;
+      if (conceptName) {
+        apiUrl += `?concept_name=${encodeURIComponent(conceptName)}`;
+      }
 
-        const loadedSessionHistory = chat.conversation
-          .filter((item) => item.user !== undefined && item.system !== undefined)
-          .map((item) => ({ Mentee: item.user, Mentor: item.system }));
-        setSessionHistory(loadedSessionHistory);
+      const response = await axios.get(apiUrl);
 
-        setCurrentChatId(chat.id);
-        setSessionType("resume");
-        setResumedFromStatus(chat.status);
-        setCurrentChatStatus(chat.status);
+      if (response.data && response.data.success) {
+        const { sessionType, hasActiveSession, shouldStartFresh, chat } = response.data.data;
 
-        // Map API stage to progress stage
-        const progressStage = mapApiStageToProgressbarIndex(
-          chat.current_stage,
-          chat.status,
-          false
-        );
-        setCurrentStage(progressStage);
+        // Check if resumed session is completed
+        if (chat && chat.status === 'completed') {
+          console.log("🎯 Resumed session is completed, starting fresh conversation instead");
+          clearSessionData();
+          setCurrentChatStatus('not_started');
 
-        console.log("✅ Session resumed with stage:", {
-          apiStage: chat.current_stage,
-          status: chat.status,
-          progressStage: progressStage,
-          conceptName: chat.concept_name
-        });
-
-        sessionStorage.setItem("chatHistory", JSON.stringify(chat.conversation));
-        sessionStorage.setItem("currentChatId", chat.id.toString());
-        sessionStorage.setItem("sessionType", "resume");
-
-        // If no concepts loaded yet, fetch them
-        if (concepts.length === 0) {
           await fetchConcepts();
+
+          setTimeout(async () => {
+            const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+            if (currentConcepts.length > 0) {
+              const conceptToUse = selectedConcept || currentConcepts[0];
+              console.log("🚀 Starting fresh conversation for completed session:", conceptToUse.concept_name);
+              setSelectedConcept(conceptToUse);
+              await initiateFirstMentorMessageWithConcept(conceptToUse);
+            }
+          }, 1000);
+          return;
         }
 
-        // Restore selectedConcept based on the chat's concept_name
-        if (chat.concept_name && concepts.length > 0) {
-          const matchingConcept = concepts.find(c => c.concept_name === chat.concept_name);
-          if (matchingConcept) {
-            setSelectedConcept(matchingConcept);
-            console.log("✅ Concept restored from session:", matchingConcept.concept_name);
-          } else {
-            console.warn("⚠️ Concept from session not found in available concepts:", chat.concept_name);
-            // If conceptName was provided, try to find it
-            if (conceptName) {
-              const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
-              if (providedConcept) {
-                setSelectedConcept(providedConcept);
-                console.log("🔄 Using provided concept:", providedConcept.concept_name);
+        if (sessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
+          // Resume existing session
+          console.log("🔄 Resuming existing session:", chat);
+
+          setChatHistory(chat.conversation);
+
+          const loadedSessionHistory = chat.conversation
+            .filter((item) => item.user !== undefined && item.system !== undefined)
+            .map((item) => ({ Mentee: item.user, Mentor: item.system }));
+          setSessionHistory(loadedSessionHistory);
+
+          setCurrentChatId(chat.id);
+          setSessionType("resume");
+          setResumedFromStatus(chat.status);
+          setCurrentChatStatus(chat.status);
+
+          // Map API stage to progress stage
+          const progressStage = mapApiStageToProgressbarIndex(
+            chat.current_stage,
+            chat.status,
+            false
+          );
+          setCurrentStage(progressStage);
+
+          console.log("✅ Session resumed with stage:", {
+            apiStage: chat.current_stage,
+            status: chat.status,
+            progressStage: progressStage,
+            conceptName: chat.concept_name
+          });
+
+          sessionStorage.setItem("chatHistory", JSON.stringify(chat.conversation));
+          sessionStorage.setItem("currentChatId", chat.id.toString());
+          sessionStorage.setItem("sessionType", "resume");
+
+          // If no concepts loaded yet, fetch them
+          if (concepts.length === 0) {
+            await fetchConcepts();
+          }
+
+          // Restore selectedConcept based on the chat's concept_name
+          if (chat.concept_name && concepts.length > 0) {
+            const matchingConcept = concepts.find(c => c.concept_name === chat.concept_name);
+            if (matchingConcept) {
+              setSelectedConcept(matchingConcept);
+              console.log("✅ Concept restored from session:", matchingConcept.concept_name);
+            } else {
+              console.warn("⚠️ Concept from session not found in available concepts:", chat.concept_name);
+              // If conceptName was provided, try to find it
+              if (conceptName) {
+                const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+                if (providedConcept) {
+                  setSelectedConcept(providedConcept);
+                  console.log("🔄 Using provided concept:", providedConcept.concept_name);
+                }
               }
             }
+          } else if (conceptName && concepts.length > 0) {
+            // If conceptName was provided in the API call, use it
+            const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+            if (providedConcept) {
+              setSelectedConcept(providedConcept);
+              console.log("🔄 Using provided concept for fresh session:", providedConcept.concept_name);
+            }
           }
-        } else if (conceptName && concepts.length > 0) {
-          // If conceptName was provided in the API call, use it
-          const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
-          if (providedConcept) {
-            setSelectedConcept(providedConcept);
-            console.log("🔄 Using provided concept for fresh session:", providedConcept.concept_name);
-          }
-        }
 
-      } else if (sessionType === "fresh") {
-        // Start fresh session
-        console.log("🆕 Starting fresh session");
+        } else if (sessionType === "fresh") {
+          // Start fresh session
+          console.log("🆕 Starting fresh session");
+          clearSessionData();
+          setCurrentChatStatus('not_started');
+
+          // Load concepts first, then initiate conversation
+          if (concepts.length === 0) {
+            await fetchConcepts();
+          }
+
+          // Automatically start conversation for fresh session
+          setTimeout(async () => {
+            const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+            if (currentConcepts.length > 0) {
+              let conceptToUse;
+
+              // If conceptName was provided, try to find matching concept
+              if (conceptName) {
+                conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+              }
+
+              // Fallback to selected concept or first active concept
+              if (!conceptToUse) {
+                conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
+              }
+
+              if (conceptToUse) {
+                console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
+                setSelectedConcept(conceptToUse);
+                await initiateFirstMentorMessageWithConcept(conceptToUse);
+              }
+            }
+          }, 1000);
+        }
+      } else {
+        // Fallback to fresh session
+        console.log("⚠️ No session data, starting fresh");
         clearSessionData();
         setCurrentChatStatus('not_started');
 
-        // Load concepts first, then initiate conversation
         if (concepts.length === 0) {
           await fetchConcepts();
         }
 
-        // Automatically start conversation for fresh session
+        // Force start fresh conversation
         setTimeout(async () => {
           const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             let conceptToUse;
-            
+
             // If conceptName was provided, try to find matching concept
             if (conceptName) {
               conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
             }
-            
+
             // Fallback to selected concept or first active concept
             if (!conceptToUse) {
               conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
             }
-            
-            if (conceptToUse) {
-              console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
-              setSelectedConcept(conceptToUse);
-              await initiateFirstMentorMessageWithConcept(conceptToUse);
-            }
+
+            console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
+            setSelectedConcept(conceptToUse);
+            await initiateFirstMentorMessageWithConcept(conceptToUse);
+          } else {
+            console.error("❌ No concepts available for fresh conversation");
           }
         }, 1000);
       }
-    } else {
-      // Fallback to fresh session
-      console.log("⚠️ No session data, starting fresh");
+
+      await fetchChatCounts();
+    } catch (error) {
+      console.error("❌ Error checking session status:", error);
+      // On error, force fresh session start
       clearSessionData();
       setCurrentChatStatus('not_started');
 
@@ -961,69 +997,33 @@ function Dashboard() {
         await fetchConcepts();
       }
 
-      // Force start fresh conversation
       setTimeout(async () => {
         const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
         if (currentConcepts.length > 0) {
           let conceptToUse;
-          
+
           // If conceptName was provided, try to find matching concept
           if (conceptName) {
             conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
           }
-          
+
           // Fallback to selected concept or first active concept
           if (!conceptToUse) {
             conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
           }
-          
-          console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
+
+          console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
           setSelectedConcept(conceptToUse);
           await initiateFirstMentorMessageWithConcept(conceptToUse);
         } else {
-          console.error("❌ No concepts available for fresh conversation");
+          console.error("❌ No concepts available for error recovery");
         }
       }, 1000);
+    } finally {
+      setIsLoading(false);
+      setIsInitializing(false);
     }
-
-    await fetchChatCounts();
-  } catch (error) {
-    console.error("❌ Error checking session status:", error);
-    // On error, force fresh session start
-    clearSessionData();
-    setCurrentChatStatus('not_started');
-
-    if (concepts.length === 0) {
-      await fetchConcepts();
-    }
-
-    setTimeout(async () => {
-      const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
-      if (currentConcepts.length > 0) {
-        let conceptToUse;
-        
-        // If conceptName was provided, try to find matching concept
-        if (conceptName) {
-          conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
-        }
-        
-        // Fallback to selected concept or first active concept
-        if (!conceptToUse) {
-          conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
-        }
-        
-        console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
-        setSelectedConcept(conceptToUse);
-        await initiateFirstMentorMessageWithConcept(conceptToUse);
-      } else {
-        console.error("❌ No concepts available for error recovery");
-      }
-    }, 1000);
-  } finally {
-    setIsLoading(false);
-    setIsInitializing(false);
-  }
-};
+  };
 
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
@@ -1034,21 +1034,21 @@ function Dashboard() {
     }
   };
 
- const handleConceptSelect = async (concept) => {
-  console.log("🎯 Concept selected:", concept.concept_name);
-  setSelectedConcept(concept);
-  setShowConceptDropdown(false);
+  const handleConceptSelect = async (concept) => {
+    console.log("🎯 Concept selected:", concept.concept_name);
+    setSelectedConcept(concept);
+    setShowConceptDropdown(false);
 
-  // Clear current session data
-  clearSessionData();
-  setCurrentChatStatus('not_started');
+    // Clear current session data
+    clearSessionData();
+    setCurrentChatStatus('not_started');
 
-  // Check session status with the selected concept
-  if (sessionStorage.getItem(`apiKey_${username}`)) {
-    console.log("🔍 Checking session status for concept:", concept.concept_name);
-    await checkSessionStatus(concept.concept_name);
-  }
-};
+    // Check session status with the selected concept
+    if (sessionStorage.getItem(`apiKey_${username}`)) {
+      console.log("🔍 Checking session status for concept:", concept.concept_name);
+      await checkSessionStatus(concept.concept_name);
+    }
+  };
   const getStageStatus = () => {
     // Priority: Use currentChatStatus from API, fallback to currentStage logic
     if (currentChatStatus === 'completed') return 'completed';
@@ -1062,34 +1062,34 @@ function Dashboard() {
   };
 
   useEffect(() => {
-  if (username && userId) {
-    // Get the first available concept and call checkSessionStatus with it
-    const initializeWithConcept = async () => {
-      // First fetch concepts if not already loaded
-      if (concepts.length === 0) {
-        await fetchConcepts();
-      }
-      
-      // Get concepts from state or fetch them
-      const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
-      
-      if (currentConcepts.length > 0) {
-        // Use first active concept or first concept available
-        const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
-        console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
-        
-        // Call checkSessionStatus with the initial concept name
-        await checkSessionStatus(initialConcept.concept_name);
-      } else {
-        // No concepts available, call without concept_name as fallback
-        console.log("⚠️ No concepts available, checking session without concept_name");
-        await checkSessionStatus();
-      }
-    };
-    
-    initializeWithConcept();
-  }
-}, [username, userId]);
+    if (username && userId) {
+      // Get the first available concept and call checkSessionStatus with it
+      const initializeWithConcept = async () => {
+        // First fetch concepts if not already loaded
+        if (concepts.length === 0) {
+          await fetchConcepts();
+        }
+
+        // Get concepts from state or fetch them
+        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+
+        if (currentConcepts.length > 0) {
+          // Use first active concept or first concept available
+          const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
+          console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
+
+          // Call checkSessionStatus with the initial concept name
+          await checkSessionStatus(initialConcept.concept_name);
+        } else {
+          // No concepts available, call without concept_name as fallback
+          console.log("⚠️ No concepts available, checking session without concept_name");
+          await checkSessionStatus();
+        }
+      };
+
+      initializeWithConcept();
+    }
+  }, [username, userId]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -1136,150 +1136,218 @@ function Dashboard() {
 
   // Assessment helper functions
   const hasAssessmentData = (content) => {
-    return (
-      content &&
-      content.includes("Detailed Assessment") &&
-      content.includes("Deterministic Scoring")
-    );
-  };
+  return (
+    content &&
+    content.includes("Detailed Assessment") &&
+    content.includes("Deterministic Scoring")
+  );
+};
 
   const parseAssessmentContent = (content) => {
-    const detailedAssessmentHeader = "### Part 1: Detailed Assessment";
-    const deterministicScoringHeader = "### Part 2: Deterministic Scoring";
+  const detailedAssessmentHeader = "### Part 1: 🌟 Detailed Assessment 📝";
+  const deterministicScoringHeader = "### Part 2: Deterministic Scoring (JSON Format) 📊";
 
-    const part1Index = content.indexOf(detailedAssessmentHeader);
-    if (part1Index === -1) {
-      const altHeader = "### Part1: Detailed Assessment";
-      const altPart1Index = content.indexOf(altHeader);
-      if (altPart1Index === -1) {
-        return content;
-      }
-      const assessmentStart = altPart1Index + altHeader.length;
-      const part2Index = content.indexOf("### Part2: Deterministic Scoring");
-      if (part2Index === -1) {
-        return content.slice(assessmentStart).trim();
-      }
-      return content.slice(assessmentStart, part2Index).trim();
+  const part1Index = content.indexOf(detailedAssessmentHeader);
+  if (part1Index === -1) {
+    // Try alternative headers
+    const altHeader = "### Part1: 🌟 Detailed Assessment 📝";
+    const altPart1Index = content.indexOf(altHeader);
+    if (altPart1Index === -1) {
+      return content;
     }
-
-    const assessmentStart = part1Index + detailedAssessmentHeader.length;
-    const part2Index = content.indexOf(deterministicScoringHeader);
+    const assessmentStart = altPart1Index + altHeader.length;
+    const part2Index = content.indexOf("### Part2: Deterministic Scoring");
     if (part2Index === -1) {
       return content.slice(assessmentStart).trim();
     }
     return content.slice(assessmentStart, part2Index).trim();
-  };
+  }
+
+  const assessmentStart = part1Index + detailedAssessmentHeader.length;
+  const part2Index = content.indexOf(deterministicScoringHeader);
+  if (part2Index === -1) {
+    return content.slice(assessmentStart).trim();
+  }
+  return content.slice(assessmentStart, part2Index).trim();
+};
 
   const extractScoringData = (content) => {
-    try {
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch && jsonMatch[1]) {
-        return JSON.parse(jsonMatch[1]);
-      }
-      const possibleJson = content.match(/\{[\s\S]*"OverallScore"[\s\S]*\}/);
-      if (possibleJson) {
-        return JSON.parse(possibleJson[0]);
-      }
-      return {};
-    } catch (e) {
-      console.error("Error parsing scoring JSON:", e);
-      return {};
+  try {
+    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch && jsonMatch[1]) {
+      return JSON.parse(jsonMatch[1]);
     }
-  };
+    // Fallback: try to find JSON-like structure
+    const possibleJson = content.match(/\{[\s\S]*"OverallScore"[\s\S]*\}/);
+    if (possibleJson) {
+      return JSON.parse(possibleJson[0]);
+    }
+    return {};
+  } catch (e) {
+    console.error("Error parsing scoring JSON:", e);
+    return {};
+  }
+};
+const calculateOverallScore = (scoringData) => {
+  const facetKeys = ["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"];
+  let totalScore = 0;
+  let validScores = 0;
 
-  const getScoreColor = (score) => {
-    if (score >= 4) return '#10b981';
-    if (score >= 3) return '#3b82f6';
-    if (score >= 2) return '#f59e0b';
-    return '#ef4444';
-  };
+  facetKeys.forEach(key => {
+    if (scoringData[key] && typeof scoringData[key].score === 'number') {
+      totalScore += scoringData[key].score;
+      validScores++;
+    }
+  });
+
+  if (validScores === 0) return 0;
+  return Math.round((totalScore / validScores) * 10) / 10; // Round to 1 decimal place
+};
+ const getScoreColor = (score) => {
+  if (score >= 4) return '#10b981'; // Green for excellent
+  if (score >= 3) return '#3b82f6'; // Blue for good
+  if (score >= 2) return '#f59e0b'; // Yellow for fair
+  return '#ef4444'; // Red for needs improvement
+};
 
   const getScoreLabel = (score) => {
-    if (score >= 4) return 'Excellent';
-    if (score >= 3) return 'Good';
-    if (score >= 2) return 'Fair';
-    return 'Needs Improvement';
-  };
+  if (score >= 4) return 'Excellent';
+  if (score >= 3) return 'Good';
+  if (score >= 2) return 'Fair';
+  return 'Needs Improvement';
+};
 
   const formatCriterionName = (name) => {
-    return name.replace(/([A-Z])/g, ' $1').trim();
-  };
+  return name.replace(/([A-Z])/g, ' $1').trim();
+};
 
   const renderScoringTable = (content) => {
-    const scoringData = extractScoringData(content);
+  const scoringData = extractScoringData(content);
+  const facetKeys = ["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"];
 
-    return (
-      <div className="assessment-scoring-table">
-        <div className="scoring-header">
-          <h4>📊 Learning Assessment Scores</h4>
+  return (
+    <div className="assessment-scoring-table">
+      <div className="scoring-header">
+        <h4>📊 Learning Assessment Scores</h4>
+      </div>
+
+      <div className="scoring-grid">
+        {facetKeys.map((key) => {
+          if (!scoringData[key]) return null;
+          
+          const facetData = scoringData[key];
+          const scoreValue = facetData.score || 0;
+          const scoreColor = getScoreColor(scoreValue);
+          const scoreLabel = getScoreLabel(scoreValue);
+
+          return (
+            <div key={key} className="score-card">
+              <div className="score-card-header">
+                <h5 className="criterion-name">{formatCriterionName(key)}</h5>
+                <div
+                  className="score-badge"
+                  style={{ backgroundColor: scoreColor }}
+                >
+                  {scoreValue}/5
+                </div>
+              </div>
+              <div className="score-performance">
+                <span
+                  className="performance-label"
+                  style={{ color: scoreColor }}
+                >
+                  {scoreLabel}
+                </span>
+              </div>
+              {facetData.justification && (
+                <div className="score-justification">
+                  <p><strong>🧠 Why:</strong> {facetData.justification}</p>
+                </div>
+              )}
+              {facetData.example && (
+                <div className="score-example">
+                  <p><strong>💬 Example:</strong> {facetData.example}</p>
+                </div>
+              )}
+              {facetData.improvement && (
+                <div className="score-improvement">
+                  <p><strong>🔧 How to improve:</strong> {facetData.improvement}</p>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+  const renderOverallScoreAndSummary = (content) => {
+  const scoringData = extractScoringData(content);
+  
+  // Calculate overall score from frontend instead of trusting LLM
+  const calculatedOverallScore = calculateOverallScore(scoringData);
+  
+  // Use LLM's summary if available, otherwise create a basic one
+  const evaluationSummary = scoringData.EvaluationSummary || "Assessment completed based on conversation analysis.";
+  
+  const overallColor = getScoreColor(calculatedOverallScore);
+  const overallLabel = getScoreLabel(calculatedOverallScore);
+
+  return (
+    <div className="overall-assessment">
+      <div className="overall-score-card">
+        <div className="overall-header">
+          <h4>🎯 Overall Assessment</h4>
+          <div
+            className="overall-score-badge"
+            style={{ backgroundColor: overallColor }}
+          >
+            <span className="score-value">{calculatedOverallScore}/5</span>
+            <span className="score-label">{overallLabel}</span>
+          </div>
         </div>
-
-        <div className="scoring-grid">
-          {Object.keys(scoringData)
-            .filter((key) => key !== "OverallScore" && key !== "EvaluationSummary")
-            .map((key) => {
-              const scoreValue = scoringData[key].score;
-              const scoreColor = getScoreColor(scoreValue);
-              const scoreLabel = getScoreLabel(scoreValue);
-
+        <div className="overall-summary">
+          <h5>📋 Summary</h5>
+          <p>{evaluationSummary}</p>
+        </div>
+        
+        {/* Show score breakdown */}
+        <div className="score-breakdown">
+          <h5>📈 Score Breakdown</h5>
+          <div className="breakdown-grid">
+            {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map(facet => {
+              if (!scoringData[facet]) return null;
+              const score = scoringData[facet].score || 0;
+              const color = getScoreColor(score);
+              
               return (
-                <div key={key} className="score-card">
-                  <div className="score-card-header">
-                    <h5 className="criterion-name">{formatCriterionName(key)}</h5>
-                    <div
-                      className="score-badge"
-                      style={{ backgroundColor: scoreColor }}
-                    >
-                      {scoreValue}/5
-                    </div>
-                  </div>
-                  <div className="score-performance">
-                    <span
-                      className="performance-label"
-                      style={{ color: scoreColor }}
-                    >
-                      {scoreLabel}
-                    </span>
-                  </div>
-                  <div className="score-evidence">
-                    <p>{scoringData[key].evidence}</p>
-                  </div>
+                <div key={facet} className="breakdown-item">
+                  <span className="breakdown-label">{formatCriterionName(facet)}</span>
+                  <span 
+                    className="breakdown-score" 
+                    style={{ color: color, fontWeight: 'bold' }}
+                  >
+                    {score}/5
+                  </span>
                 </div>
               );
             })}
-        </div>
-      </div>
-    );
-  };
-
-  const renderOverallScoreAndSummary = (content) => {
-    const scoringData = extractScoringData(content);
-    const overallScore = scoringData.OverallScore || 0;
-    const evaluationSummary = scoringData.EvaluationSummary || "N/A";
-    const overallColor = getScoreColor(overallScore);
-    const overallLabel = getScoreLabel(overallScore);
-
-    return (
-      <div className="overall-assessment">
-        <div className="overall-score-card">
-          <div className="overall-header">
-            <h4>🎯 Overall Assessment</h4>
-            <div
-              className="overall-score-badge"
-              style={{ backgroundColor: overallColor }}
+          </div>
+          <div className="breakdown-average">
+            <span className="breakdown-label"><strong>Average Score</strong></span>
+            <span 
+              className="breakdown-score" 
+              style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.1em' }}
             >
-              <span className="score-value">{overallScore}/5</span>
-              <span className="score-label">{overallLabel}</span>
-            </div>
-          </div>
-          <div className="overall-summary">
-            <h5>📋 Summary</h5>
-            <p>{evaluationSummary}</p>
+              {calculatedOverallScore}/5
+            </span>
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   return (
     <div className="learning-dashboard">
@@ -1539,16 +1607,16 @@ function Dashboard() {
                         </div>
                         <div className="message-text">
                           {hasAssessmentData(item.system) ? (
-                            <div className="assessment-display">
+                            <div>
                               {/* Detailed Assessment Section */}
-                              <div className="assessment-section">
+                              {/* <div className="assessment-section">
                                 <h4 className="assessment-title">
                                   📝 Detailed Assessment
                                 </h4>
                                 <div className="assessment-content">
                                   {parseAssessmentContent(item.system)}
                                 </div>
-                              </div>
+                              </div> */}
 
                               {/* Overall Score and Summary */}
                               {renderOverallScoreAndSummary(item.system)}
