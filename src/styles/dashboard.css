@@ -685,7 +685,7 @@ html, body {
 .control-section:last-child {
   flex: 1; /* Expand to fill remaining space */
   min-height: 0; /* Allow shrinking */
-  margin-bottom: 115%;
+  margin-bottom: 165%;
 }
 
 /* Hover Effect for Control Sections */
