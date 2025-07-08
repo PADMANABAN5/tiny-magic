@@ -209,7 +209,7 @@ function Superadmin() {
                   <div className="p-3 bg-success-subtle rounded-circle d-inline-flex mb-3">
                     <Database className="text-success" size={32} />
                   </div>
-                  <Card.Title className="fs-5 fw-semibold text-dark mb-2">User Management</Card.Title>
+                  <Card.Title className="fs-5 fw-semibold text-dark mb-2">Pod Management</Card.Title>
                   <Card.Text className="text-secondary mb-4 fs-6">
                     Manage all individual user accounts across all organizations by adding them into their respective pods.
                   </Card.Text>
@@ -218,7 +218,7 @@ function Superadmin() {
                     variant="success"
                     className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2"
                   >
-                    <Users className="me-2" size={18} /> Manage Users
+                    <Users className="me-2" size={18} /> Assign Users
                   </Button>
                 </Card.Body>
               </Card>

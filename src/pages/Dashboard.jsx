@@ -26,6 +26,8 @@ import axios from "axios";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
 import Tesseract from 'tesseract.js';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -75,7 +77,7 @@ function Dashboard() {
     archived: 0,
   });
 
-  // ✅ Function to fetch API key from API
+  // Function to fetch API key from API
   const fetchApiKey = async () => {
     try {
       console.log("🔑 Fetching API key from server...");
@@ -91,7 +93,7 @@ function Dashboard() {
       }
     } catch (error) {
       console.error("❌ Error fetching API key:", error);
-      alert("Failed to fetch API key from server. Please try again or contact support.");
+      toast.error("Failed to fetch API key from server. Please try again or contact support.");
       return null;
     }
   };
@@ -122,7 +124,7 @@ function Dashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showSaveOptions, showConceptDropdown]);
 
-  // ✅ Helper function to fetch concepts and return them
+  // Helper function to fetch concepts and return them
   const fetchAndReturnConcepts = async () => {
     if (!username || conceptsLoading) return [];
 
@@ -145,7 +147,7 @@ function Dashboard() {
     }
   };
 
-  // ✅ Fetch concepts from API
+  // Fetch concepts from API
   const fetchConcepts = async () => {
     if (!username || conceptsLoading) return;
 
@@ -181,14 +183,14 @@ function Dashboard() {
       console.error("❌ Error fetching concepts:", error);
       setConcepts([]);
       if (error.response?.status !== 404) {
-        alert("Failed to load concepts. Please try again.");
+        toast.error("Failed to load concepts. Please try again.");
       }
     } finally {
       setConceptsLoading(false);
     }
   };
 
-  // ✅ Initiate first mentor message with specific concept
+  // Initiate first mentor message with specific concept
   const initiateFirstMentorMessageWithConcept = async (concept) => {
     if (!sessionStorage.getItem(`apiKey_${username}`) || !concept) {
       setIsInitializing(false);
@@ -226,7 +228,7 @@ function Dashboard() {
       console.log("✅ First mentor message initiated successfully");
     } catch (err) {
       console.error("❌ Failed to load initial mentor message:", err);
-      alert("Failed to start conversation. Please try again.");
+      toast.error("Failed to start conversation. Please try again.");
     } finally {
       setIsLoading(false);
       setIsInitializing(false);
@@ -299,7 +301,7 @@ function Dashboard() {
       sessionStorage.setItem("sessionType", "fresh");
     } catch (err) {
       console.error("❌ Failed to load initial mentor message:", err);
-      alert("Failed to start conversation. Please try again.");
+      toast.error("Failed to start conversation. Please try again.");
     } finally {
       setIsLoading(false);
       setIsInitializing(false);
@@ -337,7 +339,7 @@ function Dashboard() {
       await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error restarting chat:", error);
-      alert("Failed to restart conversation. Please try again.");
+      toast.error("Failed to restart conversation. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -374,7 +376,7 @@ function Dashboard() {
       await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error saving and restarting chat:", error);
-      alert("Failed to save and restart conversation. Please try again.");
+      toast.error("Failed to save and restart conversation. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -463,7 +465,7 @@ function Dashboard() {
         })
         .catch((error) => {
           console.error("❌ PDF generation or OCR error:", error);
-          alert("Failed to generate PDF or perform OCR. Please try again.");
+          toast.error("Failed to generate PDF or perform OCR. Please try again.");
 
           // Ensure styles are restored even on error
           chatDiv.style.maxHeight = originalMaxHeight;
@@ -483,10 +485,10 @@ function Dashboard() {
   const handleSendClick = async () => {
     if (!prompt.trim() || !selectedConcept || isChatEnded) {
       if (isChatEnded) {
-        alert("This conversation has ended. Please restart to begin a new session.");
+        toast.warn("This conversation has ended. Please restart to begin a new session.");
         return;
       }
-      alert("Please enter a prompt and select a concept.");
+      toast.warn("Please enter a prompt and select a concept.");
       return;
     }
 
@@ -523,7 +525,7 @@ function Dashboard() {
         interactionCompleted: newInteractionCompleted,
         endRequested: newEndRequested,
         currentProgressStage: currentStage,
-        isFirstUserMessage
+        isFirstUserMessage,
       });
 
       const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
@@ -535,7 +537,7 @@ function Dashboard() {
           from: currentStage,
           to: newProgressStage,
           apiStage: newApiCurrentStage,
-          status: 'inprogress'
+          status: 'inprogress',
         });
       }
 
@@ -556,16 +558,19 @@ function Dashboard() {
         { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
       ]);
 
-      // Removed auto-save functionality - only save when user explicitly clicks save button
-
-      // Check for end conditions - both endRequested and interactionCompleted trigger assessment
-      // Replace this part in your handleSendClick function:
+      // Auto-save after regular LLM response
+      console.log("💾 Auto-saving after regular LLM response...");
+      await handleSaveChat();
 
       // Check for end conditions - both endRequested and interactionCompleted trigger assessment
       if (newEndRequested || newInteractionCompleted) {
-        console.log(newInteractionCompleted ? "🎉 Interaction completed! Triggering assessment..." : "🛑 End requested by mentor, triggering assessment...");
+        console.log(
+          newInteractionCompleted
+            ? "🎉 Interaction completed! Triggering assessment..."
+            : "🛑 End requested by mentor, triggering assessment..."
+        );
 
-        // Always call assessment when ending
+        // Call assessment
         const assessmentResponse = await processPromptAndCallLLM({
           username,
           selectedPrompt: "assessmentPrompt",
@@ -597,9 +602,9 @@ function Dashboard() {
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
 
-        // UPDATED: Both scenarios move to completed stage and status
-        setCurrentStage(7); // Always move to completed stage (7)
-        setCurrentChatStatus('completed'); // Always set status to completed
+        // Set completed stage and status
+        setCurrentStage(7);
+        setCurrentChatStatus('completed');
 
         // Set the end reason for UI messaging
         if (newInteractionCompleted) {
@@ -608,24 +613,24 @@ function Dashboard() {
           setEndReason('endRequested');
         }
 
-        // REMOVED: Auto-save functionality - only save when user manually clicks save
+        // Auto-save after assessment
+        console.log("💾 Auto-saving after assessment...");
+        await handleSaveChat('completed');
 
         setSelectedPrompt("conceptMentor");
 
-        // Important: Set chat as ended AFTER assessment is added to chat history
-        // This ensures the assessment is displayed before input is restricted
+        // Set chat as ended AFTER assessment is added to chat history
         setTimeout(() => {
           setIsChatEnded(true);
           console.log("🔒 Chat input restricted after assessment display");
-        }, 100); // Small delay to ensure UI updates properly
+        }, 100);
       }
-
     } catch (error) {
       console.error("❌ Error in API request:", error);
       if (error.response) {
-        alert(`Failed to process request: ${error.response.data.message || "Server error"}`);
+        toast.error(`Failed to process request: ${error.response.data.message || "Server error"}`);
       } else {
-        alert("Failed to process request. Please check your connection and try again.");
+        toast.error("Failed to process request. Please check your connection and try again.");
       }
     } finally {
       setIsLoading(false);
@@ -656,8 +661,6 @@ function Dashboard() {
     return Math.min(Math.max(currentStage - 1, 0), 5);
   };
 
-  // Replace your getFrontendStatusForSave function with this:
-
   const getFrontendStatusForSave = () => {
     // If chat has ended (either interactionCompleted or endRequested), save as completed
     if (isChatEnded) {
@@ -674,11 +677,11 @@ function Dashboard() {
 
   const handleSaveChat = async (requestedStatus = null) => {
     if (!username) {
-      alert("Cannot save chat: User not identified.");
+      toast.error("Cannot save chat: User not identified.");
       return;
     }
     if (chatHistory.length === 0) {
-      alert("No chat history to save.");
+      toast.warn("No chat history to save.");
       return;
     }
 
@@ -733,7 +736,15 @@ function Dashboard() {
         chatId: response.data.data.id
       });
 
-      alert(`Chat saved as ${statusToSave}!`);
+      // Show success toast notification
+      toast.success(`Chat saved as ${statusToSave}!`, {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
 
       if (response.data.data.shouldStartFresh) {
         clearSessionData();
@@ -762,9 +773,23 @@ function Dashboard() {
     } catch (error) {
       console.error("❌ Error saving chat:", error);
       if (error.response) {
-        alert(`Failed to save chat: ${error.response.data.message || "Server error"}`);
+        toast.error(`Failed to save chat: ${error.response.data.message || "Server error"}`, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       } else {
-        alert("Failed to save chat. Please check your connection and try again.");
+        toast.error("Failed to save chat. Please check your connection and try again.", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
     } finally {
       setIsLoading(false);
@@ -969,7 +994,11 @@ function Dashboard() {
 
             // If conceptName was provided, try to find matching concept
             if (conceptName) {
-              conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+              const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+              if (providedConcept) {
+                setSelectedConcept(providedConcept);
+                console.log("🔄 Using provided concept for fresh session:", providedConcept.concept_name);
+              }
             }
 
             // Fallback to selected concept or first active concept
@@ -1049,6 +1078,7 @@ function Dashboard() {
       await checkSessionStatus(concept.concept_name);
     }
   };
+
   const getStageStatus = () => {
     // Priority: Use currentChatStatus from API, fallback to currentStage logic
     if (currentChatStatus === 'completed') return 'completed';
@@ -1136,222 +1166,237 @@ function Dashboard() {
 
   // Assessment helper functions
   const hasAssessmentData = (content) => {
-  return (
-    content &&
-    content.includes("Detailed Assessment") &&
-    content.includes("Deterministic Scoring")
-  );
-};
+    return (
+      content &&
+      content.includes("Detailed Assessment") &&
+      content.includes("Deterministic Scoring")
+    );
+  };
 
   const parseAssessmentContent = (content) => {
-  const detailedAssessmentHeader = "### Part 1: 🌟 Detailed Assessment 📝";
-  const deterministicScoringHeader = "### Part 2: Deterministic Scoring (JSON Format) 📊";
+    const detailedAssessmentHeader = "### Part 1: 🌟 Detailed Assessment 📝";
+    const deterministicScoringHeader = "### Part 2: Deterministic Scoring (JSON Format) 📊";
 
-  const part1Index = content.indexOf(detailedAssessmentHeader);
-  if (part1Index === -1) {
-    // Try alternative headers
-    const altHeader = "### Part1: 🌟 Detailed Assessment 📝";
-    const altPart1Index = content.indexOf(altHeader);
-    if (altPart1Index === -1) {
-      return content;
+    const part1Index = content.indexOf(detailedAssessmentHeader);
+    if (part1Index === -1) {
+      // Try alternative headers
+      const altHeader = "### Part1: 🌟 Detailed Assessment";
+      const altPart1Index = content.indexOf(altHeader);
+      if (altPart1Index === -1) {
+        return content;
+      }
+      const assessmentStart = altPart1Index + altHeader.length;
+      const part2Index = content.indexOf("### Part2: Deterministic Scoring");
+      if (part2Index === -1) {
+        return content.slice(assessmentStart).trim();
+      }
+      return content.slice(assessmentStart, part2Index).trim();
     }
-    const assessmentStart = altPart1Index + altHeader.length;
-    const part2Index = content.indexOf("### Part2: Deterministic Scoring");
+
+    const assessmentStart = part1Index + detailedAssessmentHeader.length;
+    const part2Index = content.indexOf(deterministicScoringHeader);
     if (part2Index === -1) {
       return content.slice(assessmentStart).trim();
     }
     return content.slice(assessmentStart, part2Index).trim();
-  }
-
-  const assessmentStart = part1Index + detailedAssessmentHeader.length;
-  const part2Index = content.indexOf(deterministicScoringHeader);
-  if (part2Index === -1) {
-    return content.slice(assessmentStart).trim();
-  }
-  return content.slice(assessmentStart, part2Index).trim();
-};
+  };
 
   const extractScoringData = (content) => {
-  try {
-    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonMatch && jsonMatch[1]) {
-      return JSON.parse(jsonMatch[1]);
+    try {
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch && jsonMatch[1]) {
+        return JSON.parse(jsonMatch[1]);
+      }
+      // Fallback: try to find JSON-like structure
+      const possibleJson = content.match(/\{[\s\S]*"OverallScore"[\s\S]*\}/);
+      if (possibleJson) {
+        return JSON.parse(possibleJson[0]);
+      }
+      return {};
+    } catch (e) {
+      console.error("Error parsing scoring JSON:", e);
+      return {};
     }
-    // Fallback: try to find JSON-like structure
-    const possibleJson = content.match(/\{[\s\S]*"OverallScore"[\s\S]*\}/);
-    if (possibleJson) {
-      return JSON.parse(possibleJson[0]);
-    }
-    return {};
-  } catch (e) {
-    console.error("Error parsing scoring JSON:", e);
-    return {};
-  }
-};
-const calculateOverallScore = (scoringData) => {
-  const facetKeys = ["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"];
-  let totalScore = 0;
-  let validScores = 0;
+  };
 
-  facetKeys.forEach(key => {
-    if (scoringData[key] && typeof scoringData[key].score === 'number') {
-      totalScore += scoringData[key].score;
-      validScores++;
-    }
-  });
+  const calculateOverallScore = (scoringData) => {
+    const facetKeys = ["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"];
+    let totalScore = 0;
+    let validScores = 0;
 
-  if (validScores === 0) return 0;
-  return Math.round((totalScore / validScores) * 10) / 10; // Round to 1 decimal place
-};
- const getScoreColor = (score) => {
-  if (score >= 4) return '#10b981'; // Green for excellent
-  if (score >= 3) return '#3b82f6'; // Blue for good
-  if (score >= 2) return '#f59e0b'; // Yellow for fair
-  return '#ef4444'; // Red for needs improvement
-};
+    facetKeys.forEach(key => {
+      if (scoringData[key] && typeof scoringData[key].score === 'number') {
+        totalScore += scoringData[key].score;
+        validScores++;
+      }
+    });
+
+    if (validScores === 0) return 0;
+    return Math.round((totalScore / validScores) * 10) / 10; // Round to 1 decimal place
+  };
+
+  const getScoreColor = (score) => {
+    if (score >= 4) return '#10b981'; // Green for excellent
+    if (score >= 3) return '#3b82f6'; // Blue for good
+    if (score >= 2) return '#f59e0b'; // Yellow for fair
+    return '#ef4444'; // Red for needs improvement
+  };
 
   const getScoreLabel = (score) => {
-  if (score >= 4) return 'Excellent';
-  if (score >= 3) return 'Good';
-  if (score >= 2) return 'Fair';
-  return 'Needs Improvement';
-};
+    if (score >= 4) return 'Excellent';
+    if (score >= 3) return 'Good';
+    if (score >= 2) return 'Fair';
+    return 'Needs Improvement';
+  };
 
   const formatCriterionName = (name) => {
-  return name.replace(/([A-Z])/g, ' $1').trim();
-};
+    return name.replace(/([A-Z])/g, ' $1').trim();
+  };
 
   const renderScoringTable = (content) => {
-  const scoringData = extractScoringData(content);
-  const facetKeys = ["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"];
+    const scoringData = extractScoringData(content);
+    const facetKeys = ["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"];
 
-  return (
-    <div className="assessment-scoring-table">
-      <div className="scoring-header">
-        <h4>📊 Learning Assessment Scores</h4>
-      </div>
-
-      <div className="scoring-grid">
-        {facetKeys.map((key) => {
-          if (!scoringData[key]) return null;
-          
-          const facetData = scoringData[key];
-          const scoreValue = facetData.score || 0;
-          const scoreColor = getScoreColor(scoreValue);
-          const scoreLabel = getScoreLabel(scoreValue);
-
-          return (
-            <div key={key} className="score-card">
-              <div className="score-card-header">
-                <h5 className="criterion-name">{formatCriterionName(key)}</h5>
-                <div
-                  className="score-badge"
-                  style={{ backgroundColor: scoreColor }}
-                >
-                  {scoreValue}/5
-                </div>
-              </div>
-              <div className="score-performance">
-                <span
-                  className="performance-label"
-                  style={{ color: scoreColor }}
-                >
-                  {scoreLabel}
-                </span>
-              </div>
-              {facetData.justification && (
-                <div className="score-justification">
-                  <p><strong>🧠 Why:</strong> {facetData.justification}</p>
-                </div>
-              )}
-              {facetData.example && (
-                <div className="score-example">
-                  <p><strong>💬 Example:</strong> {facetData.example}</p>
-                </div>
-              )}
-              {facetData.improvement && (
-                <div className="score-improvement">
-                  <p><strong>🔧 How to improve:</strong> {facetData.improvement}</p>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-};
-
-  const renderOverallScoreAndSummary = (content) => {
-  const scoringData = extractScoringData(content);
-  
-  // Calculate overall score from frontend instead of trusting LLM
-  const calculatedOverallScore = calculateOverallScore(scoringData);
-  
-  // Use LLM's summary if available, otherwise create a basic one
-  const evaluationSummary = scoringData.EvaluationSummary || "Assessment completed based on conversation analysis.";
-  
-  const overallColor = getScoreColor(calculatedOverallScore);
-  const overallLabel = getScoreLabel(calculatedOverallScore);
-
-  return (
-    <div className="overall-assessment">
-      <div className="overall-score-card">
-        <div className="overall-header">
-          <h4>🎯 Overall Assessment</h4>
-          <div
-            className="overall-score-badge"
-            style={{ backgroundColor: overallColor }}
-          >
-            <span className="score-value">{calculatedOverallScore}/5</span>
-            <span className="score-label">{overallLabel}</span>
-          </div>
+    return (
+      <div className="assessment-scoring-table">
+        <div className="scoring-header">
+          <h4>📊 Learning Assessment Scores</h4>
         </div>
-        <div className="overall-summary">
-          <h5>📋 Summary</h5>
-          <p>{evaluationSummary}</p>
-        </div>
-        
-        {/* Show score breakdown */}
-        <div className="score-breakdown">
-          <h5>📈 Score Breakdown</h5>
-          <div className="breakdown-grid">
-            {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map(facet => {
-              if (!scoringData[facet]) return null;
-              const score = scoringData[facet].score || 0;
-              const color = getScoreColor(score);
-              
-              return (
-                <div key={facet} className="breakdown-item">
-                  <span className="breakdown-label">{formatCriterionName(facet)}</span>
-                  <span 
-                    className="breakdown-score" 
-                    style={{ color: color, fontWeight: 'bold' }}
+
+        <div className="scoring-grid">
+          {facetKeys.map((key) => {
+            if (!scoringData[key]) return null;
+            
+            const facetData = scoringData[key];
+            const scoreValue = facetData.score || 0;
+            const scoreColor = getScoreColor(scoreValue);
+            const scoreLabel = getScoreLabel(scoreValue);
+
+            return (
+              <div key={key} className="score-card">
+                <div className="score-card-header">
+                  <h5 className="criterion-name">{formatCriterionName(key)}</h5>
+                  <div
+                    className="score-badge"
+                    style={{ backgroundColor: scoreColor }}
                   >
-                    {score}/5
+                    {scoreValue}/5
+                  </div>
+                </div>
+                <div className="score-performance">
+                  <span
+                    className="performance-label"
+                    style={{ color: scoreColor }}
+                  >
+                    {scoreLabel}
                   </span>
                 </div>
-              );
-            })}
-          </div>
-          <div className="breakdown-average">
-            <span className="breakdown-label"><strong>Average Score</strong></span>
-            <span 
-              className="breakdown-score" 
-              style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.1em' }}
+                {facetData.justification && (
+                  <div className="score-justification">
+                    <p><strong>🧠 Why:</strong> {facetData.justification}</p>
+                  </div>
+                )}
+                {facetData.example && (
+                  <div className="score-example">
+                    <p><strong>💬 Example:</strong> {facetData.example}</p>
+                  </div>
+                )}
+                {facetData.improvement && (
+                  <div className="score-improvement">
+                    <p><strong>🔬 How to improve:</strong> {facetData.improvement}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const renderOverallScoreAndSummary = (content) => {
+    const scoringData = extractScoringData(content);
+    
+    // Calculate overall score from frontend instead of trusting LLM
+    const calculatedOverallScore = calculateOverallScore(scoringData);
+    
+    // Use LLM's summary if available, otherwise create a basic one
+    const evaluationSummary = scoringData.EvaluationSummary || "Assessment completed based on conversation analysis.";
+    
+    const overallColor = getScoreColor(calculatedOverallScore);
+    const overallLabel = getScoreLabel(calculatedOverallScore);
+
+    return (
+      <div className="overall-assessment">
+        <div className="overall-score-card">
+          <div className="overall-header">
+            <h4>🎯 Overall Assessment</h4>
+            <div
+              className="overall-score-badge"
+              style={{ backgroundColor: overallColor }}
             >
-              {calculatedOverallScore}/5
-            </span>
+              <span className="score-value">{calculatedOverallScore}/5</span>
+              <span className="score-label">{overallLabel}</span>
+            </div>
+          </div>
+          <div className="overall-summary">
+            <h5>📋 Summary</h5>
+            <p>{evaluationSummary}</p>
+          </div>
+          
+          {/* Show score breakdown */}
+          <div className="score-breakdown">
+            <h5>📈 Score Breakdown</h5>
+            <div className="breakdown-grid">
+              {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map(facet => {
+                if (!scoringData[facet]) return null;
+                const score = scoringData[facet].score || 0;
+                const color = getScoreColor(score);
+                
+                return (
+                  <div key={facet} className="breakdown-item">
+                    <span className="breakdown-label">{formatCriterionName(facet)}</span>
+                    <span 
+                      className="breakdown-score" 
+                      style={{ color: color, fontWeight: 'bold' }}
+                    >
+                      {score}/5
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="breakdown-average">
+              <span className="breakdown-label"><strong>Average Score</strong></span>
+              <span 
+                className="breakdown-score" 
+                style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.1em' }}
+              >
+                {calculatedOverallScore}/5
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   return (
     <div className="learning-dashboard">
       <Sidebar />
+      
+      {/* Toast Container for Notifications */}
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+      />
 
       {/* Restart Dialog Modal */}
       {showRestartDialog && (
@@ -1365,7 +1410,6 @@ const calculateOverallScore = (scoringData) => {
               <p>
                 You're about to start a new conversation. Would you like to save your current session before restarting?
               </p>
-
             </div>
             <div className="restart-dialog-actions">
               <button
@@ -1531,7 +1575,7 @@ const calculateOverallScore = (scoringData) => {
             <div className="save-section">
               <button
                 ref={topSaveButtonRef}
-                className="top-action-btn top-save-btn"
+                className="top-action-btn"
                 onClick={() => setShowSaveOptions(!showSaveOptions)}
                 disabled={chatHistory.length === 0}
                 data-tooltip="Save Progress"
@@ -1608,16 +1652,6 @@ const calculateOverallScore = (scoringData) => {
                         <div className="message-text">
                           {hasAssessmentData(item.system) ? (
                             <div>
-                              {/* Detailed Assessment Section */}
-                              {/* <div className="assessment-section">
-                                <h4 className="assessment-title">
-                                  📝 Detailed Assessment
-                                </h4>
-                                <div className="assessment-content">
-                                  {parseAssessmentContent(item.system)}
-                                </div>
-                              </div> */}
-
                               {/* Overall Score and Summary */}
                               {renderOverallScoreAndSummary(item.system)}
 
@@ -1638,9 +1672,6 @@ const calculateOverallScore = (scoringData) => {
               {isChatEnded && (
                 <div className="chat-end-section">
                   <div className="chat-end-message">
-                    {/* <div className="end-icon">
-                      {endReason === 'interactionCompleted' ? <FiCheckCircle /> : <FiStopCircle />}
-                    </div> */}
                     <div className="end-content">
                       <h4>
                         {endReason === 'interactionCompleted'

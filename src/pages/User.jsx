@@ -2,33 +2,45 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
 import { Pagination } from 'react-bootstrap';
-import '../styles/OrgList.css'; // Assuming this CSS file is relevant for styling modals
+import '../styles/OrgList.css';
 
 export default function User() {
   const [podUsers, setPodUsers] = useState([]);
   const [organizations, setOrganizations] = useState([]);
-  const [batches, setBatches] = useState([]);
-  const [pods, setPods] = useState([]);
+  const [batches, setBatches] = useState([]); // All batches from API
+  const [pods, setPods] = useState([]);     // All pods from API
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAddUserModal, setShowAddUserModal] = useState(false); // Renamed for clarity
+
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showProgressModal, setShowProgressModal] = useState(false);
-  const [showSelectUsersModal, setShowSelectUsersModal] = useState(false); // New modal for selecting users
+  const [showSelectUsersModal, setShowSelectUsersModal] = useState(false);
+
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [progressText, setProgressText] = useState('');
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 7;
 
-  const [unassignedOrgUsers, setUnassignedOrgUsers] = useState([]); // Unassigned users for the current org
-  const [tempSelectedUserEmails, setTempSelectedUserEmails] = useState([]); // Temporary selections in the user selection modal
-  const [userSearchTerm, setUserSearchTerm] = useState(''); // For searching unassigned users
+  const [unassignedOrgUsers, setUnassignedOrgUsers] = useState([]);
+  const [tempSelectedUserEmails, setTempSelectedUserEmails] = useState([]);
+  const [userSearchTerm, setUserSearchTerm] = useState('');
 
+  // States for filtered dropdown options
+  const [filteredBatches, setFilteredBatches] = useState([]);
+  const [filteredPods, setFilteredPods] = useState([]);
+
+  // Form state for adding new user(s)
   const [newUser, setNewUser] = useState({
     organization_name: '',
-    batch_name: '',
-    pod_name: '',
-    users: [], // This will store the final selected emails
+    batch_name: '', // Kept for display/potentially backend
+    batch_id: '',   // Crucial for filtering pods
+    pod_name: '',   // Kept for display/potentially backend
+    pod_id: '',     // Crucial for adding pod user
+    users: [],      // Array of user emails
   });
+
+  // --- API Fetching Functions ---
 
   const fetchOrganizations = async () => {
     try {
@@ -45,7 +57,7 @@ export default function User() {
   const fetchAllUsers = async () => {
     setLoading(true);
     try {
-      const orgs = await fetchOrganizations();
+      const orgs = await fetchOrganizations(); // Ensure organizations are fetched first
 
       if (orgs.length === 0) {
         setPodUsers([]);
@@ -53,6 +65,7 @@ export default function User() {
         return;
       }
 
+      // Fetch pod users for each organization
       const userPromises = orgs.map(org =>
         axios.get(`${process.env.REACT_APP_API_LINK}/pod-users/all/${org.organization_identifier || org.organization_name}`)
       );
@@ -69,7 +82,7 @@ export default function User() {
     }
   };
 
-  const fetchDropdownData = async () => {
+  const fetchAllBatchesAndPods = async () => {
     try {
       const [batchRes, podRes] = await Promise.all([
         axios.get(`${process.env.REACT_APP_API_LINK}/batches`),
@@ -78,7 +91,7 @@ export default function User() {
       setBatches(batchRes.data.data || []);
       setPods(podRes.data.data || []);
     } catch (err) {
-      console.error('Error fetching dropdown data:', err);
+      console.error('Error fetching dropdown data (batches/pods):', err);
     }
   };
 
@@ -96,27 +109,38 @@ export default function User() {
     }
   };
 
+  // --- Event Handlers ---
+
   const handleAddUser = async (e) => {
     e.preventDefault();
     if (newUser.users.length === 0) {
       alert('Please select at least one user.');
       return;
     }
+    if (!newUser.organization_name || !newUser.batch_id || !newUser.pod_id) {
+      alert('Please ensure Organization, Batch, and Pod are selected.');
+      return;
+    }
 
     try {
       const usersToAssign = newUser.users.map(email => ({ user_identifier: email }));
       await axios.post(`${process.env.REACT_APP_API_LINK}/pod-users`, {
-        ...newUser,
+        organization_name: newUser.organization_name,
+        batch_name: newUser.batch_name,
+        pod_name: newUser.pod_name,
+        batch_id: newUser.batch_id, // Send the IDs for robust backend assignment
+        pod_id: newUser.pod_id,
         users: usersToAssign,
       });
       alert('User(s) added successfully');
       setShowAddUserModal(false);
-      setNewUser({ organization_name: '', batch_name: '', pod_name: '', users: [] }); // Reset form
-      setTempSelectedUserEmails([]); // Clear temp selections
-      fetchAllUsers();
+      // Reset form state completely
+      setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
+      setTempSelectedUserEmails([]);
+      fetchAllUsers(); // Refresh the main user list
     } catch (err) {
       console.error('Error adding user:', err);
-      alert('Failed to add user');
+      alert(`Failed to add user: ${err.response?.data?.message || err.message}`);
     }
   };
 
@@ -128,32 +152,29 @@ export default function User() {
 
   const handleInlineProgressUpdate = async () => {
     try {
-      const formattedProgress = JSON.parse(progressText);
+      const formattedProgress = JSON.parse(progressText); // Ensure it's valid JSON
       await axios.put(`${process.env.REACT_APP_API_LINK}/pod-users/${selectedUserId}`, {
         progress: formattedProgress
       });
       alert('Progress updated successfully');
       setShowProgressModal(false);
-      fetchAllUsers();
+      fetchAllUsers(); // Refresh data after update
     } catch (err) {
       console.error('Error updating progress:', err);
-      alert('Failed to update progress');
+      alert(`Failed to update progress: ${err.message}. Please ensure JSON format is correct.`);
     }
   };
 
-  // Handler for opening the "Select Users" modal
   const openSelectUsersModal = () => {
     if (!newUser.organization_name) {
       alert('Please select an Organization first to load unassigned users.');
       return;
     }
-    // Initialize tempSelectedUserEmails with currently selected users
-    setTempSelectedUserEmails([...newUser.users]);
-    setUserSearchTerm(''); // Clear search term when opening modal
+    setTempSelectedUserEmails([...newUser.users]); // Initialize temp selections
+    setUserSearchTerm(''); // Clear search bar
     setShowSelectUsersModal(true);
   };
 
-  // Handler for checkbox changes in "Select Users" modal
   const handleUserCheckboxChange = (email) => {
     setTempSelectedUserEmails(prevSelected =>
       prevSelected.includes(email)
@@ -162,7 +183,6 @@ export default function User() {
     );
   };
 
-  // Handler for confirming user selections from the modal
   const confirmUserSelection = () => {
     setNewUser(prevNewUser => ({
       ...prevNewUser,
@@ -171,24 +191,11 @@ export default function User() {
     setShowSelectUsersModal(false);
   };
 
-  // Filter unassigned users based on search term
+  // --- Filtering and Pagination ---
+
   const filteredUnassignedUsers = unassignedOrgUsers.filter(user =>
-    user.email.toLowerCase().includes(userSearchTerm.toLowerCase())
+    (user.email || '').toLowerCase().includes(userSearchTerm.toLowerCase()) // Added null check for user.email
   );
-
-  useEffect(() => {
-    fetchAllUsers();
-    fetchDropdownData();
-  }, []);
-
-  useEffect(() => {
-    if (newUser.organization_name) {
-      fetchUnassignedUsersForOrg(newUser.organization_name);
-    } else {
-      setUnassignedOrgUsers([]);
-      setNewUser(prev => ({ ...prev, users: [] })); // Clear selected users if org is cleared
-    }
-  }, [newUser.organization_name]);
 
   const assignedUsers = podUsers.filter(user => user.assigned);
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -196,6 +203,65 @@ export default function User() {
   const currentUsers = assignedUsers.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(assignedUsers.length / itemsPerPage);
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
+  // --- useEffect Hooks ---
+
+  // Initial data fetch for all assigned users and dropdown data
+  useEffect(() => {
+    fetchAllUsers();
+    fetchAllBatchesAndPods(); // Fetch all batches and pods once
+  }, []);
+
+  // Effect to filter batches when organization_name changes
+  useEffect(() => {
+    if (newUser.organization_name && batches.length > 0) {
+      const newFilteredBatches = batches.filter(
+        batch => batch.organization_name === newUser.organization_name
+      );
+      setFilteredBatches(newFilteredBatches);
+    } else {
+      setFilteredBatches([]);
+    }
+    // Reset batch and pod when organization changes
+    setNewUser(prev => ({
+      ...prev,
+      batch_name: '', batch_id: '',
+      pod_name: '', pod_id: '',
+      users: [] // Clear users as unassigned users depend on org
+    }));
+    setUnassignedOrgUsers([]); // Clear unassigned users
+    setTempSelectedUserEmails([]); // Clear temp selections
+  }, [newUser.organization_name, batches]); // Depend on organization_name and all batches
+
+  // Effect to filter pods when batch_id changes
+  useEffect(() => {
+    console.log("Filtering Pods - Selected Batch ID:", newUser.batch_id);
+    console.log("All Pods in state:", pods); // Important debug check
+
+    if (newUser.batch_id && pods.length > 0) {
+      // Ensure strict equality and type matching (e.g., if IDs are numbers from backend)
+      const newFilteredPods = pods.filter(
+        pod => String(pod.batch_id) === String(newUser.batch_id) // Robust comparison
+      );
+      setFilteredPods(newFilteredPods);
+      console.log("Filtered Pods:", newFilteredPods); // See what made it through the filter
+    } else {
+      setFilteredPods([]);
+      console.log("Filtered Pods: [] (No batch ID selected or no pods in state)");
+    }
+    // Reset pod when batch changes
+    setNewUser(prev => ({ ...prev, pod_name: '', pod_id: '' }));
+  }, [newUser.batch_id, pods]); // Depend on selected batch_id and all pods
+
+  // Effect to fetch unassigned users for the selected organization
+  useEffect(() => {
+    if (newUser.organization_name) {
+      fetchUnassignedUsersForOrg(newUser.organization_name);
+    } else {
+      setUnassignedOrgUsers([]);
+      // No need to clear newUser.users here, it's done on org change
+    }
+  }, [newUser.organization_name]); // Depend on organization_name
 
   return (
     <div className="main-layout-container">
@@ -206,9 +272,12 @@ export default function User() {
             <h3>Assigned Pod Users</h3>
             <button className="btn btn-primary" onClick={() => {
               setShowAddUserModal(true);
-              setNewUser({ organization_name: '', batch_name: '', pod_name: '', users: [] }); // Reset form
-              setUnassignedOrgUsers([]); // Clear unassigned users
-              setTempSelectedUserEmails([]); // Clear temp selections
+              // Full reset for Add User Modal
+              setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
+              setUnassignedOrgUsers([]);
+              setTempSelectedUserEmails([]);
+              setFilteredBatches([]); // Clear previous filtered batches
+              setFilteredPods([]);     // Clear previous filtered pods
             }} style={{ width: '200px' }}>
               Add User
             </button>
@@ -236,7 +305,7 @@ export default function User() {
                     currentUsers.map((user, idx) => (
                       <tr key={idx}>
                         <td>{user.pod?.pod_user_id || '—'}</td>
-                        <td>{user.email}</td>
+                        <td>{user.email || '—'}</td> {/* Added null check */}
                         <td>{user.batch?.organization_name || '—'}</td>
                         <td>{user.pod?.pod_name || '—'}</td>
                         <td>{user.assigned ? 'Yes' : 'No'}</td>
@@ -295,8 +364,14 @@ export default function User() {
                   className="form-control"
                   value={newUser.organization_name}
                   onChange={(e) => {
-                    setNewUser({ ...newUser, organization_name: e.target.value, batch_name: '', pod_name: '', users: [] });
-                    setTempSelectedUserEmails([]); // Clear temp selections on org change
+                    const selectedOrgName = e.target.value;
+                    setNewUser(prev => ({
+                      ...prev,
+                      organization_name: selectedOrgName,
+                      batch_name: '', batch_id: '', // Reset batch and pod related fields
+                      pod_name: '', pod_id: '',
+                      users: []
+                    }));
                   }}
                   required
                 >
@@ -310,13 +385,24 @@ export default function User() {
                 <label className="form-label">Batch</label>
                 <select
                   className="form-control"
-                  value={newUser.batch_name}
-                  onChange={(e) => setNewUser({ ...newUser, batch_name: e.target.value })}
+                  value={newUser.batch_id} // Bind to batch_id for selection
+                  onChange={(e) => {
+                    const selectedBatchId = e.target.value;
+                    const selectedBatch = filteredBatches.find(batch => String(batch.batch_id) === String(selectedBatchId));
+                    setNewUser(prev => ({
+                      ...prev,
+                      batch_id: selectedBatchId,
+                      batch_name: selectedBatch ? selectedBatch.batch_name : '',
+                      pod_name: '', // Reset pod
+                      pod_id: ''    // Reset pod_id
+                    }));
+                  }}
                   required
+                  disabled={!newUser.organization_name}
                 >
                   <option value="">-- Select Batch --</option>
-                  {batches.map(batch => (
-                    <option key={batch.batch_id} value={batch.batch_name}>{batch.batch_name}</option>
+                  {filteredBatches.map(batch => (
+                    <option key={batch.batch_id} value={batch.batch_id}>{batch.batch_name}</option>
                   ))}
                 </select>
               </div>
@@ -324,13 +410,22 @@ export default function User() {
                 <label className="form-label">Pod</label>
                 <select
                   className="form-control"
-                  value={newUser.pod_name}
-                  onChange={(e) => setNewUser({ ...newUser, pod_name: e.target.value })}
+                  value={newUser.pod_id} // Bind to pod_id for selection
+                  onChange={(e) => {
+                    const selectedPodId = e.target.value;
+                    const selectedPod = filteredPods.find(pod => String(pod.pod_id) === String(selectedPodId));
+                    setNewUser(prev => ({
+                      ...prev,
+                      pod_id: selectedPodId,
+                      pod_name: selectedPod ? selectedPod.pod_name : ''
+                    }));
+                  }}
                   required
+                  disabled={!newUser.batch_id} // Depends on batch_id being selected
                 >
                   <option value="">-- Select Pod --</option>
-                  {pods.map(pod => (
-                    <option key={pod.pod_id} value={pod.pod_name}>{pod.pod_name}</option>
+                  {filteredPods.map(pod => (
+                    <option key={pod.pod_id} value={pod.pod_id}>{pod.pod_name}</option>
                   ))}
                 </select>
               </div>
@@ -344,7 +439,7 @@ export default function User() {
                     type="button"
                     className="btn btn-info btn-sm ms-2"
                     onClick={openSelectUsersModal}
-                    disabled={!newUser.organization_name} // Disable until an organization is selected
+                    disabled={!newUser.organization_name}
                     style={{ width: '150px' }}
                   >
                     Select Users
@@ -411,7 +506,7 @@ export default function User() {
         </div>
       )}
 
-      {/* Update Progress Modal (remains the same) */}
+      {/* Update Progress Modal */}
       {showProgressModal && (
         <div className="modal-overlay" onClick={() => setShowProgressModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
