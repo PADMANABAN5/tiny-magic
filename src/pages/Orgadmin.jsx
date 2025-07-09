@@ -108,7 +108,7 @@ function Orgadmin() {
               <Card.Body>
                 <div className="table-responsive">
                   <table className="table table-bordered table-hover">
-                    <thead className="bg-primary text-white text-center">
+                    <thead className="table-primary text-center">
                       <tr>
                         <th>S No:</th>
                         <th>Name</th>
