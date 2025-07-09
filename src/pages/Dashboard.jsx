@@ -28,6 +28,9 @@ import Progressbar from "../components/Progressbar.jsx";
 import Tesseract from 'tesseract.js';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import "jspdf-autotable";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -382,104 +385,85 @@ function Dashboard() {
     }
   };
 
-  const handleDownloadPDF = () => {
-    const chatDiv = document.getElementById("chat-history");
-    if (!chatDiv) {
-      console.error("Chat history div not found");
-      return;
+pdfMake.vfs = pdfFonts.vfs;
+
+const handleDownloadPDF = () => {
+  // ✅ Helper to remove emojis from any string
+  const removeEmojis = (text) => {
+    return text.replace(
+    /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1F700}-\u{1F77F}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
+    ""
+  );
+  };
+
+  const content = [];
+
+  content.push({
+    text: "Chat History",
+    style: "header",
+    margin: [0, 0, 0, 10],
+  });
+
+  // Replace emojis from each message
+  chatHistory.forEach((item) => {
+    if (item.user) {
+      content.push(
+        {
+          alignment: "right",
+          text: "You:",
+          style: "userLabel",
+          margin: [0, 5, 0, 2],
+        },
+        {
+          alignment: "right",
+          text: removeEmojis(item.user),
+          style: "userText",
+        }
+      );
     }
 
-    const originalMaxHeight = chatDiv.style.maxHeight;
-    const originalOverflowY = chatDiv.style.overflowY;
-    const originalScrollTop = chatDiv.scrollTop;
-    const originalPosition = chatDiv.style.position;
-    const originalTop = chatDiv.style.top;
-
-    chatDiv.style.maxHeight = "none";
-    chatDiv.style.overflowY = "visible";
-
-    const parentOfChatDiv = chatDiv.parentElement;
-    if (parentOfChatDiv) {
-      parentOfChatDiv.style.flexGrow = "0";
+    if (item.system) {
+      content.push(
+        {
+          alignment: "left",
+          text: "Mentor:",
+          style: "botLabel",
+          margin: [0, 10, 0, 2],
+        },
+        {
+          alignment: "left",
+          text: removeEmojis(item.system),
+          style: "botText",
+        }
+      );
     }
+  });
 
-    chatDiv.style.position = "absolute";
-    chatDiv.style.top = "0";
-    chatDiv.style.width = "auto";
-    chatDiv.scrollTop = 0;
+  const docDefinition = {
+    content,
+    styles: {
+      header: {
+        fontSize: 18,
+        bold: true,
+        alignment: "center",
+        margin: [0, 0, 0, 10],
+      },
+      userLabel: { fontSize: 12, bold: true, color: "#007ACC" },
+      userText: { fontSize: 11, margin: [0, 0, 0, 5] },
+      botLabel: { fontSize: 12, bold: true, color: "#4CAF50" },
+      botText: { fontSize: 11, margin: [0, 0, 0, 10] },
+    },
+    defaultStyle: {
+      font: "Roboto",
+    },
+    pageMargins: [40, 60, 40, 60],
+  };
 
-    console.log("Generating PDF and performing OCR...");
+  pdfMake.createPdf(docDefinition).download("chat-history.pdf");
+};
 
-    setTimeout(() => {
-      html2canvas(chatDiv, {
-        scale: 2,
-        useCORS: true,
-      })
-        .then(async (canvas) => {
-          const imgData = canvas.toDataURL("image/png");
-
-          try {
-            const { data: { text } } = await Tesseract.recognize(
-              imgData,
-              'eng',
-              { logger: m => console.log(m) }
-            );
-            console.log("Extracted Text:", text);
-          } catch (ocrError) {
-            console.error("❌ OCR error:", ocrError);
-          }
-
-          const pdf = new jsPDF("p", "mm", "a4");
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = pdf.internal.pageSize.getHeight();
-          const imgWidth = pdfWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-          let currentHeight = 0;
-
-          while (currentHeight < imgHeight) {
-            if (currentHeight > 0) {
-              pdf.addPage();
-            }
-            pdf.addImage(imgData, "PNG", 0, -currentHeight, imgWidth, imgHeight);
-            currentHeight += pdfHeight;
-          }
-
-          const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, "-");
-          const filename = `chat-history-${timestamp}.pdf`;
-          pdf.save(filename);
-
-          // Restore original styles
-          chatDiv.style.maxHeight = originalMaxHeight;
-          chatDiv.style.overflowY = originalOverflowY;
-          chatDiv.style.position = originalPosition;
-          chatDiv.style.top = originalTop;
-          chatDiv.style.width = "";
-          chatDiv.scrollTop = originalScrollTop;
-
-          if (parentOfChatDiv) {
-            parentOfChatDiv.style.flexGrow = "";
-          }
-
-          console.log("PDF generated and OCR attempted.");
-        })
-        .catch((error) => {
-          console.error("❌ PDF generation or OCR error:", error);
-          toast.error("Failed to generate PDF or perform OCR. Please try again.");
-
-          // Ensure styles are restored even on error
-          chatDiv.style.maxHeight = originalMaxHeight;
-          chatDiv.style.overflowY = originalOverflowY;
-          chatDiv.style.position = originalPosition;
-          chatDiv.style.top = originalTop;
-          chatDiv.style.width = "";
-          chatDiv.scrollTop = originalScrollTop;
-
-          if (parentOfChatDiv) {
-            parentOfChatDiv.style.flexGrow = "";
-          }
-        });
-    }, 700);
+  const handleInputChange = (event) => {
+    setPrompt(event.target.value);
   };
 
   const handleSendClick = async () => {
