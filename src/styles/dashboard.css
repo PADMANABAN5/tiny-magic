@@ -22,10 +22,12 @@ html, body {
 
 /* Main Dashboard Container - Always full width */
 .learning-dashboard {
-  display: flex;
-  min-height: 100vh;
+  position: fixed;
+  top: 0px;
+  left: 0;
   width: 100%;
-  min-width: 100vw;
+  height: calc(100vh - var(--navbar-height));
+  display: flex;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
 }
 
@@ -84,12 +86,13 @@ html, body {
 }
 
 /* Chat Input - Full width */
+/* Chat Input */
 .chat-input-container {
   padding: 1.5rem 2.5rem;
   background: white;
   border-top: 1px solid rgba(226, 232, 240, 0.6);
-  position: relative;
-  width: 100%;
+  flex-shrink: 0;
+  margin-bottom: 70px;
 }
 
 .chat-input-wrapper {
@@ -113,7 +116,7 @@ html, body {
   transition: all 0.3s ease;
   background: #fafbfc;
   width: 100%;
-  min-width: 0; /* Allow shrinking */
+  min-width: 0;
 }
 
 /* Responsive adjustments */

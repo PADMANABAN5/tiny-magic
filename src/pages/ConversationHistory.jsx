@@ -73,179 +73,127 @@ const ConversationHistory = () => {
 
   // Function to download conversation as PDF (text format)
   const downloadConversationPDF = (conversation) => {
-    if (!conversation) return;
+  if (!conversation) return;
 
-    setIsDownloadingPDF(true);
+  setIsDownloadingPDF(true);
 
-    try {
-      const pdf = new jsPDF();
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 20;
-      const maxWidth = pageWidth - (margin * 2);
-      
-      let yPosition = margin;
-      const lineHeight = 6;
-      const sectionSpacing = 8;
-      const messageSpacing = 12;
+  try {
+    const pdf = new jsPDF();
+    const marginX = 20;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const maxWidth = pageWidth - marginX * 2;
+    let y = 20;
 
-      // Helper function to add text with word wrapping
-      const addWrappedText = (text, x, y, maxWidth, fontSize = 10, fontStyle = 'normal', textColor = [0, 0, 0]) => {
-        pdf.setFontSize(fontSize);
-        pdf.setFont("helvetica", fontStyle);
-        pdf.setTextColor(textColor[0], textColor[1], textColor[2]);
-        
-        const cleanedText = cleanTextForPDF(text);
-        const lines = pdf.splitTextToSize(cleanedText, maxWidth);
-        
-        for (let i = 0; i < lines.length; i++) {
-          if (y + (i * lineHeight) > pageHeight - margin - 15) {
-            pdf.addPage();
-            y = margin;
+    const cleanText = (text) =>
+      text
+        .normalize("NFKD")
+        .replace(/[^\x00-\x7F]/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    // Title
+    pdf.setFontSize(18);
+    pdf.setFont("helvetica", "bold");
+    pdf.setTextColor(0, 0, 0);
+    const title = "Chat History";
+    const titleWidth = pdf.getTextWidth(title);
+    pdf.text(title, (pageWidth - titleWidth) / 2, y);
+    y += 15;
+
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(11);
+
+    // Flatten conversation preserving order
+    const flatConversation = [];
+    conversation.conversation.forEach((entry) => {
+      Object.entries(entry).forEach(([key, value]) => {
+        if (value && value.trim()) {
+          const role = key === "system" ? "mentor" : key === "user" ? "user" : null;
+          if (role) {
+            flatConversation.push({ role, message: value.trim() });
           }
-          pdf.text(lines[i], x, y + (i * lineHeight));
-        }
-        return y + (lines.length * lineHeight);
-      };
-
-      // Helper function to check if we need a new page
-      const checkNewPage = (additionalHeight) => {
-        if (yPosition + additionalHeight > pageHeight - margin - 15) {
-          pdf.addPage();
-          yPosition = margin;
-        }
-      };
-
-      // Title with better formatting
-      pdf.setFontSize(18);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(51, 51, 51);
-      const title = `Learning Conversation: ${conversation.concept_name}`;
-      yPosition = addWrappedText(title, margin, yPosition, maxWidth, 18, "bold", [51, 51, 51]);
-      yPosition += sectionSpacing * 2;
-
-      // Conversation metadata in a box-like format
-      const { date, time } = formatDate(conversation.updated_at);
-      
-      // Add metadata box background
-      pdf.setFillColor(248, 249, 250);
-      pdf.roundedRect(margin, yPosition - 5, maxWidth, 35, 3, 3, 'F');
-      
-      const metadata = [
-        `Status: ${getStatusLabel(conversation.status)}`,
-        `Stage: ${conversation.current_stage}/5`,
-        `Date: ${date} at ${time}` 
-      ];
-
-      pdf.setFontSize(10);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(102, 102, 102);
-      
-      let metaY = yPosition;
-      for (const meta of metadata) {
-        pdf.text(meta, margin + 5, metaY);
-        metaY += lineHeight + 1;
-      }
-      
-      yPosition = metaY + sectionSpacing;
-
-      // Add a separator line
-      checkNewPage(5);
-      pdf.setDrawColor(220, 220, 220);
-      pdf.setLineWidth(0.5);
-      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
-      yPosition += sectionSpacing * 2;
-
-      // Conversation content header
-      checkNewPage(lineHeight + sectionSpacing);
-      yPosition = addWrappedText("CONVERSATION TRANSCRIPT", margin, yPosition, maxWidth, 14, "bold", [51, 51, 51]);
-      yPosition += sectionSpacing * 2;
-
-      // Process each message in the conversation
-      conversation.conversation.forEach((message, index) => {
-        // User message (if exists)
-        if (message.user && message.user.trim()) {
-          checkNewPage(lineHeight * 4 + messageSpacing);
-          
-          // User label with better styling
-          pdf.setFillColor(59, 130, 246);
-          pdf.roundedRect(margin, yPosition - 3, 60, 12, 2, 2, 'F');
-          pdf.setTextColor(255, 255, 255);
-          pdf.setFontSize(9);
-          pdf.setFont("helvetica", "bold");
-          pdf.text("LEARNER", margin + 5, yPosition + 5);
-          
-          yPosition += 15;
-          
-          // User message content with background
-          const userMessageHeight = Math.max(20, pdf.splitTextToSize(cleanTextForPDF(message.user), maxWidth - 20).length * lineHeight + 8);
-          pdf.setFillColor(235, 245, 255);
-          pdf.roundedRect(margin + 5, yPosition - 5, maxWidth - 10, userMessageHeight, 2, 2, 'F');
-          
-          yPosition = addWrappedText(message.user, margin + 10, yPosition, maxWidth - 20, 10, "normal", [51, 51, 51]);
-          yPosition += messageSpacing;
-        }
-
-        // AI Mentor message
-        if (message.system && message.system.trim()) {
-          checkNewPage(lineHeight * 4 + messageSpacing);
-          
-          // Mentor label with better styling
-          pdf.setFillColor(16, 185, 129);
-          pdf.roundedRect(margin, yPosition - 3, 70, 12, 2, 2, 'F');
-          pdf.setTextColor(255, 255, 255);
-          pdf.setFontSize(9);
-          pdf.setFont("helvetica", "bold");
-          pdf.text("AI MENTOR", margin + 5, yPosition + 5);
-          
-          yPosition += 15;
-          
-          // Mentor message content with background
-          const mentorMessageHeight = Math.max(20, pdf.splitTextToSize(cleanTextForPDF(message.system), maxWidth - 20).length * lineHeight + 8);
-          pdf.setFillColor(240, 253, 250);
-          pdf.roundedRect(margin + 5, yPosition - 5, maxWidth - 10, mentorMessageHeight, 2, 2, 'F');
-          
-          yPosition = addWrappedText(message.system, margin + 10, yPosition, maxWidth - 20, 10, "normal", [51, 51, 51]);
-          yPosition += messageSpacing;
-        }
-
-        // Add extra spacing between message pairs
-        if (index < conversation.conversation.length - 1) {
-          yPosition += 8;
         }
       });
+    });
 
-      // Footer with better styling
-      const totalPages = pdf.internal.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i);
-        pdf.setFontSize(8);
+    // Render messages
+    flatConversation.forEach((item) => {
+      const lines = pdf.splitTextToSize(cleanText(item.message), maxWidth);
+
+      if (item.role === "mentor") {
+        // Mentor Label
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(0, 128, 0); // Green
+        pdf.text("Mentor:", marginX, y);
+        y += 6;
+
+        // Mentor Message (left-aligned)
         pdf.setFont("helvetica", "normal");
-        pdf.setTextColor(156, 163, 175);
-        
-        const footerText = `Generated on ${new Date().toLocaleString()} | Page ${i} of ${totalPages}`;
-        const textWidth = pdf.getStringUnitWidth(footerText) * 8 / pdf.internal.scaleFactor;
-        const centerX = (pageWidth - textWidth) / 2;
-        
-        pdf.text(footerText, centerX, pageHeight - 8);
+        pdf.setTextColor(0, 0, 0);
+        if (y + lines.length * 6 > pageHeight - 30) {
+          pdf.addPage();
+          y = 20;
+        }
+        pdf.text(lines, marginX, y);
+        y += lines.length * 6 + 10;
       }
 
-      // Generate filename
-      const sanitizedConceptName = conversation.concept_name.replace(/[^a-zA-Z0-9]/g, '_');
-      const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
-      const filename = `conversation_${sanitizedConceptName}_${timestamp}.pdf`;
+      if (item.role === "user") {
+        // User Label
+        pdf.setFont("helvetica", "bold");
+        pdf.setTextColor(0, 102, 204); // Blue
+        const label = "You:";
+        const labelWidth = pdf.getTextWidth(label);
+        pdf.text(label, pageWidth - marginX - labelWidth, y);
+        y += 6;
 
-      // Save the PDF
-      pdf.save(filename);
+        // User Message (right-aligned block)
+        pdf.setFont("helvetica", "normal");
+        pdf.setTextColor(0, 0, 0);
+        if (y + lines.length * 6 > pageHeight - 30) {
+          pdf.addPage();
+          y = 20;
+        }
 
-      console.log("✅ PDF generated successfully:", filename);
-    } catch (error) {
-      console.error("❌ Error generating PDF:", error);
-      alert("Failed to generate PDF. Please try again.");
-    } finally {
-      setIsDownloadingPDF(false);
+        lines.forEach((line) => {
+          const lineWidth = pdf.getTextWidth(line);
+          const lineX = pageWidth - marginX - lineWidth;
+          pdf.text(line, lineX, y);
+          y += 6;
+        });
+        y += 10;
+      }
+
+      if (y > pageHeight - 30) {
+        pdf.addPage();
+        y = 20;
+      }
+    });
+
+    // Footer
+    const totalPages = pdf.internal.getNumberOfPages();
+    const timestamp = new Date().toLocaleString();
+    for (let i = 1; i <= totalPages; i++) {
+      pdf.setPage(i);
+      pdf.setFontSize(8);
+      pdf.setTextColor(120);
+      pdf.text(`Generated on ${timestamp}`, marginX, pageHeight - 10);
+      pdf.text(`Page ${i} of ${totalPages}`, pageWidth - marginX - 30, pageHeight - 10);
     }
-  };
+
+    const sanitizedConceptName = conversation.concept_name?.replace(/[^a-zA-Z0-9]/g, "_") || "chat";
+    const filename = `chat_history_${sanitizedConceptName}_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.pdf`;
+    pdf.save(filename);
+
+  } catch (err) {
+    console.error("❌ PDF generation error:", err);
+    alert("Error generating PDF. Please try again.");
+  } finally {
+    setIsDownloadingPDF(false);
+  }
+};
+
 
   // Fetch chat history from API with concept search support
   const fetchChatHistory = async () => {
