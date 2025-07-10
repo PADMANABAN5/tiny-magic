@@ -3,8 +3,11 @@ import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
 import { Pagination } from 'react-bootstrap';
 import '../styles/OrgList.css';
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 
 export default function User() {
+  const navigate = useNavigate();
   const [podUsers, setPodUsers] = useState([]);
   const [organizations, setOrganizations] = useState([]);
   const [batches, setBatches] = useState([]); // All batches from API
@@ -23,7 +26,7 @@ export default function User() {
   const itemsPerPage = 7;
 
   const [unassignedOrgUsers, setUnassignedOrgUsers] = useState([]);
-  const [tempSelectedUserEmails, setTempSelectedUserEmails] = useState([]);
+  const [tempSelectedUsers, setTempSelectedUsers] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
 
   // States for filtered dropdown options
@@ -123,7 +126,9 @@ export default function User() {
     }
 
     try {
-      const usersToAssign = newUser.users.map(email => ({ user_identifier: email }));
+      const usersToAssign = newUser.users.map(user => ({
+  user_identifier: user.email || user.username || user.user_id // Fallback order
+}));
       await axios.post(`${process.env.REACT_APP_API_LINK}/pod-users`, {
         organization_name: newUser.organization_name,
         batch_name: newUser.batch_name,
@@ -136,7 +141,7 @@ export default function User() {
       setShowAddUserModal(false);
       // Reset form state completely
       setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
-      setTempSelectedUserEmails([]);
+      setTempSelectedUsers([]);
       fetchAllUsers(); // Refresh the main user list
     } catch (err) {
       console.error('Error adding user:', err);
@@ -170,23 +175,23 @@ export default function User() {
       alert('Please select an Organization first to load unassigned users.');
       return;
     }
-    setTempSelectedUserEmails([...newUser.users]); // Initialize temp selections
+    setTempSelectedUsers([...newUser.users]); // Initialize temp selections
     setUserSearchTerm(''); // Clear search bar
     setShowSelectUsersModal(true);
   };
 
-  const handleUserCheckboxChange = (email) => {
-    setTempSelectedUserEmails(prevSelected =>
-      prevSelected.includes(email)
-        ? prevSelected.filter(e => e !== email)
-        : [...prevSelected, email]
-    );
-  };
+ const handleUserCheckboxChange = (user) => {
+  setTempSelectedUsers(prev =>
+    prev.some(u => u.user_id === user.user_id)
+      ? prev.filter(u => u.user_id !== user.user_id)
+      : [...prev, user]
+  );
+};
 
   const confirmUserSelection = () => {
     setNewUser(prevNewUser => ({
       ...prevNewUser,
-      users: tempSelectedUserEmails,
+      users: tempSelectedUsers,
     }));
     setShowSelectUsersModal(false);
   };
@@ -230,7 +235,7 @@ export default function User() {
       users: [] // Clear users as unassigned users depend on org
     }));
     setUnassignedOrgUsers([]); // Clear unassigned users
-    setTempSelectedUserEmails([]); // Clear temp selections
+    setTempSelectedUsers([]); // Clear temp selections
   }, [newUser.organization_name, batches]); // Depend on organization_name and all batches
 
   // Effect to filter pods when batch_id changes
@@ -275,13 +280,19 @@ export default function User() {
               // Full reset for Add User Modal
               setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
               setUnassignedOrgUsers([]);
-              setTempSelectedUserEmails([]);
+              setTempSelectedUsers([]);
               setFilteredBatches([]); // Clear previous filtered batches
               setFilteredPods([]);     // Clear previous filtered pods
             }} style={{ width: '200px' }}>
               Add User
             </button>
           </div>
+           <div className="d-flex justify-content-start mb-3">
+                                <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{ width: '10%' }}>
+                                  <FaArrowLeft/>
+                                </button>
+                              </div>
+          
 
           {loading ? (
             <p>Loading users...</p>
@@ -292,8 +303,8 @@ export default function User() {
               <table className="table table-bordered table-striped">
                 <thead>
                   <tr>
-                    <th>Pod User ID</th>
-                    <th>User Email</th>
+                    
+                    <th>Full name</th>
                     <th>Organization</th>
                     <th>Pod</th>
                     <th>Assigned</th>
@@ -304,8 +315,8 @@ export default function User() {
                   {currentUsers.length > 0 ? (
                     currentUsers.map((user, idx) => (
                       <tr key={idx}>
-                        <td>{user.pod?.pod_user_id || '—'}</td>
-                        <td>{user.email || '—'}</td> {/* Added null check */}
+                        
+                        <td>{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '—'}</td>
                         <td>{user.batch?.organization_name || '—'}</td>
                         <td>{user.pod?.pod_name || '—'}</td>
                         <td>{user.assigned ? 'Yes' : 'No'}</td>
@@ -354,7 +365,7 @@ export default function User() {
 
       {/* Add User Main Modal */}
       {showAddUserModal && (
-        <div className="modal-overlay" onClick={() => setShowAddUserModal(false)}>
+        <div className="modal-overlay" >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>Add User(s) to Pod</h4>
             <form onSubmit={handleAddUser}>
@@ -433,8 +444,10 @@ export default function User() {
                 <label className="form-label">Selected User Email(s)</label>
                 <div className="d-flex align-items-center border p-2 rounded">
                   <span className="flex-grow-1 text-muted">
-                    {newUser.users.length > 0 ? newUser.users.join(', ') : 'No users selected'}
-                  </span>
+  {newUser.users.length > 0
+    ? newUser.users.map(u => `${u.first_name} ${u.last_name} (${u.username})`).join(', ')
+    : 'No users selected'}
+</span>
                   <button
                     type="button"
                     className="btn btn-info btn-sm ms-2"
@@ -458,53 +471,52 @@ export default function User() {
         </div>
       )}
 
-      {/* Select Users Modal */}
       {showSelectUsersModal && (
-        <div className="modal-overlay" onClick={() => setShowSelectUsersModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h4>Select Unassigned Users for {newUser.organization_name}</h4>
-            <div className="mb-3">
-              <input
-                type="text"
-                className="form-control"
-                placeholder="Search user email..."
-                value={userSearchTerm}
-                onChange={(e) => setUserSearchTerm(e.target.value)}
-              />
-            </div>
-            <div className="user-list-container" style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
-              {filteredUnassignedUsers.length > 0 ? (
-                <ul className="list-group">
-                  {filteredUnassignedUsers.map(user => (
-                    <li key={user.user_id} className="list-group-item d-flex align-items-center">
-                      <input
-                        type="checkbox"
-                        className="form-check-input me-2"
-                        id={`user-${user.user_id}`}
-                        checked={tempSelectedUserEmails.includes(user.email)}
-                        onChange={() => handleUserCheckboxChange(user.email)}
-                      />
-                      <label htmlFor={`user-${user.user_id}`} className="form-check-label flex-grow-1">
-                        {user.email}
-                      </label>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-center text-muted">
-                  {newUser.organization_name ? 'No unassigned users found for this organization or matching your search.' : 'Select an organization first.'}
-                </p>
-              )}
-            </div>
-            <div className="d-flex gap-2 mt-3">
-              <button className="btn btn-success" onClick={confirmUserSelection} style={{ width: '200px' }}>
-                Add Selected Users ({tempSelectedUserEmails.length})
-              </button>
-              <button className="btn btn-secondary" onClick={() => setShowSelectUsersModal(false)} style={{ width: '200px' }}>Cancel</button>
-            </div>
-          </div>
-        </div>
-      )}
+  <div className="modal-overlay" onClick={() => setShowSelectUsersModal(false)}>
+    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+      <h4>Select Unassigned Users for {newUser.organization_name}</h4>
+      <div className="mb-3">
+        <input
+          type="text"
+          className="form-control"
+          placeholder="Search user name or email..."
+          value={userSearchTerm}
+          onChange={(e) => setUserSearchTerm(e.target.value)}
+        />
+      </div>
+      <div className="user-list-container" style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+        {filteredUnassignedUsers.length > 0 ? (
+          <ul className="list-group">
+            {filteredUnassignedUsers.map(user => (
+              <li key={user.user_id} className="list-group-item d-flex align-items-center">
+                <input
+                  type="checkbox"
+                  className="form-check-input me-2"
+                  id={`user-${user.user_id}`}
+                  checked={tempSelectedUsers.some(u => u.user_id === user.user_id)}
+                  onChange={() => handleUserCheckboxChange(user)}
+                />
+                <label htmlFor={`user-${user.user_id}`} className="form-check-label flex-grow-1">
+                  {user.first_name} {user.last_name} ({user.username})
+                </label>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-center text-muted">
+            {newUser.organization_name ? 'No unassigned users found for this organization or matching your search.' : 'Select an organization first.'}
+          </p>
+        )}
+      </div>
+      <div className="d-flex gap-2 mt-3">
+        <button className="btn btn-success" onClick={confirmUserSelection} style={{ width: '200px' }}>
+          Add Selected Users ({tempSelectedUsers.length})
+        </button>
+        <button className="btn btn-secondary" onClick={() => setShowSelectUsersModal(false)} style={{ width: '200px' }}>Cancel</button>
+      </div>
+    </div>
+  </div>
+)}
 
       {/* Update Progress Modal */}
       {showProgressModal && (

@@ -2,7 +2,9 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
 import { Pagination } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom';
 import '../styles/OrgList.css';
+import { FaArrowLeft } from 'react-icons/fa';
 
 export default function OrgList() {
   const [organizations, setOrganizations] = useState([]);
@@ -13,6 +15,8 @@ export default function OrgList() {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  const navigate = useNavigate();
 
   const fetchOrganizations = async () => {
     setLoading(true);
@@ -99,7 +103,6 @@ export default function OrgList() {
     fetchOrganizations();
   }, []);
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentOrganizations = organizations.slice(indexOfFirstItem, indexOfLastItem);
@@ -116,6 +119,13 @@ export default function OrgList() {
             <h3>Organizations</h3>
             <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '200px' }}>
               Add Organization
+            </button>
+          </div>
+
+          {/* Back Button */}
+          <div className="d-flex justify-content-start mb-3">
+            <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{ width: '10%' }}>
+              <FaArrowLeft/>
             </button>
           </div>
 
@@ -188,7 +198,7 @@ export default function OrgList() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>Create New Organization</h4>
             <form onSubmit={handleCreateOrganization}>

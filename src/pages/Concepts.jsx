@@ -3,8 +3,11 @@ import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
 import { Pagination } from 'react-bootstrap';
 import '../styles/OrgList.css';
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 
 export default function Concepts() {
+  const navigate = useNavigate();
   const [concepts, setConcepts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -117,6 +120,11 @@ export default function Concepts() {
               Add Concept
             </button>
           </div>
+          <div className="d-flex justify-content-start mb-3">
+                                <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{width: '10%'}}>
+                                  <FaArrowLeft/>
+                                </button>
+                              </div>
 
           {loading ? (
             <p>Loading concepts...</p>
@@ -187,7 +195,7 @@ export default function Concepts() {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" >
           <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
             <h4>{isEditMode ? 'Update Concept' : 'Create New Concept'}</h4>
             <form onSubmit={handleFormSubmit}>

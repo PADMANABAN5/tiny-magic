@@ -4,8 +4,11 @@ import Select from 'react-select';
 import { Pagination } from 'react-bootstrap';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css';
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 
 export default function Batch() {
+  const navigate = useNavigate();
   const [batches, setBatches] = useState([]);
   const [concepts, setConcepts] = useState([]);
   const [organizations, setOrganizations] = useState([]);
@@ -148,6 +151,11 @@ export default function Batch() {
               Add Batch
             </button>
           </div>
+          <div className="d-flex justify-content-start mb-3">
+                                          <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{width: '10%'}}>
+                                            <FaArrowLeft/>
+                                          </button>
+                                        </div>
 
           {loading ? (
             <p>Loading batches...</p>
@@ -158,7 +166,7 @@ export default function Batch() {
               <table className="table table-bordered table-striped">
                 <thead>
                   <tr>
-                    <th>Batch ID</th>
+                    
                     <th>Org Name</th>
                     <th>Batch Name</th>
                     <th>Size</th>
@@ -171,7 +179,7 @@ export default function Batch() {
                   {currentBatches.length > 0 ? (
                     currentBatches.map((batch) => (
                       <tr key={batch.batch_id}>
-                        <td>{batch.batch_id}</td>
+              
                         <td>{batch.organization_name}</td>
                         <td>{batch.batch_name}</td>
                         <td>{batch.batch_size}</td>
@@ -225,7 +233,7 @@ export default function Batch() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" >
           <div
             className="modal-content modal-lg"
             onClick={(e) => e.stopPropagation()}

@@ -3,8 +3,11 @@ import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
 import { Pagination } from 'react-bootstrap';
 import '../styles/OrgList.css';
+import { useNavigate } from 'react-router-dom';
+import { FaArrowLeft } from 'react-icons/fa';
 
 export default function Pods() {
+  const navigate = useNavigate();
   const [pods, setPods] = useState([]);
   const [organizations, setOrganizations] = useState([]);
   const [batches, setBatches] = useState([]);
@@ -187,6 +190,11 @@ export default function Pods() {
               Add Pod
             </button>
           </div>
+          <div className="d-flex justify-content-start mb-3">
+                      <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{ width: '10%' }}>
+                        <FaArrowLeft/>
+                      </button>
+                    </div>
 
           <div className="card p-3 mb-3">
             <h5>Filter Pods</h5>
@@ -243,7 +251,7 @@ export default function Pods() {
               <table className="table table-bordered table-striped">
                 <thead>
                   <tr>
-                    <th>Pod ID</th>
+                   
                     <th>Pod Name</th>
                     <th>Organization ID</th>
                     <th>Batch ID</th>
@@ -256,7 +264,7 @@ export default function Pods() {
                   {currentPods.length > 0 ? (
                     currentPods.map((pod) => (
                       <tr key={pod.pod_id}>
-                        <td>{pod.pod_id}</td>
+                       
                         <td>{pod.pod_name}</td>
                         <td>{pod.organization_id || '—'}</td>
                         <td>{pod.batch_id || '—'}</td>
@@ -317,7 +325,7 @@ export default function Pods() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>{isEditMode ? 'Update Pod' : 'Create Pod'}</h4>
             <form onSubmit={handleFormSubmit}>
