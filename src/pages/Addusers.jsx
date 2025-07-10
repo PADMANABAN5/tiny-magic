@@ -20,6 +20,9 @@ export default function Addusers() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  const capitalize = (str) =>
+    str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+
   const fetchOrgUsers = async () => {
     setLoading(true);
     setError(null);
@@ -53,15 +56,31 @@ export default function Addusers() {
 
   const handleCreateUser = async (e) => {
     e.preventDefault();
-    const { organization_name, email, first_name, last_name, password } = newUser;
 
-    if (!organization_name || !email || !first_name || !last_name || !password) {
-      alert("All fields are required.");
+    const trimmedUser = {
+      organization_name: newUser.organization_name.trim(),
+      email: newUser.email.trim(),
+      first_name: capitalize(newUser.first_name.trim()),
+      last_name: capitalize(newUser.last_name.trim()),
+      password: newUser.password.trim()
+    };
+
+    if (!trimmedUser.organization_name || !trimmedUser.first_name || !trimmedUser.last_name) {
+      alert("Organization, First Name, and Last Name are required.");
       return;
     }
 
+    const payload = {
+      organization_name: trimmedUser.organization_name,
+      first_name: trimmedUser.first_name,
+      last_name: trimmedUser.last_name
+    };
+
+    if (trimmedUser.email) payload.email = trimmedUser.email;
+    if (trimmedUser.password) payload.password = trimmedUser.password;
+
     try {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, newUser);
+      await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload);
       setShowModal(false);
       setNewUser({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
       fetchOrgUsers();
@@ -76,12 +95,10 @@ export default function Addusers() {
     fetchOrganizations();
   }, []);
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentUsers = orgUsers.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(orgUsers.length / itemsPerPage);
-
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
@@ -185,7 +202,7 @@ export default function Addusers() {
                   id="email"
                   value={newUser.email}
                   onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-                  required
+                  
                 />
               </div>
               <div className="mb-3">
@@ -211,14 +228,14 @@ export default function Addusers() {
                 />
               </div>
               <div className="mb-3">
-                <label htmlFor="password" className="form-label">Password</label>
+                <label htmlFor="password" className="form-label">Password </label>
                 <input
                   type="password"
                   className="form-control"
                   id="password"
                   value={newUser.password}
                   onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                  required
+                  
                 />
               </div>
               <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>Create</button>
