@@ -544,7 +544,7 @@ const handleDownloadPDF = () => {
 
       // Auto-save after regular LLM response
       console.log("💾 Auto-saving after regular LLM response...");
-      await handleSaveChat();
+      await handleSaveChat('inprogress');
 
       // Check for end conditions - both endRequested and interactionCompleted trigger assessment
       if (newEndRequested || newInteractionCompleted) {
@@ -617,6 +617,7 @@ const handleDownloadPDF = () => {
         toast.error("Failed to process request. Please check your connection and try again.");
       }
     } finally {
+      // ✅ FIX 2: Always hide loading indicator at the end
       setIsLoading(false);
     }
   };
@@ -775,9 +776,7 @@ const handleDownloadPDF = () => {
           draggable: true,
         });
       }
-    } finally {
-      setIsLoading(false);
-    }
+    }  
   };
 
   const fetchChatCounts = async () => {
@@ -1152,25 +1151,25 @@ const handleDownloadPDF = () => {
   const hasAssessmentData = (content) => {
     return (
       content &&
-      content.includes("Detailed Assessment") &&
-      content.includes("Deterministic Scoring")
+      (content.includes("Detailed Assessment") || content.includes("Part 1:")) &&
+      (content.includes("Deterministic Scoring") || content.includes("Part 2:"))
     );
   };
 
   const parseAssessmentContent = (content) => {
-    const detailedAssessmentHeader = "### Part 1: 🌟 Detailed Assessment 📝";
-    const deterministicScoringHeader = "### Part 2: Deterministic Scoring (JSON Format) 📊";
+    const detailedAssessmentHeader = "Part 1: 🌟 Detailed Assessment 📝";
+    const deterministicScoringHeader = "Part 2: Deterministic Scoring (JSON Format) 📊";
 
     const part1Index = content.indexOf(detailedAssessmentHeader);
     if (part1Index === -1) {
       // Try alternative headers
-      const altHeader = "### Part1: 🌟 Detailed Assessment";
+      const altHeader = "### Part 1: 🌟 Detailed Assessment";
       const altPart1Index = content.indexOf(altHeader);
       if (altPart1Index === -1) {
         return content;
       }
       const assessmentStart = altPart1Index + altHeader.length;
-      const part2Index = content.indexOf("### Part2: Deterministic Scoring");
+      const part2Index = content.indexOf("### Part 2: Deterministic Scoring");
       if (part2Index === -1) {
         return content.slice(assessmentStart).trim();
       }
@@ -1191,8 +1190,8 @@ const handleDownloadPDF = () => {
       if (jsonMatch && jsonMatch[1]) {
         return JSON.parse(jsonMatch[1]);
       }
-      // Fallback: try to find JSON-like structure
-      const possibleJson = content.match(/\{[\s\S]*"OverallScore"[\s\S]*\}/);
+      // Fallback: try to find JSON-like structure with new format
+      const possibleJson = content.match(/\{[\s\S]*"FinalWeightedScore"[\s\S]*\}/);
       if (possibleJson) {
         return JSON.parse(possibleJson[0]);
       }
@@ -1204,42 +1203,41 @@ const handleDownloadPDF = () => {
   };
 
   const calculateOverallScore = (scoringData) => {
-    const facetKeys = ["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"];
-    let totalScore = 0;
-    let validScores = 0;
+    if (scoringData.FinalWeightedScore && typeof scoringData.FinalWeightedScore === 'number') {
+      return Math.round(scoringData.FinalWeightedScore * 10) / 10;
+    }
 
-    facetKeys.forEach(key => {
-      if (scoringData[key] && typeof scoringData[key].score === 'number') {
-        totalScore += scoringData[key].score;
-        validScores++;
-      }
-    });
+    const sixFacetsScore = scoringData.SixFacets?.OverallScore || 0;
+    const understandingSkillsScore = scoringData.UnderstandingSkills?.OverallScore || 0;
 
-    if (validScores === 0) return 0;
-    return Math.round((totalScore / validScores) * 10) / 10; // Round to 1 decimal place
+    const finalWeightedScore = (0.6 * sixFacetsScore) + (0.4 * understandingSkillsScore);
+
+    return Math.round(finalWeightedScore * 10) / 10;
   };
 
   const getScoreColor = (score) => {
-    if (score >= 4) return '#10b981'; // Green for excellent
-    if (score >= 3) return '#3b82f6'; // Blue for good
-    if (score >= 2) return '#f59e0b'; // Yellow for fair
-    return '#ef4444'; // Red for needs improvement
+    if (score === 5) return '#10b981'; // Green for Masterful
+    if (score >= 4) return '#10b981'; // Green for Strong
+    if (score >= 3) return '#3b82f6'; // Blue for Developing
+    if (score >= 2) return '#f59e0b'; // Yellow for Emerging
+    return '#ef4444'; // Red for Absent/Minimal
   };
 
   const getScoreLabel = (score) => {
-    if (score >= 4) return 'Excellent';
-    if (score >= 3) return 'Good';
-    if (score >= 2) return 'Fair';
-    return 'Needs Improvement';
+    if (score === 5) return 'Masterful';
+    if (score >= 4) return 'Strong';
+    if (score >= 3) return 'Developing';
+    if (score >= 2) return 'Emerging';
+    return 'Absent/Minimal';
   };
 
   const formatCriterionName = (name) => {
+    // Handle camelCase to readable format
     return name.replace(/([A-Z])/g, ' $1').trim();
   };
 
   const renderScoringTable = (content) => {
     const scoringData = extractScoringData(content);
-    const facetKeys = ["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"];
 
     return (
       <div className="assessment-scoring-table">
@@ -1247,53 +1245,96 @@ const handleDownloadPDF = () => {
           <h4>📊 Learning Assessment Scores</h4>
         </div>
 
-        <div className="scoring-grid">
-          {facetKeys.map((key) => {
-            if (!scoringData[key]) return null;
-            
-            const facetData = scoringData[key];
-            const scoreValue = facetData.score || 0;
-            const scoreColor = getScoreColor(scoreValue);
-            const scoreLabel = getScoreLabel(scoreValue);
+        {/* Six Facets of Understanding */}
+        {scoringData.SixFacets && (
+          <div className="scoring-section">
+            <h5>🌟 Six Facets of Understanding</h5>
+            <div className="scoring-grid">
+              {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map((key) => {
+                if (!scoringData.SixFacets[key]) return null;
 
-            return (
-              <div key={key} className="score-card">
-                <div className="score-card-header">
-                  <h5 className="criterion-name">{formatCriterionName(key)}</h5>
-                  <div
-                    className="score-badge"
-                    style={{ backgroundColor: scoreColor }}
-                  >
-                    {scoreValue}/5
+                const facetData = scoringData.SixFacets[key];
+                const scoreValue = facetData.score || 0;
+                const scoreColor = getScoreColor(scoreValue);
+
+                return (
+                  <div key={key} className="score-card">
+                    <div className="score-card-header">
+                      <h6 className="criterion-name">{formatCriterionName(key)}</h6>
+                      <div
+                        className="score-badge"
+                        style={{ backgroundColor: scoreColor }}
+                      >
+                        {scoreValue}/5
+                      </div>
+                    </div>
+                    {facetData.justification && (
+                      <div className="score-justification">
+                        <p><strong>🧠 Why:</strong> {facetData.justification}</p>
+                      </div>
+                    )}
+                    {facetData.example && (
+                      <div className="score-example">
+                        <p><strong>💬 Example:</strong> {facetData.example}</p>
+                      </div>
+                    )}
+                    {facetData.improvement && (
+                      <div className="score-improvement">
+                        <p><strong>🔧 How to improve:</strong> {facetData.improvement}</p>
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="score-performance">
-                  <span
-                    className="performance-label"
-                    style={{ color: scoreColor }}
-                  >
-                    {scoreLabel}
-                  </span>
-                </div>
-                {facetData.justification && (
-                  <div className="score-justification">
-                    <p><strong>🧠 Why:</strong> {facetData.justification}</p>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        <br />
+
+        {/* Understanding Skills */}
+        {scoringData.UnderstandingSkills && (
+          <div className="scoring-section">
+            <h5>🎯 Understanding Skills</h5>
+            <div className="scoring-grid">
+              {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map((key) => {
+                if (!scoringData.UnderstandingSkills[key]) return null;
+
+                const skillData = scoringData.UnderstandingSkills[key];
+                const scoreValue = skillData.score || 0;
+                const scoreColor = getScoreColor(scoreValue);
+
+                return (
+                  <div key={key} className="score-card">
+                    <div className="score-card-header">
+                      <h6 className="criterion-name">{formatCriterionName(key)}</h6>
+                      <div
+                        className="score-badge"
+                        style={{ backgroundColor: scoreColor }}
+                      >
+                        {scoreValue}/5
+                      </div>
+                    </div>
+                    {skillData.justification && (
+                      <div className="score-justification">
+                        <p><strong>🧠 Why:</strong> {skillData.justification}</p>
+                      </div>
+                    )}
+                    {skillData.example && (
+                      <div className="score-example">
+                        <p><strong>💬 Example:</strong> {skillData.example}</p>
+                      </div>
+                    )}
+                    {skillData.improvement && (
+                      <div className="score-improvement">
+                        <p><strong>🔧 How to improve:</strong> {skillData.improvement}</p>
+                      </div>
+                    )}
                   </div>
-                )}
-                {facetData.example && (
-                  <div className="score-example">
-                    <p><strong>💬 Example:</strong> {facetData.example}</p>
-                  </div>
-                )}
-                {facetData.improvement && (
-                  <div className="score-improvement">
-                    <p><strong>🔬 How to improve:</strong> {facetData.improvement}</p>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -1331,30 +1372,83 @@ const handleDownloadPDF = () => {
           {/* Show score breakdown */}
           <div className="score-breakdown">
             <h5>📈 Score Breakdown</h5>
-            <div className="breakdown-grid">
-              {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map(facet => {
-                if (!scoringData[facet]) return null;
-                const score = scoringData[facet].score || 0;
-                const color = getScoreColor(score);
-                
-                return (
-                  <div key={facet} className="breakdown-item">
-                    <span className="breakdown-label">{formatCriterionName(facet)}</span>
-                    <span 
-                      className="breakdown-score" 
-                      style={{ color: color, fontWeight: 'bold' }}
+
+            {/* Six Facets Breakdown */}
+            {scoringData.SixFacets && (
+              <div className="breakdown-section">
+                <h6>🌟 Six Facets of Understanding</h6>
+                <div className="breakdown-grid">
+                  {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map(facet => {
+                    if (!scoringData.SixFacets[facet]) return null;
+                    const score = scoringData.SixFacets[facet].score || 0;
+                    const color = getScoreColor(score);
+
+                    return (
+                      <div key={facet} className="breakdown-item">
+                        <span className="breakdown-label">{formatCriterionName(facet)}</span>
+                        <span
+                          className="breakdown-score"
+                          style={{ color: color, fontWeight: 'bold' }}
+                        >
+                          {score}/5
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div className="breakdown-average">
+                    <span className="breakdown-label"><strong>Six Facets Average</strong></span>
+                    <span
+                      className="breakdown-score"
+                      style={{ color: getScoreColor(scoringData.SixFacets?.OverallScore || 0), fontWeight: 'bold' }}
                     >
-                      {score}/5
+                      {scoringData.SixFacets?.OverallScore || 0}/5
                     </span>
                   </div>
-                );
-              })}
-            </div>
-            <div className="breakdown-average">
-              <span className="breakdown-label"><strong>Average Score</strong></span>
-              <span 
-                className="breakdown-score" 
-                style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.1em' }}
+                </div>
+              </div>
+            )}
+
+            {/* Understanding Skills Breakdown */}
+            {scoringData.UnderstandingSkills && (
+              <div className="breakdown-section">
+                <h6>🎯 Understanding Skills</h6>
+                <div className="breakdown-grid">
+                  {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map(skill => {
+                    if (!scoringData.UnderstandingSkills[skill]) return null;
+                    const score = scoringData.UnderstandingSkills[skill].score || 0;
+                    const color = getScoreColor(score);
+
+                    return (
+                      <div key={skill} className="breakdown-item">
+                        <span className="breakdown-label">{formatCriterionName(skill)}</span>
+                        <span
+                          className="breakdown-score"
+                          style={{ color: color, fontWeight: 'bold' }}
+                        >
+                          {score}/5
+                        </span>
+                      </div>
+                    );
+                  })}
+                  <div className="breakdown-average">
+                    <span className="breakdown-label"><strong>Skills Average</strong></span>
+                    <span
+                      className="breakdown-score"
+                      style={{ color: getScoreColor(scoringData.UnderstandingSkills?.OverallScore || 0), fontWeight: 'bold' }}
+                    >
+                      {scoringData.UnderstandingSkills?.OverallScore || 0}/5
+                    </span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Final Weighted Score */}
+            <div className="breakdown-final">
+              <span className="breakdown-label"><strong>Final Weighted Score</strong></span>
+              <span
+                className="breakdown-score"
+                style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.2em' }}
               >
                 {calculatedOverallScore}/5
               </span>
