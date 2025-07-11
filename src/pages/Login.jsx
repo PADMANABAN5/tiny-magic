@@ -163,8 +163,8 @@ function Login() {
 
       {/* 🔒 Password Change Modal */}
       {showPasswordChangeModal && (
-        <div className="modal-overlay">
-          <div className="modal-content" style={{ width: "400px" }}>
+        <div className="modal-overlay1">
+          <div className="modal-content1" style={{ width: "400px" }}>
             <h3>🔐 Change Default Password</h3>
             <div className="input-group">
               <label>New Password</label>

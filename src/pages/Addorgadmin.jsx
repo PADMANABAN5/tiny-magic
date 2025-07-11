@@ -112,17 +112,16 @@ export default function Addorgadmin() {
       <div className="content-area">
         <div className="container mt-4">
           <div className="d-flex justify-content-between align-items-center mb-3">
-            
             <h3 className="mb-0">Organization Admins</h3>
             <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '200px' }}>
               Add Org Admin
             </button>
           </div>
           <div className="d-flex justify-content-start mb-3">
-                                <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{width: '10%'}}>
-                                  <FaArrowLeft/>
-                                </button>
-                              </div>
+            <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{ width: '10%' }}>
+              <FaArrowLeft />
+            </button>
+          </div>
 
           {loading ? (
             <p>Loading admins...</p>
@@ -195,42 +194,129 @@ export default function Addorgadmin() {
         </div>
       </div>
 
+      {/* Create Modal */}
       {showModal && (
-        <div className="modal-overlay" >
+        <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>Create Organization Admin</h4>
             <form onSubmit={handleCreateAdmin}>
-              {/* Form fields same as before */}
-              {/* ... */}
+              <div className="mb-3">
+                <label className="form-label">Organization Name</label>
+                <select
+                  className="form-select"
+                  value={newAdmin.organization_name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, organization_name: e.target.value })}
+                  required
+                >
+                  <option value="">Select Organization</option>
+                  {organizations.map((org) => (
+                    <option key={org.organization_id} value={org.organization_name}>
+                      {org.organization_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Email</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={newAdmin.email}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">First Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={newAdmin.first_name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, first_name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Last Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={newAdmin.last_name}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, last_name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="mb-3">
+                <label className="form-label">Password</label>
+                <input
+                  type="password"
+                  className="form-control"
+                  value={newAdmin.password}
+                  onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
+                  required
+                />
+              </div>
+              <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>Create</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>Cancel</button>
             </form>
           </div>
         </div>
       )}
 
+      {/* Edit Modal */}
       {showEditModal && editingAdmin && (
-        <div className="modal-overlay" >
+        <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>Update Admin</h4>
             <form onSubmit={handleEditSubmit}>
               <div className="mb-3">
                 <label className="form-label">Username</label>
-                <input type="text" className="form-control" value={editingAdmin.username || ''} onChange={(e) => setEditingAdmin({ ...editingAdmin, username: e.target.value })} required />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editingAdmin.username || ''}
+                  onChange={(e) => setEditingAdmin({ ...editingAdmin, username: e.target.value })}
+                  required
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">Email</label>
-                <input type="email" className="form-control" value={editingAdmin.email || ''} onChange={(e) => setEditingAdmin({ ...editingAdmin, email: e.target.value })} required />
+                <input
+                  type="email"
+                  className="form-control"
+                  value={editingAdmin.email || ''}
+                  onChange={(e) => setEditingAdmin({ ...editingAdmin, email: e.target.value })}
+                  required
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">First Name</label>
-                <input type="text" className="form-control" value={editingAdmin.first_name || ''} onChange={(e) => setEditingAdmin({ ...editingAdmin, first_name: e.target.value })} required />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editingAdmin.first_name || ''}
+                  onChange={(e) => setEditingAdmin({ ...editingAdmin, first_name: e.target.value })}
+                  required
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">Last Name</label>
-                <input type="text" className="form-control" value={editingAdmin.last_name || ''} onChange={(e) => setEditingAdmin({ ...editingAdmin, last_name: e.target.value })} required />
+                <input
+                  type="text"
+                  className="form-control"
+                  value={editingAdmin.last_name || ''}
+                  onChange={(e) => setEditingAdmin({ ...editingAdmin, last_name: e.target.value })}
+                  required
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">Password</label>
-                <input type="password" className="form-control" value={editingAdmin.password || ''} onChange={(e) => setEditingAdmin({ ...editingAdmin, password: e.target.value })} />
+                <input
+                  type="password"
+                  className="form-control"
+                  value={editingAdmin.password || ''}
+                  onChange={(e) => setEditingAdmin({ ...editingAdmin, password: e.target.value })}
+                />
               </div>
               <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>Save Changes</button>
               <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)} style={{ width: '200px' }}>Cancel</button>
