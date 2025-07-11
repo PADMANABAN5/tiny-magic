@@ -388,207 +388,249 @@ function Dashboard() {
   pdfMake.vfs = pdfFonts.vfs;
 
   const handleDownloadPDF = () => {
-    const removeEmojis = (text) =>
-      text.replace(
-        /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1F700}-\u{1F77F}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
-        ""
-      );
-
-    const normalizeScore = (text) => {
-      return text.replace(/(Score:\s*)([1-5])\b/gi, "$1$2/5");
-    };
-
-    const stripJsonBlockAndHeaders = (text) => {
-      let stripped = text.replace(/```json[\s\S]*?```/gi, "").trim();
-      stripped = stripped.replace(/### Part 2:.*(\n)?/gi, "").trim();
-      return stripped;
-    };
-
-    const content = [];
-    let summaryText = "";
-
-    const facetScores = {
-      Explanation: null,
-      Interpretation: null,
-      Application: null,
-      Perspective: null,
-      Empathy: null,
-      "Self-Knowledge": null,
-    };
-
-    const skillScores = {
-      "Asking Questions": null,
-      "Clarifying Ambiguity": null,
-      "Summarizing and Confirming": null,
-      "Challenging Ideas": null,
-      "Comparing Concepts": null,
-      "AbstractConcrete": null,
-    };
-
-    // Title
-    content.push({
-      text: "Chat History",
-      style: "header",
-      margin: [0, 0, 0, 10],
-    });
-
-    // Process chatHistory
-    chatHistory.forEach((item) => {
-      if (item.user) {
-        content.push(
-          {
-            alignment: "right",
-            text: "You:",
-            style: "userLabel",
-            margin: [0, 5, 0, 2],
-          },
-          {
-            alignment: "right",
-            text: removeEmojis(item.user),
-            style: "userText",
-          }
-        );
-      }
-
-      if (item.system) {
-        let cleaned = removeEmojis(item.system);
-        let normalized = normalizeScore(stripJsonBlockAndHeaders(cleaned));
-
-        // Extract summary if present
-        const summaryMatch = normalized.match(/📋 Summary\s*\n([\s\S]*?)(?=📈|$)/);
-        if (summaryMatch) {
-          summaryText = summaryMatch[1].trim();
-        }
-
-        // Extract facet scores
-        Object.keys(facetScores).forEach((facet) => {
-          const regex = new RegExp(`${facet}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
-          const match = normalized.match(regex);
-          if (match) {
-            facetScores[facet] = parseInt(match[1]);
-          }
-        });
-
-        // Extract skill scores
-        Object.keys(skillScores).forEach((skill) => {
-          const regex = new RegExp(`${skill}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
-          const match = normalized.match(regex);
-          if (match) {
-            skillScores[skill] = parseInt(match[1]);
-          }
-        });
-
-        content.push(
-          {
-            alignment: "left",
-            text: "Mentor:",
-            style: "botLabel",
-            margin: [0, 10, 0, 2],
-          },
-          {
-            alignment: "left",
-            text: normalized,
-            style: "botText",
-          }
-        );
-      }
-    });
-
-    // Score section builder
-    const buildScoreSection = (title, scoreData) => {
-      const entries = Object.entries(scoreData);
-      const available = entries.filter(([_, val]) => val !== null);
-      const total = available.reduce((sum, [, val]) => sum + val, 0);
-      const avg = available.length > 0 ? (total / available.length) : null;
-      const avgDisplay = avg !== null ? Number(avg.toFixed(1)).toString().replace(/\.0$/, "") : "No score available";
-
-      const section = [];
-
-      section.push({
-        text: title,
-        style: "subHeader",
-        margin: [0, 10, 0, 6],
-      });
-
-      entries.forEach(([key, val]) => {
-        const scoreDisplay = val !== null ? `${val}/5` : "Not available";
-        section.push({
-          text: `${key} - ${scoreDisplay}`,
-          style: "botText",
-        });
-      });
-
-      section.push({
-        text: `\nAverage Score: ${avgDisplay}/5`,
-        style: "botText",
-        bold: true,
-        margin: [0, 10, 0, 0],
-      });
-
-      return section;
-    };
-
-    // Always include Overall Summary
-    content.push({ text: "Overall Summary", style: "header", margin: [0, 30, 0, 10] });
-
-    if (summaryText) {
-      content.push({
-        text: "📋 Summary",
-        style: "subHeader",
-        margin: [0, 0, 0, 4],
-      });
-      content.push({
-        text: summaryText,
-        style: "botText",
-      });
-    }
-
-    // Add both score sections
-    content.push(...buildScoreSection("Six Facets of Understanding", facetScores));
-    content.push(...buildScoreSection("Understanding Skills Breakdown", skillScores));
-
-    // Final doc
-    const docDefinition = {
-      content,
-      styles: {
-        header: {
-          fontSize: 18,
-          bold: true,
-          alignment: "center",
-        },
-        subHeader: {
-          fontSize: 14,
-          bold: true,
+  const removeEmojis = (text) =>
+    text.replace(
+      /([\u2700-\u27BF]|[\uE000-\uF8FF]|[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83D[\uDE00-\uDE4F])/g,
+      ""
+    );
+ 
+  const normalizeScore = (text) => {
+    return text.replace(/(Score:\s*)([1-5])\b/gi, "$1$2/5");
+  };
+ 
+  const stripJsonBlockAndHeaders = (text) => {
+    let stripped = text.replace(/```json[\s\S]*?```/gi, "").trim();
+    stripped = stripped.replace(/### Part 2:.*(\n)?/gi, "").trim();
+    return stripped;
+  };
+ 
+  const cleanMisformattedLines = (text) => {
+  const knownLabels = [
+    "Explanation",
+    "Interpretation",
+    "Application",
+    "Perspective",
+    "Empathy",
+    "Self-Knowledge",
+    "Asking Questions",
+    "Clarifying Ambiguity",
+    "Summarizing and Confirming",
+    "Challenging Ideas",
+    "Comparing Concepts",
+    "AbstractConcrete",
+    "Abstract",
+    "Concrete"
+  ];
+ 
+  const labelPattern = knownLabels.map(label => label.replace(/ /g, "\\s+")).join("|");
+  const regex = new RegExp(`^\\s*[-o*]?\\s*(${labelPattern})\\b`, "gim");
+ 
+  return text.replace(regex, (_, label) => label.replace(/\s+/g, " "));
+};
+ 
+ 
+  const content = [];
+  let summaryText = "";
+ 
+  const facetScores = {
+    Explanation: null,
+    Interpretation: null,
+    Application: null,
+    Perspective: null,
+    Empathy: null,
+    "Self-Knowledge": null,
+  };
+ 
+  const skillScores = {
+    "Asking Questions": null,
+    "Clarifying Ambiguity": null,
+    "Summarizing and Confirming": null,
+    "Challenging Ideas": null,
+    "Comparing Concepts": null,
+    "AbstractConcrete": null,
+  };
+ 
+  // Title
+  content.push({
+    text: "Chat History",
+    style: "header",
+    margin: [0, 0, 0, 10],
+  });
+ 
+  // Process chatHistory
+  chatHistory.forEach((item) => {
+    if (item.user) {
+      content.push(
+        {
+          alignment: "right",
+          text: "You:",
+          style: "userLabel",
           margin: [0, 5, 0, 2],
         },
-        userLabel: {
-          fontSize: 12,
-          bold: true,
-          color: "#007ACC",
+        {
+          alignment: "right",
+          text: removeEmojis(item.user),
+          style: "userText",
+        }
+      );
+    }
+ 
+    if (item.system) {
+      let cleaned = removeEmojis(item.system);
+      let normalized = normalizeScore(stripJsonBlockAndHeaders(cleaned));
+      normalized = cleanMisformattedLines(normalized); // Fix misformatted labels
+ 
+      // Extract summary
+      const summaryMatch = normalized.match(/📋 Summary\s*\n([\s\S]*?)(?=📈|$)/);
+      if (summaryMatch) {
+        summaryText = summaryMatch[1].trim();
+      }
+ 
+      // Facet scores
+      Object.keys(facetScores).forEach((facet) => {
+        const regex = new RegExp(`${facet}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
+        const match = normalized.match(regex);
+        if (match && !isNaN(match[1])) {
+          facetScores[facet] = parseInt(match[1]);
+        }
+      });
+ 
+      // Skill scores
+      Object.keys(skillScores).forEach((skill) => {
+  let regex = new RegExp(`${skill.replace(/ /g, "\\s*")}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
+  let match = normalized.match(regex);
+ 
+  // Fallbacks for specific skills
+  if (!match) {
+    if (skill === "AbstractConcrete") {
+      const altRegex1 = /Abstract\s*[^\n]*?Score:\s*(\d)/i;
+      const altRegex2 = /Concrete\s*[^\n]*?Score:\s*(\d)/i;
+      match = normalized.match(altRegex1) || normalized.match(altRegex2);
+    }
+ 
+    if (skill === "Clarifying Ambiguity") {
+      const altRegex = /Clarifying\s+Ambiguous(?:\s+Phrases)?\s*[^\n]*?Score:\s*(\d)/i;
+      match = normalized.match(altRegex);
+    }
+  }
+ 
+  if (match && !isNaN(match[1])) {
+    skillScores[skill] = parseInt(match[1]);
+  }
+});
+ 
+ 
+      content.push(
+        {
+          alignment: "left",
+          text: "Mentor:",
+          style: "botLabel",
+          margin: [0, 10, 0, 2],
         },
-        userText: {
-          fontSize: 11,
-          margin: [0, 0, 0, 5],
-        },
-        botLabel: {
-          fontSize: 12,
-          bold: true,
-          color: "#4CAF50",
-        },
-        botText: {
-          fontSize: 11,
-          margin: [0, 0, 0, 6],
-        },
-      },
-      defaultStyle: {
-        font: "Roboto",
-      },
-      pageMargins: [40, 60, 40, 60],
-    };
-
-    pdfMake.createPdf(docDefinition).download("chat-history.pdf");
+        {
+          alignment: "left",
+          text: normalized,
+          style: "botText",
+        }
+      );
+    }
+  });
+ 
+  // Score section builder
+  const buildScoreSection = (title, scoreData) => {
+    const entries = Object.entries(scoreData);
+    const validScores = entries.map(([, val]) => Number(val)).filter((val) => !isNaN(val));
+    const total = validScores.reduce((sum, val) => sum + val, 0);
+    const avg = validScores.length > 0 ? (total / validScores.length) : null;
+    const avgDisplay = avg !== null ? Number(avg.toFixed(1)).toString().replace(/\.0$/, "") : "No score available";
+ 
+    const section = [];
+ 
+    section.push({
+      text: title,
+      style: "subHeader",
+      margin: [0, 10, 0, 6],
+    });
+ 
+    entries.forEach(([key, val]) => {
+      const scoreDisplay = typeof val === "number" ? `${val}/5` : "Not available";
+      section.push({
+        text: `${key} - ${scoreDisplay}`,
+        style: "botText",
+      });
+    });
+ 
+    section.push({
+      text: `\nAverage Score: ${avgDisplay}/5`,
+      style: "botText",
+      bold: true,
+      margin: [0, 10, 0, 0],
+    });
+ 
+    return section;
   };
-
+ 
+  // Summary section
+  content.push({ text: "Overall Summary", style: "header", margin: [0, 30, 0, 10] });
+ 
+  if (summaryText) {
+    content.push({
+      text: "📋 Summary",
+      style: "subHeader",
+      margin: [0, 0, 0, 4],
+    });
+    content.push({
+      text: summaryText,
+      style: "botText",
+    });
+  }
+ 
+  // Scores
+  content.push(...buildScoreSection("Six Facets of Understanding", facetScores));
+  content.push(...buildScoreSection("Understanding Skills Breakdown", skillScores));
+ 
+  // Final doc
+  const docDefinition = {
+    content,
+    styles: {
+      header: {
+        fontSize: 18,
+        bold: true,
+        alignment: "center",
+      },
+      subHeader: {
+        fontSize: 14,
+        bold: true,
+        margin: [0, 5, 0, 2],
+      },
+      userLabel: {
+        fontSize: 12,
+        bold: true,
+        color: "#007ACC",
+      },
+      userText: {
+        fontSize: 11,
+        margin: [0, 0, 0, 5],
+      },
+      botLabel: {
+        fontSize: 12,
+        bold: true,
+        color: "#4CAF50",
+      },
+      botText: {
+        fontSize: 11,
+        margin: [0, 0, 0, 6],
+      },
+    },
+    defaultStyle: {
+      font: "Roboto",
+    },
+    pageMargins: [40, 60, 40, 60],
+  };
+ 
+  pdfMake.createPdf(docDefinition).download("chat-history.pdf");
+};
+ 
 
 
 

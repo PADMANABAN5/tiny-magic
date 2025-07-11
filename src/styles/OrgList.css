@@ -22,7 +22,7 @@
   overflow-y: auto; /* Allow content area to scroll if its content overflows */
   padding: 20px; /* Add some padding around the content */
   background-color: #ffffff; 
-  margin-top: 20px;/* Example background color for content area */
+  margin-top: 70px;/* Example background color for content area */
 }
 /* Modal Styles */
 .modal-overlay {
