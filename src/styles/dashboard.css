@@ -1875,12 +1875,14 @@ body {
   left: 0;
   right: 0;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  border-radius: 8px; /* REDUCED from 12px */
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15); /* REDUCED shadow */
   border: 1px solid #e2e8f0;
   z-index: 1000;
   overflow: hidden;
   animation: slideDown 0.3s ease;
+  max-height: 250px; /* REDUCED from 200px */
+  overflow-y: auto; /* ADD THIS */
 }
 
 @keyframes slideDown {

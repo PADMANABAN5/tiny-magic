@@ -385,209 +385,209 @@ function Dashboard() {
     }
   };
 
-pdfMake.vfs = pdfFonts.vfs;
+  pdfMake.vfs = pdfFonts.vfs;
 
-const handleDownloadPDF = () => {
-  const removeEmojis = (text) =>
-    text.replace(
-      /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1F700}-\u{1F77F}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
-      ""
-    );
-
-  const normalizeScore = (text) => {
-    return text.replace(/(Score:\s*)([1-5])\b/gi, "$1$2/5");
-  };
-
-  const stripJsonBlockAndHeaders = (text) => {
-    let stripped = text.replace(/```json[\s\S]*?```/gi, "").trim();
-    stripped = stripped.replace(/### Part 2:.*(\n)?/gi, "").trim();
-    return stripped;
-  };
-
-  const content = [];
-  let summaryText = "";
-
-  const facetScores = {
-    Explanation: null,
-    Interpretation: null,
-    Application: null,
-    Perspective: null,
-    Empathy: null,
-    "Self-Knowledge": null,
-  };
-
-  const skillScores = {
-    "Asking Questions": null,
-    "Clarifying Ambiguity": null,
-    "Summarizing and Confirming": null,
-    "Challenging Ideas": null,
-    "Comparing Concepts": null,
-    "AbstractConcrete": null,
-  };
-
-  // Title
-  content.push({
-    text: "Chat History",
-    style: "header",
-    margin: [0, 0, 0, 10],
-  });
-
-  // Process chatHistory
-  chatHistory.forEach((item) => {
-    if (item.user) {
-      content.push(
-        {
-          alignment: "right",
-          text: "You:",
-          style: "userLabel",
-          margin: [0, 5, 0, 2],
-        },
-        {
-          alignment: "right",
-          text: removeEmojis(item.user),
-          style: "userText",
-        }
+  const handleDownloadPDF = () => {
+    const removeEmojis = (text) =>
+      text.replace(
+        /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{1F700}-\u{1F77F}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu,
+        ""
       );
-    }
 
-    if (item.system) {
-      let cleaned = removeEmojis(item.system);
-      let normalized = normalizeScore(stripJsonBlockAndHeaders(cleaned));
+    const normalizeScore = (text) => {
+      return text.replace(/(Score:\s*)([1-5])\b/gi, "$1$2/5");
+    };
 
-      // Extract summary if present
-      const summaryMatch = normalized.match(/📋 Summary\s*\n([\s\S]*?)(?=📈|$)/);
-      if (summaryMatch) {
-        summaryText = summaryMatch[1].trim();
+    const stripJsonBlockAndHeaders = (text) => {
+      let stripped = text.replace(/```json[\s\S]*?```/gi, "").trim();
+      stripped = stripped.replace(/### Part 2:.*(\n)?/gi, "").trim();
+      return stripped;
+    };
+
+    const content = [];
+    let summaryText = "";
+
+    const facetScores = {
+      Explanation: null,
+      Interpretation: null,
+      Application: null,
+      Perspective: null,
+      Empathy: null,
+      "Self-Knowledge": null,
+    };
+
+    const skillScores = {
+      "Asking Questions": null,
+      "Clarifying Ambiguity": null,
+      "Summarizing and Confirming": null,
+      "Challenging Ideas": null,
+      "Comparing Concepts": null,
+      "AbstractConcrete": null,
+    };
+
+    // Title
+    content.push({
+      text: "Chat History",
+      style: "header",
+      margin: [0, 0, 0, 10],
+    });
+
+    // Process chatHistory
+    chatHistory.forEach((item) => {
+      if (item.user) {
+        content.push(
+          {
+            alignment: "right",
+            text: "You:",
+            style: "userLabel",
+            margin: [0, 5, 0, 2],
+          },
+          {
+            alignment: "right",
+            text: removeEmojis(item.user),
+            style: "userText",
+          }
+        );
       }
 
-      // Extract facet scores
-      Object.keys(facetScores).forEach((facet) => {
-        const regex = new RegExp(`${facet}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
-        const match = normalized.match(regex);
-        if (match) {
-          facetScores[facet] = parseInt(match[1]);
+      if (item.system) {
+        let cleaned = removeEmojis(item.system);
+        let normalized = normalizeScore(stripJsonBlockAndHeaders(cleaned));
+
+        // Extract summary if present
+        const summaryMatch = normalized.match(/📋 Summary\s*\n([\s\S]*?)(?=📈|$)/);
+        if (summaryMatch) {
+          summaryText = summaryMatch[1].trim();
         }
-      });
 
-      // Extract skill scores
-      Object.keys(skillScores).forEach((skill) => {
-        const regex = new RegExp(`${skill}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
-        const match = normalized.match(regex);
-        if (match) {
-          skillScores[skill] = parseInt(match[1]);
-        }
-      });
+        // Extract facet scores
+        Object.keys(facetScores).forEach((facet) => {
+          const regex = new RegExp(`${facet}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
+          const match = normalized.match(regex);
+          if (match) {
+            facetScores[facet] = parseInt(match[1]);
+          }
+        });
 
-      content.push(
-        {
-          alignment: "left",
-          text: "Mentor:",
-          style: "botLabel",
-          margin: [0, 10, 0, 2],
-        },
-        {
-          alignment: "left",
-          text: normalized,
-          style: "botText",
-        }
-      );
-    }
-  });
+        // Extract skill scores
+        Object.keys(skillScores).forEach((skill) => {
+          const regex = new RegExp(`${skill}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
+          const match = normalized.match(regex);
+          if (match) {
+            skillScores[skill] = parseInt(match[1]);
+          }
+        });
 
-  // Score section builder
-  const buildScoreSection = (title, scoreData) => {
-    const entries = Object.entries(scoreData);
-    const available = entries.filter(([_, val]) => val !== null);
-    const total = available.reduce((sum, [, val]) => sum + val, 0);
-    const avg = available.length > 0 ? (total / available.length) : null;
-    const avgDisplay = avg !== null ? Number(avg.toFixed(1)).toString().replace(/\.0$/, "") : "No score available";
-
-    const section = [];
-
-    section.push({
-      text: title,
-      style: "subHeader",
-      margin: [0, 10, 0, 6],
+        content.push(
+          {
+            alignment: "left",
+            text: "Mentor:",
+            style: "botLabel",
+            margin: [0, 10, 0, 2],
+          },
+          {
+            alignment: "left",
+            text: normalized,
+            style: "botText",
+          }
+        );
+      }
     });
 
-    entries.forEach(([key, val]) => {
-      const scoreDisplay = val !== null ? `${val}/5` : "Not available";
+    // Score section builder
+    const buildScoreSection = (title, scoreData) => {
+      const entries = Object.entries(scoreData);
+      const available = entries.filter(([_, val]) => val !== null);
+      const total = available.reduce((sum, [, val]) => sum + val, 0);
+      const avg = available.length > 0 ? (total / available.length) : null;
+      const avgDisplay = avg !== null ? Number(avg.toFixed(1)).toString().replace(/\.0$/, "") : "No score available";
+
+      const section = [];
+
       section.push({
-        text: `${key} - ${scoreDisplay}`,
+        text: title,
+        style: "subHeader",
+        margin: [0, 10, 0, 6],
+      });
+
+      entries.forEach(([key, val]) => {
+        const scoreDisplay = val !== null ? `${val}/5` : "Not available";
+        section.push({
+          text: `${key} - ${scoreDisplay}`,
+          style: "botText",
+        });
+      });
+
+      section.push({
+        text: `\nAverage Score: ${avgDisplay}/5`,
+        style: "botText",
+        bold: true,
+        margin: [0, 10, 0, 0],
+      });
+
+      return section;
+    };
+
+    // Always include Overall Summary
+    content.push({ text: "Overall Summary", style: "header", margin: [0, 30, 0, 10] });
+
+    if (summaryText) {
+      content.push({
+        text: "📋 Summary",
+        style: "subHeader",
+        margin: [0, 0, 0, 4],
+      });
+      content.push({
+        text: summaryText,
         style: "botText",
       });
-    });
+    }
 
-    section.push({
-      text: `\nAverage Score: ${avgDisplay}/5`,
-      style: "botText",
-      bold: true,
-      margin: [0, 10, 0, 0],
-    });
+    // Add both score sections
+    content.push(...buildScoreSection("Six Facets of Understanding", facetScores));
+    content.push(...buildScoreSection("Understanding Skills Breakdown", skillScores));
 
-    return section;
+    // Final doc
+    const docDefinition = {
+      content,
+      styles: {
+        header: {
+          fontSize: 18,
+          bold: true,
+          alignment: "center",
+        },
+        subHeader: {
+          fontSize: 14,
+          bold: true,
+          margin: [0, 5, 0, 2],
+        },
+        userLabel: {
+          fontSize: 12,
+          bold: true,
+          color: "#007ACC",
+        },
+        userText: {
+          fontSize: 11,
+          margin: [0, 0, 0, 5],
+        },
+        botLabel: {
+          fontSize: 12,
+          bold: true,
+          color: "#4CAF50",
+        },
+        botText: {
+          fontSize: 11,
+          margin: [0, 0, 0, 6],
+        },
+      },
+      defaultStyle: {
+        font: "Roboto",
+      },
+      pageMargins: [40, 60, 40, 60],
+    };
+
+    pdfMake.createPdf(docDefinition).download("chat-history.pdf");
   };
-
-  // Always include Overall Summary
-  content.push({ text: "Overall Summary", style: "header", margin: [0, 30, 0, 10] });
-
-  if (summaryText) {
-    content.push({
-      text: "📋 Summary",
-      style: "subHeader",
-      margin: [0, 0, 0, 4],
-    });
-    content.push({
-      text: summaryText,
-      style: "botText",
-    });
-  }
-
-  // Add both score sections
-  content.push(...buildScoreSection("Six Facets of Understanding", facetScores));
-  content.push(...buildScoreSection("Understanding Skills Breakdown", skillScores));
-
-  // Final doc
-  const docDefinition = {
-    content,
-    styles: {
-      header: {
-        fontSize: 18,
-        bold: true,
-        alignment: "center",
-      },
-      subHeader: {
-        fontSize: 14,
-        bold: true,
-        margin: [0, 5, 0, 2],
-      },
-      userLabel: {
-        fontSize: 12,
-        bold: true,
-        color: "#007ACC",
-      },
-      userText: {
-        fontSize: 11,
-        margin: [0, 0, 0, 5],
-      },
-      botLabel: {
-        fontSize: 12,
-        bold: true,
-        color: "#4CAF50",
-      },
-      botText: {
-        fontSize: 11,
-        margin: [0, 0, 0, 6],
-      },
-    },
-    defaultStyle: {
-      font: "Roboto",
-    },
-    pageMargins: [40, 60, 40, 60],
-  };
-
-  pdfMake.createPdf(docDefinition).download("chat-history.pdf");
-};
 
 
 
@@ -597,124 +597,124 @@ const handleDownloadPDF = () => {
   };
 
   const handleSendClick = async () => {
-  if (!prompt.trim() || !selectedConcept || isChatEnded) {
-    if (isChatEnded) {
-      toast.warn("This conversation has ended. Please restart to begin a new session.");
+    if (!prompt.trim() || !selectedConcept || isChatEnded) {
+      if (isChatEnded) {
+        toast.warn("This conversation has ended. Please restart to begin a new session.");
+        return;
+      }
+      toast.warn("Please enter a prompt and select a concept.");
       return;
     }
-    toast.warn("Please enter a prompt and select a concept.");
-    return;
-  }
 
-  const isFirstUserMessage = currentStage === 0;
+    const isFirstUserMessage = currentStage === 0;
 
-  if (isFirstUserMessage) {
-    setIsTransitioning(true);
-    setCurrentStage(1);
-    setTimeout(() => setIsTransitioning(false), 800);
-  }
-
-  setIsLoading(true);
-  console.log("🚀 handleSendClick: Setting isLoading to true");
-
-  try {
-    const userPrompt = prompt.trim();
-    setPrompt("");
-
-    const initialResponse = await processPromptAndCallLLM({
-      username,
-      selectedPrompt,
-      selectedModel: "gpt-4o",
-      sessionHistory,
-      userPrompt: userPrompt,
-      selectedConcept: selectedConcept,
-    });
-
-    console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-
-    let newApiCurrentStage = initialResponse.currentStage || 0;
-    let newInteractionCompleted = initialResponse.interactionCompleted || false;
-    let newEndRequested = initialResponse.endRequested || false;
-
-    const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
-
-    if (isFirstUserMessage || newProgressStage >= currentStage) {
-      setCurrentStage(newProgressStage);
-      setCurrentChatStatus('inprogress');
+    if (isFirstUserMessage) {
+      setIsTransitioning(true);
+      setCurrentStage(1);
+      setTimeout(() => setIsTransitioning(false), 800);
     }
 
-    const newChatEntry = {
-      user: userPrompt,
-      system: initialResponse.apiResponseText,
-    };
+    setIsLoading(true);
+    console.log("🚀 handleSendClick: Setting isLoading to true");
 
-    let currentChatHistory = [];
-    setChatHistory((prev) => {
-      currentChatHistory = [...prev, newChatEntry];
-      sessionStorage.setItem("chatHistory", JSON.stringify(currentChatHistory));
-      return currentChatHistory;
-    });
+    try {
+      const userPrompt = prompt.trim();
+      setPrompt("");
 
-    setSessionHistory((prev) => [
-      ...prev,
-      { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
-    ]);
-
-    // Check for end conditions
-    if (newEndRequested || newInteractionCompleted) {
-      console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
-
-      const assessmentResponse = await processPromptAndCallLLM({
+      const initialResponse = await processPromptAndCallLLM({
         username,
-        selectedPrompt: "assessmentPrompt",
+        selectedPrompt,
         selectedModel: "gpt-4o",
-        sessionHistory: [
-          ...sessionHistory,
-          { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
-        ],
+        sessionHistory,
         userPrompt: userPrompt,
         selectedConcept: selectedConcept,
       });
 
-      setLlmContent(assessmentResponse.apiResponseText);
+      console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
 
-      const assessmentChatEntry = {
-        user: "",
-        system: assessmentResponse.apiResponseText,
+      let newApiCurrentStage = initialResponse.currentStage || 0;
+      let newInteractionCompleted = initialResponse.interactionCompleted || false;
+      let newEndRequested = initialResponse.endRequested || false;
+
+      const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
+
+      if (isFirstUserMessage || newProgressStage >= currentStage) {
+        setCurrentStage(newProgressStage);
+        setCurrentChatStatus('inprogress');
+      }
+
+      const newChatEntry = {
+        user: userPrompt,
+        system: initialResponse.apiResponseText,
       };
 
-      let finalChatHistory = [];
+      let currentChatHistory = [];
       setChatHistory((prev) => {
-        finalChatHistory = [...prev, assessmentChatEntry];
-        sessionStorage.setItem("chatHistory", JSON.stringify(finalChatHistory));
-        return finalChatHistory;
+        currentChatHistory = [...prev, newChatEntry];
+        sessionStorage.setItem("chatHistory", JSON.stringify(currentChatHistory));
+        return currentChatHistory;
       });
 
       setSessionHistory((prev) => [
         ...prev,
-        { Mentee: "", Mentor: assessmentResponse.apiResponseText },
+        { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
       ]);
 
-      setCurrentStage(7);
-      setCurrentChatStatus('completed');
+      // Check for end conditions
+      if (newEndRequested || newInteractionCompleted) {
+        console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
 
-      if (newInteractionCompleted) {
-        setEndReason('interactionCompleted');
-      } else {
-        setEndReason('endRequested');
+        const assessmentResponse = await processPromptAndCallLLM({
+          username,
+          selectedPrompt: "assessmentPrompt",
+          selectedModel: "gpt-4o",
+          sessionHistory: [
+            ...sessionHistory,
+            { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
+          ],
+          userPrompt: userPrompt,
+          selectedConcept: selectedConcept,
+        });
+
+        setLlmContent(assessmentResponse.apiResponseText);
+
+        const assessmentChatEntry = {
+          user: "",
+          system: assessmentResponse.apiResponseText,
+        };
+
+        let finalChatHistory = [];
+        setChatHistory((prev) => {
+          finalChatHistory = [...prev, assessmentChatEntry];
+          sessionStorage.setItem("chatHistory", JSON.stringify(finalChatHistory));
+          return finalChatHistory;
+        });
+
+        setSessionHistory((prev) => [
+          ...prev,
+          { Mentee: "", Mentor: assessmentResponse.apiResponseText },
+        ]);
+
+        setCurrentStage(7);
+        setCurrentChatStatus('completed');
+
+        if (newInteractionCompleted) {
+          setEndReason('interactionCompleted');
+        } else {
+          setEndReason('endRequested');
+        }
+
+        setIsChatEnded(true);
+        console.log("🔒 handleSendClick: Chat ended, input restricted");
       }
-
-      setIsChatEnded(true);
-      console.log("🔒 handleSendClick: Chat ended, input restricted");
+    } catch (error) {
+      console.error("❌ handleSendClick: Error in API request:", error);
+      toast.error("Failed to process request. Please try again.");
+    } finally {
+      console.log("🏁 handleSendClick: Setting isLoading to false");
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error("❌ handleSendClick: Error in API request:", error);
-    toast.error("Failed to process request. Please try again.");
-  } finally {
-    console.log("🏁 handleSendClick: Setting isLoading to false");
-    setIsLoading(false);
-  }
-};
+  };
 
   const getCurrentStageForAPI = (saveStatus) => {
     // If user is manually setting status, use that
@@ -755,127 +755,151 @@ const handleDownloadPDF = () => {
   };
 
   const handleSaveChat = async (requestedStatus = null, showLoader = true) => {
-  if (!username) {
-    toast.error("Cannot save chat: User not identified.");
-    return;
-  }
-
-  if (chatHistory.length === 0) {
-    toast.warn("No chat history to save.");
-    return;
-  }
-
-  // Determine the status to save
-  const statusToSave = requestedStatus || getFrontendStatusForSave();
-  const stageToSave = getCurrentStageForAPI(statusToSave);
-  const conceptNameToSave = selectedConcept?.concept_name || null;
-
-  console.log("💾 Saving chat with:", {
-    requestedStatus,
-    statusToSave,
-    stageToSave,
-    currentStage,
-    frontendStatus: getStageStatus(),
-    currentChatStatus,
-    chatHistoryLength: chatHistory.length,
-    conceptName: conceptNameToSave
-  });
-
-  if (showLoader) setIsLoading(true); // Only show global loader if true
-
-  try {
-    let response;
-    let actionMessage = "";
-
-    if (currentChatId && sessionType === "resume") {
-      // Update existing chat
-      response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
-        conversation: chatHistory,
-        status: statusToSave,
-        current_stage: stageToSave,
-        concept_name: conceptNameToSave
-      });
-      actionMessage = `Updated existing chat (ID: ${currentChatId})`;
-    } else {
-      // Create new chat
-      response = await axios.post(`${BASE_URL}/chat`, {
-        user_id: userId,
-        conversation: chatHistory,
-        status: statusToSave,
-        current_stage: stageToSave,
-        concept_name: conceptNameToSave
-      });
-      actionMessage = "Created new chat";
+    if (!username) {
+      toast.error("Cannot save chat: User not identified.");
+      return;
     }
 
-    setShowSaveOptions(false);
+    if (chatHistory.length === 0) {
+      toast.warn("No chat history to save.");
+      return;
+    }
 
-    console.log("✅ Chat saved successfully:", {
-      status: statusToSave,
-      stage: stageToSave,
+    // Determine the status to save
+    const statusToSave = requestedStatus || getFrontendStatusForSave();
+    const stageToSave = getCurrentStageForAPI(statusToSave);
+    const conceptNameToSave = selectedConcept?.concept_name || null;
+
+    // NEW: Extract scoring data if status is completed and we have llmContent
+    let scoring_data = null;
+    if (statusToSave === 'completed' && llmContent) {
+      scoring_data = extractScoringData(llmContent);
+      console.log("📊 Extracted scoring data for save:", scoring_data);
+    }
+
+    console.log("💾 Saving chat with:", {
+      requestedStatus,
+      statusToSave,
+      stageToSave,
+      currentStage,
+      frontendStatus: getStageStatus(),
+      currentChatStatus,
+      chatHistoryLength: chatHistory.length,
       conceptName: conceptNameToSave,
-      chatId: response.data.data.id
+      hasScoring: !!scoring_data // NEW: Log if scoring data exists
     });
 
-    toast.success(`Chat saved as ${statusToSave}!`, {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
+    if (showLoader) setIsLoading(true);
 
-    if (response.data.data.shouldStartFresh) {
-      clearSessionData();
+    try {
+      let response;
+      let actionMessage = "";
 
-      if (statusToSave === "completed") {
-        setTimeout(async () => {
-          await initiateFirstMentorMessage();
-        }, 1000);
+      // NEW: Build request data with optional scoring
+      const requestData = {
+        conversation: chatHistory,
+        status: statusToSave,
+        current_stage: stageToSave,
+        concept_name: conceptNameToSave
+      };
+
+      // NEW: Add scoring data only if it exists and status is completed
+      if (statusToSave === 'completed' && scoring_data) {
+        requestData.scoring_data = scoring_data;
       }
 
-      setSessionType(statusToSave === "completed" ? "completed" : "fresh");
-      setCurrentChatId(null);
-      setResumedFromStatus(null);
-      setCurrentStage(0);
-      setCurrentChatStatus(statusToSave);
-    } else {
-      const newChatId = response.data.data.id || currentChatId;
-      setCurrentChatId(newChatId);
-      setSessionType("resume");
-      setResumedFromStatus(statusToSave);
-      setCurrentChatStatus(statusToSave);
-    }
+      if (currentChatId && sessionType === "resume") {
+        // Update existing chat
+        response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, requestData); // CHANGED: Use requestData
+        actionMessage = `Updated existing chat (ID: ${currentChatId})`;
+      } else {
+        // Create new chat
+        response = await axios.post(`${BASE_URL}/chat`, {
+          user_id: userId,
+          ...requestData // CHANGED: Spread requestData instead of individual fields
+        });
+        actionMessage = "Created new chat";
+      }
 
-    sessionStorage.setItem("chatHistory", JSON.stringify(chatHistory));
-    await fetchChatCounts();
+      setShowSaveOptions(false);
 
-  } catch (error) {
-    console.error("❌ Error saving chat:", error);
-    if (error.response) {
-      toast.error(`Failed to save chat: ${error.response.data.message || "Server error"}`, {
+      console.log("✅ Chat saved successfully:", {
+        status: statusToSave,
+        stage: stageToSave,
+        conceptName: conceptNameToSave,
+        chatId: response.data.data.id,
+        hasScoring: !!response.data.data.scoring // NEW: Log if response has scoring
+      });
+
+      // NEW: Log scoring data if present in response
+      if (response.data.data.scoring) {
+        console.log("📊 Scoring data saved:", {
+          sixFacetsAverage: response.data.data.scoring.six_facets.average,
+          skillsAverage: response.data.data.scoring.understanding_skills.average,
+          finalScore: response.data.data.scoring.final_score
+        });
+      }
+
+      toast.success(`Chat saved as ${statusToSave}!`, {
         position: "top-right",
-        autoClose: 5000,
+        autoClose: 3000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
       });
-    } else {
-      toast.error("Failed to save chat. Please check your connection and try again.", {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
+
+      // Rest of the function remains the same...
+      if (response.data.data.shouldStartFresh) {
+        clearSessionData();
+
+        if (statusToSave === "completed") {
+          setTimeout(async () => {
+            await initiateFirstMentorMessage();
+          }, 1000);
+        }
+
+        setSessionType(statusToSave === "completed" ? "completed" : "fresh");
+        setCurrentChatId(null);
+        setResumedFromStatus(null);
+        setCurrentStage(0);
+        setCurrentChatStatus(statusToSave);
+      } else {
+        const newChatId = response.data.data.id || currentChatId;
+        setCurrentChatId(newChatId);
+        setSessionType("resume");
+        setResumedFromStatus(statusToSave);
+        setCurrentChatStatus(statusToSave);
+      }
+
+      sessionStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+      await fetchChatCounts();
+
+    } catch (error) {
+      console.error("❌ Error saving chat:", error);
+      if (error.response) {
+        toast.error(`Failed to save chat: ${error.response.data.message || "Server error"}`, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      } else {
+        toast.error("Failed to save chat. Please check your connection and try again.", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }
+    } finally {
+      if (showLoader) setIsLoading(false);
     }
-  } finally {
-    if (showLoader) setIsLoading(false); // Reset loading only if we set it
-  }
-};
+  };
 
 
   const fetchChatCounts = async () => {
@@ -1246,30 +1270,30 @@ const handleDownloadPDF = () => {
     }
   }, [isInitializing, chatHistory.length]);
 
- useEffect(() => {
-  if (
-    chatHistory.length > 0 &&
-    !isInitializing &&
-    !isLoading
-  ) {
-    const lastEntry = chatHistory[chatHistory.length - 1];
-
-    // Check if the last entry is an assessment (has empty user input and assessment content)
-    const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
-
-    if (isAssessmentEntry && currentChatStatus === 'completed') {
-      console.log("💾 Detected assessment response, auto-saving as completed...");
-      handleSaveChat('completed', false); // Save as completed without loader
-    } else if (
-      lastEntry?.system &&
-      lastEntry?.user !== undefined &&
-      currentChatStatus === 'inprogress'
+  useEffect(() => {
+    if (
+      chatHistory.length > 0 &&
+      !isInitializing &&
+      !isLoading
     ) {
-      console.log("💾 Detected regular LLM response, auto-saving as inprogress...");
-      handleSaveChat('inprogress', false); // Save as inprogress without loader
+      const lastEntry = chatHistory[chatHistory.length - 1];
+
+      // Check if the last entry is an assessment (has empty user input and assessment content)
+      const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
+
+      if (isAssessmentEntry && currentChatStatus === 'completed') {
+        console.log("💾 Detected assessment response, auto-saving as completed...");
+        handleSaveChat('completed', false); // Save as completed without loader
+      } else if (
+        lastEntry?.system &&
+        lastEntry?.user !== undefined &&
+        currentChatStatus === 'inprogress'
+      ) {
+        console.log("💾 Detected regular LLM response, auto-saving as inprogress...");
+        handleSaveChat('inprogress', false); // Save as inprogress without loader
+      }
     }
-  }
-}, [chatHistory, isInitializing, currentChatStatus, isLoading]);
+  }, [chatHistory, isInitializing, currentChatStatus, isLoading]);
 
   // Assessment helper functions
   const hasAssessmentData = (content) => {
@@ -1312,8 +1336,45 @@ const handleDownloadPDF = () => {
     try {
       const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonMatch && jsonMatch[1]) {
-        return JSON.parse(jsonMatch[1]);
+        const parsedData = JSON.parse(jsonMatch[1]);
+
+        // Calculate proper averages for Six Facets if not present or incorrect
+        if (parsedData.SixFacets && !parsedData.SixFacets.OverallScore) {
+          const facetScores = [
+            parsedData.SixFacets.Explanation?.score,
+            parsedData.SixFacets.Interpretation?.score,
+            parsedData.SixFacets.Application?.score,
+            parsedData.SixFacets.Perspective?.score,
+            parsedData.SixFacets.Empathy?.score,
+            parsedData.SixFacets['Self-Knowledge']?.score
+          ].filter(score => score != null);
+
+          if (facetScores.length > 0) {
+            const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
+            parsedData.SixFacets.OverallScore = Math.round(average * 1000) / 1000; // 3 decimal precision
+          }
+        }
+
+        // Calculate proper averages for Understanding Skills if not present or incorrect
+        if (parsedData.UnderstandingSkills && !parsedData.UnderstandingSkills.OverallScore) {
+          const skillScores = [
+            parsedData.UnderstandingSkills.AskingQuestions?.score,
+            parsedData.UnderstandingSkills.ClarifyingAmbiguity?.score,
+            parsedData.UnderstandingSkills.SummarizingConfirming?.score,
+            parsedData.UnderstandingSkills.ChallengingIdeas?.score,
+            parsedData.UnderstandingSkills.ComparingConcepts?.score,
+            parsedData.UnderstandingSkills.AbstractConcrete?.score
+          ].filter(score => score != null);
+
+          if (skillScores.length > 0) {
+            const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
+            parsedData.UnderstandingSkills.OverallScore = Math.round(average * 1000) / 1000; // 3 decimal precision
+          }
+        }
+
+        return parsedData;
       }
+
       // Fallback: try to find JSON-like structure with new format
       const possibleJson = content.match(/\{[\s\S]*"FinalWeightedScore"[\s\S]*\}/);
       if (possibleJson) {
@@ -1328,7 +1389,7 @@ const handleDownloadPDF = () => {
 
   const calculateOverallScore = (scoringData) => {
     if (scoringData.FinalWeightedScore && typeof scoringData.FinalWeightedScore === 'number') {
-      return Math.round(scoringData.FinalWeightedScore * 10) / 10;
+      return Math.round(scoringData.FinalWeightedScore * 100) / 100; // Changed: More precise rounding
     }
 
     const sixFacetsScore = scoringData.SixFacets?.OverallScore || 0;
@@ -1336,7 +1397,7 @@ const handleDownloadPDF = () => {
 
     const finalWeightedScore = (0.6 * sixFacetsScore) + (0.4 * understandingSkillsScore);
 
-    return Math.round(finalWeightedScore * 10) / 10;
+    return Math.round(finalWeightedScore * 100) / 100; // Changed: More precise rounding to avoid .166 -> .2
   };
 
   const getScoreColor = (score) => {
@@ -1465,15 +1526,19 @@ const handleDownloadPDF = () => {
 
   const renderOverallScoreAndSummary = (content) => {
     const scoringData = extractScoringData(content);
-    
-    // Calculate overall score from frontend instead of trusting LLM
+
+    // Calculate overall score with better precision
     const calculatedOverallScore = calculateOverallScore(scoringData);
-    
+
     // Use LLM's summary if available, otherwise create a basic one
     const evaluationSummary = scoringData.EvaluationSummary || "Assessment completed based on conversation analysis.";
-    
+
     const overallColor = getScoreColor(calculatedOverallScore);
     const overallLabel = getScoreLabel(calculatedOverallScore);
+
+    // Get precise averages
+    const sixFacetsAvg = scoringData.SixFacets?.OverallScore;
+    const skillsAvg = scoringData.UnderstandingSkills?.OverallScore;
 
     return (
       <div className="overall-assessment">
@@ -1484,7 +1549,7 @@ const handleDownloadPDF = () => {
               className="overall-score-badge"
               style={{ backgroundColor: overallColor }}
             >
-              <span className="score-value">{calculatedOverallScore}/5</span>
+              <span className="score-value">{calculatedOverallScore.toFixed(1)}/5</span> {/* Changed: Show 3 decimals */}
               <span className="score-label">{overallLabel}</span>
             </div>
           </div>
@@ -1492,8 +1557,8 @@ const handleDownloadPDF = () => {
             <h5>📋 Summary</h5>
             <p>{evaluationSummary}</p>
           </div>
-          
-          {/* Show score breakdown */}
+
+          {/* Show score breakdown with precise values */}
           <div className="score-breakdown">
             <h5>📈 Score Breakdown</h5>
 
@@ -1523,9 +1588,9 @@ const handleDownloadPDF = () => {
                     <span className="breakdown-label"><strong>Six Facets Average</strong></span>
                     <span
                       className="breakdown-score"
-                      style={{ color: getScoreColor(scoringData.SixFacets?.OverallScore || 0), fontWeight: 'bold' }}
+                      style={{ color: getScoreColor(sixFacetsAvg), fontWeight: 'bold' }}
                     >
-                      {scoringData.SixFacets?.OverallScore || 0}/5
+                      {sixFacetsAvg ? sixFacetsAvg.toFixed(1) : '0'}/5 {/* Changed: Show 3 decimals */}
                     </span>
                   </div>
                 </div>
@@ -1558,9 +1623,9 @@ const handleDownloadPDF = () => {
                     <span className="breakdown-label"><strong>Skills Average</strong></span>
                     <span
                       className="breakdown-score"
-                      style={{ color: getScoreColor(scoringData.UnderstandingSkills?.OverallScore || 0), fontWeight: 'bold' }}
+                      style={{ color: getScoreColor(skillsAvg), fontWeight: 'bold' }}
                     >
-                      {scoringData.UnderstandingSkills?.OverallScore || 0}/5
+                      {skillsAvg ? skillsAvg.toFixed(1) : '0'}/5 {/* Changed: Show 3 decimals */}
                     </span>
                   </div>
                 </div>
@@ -1574,7 +1639,7 @@ const handleDownloadPDF = () => {
                 className="breakdown-score"
                 style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.2em' }}
               >
-                {calculatedOverallScore}/5
+                {calculatedOverallScore.toFixed(1)}/5 {/* Changed: Show 3 decimals */}
               </span>
             </div>
           </div>
@@ -1586,7 +1651,7 @@ const handleDownloadPDF = () => {
   return (
     <div className="learning-dashboard">
       <Sidebar />
-      
+
       {/* Toast Container for Notifications */}
       <ToastContainer
         position="top-right"
