@@ -597,160 +597,124 @@ const handleDownloadPDF = () => {
   };
 
   const handleSendClick = async () => {
-    if (!prompt.trim() || !selectedConcept || isChatEnded) {
-      if (isChatEnded) {
-        toast.warn("This conversation has ended. Please restart to begin a new session.");
-        return;
-      }
-      toast.warn("Please enter a prompt and select a concept.");
+  if (!prompt.trim() || !selectedConcept || isChatEnded) {
+    if (isChatEnded) {
+      toast.warn("This conversation has ended. Please restart to begin a new session.");
       return;
     }
+    toast.warn("Please enter a prompt and select a concept.");
+    return;
+  }
 
-    const isFirstUserMessage = currentStage === 0;
+  const isFirstUserMessage = currentStage === 0;
 
-    if (isFirstUserMessage) {
-      setIsTransitioning(true);
-      setCurrentStage(1);
-      setTimeout(() => setIsTransitioning(false), 800);
-    }
+  if (isFirstUserMessage) {
+    setIsTransitioning(true);
+    setCurrentStage(1);
+    setTimeout(() => setIsTransitioning(false), 800);
+  }
 
-    setIsLoading(true);
+  setIsLoading(true);
+  console.log("🚀 handleSendClick: Setting isLoading to true");
+
+  try {
     const userPrompt = prompt.trim();
     setPrompt("");
 
-    try {
-      const initialResponse = await processPromptAndCallLLM({
+    const initialResponse = await processPromptAndCallLLM({
+      username,
+      selectedPrompt,
+      selectedModel: "gpt-4o",
+      sessionHistory,
+      userPrompt: userPrompt,
+      selectedConcept: selectedConcept,
+    });
+
+    console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
+
+    let newApiCurrentStage = initialResponse.currentStage || 0;
+    let newInteractionCompleted = initialResponse.interactionCompleted || false;
+    let newEndRequested = initialResponse.endRequested || false;
+
+    const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
+
+    if (isFirstUserMessage || newProgressStage >= currentStage) {
+      setCurrentStage(newProgressStage);
+      setCurrentChatStatus('inprogress');
+    }
+
+    const newChatEntry = {
+      user: userPrompt,
+      system: initialResponse.apiResponseText,
+    };
+
+    let currentChatHistory = [];
+    setChatHistory((prev) => {
+      currentChatHistory = [...prev, newChatEntry];
+      sessionStorage.setItem("chatHistory", JSON.stringify(currentChatHistory));
+      return currentChatHistory;
+    });
+
+    setSessionHistory((prev) => [
+      ...prev,
+      { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
+    ]);
+
+    // Check for end conditions
+    if (newEndRequested || newInteractionCompleted) {
+      console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
+
+      const assessmentResponse = await processPromptAndCallLLM({
         username,
-        selectedPrompt,
+        selectedPrompt: "assessmentPrompt",
         selectedModel: "gpt-4o",
-        sessionHistory,
+        sessionHistory: [
+          ...sessionHistory,
+          { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
+        ],
         userPrompt: userPrompt,
         selectedConcept: selectedConcept,
       });
 
-      console.log("📡 Raw API Response:", initialResponse);
+      setLlmContent(assessmentResponse.apiResponseText);
 
-      let newApiCurrentStage = initialResponse.currentStage || 0;
-      let newInteractionCompleted = initialResponse.interactionCompleted || false;
-      let newEndRequested = initialResponse.endRequested || false;
-
-      console.log("🔍 API Response Details:", {
-        apiCurrentStage: newApiCurrentStage,
-        interactionCompleted: newInteractionCompleted,
-        endRequested: newEndRequested,
-        currentProgressStage: currentStage,
-        isFirstUserMessage,
-      });
-
-      const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
-
-      if (isFirstUserMessage || newProgressStage >= currentStage) {
-        setCurrentStage(newProgressStage);
-        setCurrentChatStatus('inprogress');
-        console.log("✅ Progress updated:", {
-          from: currentStage,
-          to: newProgressStage,
-          apiStage: newApiCurrentStage,
-          status: 'inprogress',
-        });
-      }
-
-      const newChatEntry = {
-        user: userPrompt,
-        system: initialResponse.apiResponseText,
+      const assessmentChatEntry = {
+        user: "",
+        system: assessmentResponse.apiResponseText,
       };
 
-      let currentChatHistory = [];
+      let finalChatHistory = [];
       setChatHistory((prev) => {
-        currentChatHistory = [...prev, newChatEntry];
-        sessionStorage.setItem("chatHistory", JSON.stringify(currentChatHistory));
-        return currentChatHistory;
+        finalChatHistory = [...prev, assessmentChatEntry];
+        sessionStorage.setItem("chatHistory", JSON.stringify(finalChatHistory));
+        return finalChatHistory;
       });
 
       setSessionHistory((prev) => [
         ...prev,
-        { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
+        { Mentee: "", Mentor: assessmentResponse.apiResponseText },
       ]);
 
-      // Auto-save after regular LLM response
-      console.log("💾 Auto-saving after regular LLM response...");
-      await handleSaveChat('inprogress');
+      setCurrentStage(7);
+      setCurrentChatStatus('completed');
 
-      // Check for end conditions - both endRequested and interactionCompleted trigger assessment
-      if (newEndRequested || newInteractionCompleted) {
-        console.log(
-          newInteractionCompleted
-            ? "🎉 Interaction completed! Triggering assessment..."
-            : "🛑 End requested by mentor, triggering assessment..."
-        );
-
-        // Call assessment
-        const assessmentResponse = await processPromptAndCallLLM({
-          username,
-          selectedPrompt: "assessmentPrompt",
-          selectedModel: "gpt-4o",
-          sessionHistory: [
-            ...sessionHistory,
-            { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
-          ],
-          userPrompt: userPrompt,
-          selectedConcept: selectedConcept,
-        });
-
-        setLlmContent(assessmentResponse.apiResponseText);
-
-        const assessmentChatEntry = {
-          user: "",
-          system: assessmentResponse.apiResponseText,
-        };
-
-        let finalChatHistory = [];
-        setChatHistory((prev) => {
-          finalChatHistory = [...prev, assessmentChatEntry];
-          sessionStorage.setItem("chatHistory", JSON.stringify(finalChatHistory));
-          return finalChatHistory;
-        });
-
-        setSessionHistory((prev) => [
-          ...prev,
-          { Mentee: "", Mentor: assessmentResponse.apiResponseText },
-        ]);
-
-        // Set completed stage and status
-        setCurrentStage(7);
-        setCurrentChatStatus('completed');
-
-        // Set the end reason for UI messaging
-        if (newInteractionCompleted) {
-          setEndReason('interactionCompleted');
-        } else {
-          setEndReason('endRequested');
-        }
-
-        // Auto-save after assessment
-        console.log("💾 Auto-saving after assessment...");
-        await handleSaveChat('completed');
-
-        setSelectedPrompt("conceptMentor");
-
-        // Set chat as ended AFTER assessment is added to chat history
-        setTimeout(() => {
-          setIsChatEnded(true);
-          console.log("🔒 Chat input restricted after assessment display");
-        }, 100);
-      }
-    } catch (error) {
-      console.error("❌ Error in API request:", error);
-      if (error.response) {
-        toast.error(`Failed to process request: ${error.response.data.message || "Server error"}`);
+      if (newInteractionCompleted) {
+        setEndReason('interactionCompleted');
       } else {
-        toast.error("Failed to process request. Please check your connection and try again.");
+        setEndReason('endRequested');
       }
-    } finally {
-      // ✅ FIX 2: Always hide loading indicator at the end
-      setIsLoading(false);
+
+      setIsChatEnded(true);
+      console.log("🔒 handleSendClick: Chat ended, input restricted");
     }
-  };
+  } catch (error) {
+    console.error("❌ handleSendClick: Error in API request:", error);
+    toast.error("Failed to process request. Please try again.");
+  } finally {
+    console.log("🏁 handleSendClick: Setting isLoading to false");
+    setIsLoading(false);
+  }
+};
 
   const getCurrentStageForAPI = (saveStatus) => {
     // If user is manually setting status, use that
@@ -790,124 +754,129 @@ const handleDownloadPDF = () => {
     }
   };
 
-  const handleSaveChat = async (requestedStatus = null) => {
-    if (!username) {
-      toast.error("Cannot save chat: User not identified.");
-      return;
-    }
-    if (chatHistory.length === 0) {
-      toast.warn("No chat history to save.");
-      return;
+  const handleSaveChat = async (requestedStatus = null, showLoader = true) => {
+  if (!username) {
+    toast.error("Cannot save chat: User not identified.");
+    return;
+  }
+
+  if (chatHistory.length === 0) {
+    toast.warn("No chat history to save.");
+    return;
+  }
+
+  // Determine the status to save
+  const statusToSave = requestedStatus || getFrontendStatusForSave();
+  const stageToSave = getCurrentStageForAPI(statusToSave);
+  const conceptNameToSave = selectedConcept?.concept_name || null;
+
+  console.log("💾 Saving chat with:", {
+    requestedStatus,
+    statusToSave,
+    stageToSave,
+    currentStage,
+    frontendStatus: getStageStatus(),
+    currentChatStatus,
+    chatHistoryLength: chatHistory.length,
+    conceptName: conceptNameToSave
+  });
+
+  if (showLoader) setIsLoading(true); // Only show global loader if true
+
+  try {
+    let response;
+    let actionMessage = "";
+
+    if (currentChatId && sessionType === "resume") {
+      // Update existing chat
+      response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
+        conversation: chatHistory,
+        status: statusToSave,
+        current_stage: stageToSave,
+        concept_name: conceptNameToSave
+      });
+      actionMessage = `Updated existing chat (ID: ${currentChatId})`;
+    } else {
+      // Create new chat
+      response = await axios.post(`${BASE_URL}/chat`, {
+        user_id: userId,
+        conversation: chatHistory,
+        status: statusToSave,
+        current_stage: stageToSave,
+        concept_name: conceptNameToSave
+      });
+      actionMessage = "Created new chat";
     }
 
-    // Determine the status to save
-    const statusToSave = requestedStatus || getFrontendStatusForSave();
-    const stageToSave = getCurrentStageForAPI(statusToSave);
-    const conceptNameToSave = selectedConcept?.concept_name || null;
+    setShowSaveOptions(false);
 
-    console.log("💾 Saving chat with:", {
-      requestedStatus,
-      statusToSave,
-      stageToSave,
-      currentStage,
-      frontendStatus: getStageStatus(),
-      currentChatStatus,
-      chatHistoryLength: chatHistory.length,
-      conceptName: conceptNameToSave
+    console.log("✅ Chat saved successfully:", {
+      status: statusToSave,
+      stage: stageToSave,
+      conceptName: conceptNameToSave,
+      chatId: response.data.data.id
     });
 
-    setIsLoading(true);
-    try {
-      let response;
-      let actionMessage = "";
+    toast.success(`Chat saved as ${statusToSave}!`, {
+      position: "top-right",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
 
-      if (currentChatId && sessionType === "resume") {
-        // Update existing chat
-        response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, {
-          conversation: chatHistory,
-          status: statusToSave,
-          current_stage: stageToSave,
-          concept_name: conceptNameToSave
-        });
-        actionMessage = `Updated existing chat (ID: ${currentChatId})`;
-      } else {
-        // Create new chat
-        response = await axios.post(`${BASE_URL}/chat`, {
-          user_id: userId,
-          conversation: chatHistory,
-          status: statusToSave,
-          current_stage: stageToSave,
-          concept_name: conceptNameToSave
-        });
-        actionMessage = "Created new chat";
+    if (response.data.data.shouldStartFresh) {
+      clearSessionData();
+
+      if (statusToSave === "completed") {
+        setTimeout(async () => {
+          await initiateFirstMentorMessage();
+        }, 1000);
       }
 
-      setShowSaveOptions(false);
+      setSessionType(statusToSave === "completed" ? "completed" : "fresh");
+      setCurrentChatId(null);
+      setResumedFromStatus(null);
+      setCurrentStage(0);
+      setCurrentChatStatus(statusToSave);
+    } else {
+      const newChatId = response.data.data.id || currentChatId;
+      setCurrentChatId(newChatId);
+      setSessionType("resume");
+      setResumedFromStatus(statusToSave);
+      setCurrentChatStatus(statusToSave);
+    }
 
-      console.log("✅ Chat saved successfully:", {
-        status: statusToSave,
-        stage: stageToSave,
-        conceptName: conceptNameToSave,
-        chatId: response.data.data.id
-      });
+    sessionStorage.setItem("chatHistory", JSON.stringify(chatHistory));
+    await fetchChatCounts();
 
-      // Show success toast notification
-      toast.success(`Chat saved as ${statusToSave}!`, {
+  } catch (error) {
+    console.error("❌ Error saving chat:", error);
+    if (error.response) {
+      toast.error(`Failed to save chat: ${error.response.data.message || "Server error"}`, {
         position: "top-right",
-        autoClose: 3000,
+        autoClose: 5000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
       });
+    } else {
+      toast.error("Failed to save chat. Please check your connection and try again.", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    }
+  } finally {
+    if (showLoader) setIsLoading(false); // Reset loading only if we set it
+  }
+};
 
-      if (response.data.data.shouldStartFresh) {
-        clearSessionData();
-
-        if (statusToSave === "completed") {
-          setTimeout(async () => {
-            await initiateFirstMentorMessage();
-          }, 1000);
-        }
-
-        setSessionType(statusToSave === "completed" ? "completed" : "fresh");
-        setCurrentChatId(null);
-        setResumedFromStatus(null);
-        setCurrentStage(0);
-        setCurrentChatStatus(statusToSave);
-      } else {
-        const newChatId = response.data.data.id || currentChatId;
-        setCurrentChatId(newChatId);
-        setSessionType("resume");
-        setResumedFromStatus(statusToSave);
-        setCurrentChatStatus(statusToSave);
-      }
-
-      sessionStorage.setItem("chatHistory", JSON.stringify(chatHistory));
-      await fetchChatCounts();
-    } catch (error) {
-      console.error("❌ Error saving chat:", error);
-      if (error.response) {
-        toast.error(`Failed to save chat: ${error.response.data.message || "Server error"}`, {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      } else {
-        toast.error("Failed to save chat. Please check your connection and try again.", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }
-    }  
-  };
 
   const fetchChatCounts = async () => {
     if (!userId || !sessionStorage.getItem(`apiKey_${username}`)) {
@@ -1276,6 +1245,21 @@ const handleDownloadPDF = () => {
       }
     }
   }, [isInitializing, chatHistory.length]);
+
+ useEffect(() => {
+  if (
+    chatHistory.length > 0 &&
+    !isInitializing &&
+    currentChatStatus === 'inprogress' &&
+    !isLoading
+  ) {
+    const lastEntry = chatHistory[chatHistory.length - 1];
+    if (lastEntry?.system && lastEntry?.user !== undefined) {
+      console.log("💾 Detected LLM response, auto-saving...");
+      handleSaveChat('inprogress', false); // 🚫 No loader
+    }
+  }
+}, [chatHistory, isInitializing, currentChatStatus, isLoading]);
 
   // Assessment helper functions
   const hasAssessmentData = (content) => {

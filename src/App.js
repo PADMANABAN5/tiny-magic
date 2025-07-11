@@ -22,6 +22,7 @@ import OrgadminPods from './pages/Orgadminpods.jsx'; // Assuming you have an Org
 import OrgadminUsers from './pages/OrgadminUsers.jsx';
 import Orgadminuserprogress from './pages/Orgadminuserprogress.jsx';
 import ConversationHistory from './pages/ConversationHistory.jsx';
+import Mentordashboard from './pages/Mentordashboard.jsx';
 
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
@@ -35,7 +36,7 @@ function getRedirectPath() {
       case "orgadmin":
         return "/orgadmin";
       case "mentor":
-        return "/mentor";
+        return "/mentordashboard";
       case "orguser":
         return selectedModel ? "/dashboard" : "/login"; // trigger model popup if not selected
       default:
@@ -71,6 +72,8 @@ function App() {
         <Route path="/orgadminpods/:batchId" element={<OrgadminPods />} />
         <Route path="/orgadminusers/:podId" element={<OrgadminUsers />} />
         <Route path="/orgadminuserprogress/:userId" element={<Orgadminuserprogress />} />
+        <Route path="/mentordashboard" element={<Mentordashboard />} />
+
 
       </Routes>
     </Router>
