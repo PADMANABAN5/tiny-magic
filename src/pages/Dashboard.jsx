@@ -1250,13 +1250,23 @@ const handleDownloadPDF = () => {
   if (
     chatHistory.length > 0 &&
     !isInitializing &&
-    currentChatStatus === 'inprogress' &&
     !isLoading
   ) {
     const lastEntry = chatHistory[chatHistory.length - 1];
-    if (lastEntry?.system && lastEntry?.user !== undefined) {
-      console.log("💾 Detected LLM response, auto-saving...");
-      handleSaveChat('inprogress', false); // 🚫 No loader
+
+    // Check if the last entry is an assessment (has empty user input and assessment content)
+    const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
+
+    if (isAssessmentEntry && currentChatStatus === 'completed') {
+      console.log("💾 Detected assessment response, auto-saving as completed...");
+      handleSaveChat('completed', false); // Save as completed without loader
+    } else if (
+      lastEntry?.system &&
+      lastEntry?.user !== undefined &&
+      currentChatStatus === 'inprogress'
+    ) {
+      console.log("💾 Detected regular LLM response, auto-saving as inprogress...");
+      handleSaveChat('inprogress', false); // Save as inprogress without loader
     }
   }
 }, [chatHistory, isInitializing, currentChatStatus, isLoading]);
