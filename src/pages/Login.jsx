@@ -16,36 +16,53 @@ function Login() {
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    if (!identifier || !password) {
-      setError("Both fields are required.");
+  if (!identifier || !password) {
+    setError("Both fields are required.");
+    return;
+  }
+
+  try {
+    const response = await axios.post(
+      `${BASE_URL}/users/login`,
+      { identifier, password },
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    const { data: user } = response.data;
+
+    if (user.is_default_password) {
+      setUserDetails(user); // Save user temporarily
+      setShowPasswordChangeModal(true); // Show modal
       return;
     }
 
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/users/login`,
-        { identifier, password },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      const { data: user } = response.data;
-
-      if (user.is_default_password) {
-        setUserDetails(user); // Save user temporarily
-        setShowPasswordChangeModal(true); // Show modal
-        return;
+    handleSessionAndRedirect(user);
+  } catch (err) {
+    // ✅ Custom handling for specific error status codes
+    const status = err.response?.status;
+    if (status === 401) {
+      setError("❌ Invalid credentials. Please try again.");
+    } else if (status === 403) {
+      const message = err.response?.data?.message || "Access denied.";
+      if (message.includes("Account is inactive")) {
+        setError("❌ Your account is inactive. Contact admin.");
+      } else if (message.includes("Organization is inactive")) {
+        setError("❌ Your organization is inactive. Contact support.");
+      } else {
+        setError("❌ Access denied.");
       }
-
-      handleSessionAndRedirect(user);
-    } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
-      setIsLoggedIn(false);
+    } else if (status === 400) {
+      setError("❗ Missing credentials. Fill in all fields.");
+    } else {
+      setError(err.response?.data?.error || "⚠️ Login failed. Try again.");
     }
-  };
 
+    setIsLoggedIn(false);
+  }
+};
   const handleSessionAndRedirect = (user) => {
     sessionStorage.setItem("token", user.token || "");
     sessionStorage.setItem("email", user.email || "");
@@ -86,38 +103,44 @@ function Login() {
   };
 
   const handleChangePassword = async () => {
-    setError("");
-    if (!newPassword || !confirmPassword) {
-      setError("Both new password fields are required.");
-      return;
-    }
+  setError("");
 
-    if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
-      return;
-    }
+  if (!newPassword || !confirmPassword) {
+    setError("Both new password fields are required.");
+    return;
+  }
 
-    try {
-      await axios.put(
-        `http://localhost:5000/api/users/${userDetails.user_id}`,
-        {
-          password: newPassword, // Use `new_password` if required by your backend
-        },
-        { headers: { "Content-Type": "application/json" } }
-      );
+  if (newPassword.length < 8) {
+    setError("Password must be at least 8 characters long.");
+    return;
+  }
 
-      setShowPasswordChangeModal(false);
-      setUserDetails(null);
-      setIdentifier("");
-      setPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
+  if (newPassword !== confirmPassword) {
+    setError("Passwords do not match.");
+    return;
+  }
 
-      alert("Password updated successfully! Please login with new password.");
-    } catch (err) {
-      setError(err.response?.data?.error || "Failed to change password.");
-    }
-  };
+  try {
+    await axios.put(
+      `${BASE_URL}/users/${userDetails.user_id}`,
+      {
+        password: newPassword,
+      },
+      { headers: { "Content-Type": "application/json" } }
+    );
+
+    setShowPasswordChangeModal(false);
+    setUserDetails(null);
+    setIdentifier("");
+    setPassword("");
+    setNewPassword("");
+    setConfirmPassword("");
+
+    alert("Password updated successfully! Please login with new password.");
+  } catch (err) {
+    setError(err.response?.data?.error || "Failed to change password.");
+  }
+};
 
   return (
     <div className="login-page-wrapper">
@@ -164,8 +187,8 @@ function Login() {
       {/* 🔒 Password Change Modal */}
       {showPasswordChangeModal && (
         <div className="modal-overlay1">
-          <div className="modal-content1" style={{ width: "400px" }}>
-            <h3>🔐 Change Default Password</h3>
+          <div className="modal-content1">
+            <h3 className="login-title">Change Password</h3>
             <div className="input-group">
               <label>New Password</label>
               <input
@@ -183,9 +206,26 @@ function Login() {
               />
             </div>
 
+            {confirmPassword && (
+              <div
+                className={`password-match-status ${
+                  newPassword === confirmPassword ? "match" : "mismatch"
+                }`}
+              >
+                {newPassword === confirmPassword
+                  ? "✔️ Passwords match"
+                  : "❌ Passwords do not match"}
+              </div>
+            )}
+
             {error && <div className="error-msg">{error}</div>}
 
-            <button onClick={handleChangePassword}>Update Password</button>
+            <button
+              onClick={handleChangePassword}
+              disabled={newPassword !== confirmPassword}
+            >
+              Update Password
+            </button>
           </div>
         </div>
       )}
