@@ -19,9 +19,17 @@ import {
   FiChevronUp
 } from "react-icons/fi";
 import axios from 'axios';
-import jsPDF from "jspdf";
 import { Spinner, Alert, Card, Row, Col, Badge, Button } from 'react-bootstrap';
 import Orgadminsidebar from '../components/Orgadminsidebar';
+import PDFDownloader from '../components/PDFDownloader.jsx';
+import AssessmentDisplay, { 
+  hasAssessmentData, 
+  extractScoringData, 
+  calculateOverallScore, 
+  getScoreColor, 
+  getScoreLabel, 
+  formatCriterionName 
+} from '../components/AssessmentDisplay.jsx';
 import '../styles/orgadminusers.css';
 
 function Orgadminuserprogress() {
@@ -45,6 +53,44 @@ function Orgadminuserprogress() {
   const chatEndRef = useRef(null);
 
   const BASE_URL = process.env.REACT_APP_API_LINK;
+
+  // Convert conversation to format expected by PDFDownloader
+  const convertConversationForPDF = (conversation) => {
+    if (!conversation || !conversation.conversation) return [];
+    
+    return conversation.conversation.map(entry => ({
+      user: entry.user || "",
+      system: entry.system || ""
+    }));
+  };
+
+  // Create concept object for PDFDownloader
+  const createConceptObject = (conversation) => ({
+    concept_name: conversation.concept_name || "Learning Session"
+  });
+
+  // Handle PDF download with loading state
+  const downloadConversationPDF = async (conversation) => {
+    if (!conversation) return;
+
+    setIsDownloadingPDF(true);
+    
+    try {
+      // Create temporary PDF downloader instance for this specific conversation
+      const tempPDFDownloader = PDFDownloader({
+        chatHistory: convertConversationForPDF(conversation),
+        selectedConcept: createConceptObject(conversation)
+      });
+
+      // Call the PDF generation
+      await tempPDFDownloader.handleDownloadPDF();
+    } catch (error) {
+      console.error("❌ Error generating PDF:", error);
+      alert("Error generating PDF. Please try again.");
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUserProgress = async () => {
@@ -282,433 +328,6 @@ function Orgadminuserprogress() {
       }, 100);
     }
   }, [showConversationModal]);
-
-  // Assessment data checking functions
-  const hasAssessmentData = (content) => {
-    return (
-      content &&
-      (content.includes("Detailed Assessment") || content.includes("Part 1:")) &&
-      (content.includes("Deterministic Scoring") || content.includes("Part 2:"))
-    );
-  };
-
-  const extractScoringData = (content) => {
-    try {
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch && jsonMatch[1]) {
-        const parsedData = JSON.parse(jsonMatch[1]);
-
-        if (parsedData.SixFacets && !parsedData.SixFacets.OverallScore) {
-          const facetScores = [
-            parsedData.SixFacets.Explanation?.score,
-            parsedData.SixFacets.Interpretation?.score,
-            parsedData.SixFacets.Application?.score,
-            parsedData.SixFacets.Perspective?.score,
-            parsedData.SixFacets.Empathy?.score,
-            parsedData.SixFacets['Self-Knowledge']?.score
-          ].filter(score => score != null);
-
-          if (facetScores.length > 0) {
-            const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
-            parsedData.SixFacets.OverallScore = Math.round(average * 1000) / 1000;
-          }
-        }
-
-        if (parsedData.UnderstandingSkills && !parsedData.UnderstandingSkills.OverallScore) {
-          const skillScores = [
-            parsedData.UnderstandingSkills.AskingQuestions?.score,
-            parsedData.UnderstandingSkills.ClarifyingAmbiguity?.score,
-            parsedData.UnderstandingSkills.SummarizingConfirming?.score,
-            parsedData.UnderstandingSkills.ChallengingIdeas?.score,
-            parsedData.UnderstandingSkills.ComparingConcepts?.score,
-            parsedData.UnderstandingSkills.AbstractConcrete?.score
-          ].filter(score => score != null);
-
-          if (skillScores.length > 0) {
-            const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
-            parsedData.UnderstandingSkills.OverallScore = Math.round(average * 1000) / 1000;
-          }
-        }
-
-        return parsedData;
-      }
-
-      const possibleJson = content.match(/\{[\s\S]*"FinalWeightedScore"[\s\S]*\}/);
-      if (possibleJson) {
-        return JSON.parse(possibleJson[0]);
-      }
-      return {};
-    } catch (e) {
-      console.error("Error parsing scoring JSON:", e);
-      return {};
-    }
-  };
-
-  const calculateOverallScore = (scoringData) => {
-    if (scoringData.FinalWeightedScore && typeof scoringData.FinalWeightedScore === 'number') {
-      return Math.round(scoringData.FinalWeightedScore * 100) / 100;
-    }
-
-    const sixFacetsScore = scoringData.SixFacets?.OverallScore || 0;
-    const understandingSkillsScore = scoringData.UnderstandingSkills?.OverallScore || 0;
-
-    const finalWeightedScore = (0.6 * sixFacetsScore) + (0.4 * understandingSkillsScore);
-
-    return Math.round(finalWeightedScore * 100) / 100;
-  };
-
-  const getScoreColor = (score) => {
-    if (score === 5) return '#10b981';
-    if (score >= 4) return '#10b981';
-    if (score >= 3) return '#3b82f6';
-    if (score >= 2) return '#f59e0b';
-    return '#ef4444';
-  };
-
-  const getScoreLabel = (score) => {
-    if (score === 5) return 'Masterful';
-    if (score >= 4) return 'Strong';
-    if (score >= 3) return 'Developing';
-    if (score >= 2) return 'Emerging';
-    return 'Absent/Minimal';
-  };
-
-  const formatCriterionName = (name) => {
-    return name.replace(/([A-Z])/g, ' $1').trim();
-  };
-
-  // PDF download function
-  const downloadConversationPDF = (conversation) => {
-    if (!conversation) return;
-
-    setIsDownloadingPDF(true);
-
-    try {
-      const pdf = new jsPDF();
-      const marginX = 20;
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      const maxWidth = pageWidth - marginX * 2;
-      let y = 20;
-
-      const cleanText = (text) =>
-        text
-          .normalize("NFKD")
-          .replace(/[^\x00-\x7F]/g, "")
-          .replace(/\s+/g, " ")
-          .trim();
-
-      // Title
-      pdf.setFontSize(18);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(0, 0, 0);
-      const title = "Chat History";
-      const titleWidth = pdf.getTextWidth(title);
-      pdf.text(title, (pageWidth - titleWidth) / 2, y);
-      y += 15;
-
-      pdf.setFont("helvetica", "normal");
-      pdf.setFontSize(11);
-
-      // Flatten conversation preserving order
-      const flatConversation = [];
-      conversation.conversation.forEach((entry) => {
-        Object.entries(entry).forEach(([key, value]) => {
-          if (value && value.trim()) {
-            const role = key === "system" ? "mentor" : key === "user" ? "user" : null;
-            if (role) {
-              flatConversation.push({ role, message: value.trim() });
-            }
-          }
-        });
-      });
-
-      // Render messages
-      flatConversation.forEach((item) => {
-        const lines = pdf.splitTextToSize(cleanText(item.message), maxWidth);
-
-        if (item.role === "mentor") {
-          pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(0, 128, 0);
-          pdf.text("Mentor:", marginX, y);
-          y += 6;
-
-          pdf.setFont("helvetica", "normal");
-          pdf.setTextColor(0, 0, 0);
-          if (y + lines.length * 6 > pageHeight - 30) {
-            pdf.addPage();
-            y = 20;
-          }
-          pdf.text(lines, marginX, y);
-          y += lines.length * 6 + 10;
-        }
-
-        if (item.role === "user") {
-          pdf.setFont("helvetica", "bold");
-          pdf.setTextColor(0, 102, 204);
-          const label = "You:";
-          const labelWidth = pdf.getTextWidth(label);
-          pdf.text(label, pageWidth - marginX - labelWidth, y);
-          y += 6;
-
-          pdf.setFont("helvetica", "normal");
-          pdf.setTextColor(0, 0, 0);
-          if (y + lines.length * 6 > pageHeight - 30) {
-            pdf.addPage();
-            y = 20;
-          }
-
-          lines.forEach((line) => {
-            const lineWidth = pdf.getTextWidth(line);
-            const lineX = pageWidth - marginX - lineWidth;
-            pdf.text(line, lineX, y);
-            y += 6;
-          });
-          y += 10;
-        }
-
-        if (y > pageHeight - 30) {
-          pdf.addPage();
-          y = 20;
-        }
-      });
-
-      const totalPages = pdf.internal.getNumberOfPages();
-      const timestamp = new Date().toLocaleString();
-      for (let i = 1; i <= totalPages; i++) {
-        pdf.setPage(i);
-        pdf.setFontSize(8);
-        pdf.setTextColor(120);
-        pdf.text(`Generated on ${timestamp}`, marginX, pageHeight - 10);
-        pdf.text(`Page ${i} of ${totalPages}`, pageWidth - marginX - 30, pageHeight - 10);
-      }
-
-      const sanitizedConceptName = conversation.concept_name?.replace(/[^a-zA-Z0-9]/g, "_") || "chat";
-      const filename = `chat_history_${sanitizedConceptName}_${new Date().toISOString().slice(0, 19).replace(/:/g, "-")}.pdf`;
-      pdf.save(filename);
-
-    } catch (err) {
-      console.error("❌ PDF generation error:", err);
-      alert("Error generating PDF. Please try again.");
-    } finally {
-      setIsDownloadingPDF(false);
-    }
-  };
-
-  // Render scoring components
-  const renderScoringTable = (content) => {
-    const scoringData = extractScoringData(content);
-
-    return (
-      <div className="assessment-scoring-table" style={{ marginTop: '20px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px' }}>
-        <div className="scoring-header">
-          <h4>📊 Learning Assessment Scores</h4>
-        </div>
-
-        {scoringData.SixFacets && (
-          <div className="scoring-section" style={{ marginBottom: '20px' }}>
-            <h5>🌟 Six Facets of Understanding</h5>
-            <div className="scoring-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
-              {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map((key) => {
-                if (!scoringData.SixFacets[key]) return null;
-
-                const facetData = scoringData.SixFacets[key];
-                const scoreValue = facetData.score || 0;
-                const scoreColor = getScoreColor(scoreValue);
-
-                return (
-                  <div key={key} className="score-card" style={{ padding: '15px', border: '1px solid #eee', borderRadius: '6px' }}>
-                    <div className="score-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <h6 className="criterion-name">{formatCriterionName(key)}</h6>
-                      <div
-                        className="score-badge"
-                        style={{ backgroundColor: scoreColor, color: 'white', padding: '4px 8px', borderRadius: '4px' }}
-                      >
-                        {scoreValue}/5
-                      </div>
-                    </div>
-                    {facetData.justification && (
-                      <div className="score-justification" style={{ marginBottom: '8px' }}>
-                        <p><strong>🧠 Why:</strong> {facetData.justification}</p>
-                      </div>
-                    )}
-                    {facetData.example && (
-                      <div className="score-example" style={{ marginBottom: '8px' }}>
-                        <p><strong>💬 Example:</strong> {facetData.example}</p>
-                      </div>
-                    )}
-                    {facetData.improvement && (
-                      <div className="score-improvement">
-                        <p><strong>🔧 How to improve:</strong> {facetData.improvement}</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {scoringData.UnderstandingSkills && (
-          <div className="scoring-section">
-            <h5>🎯 Understanding Skills</h5>
-            <div className="scoring-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '15px' }}>
-              {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map((key) => {
-                if (!scoringData.UnderstandingSkills[key]) return null;
-
-                const skillData = scoringData.UnderstandingSkills[key];
-                const scoreValue = skillData.score || 0;
-                const scoreColor = getScoreColor(scoreValue);
-
-                return (
-                  <div key={key} className="score-card" style={{ padding: '15px', border: '1px solid #eee', borderRadius: '6px' }}>
-                    <div className="score-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                      <h6 className="criterion-name">{formatCriterionName(key)}</h6>
-                      <div
-                        className="score-badge"
-                        style={{ backgroundColor: scoreColor, color: 'white', padding: '4px 8px', borderRadius: '4px' }}
-                      >
-                        {scoreValue}/5
-                      </div>
-                    </div>
-                    {skillData.justification && (
-                      <div className="score-justification" style={{ marginBottom: '8px' }}>
-                        <p><strong>🧠 Why:</strong> {skillData.justification}</p>
-                      </div>
-                    )}
-                    {skillData.example && (
-                      <div className="score-example" style={{ marginBottom: '8px' }}>
-                        <p><strong>💬 Example:</strong> {skillData.example}</p>
-                      </div>
-                    )}
-                    {skillData.improvement && (
-                      <div className="score-improvement">
-                        <p><strong>🔧 How to improve:</strong> {skillData.improvement}</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderOverallScoreAndSummary = (content) => {
-    const scoringData = extractScoringData(content);
-    const calculatedOverallScore = calculateOverallScore(scoringData);
-    const evaluationSummary = scoringData.EvaluationSummary || "Assessment completed based on conversation analysis.";
-    const overallColor = getScoreColor(calculatedOverallScore);
-    const overallLabel = getScoreLabel(calculatedOverallScore);
-    const sixFacetsAvg = scoringData.SixFacets?.OverallScore;
-    const skillsAvg = scoringData.UnderstandingSkills?.OverallScore;
-
-    return (
-      <div className="overall-assessment" style={{ marginTop: '20px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f8f9fa' }}>
-        <div className="overall-score-card">
-          <div className="overall-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-            <h4>🎯 Overall Assessment</h4>
-            <div
-              className="overall-score-badge"
-              style={{ backgroundColor: overallColor, color: 'white', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}
-            >
-              <span className="score-value" style={{ fontSize: '1.2em', fontWeight: 'bold' }}>{calculatedOverallScore.toFixed(1)}/5</span>
-              <br />
-              <span className="score-label" style={{ fontSize: '0.9em' }}>{overallLabel}</span>
-            </div>
-          </div>
-          <div className="overall-summary" style={{ marginBottom: '15px' }}>
-            <h5>📋 Summary</h5>
-            <p>{evaluationSummary}</p>
-          </div>
-
-          <div className="score-breakdown">
-            <h5>📈 Score Breakdown</h5>
-            
-            {scoringData.SixFacets && (
-              <div className="breakdown-section" style={{ marginBottom: '15px' }}>
-                <h6>🌟 Six Facets of Understanding</h6>
-                <div className="breakdown-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                  {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map(facet => {
-                    if (!scoringData.SixFacets[facet]) return null;
-                    const score = scoringData.SixFacets[facet].score || 0;
-                    const color = getScoreColor(score);
-
-                    return (
-                      <div key={facet} className="breakdown-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '5px' }}>
-                        <span className="breakdown-label">{formatCriterionName(facet)}</span>
-                        <span
-                          className="breakdown-score"
-                          style={{ color: color, fontWeight: 'bold' }}
-                        >
-                          {score}/5
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div className="breakdown-average" style={{ display: 'flex', justifyContent: 'space-between', padding: '5px', borderTop: '1px solid #ddd', fontWeight: 'bold' }}>
-                    <span className="breakdown-label">Six Facets Average</span>
-                    <span
-                      className="breakdown-score"
-                      style={{ color: getScoreColor(sixFacetsAvg), fontWeight: 'bold' }}
-                    >
-                      {sixFacetsAvg ? sixFacetsAvg.toFixed(1) : '0'}/5
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {scoringData.UnderstandingSkills && (
-              <div className="breakdown-section" style={{ marginBottom: '15px' }}>
-                <h6>🎯 Understanding Skills</h6>
-                <div className="breakdown-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
-                  {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map(skill => {
-                    if (!scoringData.UnderstandingSkills[skill]) return null;
-                    const score = scoringData.UnderstandingSkills[skill].score || 0;
-                    const color = getScoreColor(score);
-
-                    return (
-                      <div key={skill} className="breakdown-item" style={{ display: 'flex', justifyContent: 'space-between', padding: '5px' }}>
-                        <span className="breakdown-label">{formatCriterionName(skill)}</span>
-                        <span
-                          className="breakdown-score"
-                          style={{ color: color, fontWeight: 'bold' }}
-                        >
-                          {score}/5
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div className="breakdown-average" style={{ display: 'flex', justifyContent: 'space-between', padding: '5px', borderTop: '1px solid #ddd', fontWeight: 'bold' }}>
-                    <span className="breakdown-label">Skills Average</span>
-                    <span
-                      className="breakdown-score"
-                      style={{ color: getScoreColor(skillsAvg), fontWeight: 'bold' }}
-                    >
-                      {skillsAvg ? skillsAvg.toFixed(1) : '0'}/5
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <div className="breakdown-final" style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', backgroundColor: '#e9ecef', borderRadius: '4px', fontWeight: 'bold', fontSize: '1.1em' }}>
-              <span className="breakdown-label">Final Weighted Score</span>
-              <span
-                className="breakdown-score"
-                style={{ color: overallColor, fontWeight: 'bold' }}
-              >
-                {calculatedOverallScore.toFixed(1)}/5
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // Render score cell for table - EXACTLY like conversation history
   const renderScoreCell = (conversation) => {
@@ -955,11 +574,21 @@ function Orgadminuserprogress() {
                       marginBottom: '10px' 
                     }}>
                       <div className="message-content">
-                      <div className="message-text">{message.user}</div>
-                    </div>
-                      <div className="message-avatar user">
-                                            <FiUser />
-                                          </div>
+                        <div className="message-text">{message.user}</div>
+                      </div>
+                      <div className="message-avatar user" style={{ 
+                        marginLeft: '10px', 
+                        width: '32px', 
+                        height: '32px', 
+                        borderRadius: '50%', 
+                        backgroundColor: '#007bff', 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'center', 
+                        color: 'white' 
+                      }}>
+                        <FiUser />
+                      </div>
                     </div>
                   )}
 
@@ -987,14 +616,7 @@ function Orgadminuserprogress() {
                         <span className="message-author" style={{ fontWeight: 'bold', color: '#28a745' }}>AI Mentor</span>
                       </div>
                       <div className="message-text">
-                        {hasAssessmentData(message.system) ? (
-                          <div>
-                            {renderOverallScoreAndSummary(message.system)}
-                            {renderScoringTable(message.system)}
-                          </div>
-                        ) : (
-                          message.system
-                        )}
+                        <AssessmentDisplay content={message.system} />
                       </div>
                     </div>
                   </div>

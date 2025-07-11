@@ -19,18 +19,15 @@ import {
   FiRefreshCw,
   FiAlertCircle
 } from "react-icons/fi";
-import jsPDF from "jspdf";
 import { useNavigate } from "react-router-dom";
-import html2canvas from "html2canvas";
 import axios from "axios";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
 import Tesseract from 'tesseract.js';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import "jspdf-autotable";
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
+import PDFDownloader from "../components/PDFDownloader.jsx";
+import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -78,6 +75,12 @@ function Dashboard() {
     inprogress: 0,
     completed: 0,
     archived: 0,
+  });
+
+  // Initialize PDF downloader
+  const { handleDownloadPDF } = PDFDownloader({ 
+    chatHistory, 
+    selectedConcept 
   });
 
   // Function to fetch API key from API
@@ -385,255 +388,6 @@ function Dashboard() {
     }
   };
 
-  pdfMake.vfs = pdfFonts.vfs;
-
-  const handleDownloadPDF = () => {
-  const removeEmojis = (text) =>
-    text.replace(
-      /([\u2700-\u27BF]|[\uE000-\uF8FF]|[\uD83C-\uDBFF\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83D[\uDE00-\uDE4F])/g,
-      ""
-    );
- 
-  const normalizeScore = (text) => {
-    return text.replace(/(Score:\s*)([1-5])\b/gi, "$1$2/5");
-  };
- 
-  const stripJsonBlockAndHeaders = (text) => {
-    let stripped = text.replace(/```json[\s\S]*?```/gi, "").trim();
-    stripped = stripped.replace(/### Part 2:.*(\n)?/gi, "").trim();
-    return stripped;
-  };
- 
-  const cleanMisformattedLines = (text) => {
-  const knownLabels = [
-    "Explanation",
-    "Interpretation",
-    "Application",
-    "Perspective",
-    "Empathy",
-    "Self-Knowledge",
-    "Asking Questions",
-    "Clarifying Ambiguity",
-    "Summarizing and Confirming",
-    "Challenging Ideas",
-    "Comparing Concepts",
-    "AbstractConcrete",
-    "Abstract",
-    "Concrete"
-  ];
- 
-  const labelPattern = knownLabels.map(label => label.replace(/ /g, "\\s+")).join("|");
-  const regex = new RegExp(`^\\s*[-o*]?\\s*(${labelPattern})\\b`, "gim");
- 
-  return text.replace(regex, (_, label) => label.replace(/\s+/g, " "));
-};
- 
- 
-  const content = [];
-  let summaryText = "";
- 
-  const facetScores = {
-    Explanation: null,
-    Interpretation: null,
-    Application: null,
-    Perspective: null,
-    Empathy: null,
-    "Self-Knowledge": null,
-  };
- 
-  const skillScores = {
-    "Asking Questions": null,
-    "Clarifying Ambiguity": null,
-    "Summarizing and Confirming": null,
-    "Challenging Ideas": null,
-    "Comparing Concepts": null,
-    "AbstractConcrete": null,
-  };
- 
-  // Title
-  content.push({
-    text: "Chat History",
-    style: "header",
-    margin: [0, 0, 0, 10],
-  });
- 
-  // Process chatHistory
-  chatHistory.forEach((item) => {
-    if (item.user) {
-      content.push(
-        {
-          alignment: "right",
-          text: "You:",
-          style: "userLabel",
-          margin: [0, 5, 0, 2],
-        },
-        {
-          alignment: "right",
-          text: removeEmojis(item.user),
-          style: "userText",
-        }
-      );
-    }
- 
-    if (item.system) {
-      let cleaned = removeEmojis(item.system);
-      let normalized = normalizeScore(stripJsonBlockAndHeaders(cleaned));
-      normalized = cleanMisformattedLines(normalized); // Fix misformatted labels
- 
-      // Extract summary
-      const summaryMatch = normalized.match(/📋 Summary\s*\n([\s\S]*?)(?=📈|$)/);
-      if (summaryMatch) {
-        summaryText = summaryMatch[1].trim();
-      }
- 
-      // Facet scores
-      Object.keys(facetScores).forEach((facet) => {
-        const regex = new RegExp(`${facet}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
-        const match = normalized.match(regex);
-        if (match && !isNaN(match[1])) {
-          facetScores[facet] = parseInt(match[1]);
-        }
-      });
- 
-      // Skill scores
-      Object.keys(skillScores).forEach((skill) => {
-  let regex = new RegExp(`${skill.replace(/ /g, "\\s*")}\\s*[\\s\\S]{0,100}?Score:\\s*(\\d)/5`, "i");
-  let match = normalized.match(regex);
- 
-  // Fallbacks for specific skills
-  if (!match) {
-    if (skill === "AbstractConcrete") {
-      const altRegex1 = /Abstract\s*[^\n]*?Score:\s*(\d)/i;
-      const altRegex2 = /Concrete\s*[^\n]*?Score:\s*(\d)/i;
-      match = normalized.match(altRegex1) || normalized.match(altRegex2);
-    }
- 
-    if (skill === "Clarifying Ambiguity") {
-      const altRegex = /Clarifying\s+Ambiguous(?:\s+Phrases)?\s*[^\n]*?Score:\s*(\d)/i;
-      match = normalized.match(altRegex);
-    }
-  }
- 
-  if (match && !isNaN(match[1])) {
-    skillScores[skill] = parseInt(match[1]);
-  }
-});
- 
- 
-      content.push(
-        {
-          alignment: "left",
-          text: "Mentor:",
-          style: "botLabel",
-          margin: [0, 10, 0, 2],
-        },
-        {
-          alignment: "left",
-          text: normalized,
-          style: "botText",
-        }
-      );
-    }
-  });
- 
-  // Score section builder
-  const buildScoreSection = (title, scoreData) => {
-    const entries = Object.entries(scoreData);
-    const validScores = entries.map(([, val]) => Number(val)).filter((val) => !isNaN(val));
-    const total = validScores.reduce((sum, val) => sum + val, 0);
-    const avg = validScores.length > 0 ? (total / validScores.length) : null;
-    const avgDisplay = avg !== null ? Number(avg.toFixed(1)).toString().replace(/\.0$/, "") : "No score available";
- 
-    const section = [];
- 
-    section.push({
-      text: title,
-      style: "subHeader",
-      margin: [0, 10, 0, 6],
-    });
- 
-    entries.forEach(([key, val]) => {
-      const scoreDisplay = typeof val === "number" ? `${val}/5` : "Not available";
-      section.push({
-        text: `${key} - ${scoreDisplay}`,
-        style: "botText",
-      });
-    });
- 
-    section.push({
-      text: `\nAverage Score: ${avgDisplay}/5`,
-      style: "botText",
-      bold: true,
-      margin: [0, 10, 0, 0],
-    });
- 
-    return section;
-  };
- 
-  // Summary section
-  content.push({ text: "Overall Summary", style: "header", margin: [0, 30, 0, 10] });
- 
-  if (summaryText) {
-    content.push({
-      text: "📋 Summary",
-      style: "subHeader",
-      margin: [0, 0, 0, 4],
-    });
-    content.push({
-      text: summaryText,
-      style: "botText",
-    });
-  }
- 
-  // Scores
-  content.push(...buildScoreSection("Six Facets of Understanding", facetScores));
-  content.push(...buildScoreSection("Understanding Skills Breakdown", skillScores));
- 
-  // Final doc
-  const docDefinition = {
-    content,
-    styles: {
-      header: {
-        fontSize: 18,
-        bold: true,
-        alignment: "center",
-      },
-      subHeader: {
-        fontSize: 14,
-        bold: true,
-        margin: [0, 5, 0, 2],
-      },
-      userLabel: {
-        fontSize: 12,
-        bold: true,
-        color: "#007ACC",
-      },
-      userText: {
-        fontSize: 11,
-        margin: [0, 0, 0, 5],
-      },
-      botLabel: {
-        fontSize: 12,
-        bold: true,
-        color: "#4CAF50",
-      },
-      botText: {
-        fontSize: 11,
-        margin: [0, 0, 0, 6],
-      },
-    },
-    defaultStyle: {
-      font: "Roboto",
-    },
-    pageMargins: [40, 60, 40, 60],
-  };
- 
-  pdfMake.createPdf(docDefinition).download("chat-history.pdf");
-};
- 
-
-
-
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
@@ -812,7 +566,7 @@ function Dashboard() {
     const stageToSave = getCurrentStageForAPI(statusToSave);
     const conceptNameToSave = selectedConcept?.concept_name || null;
 
-    // NEW: Extract scoring data if status is completed and we have llmContent
+    // Extract scoring data if status is completed and we have llmContent
     let scoring_data = null;
     if (statusToSave === 'completed' && llmContent) {
       scoring_data = extractScoringData(llmContent);
@@ -828,7 +582,7 @@ function Dashboard() {
       currentChatStatus,
       chatHistoryLength: chatHistory.length,
       conceptName: conceptNameToSave,
-      hasScoring: !!scoring_data // NEW: Log if scoring data exists
+      hasScoring: !!scoring_data
     });
 
     if (showLoader) setIsLoading(true);
@@ -837,7 +591,7 @@ function Dashboard() {
       let response;
       let actionMessage = "";
 
-      // NEW: Build request data with optional scoring
+      // Build request data with optional scoring
       const requestData = {
         conversation: chatHistory,
         status: statusToSave,
@@ -845,20 +599,20 @@ function Dashboard() {
         concept_name: conceptNameToSave
       };
 
-      // NEW: Add scoring data only if it exists and status is completed
+      // Add scoring data only if it exists and status is completed
       if (statusToSave === 'completed' && scoring_data) {
         requestData.scoring_data = scoring_data;
       }
 
       if (currentChatId && sessionType === "resume") {
         // Update existing chat
-        response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, requestData); // CHANGED: Use requestData
+        response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, requestData);
         actionMessage = `Updated existing chat (ID: ${currentChatId})`;
       } else {
         // Create new chat
         response = await axios.post(`${BASE_URL}/chat`, {
           user_id: userId,
-          ...requestData // CHANGED: Spread requestData instead of individual fields
+          ...requestData
         });
         actionMessage = "Created new chat";
       }
@@ -870,10 +624,10 @@ function Dashboard() {
         stage: stageToSave,
         conceptName: conceptNameToSave,
         chatId: response.data.data.id,
-        hasScoring: !!response.data.data.scoring // NEW: Log if response has scoring
+        hasScoring: !!response.data.data.scoring
       });
 
-      // NEW: Log scoring data if present in response
+      // Log scoring data if present in response
       if (response.data.data.scoring) {
         console.log("📊 Scoring data saved:", {
           sixFacetsAverage: response.data.data.scoring.six_facets.average,
@@ -891,7 +645,6 @@ function Dashboard() {
         draggable: true,
       });
 
-      // Rest of the function remains the same...
       if (response.data.data.shouldStartFresh) {
         clearSessionData();
 
@@ -942,7 +695,6 @@ function Dashboard() {
       if (showLoader) setIsLoading(false);
     }
   };
-
 
   const fetchChatCounts = async () => {
     if (!userId || !sessionStorage.getItem(`apiKey_${username}`)) {
@@ -1337,359 +1089,6 @@ function Dashboard() {
     }
   }, [chatHistory, isInitializing, currentChatStatus, isLoading]);
 
-  // Assessment helper functions
-  const hasAssessmentData = (content) => {
-    return (
-      content &&
-      (content.includes("Detailed Assessment") || content.includes("Part 1:")) &&
-      (content.includes("Deterministic Scoring") || content.includes("Part 2:"))
-    );
-  };
-
-  const parseAssessmentContent = (content) => {
-    const detailedAssessmentHeader = "Part 1: 🌟 Detailed Assessment 📝";
-    const deterministicScoringHeader = "Part 2: Deterministic Scoring (JSON Format) 📊";
-
-    const part1Index = content.indexOf(detailedAssessmentHeader);
-    if (part1Index === -1) {
-      // Try alternative headers
-      const altHeader = "### Part 1: 🌟 Detailed Assessment";
-      const altPart1Index = content.indexOf(altHeader);
-      if (altPart1Index === -1) {
-        return content;
-      }
-      const assessmentStart = altPart1Index + altHeader.length;
-      const part2Index = content.indexOf("### Part 2: Deterministic Scoring");
-      if (part2Index === -1) {
-        return content.slice(assessmentStart).trim();
-      }
-      return content.slice(assessmentStart, part2Index).trim();
-    }
-
-    const assessmentStart = part1Index + detailedAssessmentHeader.length;
-    const part2Index = content.indexOf(deterministicScoringHeader);
-    if (part2Index === -1) {
-      return content.slice(assessmentStart).trim();
-    }
-    return content.slice(assessmentStart, part2Index).trim();
-  };
-
-  const extractScoringData = (content) => {
-    try {
-      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch && jsonMatch[1]) {
-        const parsedData = JSON.parse(jsonMatch[1]);
-
-        // Calculate proper averages for Six Facets if not present or incorrect
-        if (parsedData.SixFacets && !parsedData.SixFacets.OverallScore) {
-          const facetScores = [
-            parsedData.SixFacets.Explanation?.score,
-            parsedData.SixFacets.Interpretation?.score,
-            parsedData.SixFacets.Application?.score,
-            parsedData.SixFacets.Perspective?.score,
-            parsedData.SixFacets.Empathy?.score,
-            parsedData.SixFacets['Self-Knowledge']?.score
-          ].filter(score => score != null);
-
-          if (facetScores.length > 0) {
-            const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
-            parsedData.SixFacets.OverallScore = Math.round(average * 1000) / 1000; // 3 decimal precision
-          }
-        }
-
-        // Calculate proper averages for Understanding Skills if not present or incorrect
-        if (parsedData.UnderstandingSkills && !parsedData.UnderstandingSkills.OverallScore) {
-          const skillScores = [
-            parsedData.UnderstandingSkills.AskingQuestions?.score,
-            parsedData.UnderstandingSkills.ClarifyingAmbiguity?.score,
-            parsedData.UnderstandingSkills.SummarizingConfirming?.score,
-            parsedData.UnderstandingSkills.ChallengingIdeas?.score,
-            parsedData.UnderstandingSkills.ComparingConcepts?.score,
-            parsedData.UnderstandingSkills.AbstractConcrete?.score
-          ].filter(score => score != null);
-
-          if (skillScores.length > 0) {
-            const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
-            parsedData.UnderstandingSkills.OverallScore = Math.round(average * 1000) / 1000; // 3 decimal precision
-          }
-        }
-
-        return parsedData;
-      }
-
-      // Fallback: try to find JSON-like structure with new format
-      const possibleJson = content.match(/\{[\s\S]*"FinalWeightedScore"[\s\S]*\}/);
-      if (possibleJson) {
-        return JSON.parse(possibleJson[0]);
-      }
-      return {};
-    } catch (e) {
-      console.error("Error parsing scoring JSON:", e);
-      return {};
-    }
-  };
-
-  const calculateOverallScore = (scoringData) => {
-    if (scoringData.FinalWeightedScore && typeof scoringData.FinalWeightedScore === 'number') {
-      return Math.round(scoringData.FinalWeightedScore * 100) / 100; // Changed: More precise rounding
-    }
-
-    const sixFacetsScore = scoringData.SixFacets?.OverallScore || 0;
-    const understandingSkillsScore = scoringData.UnderstandingSkills?.OverallScore || 0;
-
-    const finalWeightedScore = (0.6 * sixFacetsScore) + (0.4 * understandingSkillsScore);
-
-    return Math.round(finalWeightedScore * 100) / 100; // Changed: More precise rounding to avoid .166 -> .2
-  };
-
-  const getScoreColor = (score) => {
-    if (score === 5) return '#10b981'; // Green for Masterful
-    if (score >= 4) return '#10b981'; // Green for Strong
-    if (score >= 3) return '#3b82f6'; // Blue for Developing
-    if (score >= 2) return '#f59e0b'; // Yellow for Emerging
-    return '#ef4444'; // Red for Absent/Minimal
-  };
-
-  const getScoreLabel = (score) => {
-    if (score === 5) return 'Masterful';
-    if (score >= 4) return 'Strong';
-    if (score >= 3) return 'Developing';
-    if (score >= 2) return 'Emerging';
-    return 'Absent/Minimal';
-  };
-
-  const formatCriterionName = (name) => {
-    // Handle camelCase to readable format
-    return name.replace(/([A-Z])/g, ' $1').trim();
-  };
-
-  const renderScoringTable = (content) => {
-    const scoringData = extractScoringData(content);
-
-    return (
-      <div className="assessment-scoring-table">
-        <div className="scoring-header">
-          <h4>📊 Learning Assessment Scores</h4>
-        </div>
-
-        {/* Six Facets of Understanding */}
-        {scoringData.SixFacets && (
-          <div className="scoring-section">
-            <h5>🌟 Six Facets of Understanding</h5>
-            <div className="scoring-grid">
-              {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map((key) => {
-                if (!scoringData.SixFacets[key]) return null;
-
-                const facetData = scoringData.SixFacets[key];
-                const scoreValue = facetData.score || 0;
-                const scoreColor = getScoreColor(scoreValue);
-
-                return (
-                  <div key={key} className="score-card">
-                    <div className="score-card-header">
-                      <h6 className="criterion-name">{formatCriterionName(key)}</h6>
-                      <div
-                        className="score-badge"
-                        style={{ backgroundColor: scoreColor }}
-                      >
-                        {scoreValue}/5
-                      </div>
-                    </div>
-                    {facetData.justification && (
-                      <div className="score-justification">
-                        <p><strong>🧠 Why:</strong> {facetData.justification}</p>
-                      </div>
-                    )}
-                    {facetData.example && (
-                      <div className="score-example">
-                        <p><strong>💬 Example:</strong> {facetData.example}</p>
-                      </div>
-                    )}
-                    {facetData.improvement && (
-                      <div className="score-improvement">
-                        <p><strong>🔧 How to improve:</strong> {facetData.improvement}</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-        <br />
-
-        {/* Understanding Skills */}
-        {scoringData.UnderstandingSkills && (
-          <div className="scoring-section">
-            <h5>🎯 Understanding Skills</h5>
-            <div className="scoring-grid">
-              {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map((key) => {
-                if (!scoringData.UnderstandingSkills[key]) return null;
-
-                const skillData = scoringData.UnderstandingSkills[key];
-                const scoreValue = skillData.score || 0;
-                const scoreColor = getScoreColor(scoreValue);
-
-                return (
-                  <div key={key} className="score-card">
-                    <div className="score-card-header">
-                      <h6 className="criterion-name">{formatCriterionName(key)}</h6>
-                      <div
-                        className="score-badge"
-                        style={{ backgroundColor: scoreColor }}
-                      >
-                        {scoreValue}/5
-                      </div>
-                    </div>
-                    {skillData.justification && (
-                      <div className="score-justification">
-                        <p><strong>🧠 Why:</strong> {skillData.justification}</p>
-                      </div>
-                    )}
-                    {skillData.example && (
-                      <div className="score-example">
-                        <p><strong>💬 Example:</strong> {skillData.example}</p>
-                      </div>
-                    )}
-                    {skillData.improvement && (
-                      <div className="score-improvement">
-                        <p><strong>🔧 How to improve:</strong> {skillData.improvement}</p>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const renderOverallScoreAndSummary = (content) => {
-    const scoringData = extractScoringData(content);
-
-    // Calculate overall score with better precision
-    const calculatedOverallScore = calculateOverallScore(scoringData);
-
-    // Use LLM's summary if available, otherwise create a basic one
-    const evaluationSummary = scoringData.EvaluationSummary || "Assessment completed based on conversation analysis.";
-
-    const overallColor = getScoreColor(calculatedOverallScore);
-    const overallLabel = getScoreLabel(calculatedOverallScore);
-
-    // Get precise averages
-    const sixFacetsAvg = scoringData.SixFacets?.OverallScore;
-    const skillsAvg = scoringData.UnderstandingSkills?.OverallScore;
-
-    return (
-      <div className="overall-assessment">
-        <div className="overall-score-card">
-          <div className="overall-header">
-            <h4>🎯 Overall Assessment</h4>
-            <div
-              className="overall-score-badge"
-              style={{ backgroundColor: overallColor }}
-            >
-              <span className="score-value">{calculatedOverallScore.toFixed(1)}/5</span> {/* Changed: Show 3 decimals */}
-              <span className="score-label">{overallLabel}</span>
-            </div>
-          </div>
-          <div className="overall-summary">
-            <h5>📋 Summary</h5>
-            <p>{evaluationSummary}</p>
-          </div>
-
-          {/* Show score breakdown with precise values */}
-          <div className="score-breakdown">
-            <h5>📈 Score Breakdown</h5>
-
-            {/* Six Facets Breakdown */}
-            {scoringData.SixFacets && (
-              <div className="breakdown-section">
-                <h6>🌟 Six Facets of Understanding</h6>
-                <div className="breakdown-grid">
-                  {["Explanation", "Interpretation", "Application", "Perspective", "Empathy", "Self-Knowledge"].map(facet => {
-                    if (!scoringData.SixFacets[facet]) return null;
-                    const score = scoringData.SixFacets[facet].score || 0;
-                    const color = getScoreColor(score);
-
-                    return (
-                      <div key={facet} className="breakdown-item">
-                        <span className="breakdown-label">{formatCriterionName(facet)}</span>
-                        <span
-                          className="breakdown-score"
-                          style={{ color: color, fontWeight: 'bold' }}
-                        >
-                          {score}/5
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div className="breakdown-average">
-                    <span className="breakdown-label"><strong>Six Facets Average</strong></span>
-                    <span
-                      className="breakdown-score"
-                      style={{ color: getScoreColor(sixFacetsAvg), fontWeight: 'bold' }}
-                    >
-                      {sixFacetsAvg ? sixFacetsAvg.toFixed(1) : '0'}/5 {/* Changed: Show 3 decimals */}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Understanding Skills Breakdown */}
-            {scoringData.UnderstandingSkills && (
-              <div className="breakdown-section">
-                <h6>🎯 Understanding Skills</h6>
-                <div className="breakdown-grid">
-                  {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map(skill => {
-                    if (!scoringData.UnderstandingSkills[skill]) return null;
-                    const score = scoringData.UnderstandingSkills[skill].score || 0;
-                    const color = getScoreColor(score);
-
-                    return (
-                      <div key={skill} className="breakdown-item">
-                        <span className="breakdown-label">{formatCriterionName(skill)}</span>
-                        <span
-                          className="breakdown-score"
-                          style={{ color: color, fontWeight: 'bold' }}
-                        >
-                          {score}/5
-                        </span>
-                      </div>
-                    );
-                  })}
-                  <div className="breakdown-average">
-                    <span className="breakdown-label"><strong>Skills Average</strong></span>
-                    <span
-                      className="breakdown-score"
-                      style={{ color: getScoreColor(skillsAvg), fontWeight: 'bold' }}
-                    >
-                      {skillsAvg ? skillsAvg.toFixed(1) : '0'}/5 {/* Changed: Show 3 decimals */}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Final Weighted Score */}
-            <div className="breakdown-final">
-              <span className="breakdown-label"><strong>Final Weighted Score</strong></span>
-              <span
-                className="breakdown-score"
-                style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.2em' }}
-              >
-                {calculatedOverallScore.toFixed(1)}/5 {/* Changed: Show 3 decimals */}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
     <div className="learning-dashboard">
       <Sidebar />
@@ -1959,17 +1358,7 @@ function Dashboard() {
                           <span className="message-author">AI Mentor</span>
                         </div>
                         <div className="message-text">
-                          {hasAssessmentData(item.system) ? (
-                            <div>
-                              {/* Overall Score and Summary */}
-                              {renderOverallScoreAndSummary(item.system)}
-
-                              {/* Scoring Table */}
-                              {renderScoringTable(item.system)}
-                            </div>
-                          ) : (
-                            item.system
-                          )}
+                          <AssessmentDisplay content={item.system} />
                         </div>
                       </div>
                     </div>
