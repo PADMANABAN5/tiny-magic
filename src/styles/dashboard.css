@@ -433,9 +433,9 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
-  height: 100%; /* Use full height of container */
+  height: auto;
+  min-height: 0;
 }
-
 .stage-card {
   background: white;
   padding: 1rem;
@@ -447,14 +447,14 @@ html, body {
   align-items: stretch; /* Changed from flex-start to stretch */
   gap: 1rem;
   flex: 1; /* Allow cards to grow */
-  min-height: 80px; /* Minimum height for consistency */
+  min-height: 40px; /* Minimum height for consistency */
 }
 
 .stage-card.active {
   border-color: #667eea;
   box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.02), rgba(118, 75, 162, 0.01));
-  flex: 2; /* Active cards take more space */
+  flex: 1; /* Active cards take more space */
   min-height: auto; /* Remove min-height constraint for active cards */
 }
 
@@ -686,9 +686,8 @@ html, body {
 
 /* Last Control Section - Take remaining space */
 .control-section:last-child {
-  flex: 1; /* Expand to fill remaining space */
-  min-height: 0; /* Allow shrinking */
-  margin-bottom: 165%;
+  flex-grow: 1; /* Allow last section to take remaining space */
+  margin-bottom: 60px; /* Remove excessive margin */
 }
 
 /* Hover Effect for Control Sections */

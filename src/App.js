@@ -11,18 +11,21 @@ import Mentor from './pages/Mentor.jsx';
 import Orgadmin from './pages/Orgadmin.jsx';
 import OrgList from './pages/Organistation.jsx';
 import Concepts from './pages/Concepts.jsx';
-import Batch from './pages/Batch.jsx'; // Assuming you have a Batch page
-import Pods from './pages/Pods.jsx'; // Assuming you have a Pods page
-import Assign  from './pages/Assign.jsx';
+import Batch from './pages/Batch.jsx';
+import Pods from './pages/Pods.jsx';
+import Assign from './pages/Assign.jsx';
 import User from './pages/User.jsx';
-import Addusers from './pages/Addusers.jsx'; // Assuming you have an Addusers page
+import Addusers from './pages/Addusers.jsx';
 import Addorgadmin from './pages/Addorgadmin.jsx';
 import OrgadminBatch from './pages/OrgadminBatch.jsx';
-import OrgadminPods from './pages/Orgadminpods.jsx'; // Assuming you have an OrgadminPods page
+import OrgadminPods from './pages/Orgadminpods.jsx';
 import OrgadminUsers from './pages/OrgadminUsers.jsx';
 import Orgadminuserprogress from './pages/Orgadminuserprogress.jsx';
 import ConversationHistory from './pages/ConversationHistory.jsx';
 import Mentordashboard from './pages/Mentordashboard.jsx';
+
+// ✅ Import the PrivateRoute component
+import PrivateRoute from './components/PrivateRoute.jsx';
 
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
@@ -38,7 +41,7 @@ function getRedirectPath() {
       case "mentor":
         return "/mentordashboard";
       case "orguser":
-        return selectedModel ? "/dashboard" : "/login"; // trigger model popup if not selected
+        return selectedModel ? "/dashboard" : "/login";
       default:
         return "/login";
     }
@@ -53,28 +56,70 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/conversationhistory" element={<ConversationHistory />} />
-        <Route path="/variables" element={<Variables />} />
-        <Route path="/prompt" element={<Prompt />} />
-        <Route path="/superadmin" element={<Superadmin />} />
-        <Route path="/mentor" element={<Mentor />} />
-        <Route path="/orgadmin" element={<Orgadmin />} />
-        <Route path="/organization" element={<OrgList />} />
-        <Route path="/concepts" element={<Concepts />} />
-        <Route path="/batch" element={<Batch />} />
-        <Route path="/pods" element={<Pods />} />
-        <Route path="/assign" element={<Assign />} />
-        <Route path="/users" element={<User />} />
-        <Route path="/addusers" element={<Addusers />} />
-        <Route path="/addorgadmin" element={<Addorgadmin />} />
-        <Route path="/orgadminbatch" element={<OrgadminBatch />} />
-        <Route path="/orgadminpods/:batchId" element={<OrgadminPods />} />
-        <Route path="/orgadminusers/:podId" element={<OrgadminUsers />} />
-        <Route path="/orgadminuserprogress/:userId" element={<Orgadminuserprogress />} />
-        <Route path="/mentordashboard" element={<Mentordashboard />} />
 
+        {/* ✅ Protected Routes by Role */}
+        <Route path="/dashboard" element={
+          <PrivateRoute roles={["orguser"]}><Dashboard /></PrivateRoute>
+        } />
+        <Route path="/conversationhistory" element={
+          <PrivateRoute roles={["orguser"]}><ConversationHistory /></PrivateRoute>
+        } />
+        <Route path="/variables" element={
+          <PrivateRoute roles={["orguser"]}><Variables /></PrivateRoute>
+        } />
+        <Route path="/prompt" element={
+          <PrivateRoute roles={["orguser"]}><Prompt /></PrivateRoute>
+        } />
 
+        <Route path="/superadmin" element={
+          <PrivateRoute roles={["superadmin"]}><Superadmin /></PrivateRoute>
+        } />
+        <Route path="/mentor" element={
+          <PrivateRoute roles={["superadmin"]}><Mentor /></PrivateRoute>
+        } />
+        <Route path="/orgadmin" element={
+          <PrivateRoute roles={["orgadmin"]}><Orgadmin /></PrivateRoute>
+        } />
+
+        <Route path="/organization" element={
+          <PrivateRoute roles={["superadmin"]}><OrgList /></PrivateRoute>
+        } />
+        <Route path="/concepts" element={
+          <PrivateRoute roles={["superadmin"]}><Concepts /></PrivateRoute>
+        } />
+        <Route path="/batch" element={
+          <PrivateRoute roles={["superadmin"]}><Batch /></PrivateRoute>
+        } />
+        <Route path="/pods" element={
+          <PrivateRoute roles={["superadmin"]}><Pods /></PrivateRoute>
+        } />
+        <Route path="/assign" element={
+          <PrivateRoute roles={["superadmin"]}><Assign /></PrivateRoute>
+        } />
+        <Route path="/users" element={
+          <PrivateRoute roles={["superadmin"]}><User /></PrivateRoute>
+        } />
+        <Route path="/addusers" element={
+          <PrivateRoute roles={["superadmin"]}><Addusers /></PrivateRoute>
+        } />
+        <Route path="/addorgadmin" element={
+          <PrivateRoute roles={["superadmin"]}><Addorgadmin /></PrivateRoute>
+        } />
+        <Route path="/orgadminbatch" element={
+          <PrivateRoute roles={["orgadmin"]}><OrgadminBatch /></PrivateRoute>
+        } />
+        <Route path="/orgadminpods/:batchId" element={
+          <PrivateRoute roles={["orgadmin"]}><OrgadminPods /></PrivateRoute>
+        } />
+        <Route path="/orgadminusers/:podId" element={
+          <PrivateRoute roles={["orgadmin"]}><OrgadminUsers /></PrivateRoute>
+        } />
+        <Route path="/orgadminuserprogress/:userId" element={
+          <PrivateRoute roles={["orgadmin"]}><Orgadminuserprogress /></PrivateRoute>
+        } />
+        <Route path="/mentordashboard" element={
+          <PrivateRoute roles={["mentor"]}><Mentordashboard /></PrivateRoute>
+        } />
       </Routes>
     </Router>
   );
