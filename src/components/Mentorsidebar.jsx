@@ -8,9 +8,8 @@ import {
   FaUser,
   FaCaretDown,
 } from "react-icons/fa";
-
-function Orgadminsidebar() {
- const location = useLocation();
+function Mentorsidebar() {
+  const location = useLocation();
    const username = sessionStorage.getItem("email");
    const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
    const [showDropdown, setShowDropdown] = useState(false);
@@ -43,7 +42,7 @@ function Orgadminsidebar() {
    return (
      <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
        <div className="container-fluid"> 
-         <Link to="/orgadmin" className="navbar-brand d-flex align-items-center">
+         <Link to="/superadmin" className="navbar-brand d-flex align-items-center">
            <div className="logo-container">
              <img src="/logo.png" alt="Logo" className="logo-image" /> 
            </div>
@@ -66,9 +65,9 @@ function Orgadminsidebar() {
                <ul className="dropdown-menu dropdown-menu-end show">
                  <li>
                    <Link
-                     to="/orgadmin"
+                     to="/superadmin"
                      className={`dropdown-item d-flex align-items-center ${
-                       location.pathname === "/orgadmin" ? "active" : ""
+                       location.pathname === "/superadmin" ? "active" : ""
                      }`}
                      onClick={() => setShowDropdown(false)}
                    >
@@ -100,5 +99,4 @@ function Orgadminsidebar() {
    );
  }
  
-
-export default Orgadminsidebar
+export default Mentorsidebar

@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft,FaPlus,FaEdit} from 'react-icons/fa';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
 import '../styles/OrgList.css';
 
 export default function Addusers() {
@@ -23,8 +23,11 @@ export default function Addusers() {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastBg, setToastBg] = useState('primary');
+  const [showToast, setShowToast] = useState(false);
   const navigate = useNavigate();
+
 
   const capitalize = (str) =>
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
@@ -51,7 +54,7 @@ export default function Addusers() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       }
@@ -86,14 +89,24 @@ export default function Addusers() {
     if (trimmedUser.password) payload.password = trimmedUser.password;
 
     try {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload);
-      setShowModal(false);
-      setNewUser({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
-      fetchOrgUsers();
-    } catch (err) {
-      console.error("Error creating org user:", err);
-      alert("Failed to create user.");
-    }
+  await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload);
+  setShowModal(false);
+  setNewUser({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
+  fetchOrgUsers();
+
+  setToastMessage('User created successfully!');
+  setToastBg('primary');
+  setShowToast(true);
+} catch (err) {
+  if (err.response?.status === 409) {
+    setToastMessage('User already exists!');
+    setToastBg('warning');
+    setShowToast(true);
+  } else {
+    alert('Failed to create user.');
+  }
+}
+
   };
 
   const handleUpdateUser = async (e) => {
@@ -106,8 +119,11 @@ export default function Addusers() {
       password: editingUser.password?.trim() || ''
     };
 
-    try {
+   try {
       await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingUser.user_id}`, updatedUser);
+      setToastBg('primary');
+      setToastMessage('User updated successfully!');
+      setShowToast(true);
       setShowEditModal(false);
       setEditingUser(null);
       fetchOrgUsers();
@@ -133,17 +149,22 @@ export default function Addusers() {
       <Supersidebar />
       <div className="content-area">
         <div className="container mt-4">
+
+          <div className="d-flex justify-content-start mb-3">
+             <button
+              className='back-button bg-primary text-white border-0'
+              onClick={() => navigate(-1)}>
+                                    <FaArrowLeft />
+                                  </button>
+          </div>
+
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3 className="mb-0">Organization Users</h3>
-            <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '200px' }}>
-              Add Org User
+            <button className="create-btn" onClick={() => setShowModal(true)} style={{ width: '10%' }}>
+                                     <FaPlus />
             </button>
           </div>
-          <div className="d-flex justify-content-start mb-3">
-                      <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{width: '10%'}}>
-                        <FaArrowLeft/>
-                      </button>
-                    </div>
+          
 
           {loading ? (
             <p>Loading users...</p>
@@ -151,8 +172,9 @@ export default function Addusers() {
             <p className="text-danger">{error}</p>
           ) : (
             <>
-              <table className="table table-striped table-bordered">
-                <thead>
+            <div className="table-responsive">
+              <table className="table table-striped table-bordered table-hover">
+                  <thead className="bg-primary text-white">
                   <tr>
                     <th>Organization</th>
                     <th>Email</th>
@@ -179,7 +201,7 @@ export default function Addusers() {
                               setShowEditModal(true);
                             }}
                           >
-                            Update
+                            <FaEdit />
                           </button>
                         </td>
                       </tr>
@@ -191,6 +213,7 @@ export default function Addusers() {
                   )}
                 </tbody>
               </table>
+              </div>
 
               {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
@@ -211,6 +234,7 @@ export default function Addusers() {
                   </Pagination>
                 </div>
               )}
+            
             </>
           )}
         </div>
@@ -269,15 +293,21 @@ export default function Addusers() {
               </div>
               <div className="mb-3">
                 <label className="form-label">Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  value={newUser.password}
-                  onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-                />
+               <input
+                type="password"
+                className="form-control"
+                value={newUser.password}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewUser({ ...newUser, password: value });
+                  e.target.setCustomValidity(
+                    value && value.length < 8 ? 'Password must be at least 8 characters long.' : ''
+                  );
+                }}
+              />
               </div>
-              <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>Create</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>Cancel</button>
+              <button type="submit" className="btn btn-success me-2" >Create</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
             </form>
           </div>
         </div>
@@ -330,23 +360,43 @@ export default function Addusers() {
               </div>
               <div className="mb-3">
                 <label className="form-label">Password</label>
-                <input
-                  type="password"
-                  className="form-control"
-                  value={editingUser.password || ''}
-                  onChange={(e) => setEditingUser({ ...editingUser, password: e.target.value })}
-                />
+               <input
+                type="password"
+                className="form-control"
+                value={newUser.password}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setNewUser({ ...newUser, password: value });
+                  e.target.setCustomValidity(
+                    value && value.length < 8 ? 'Password must be at least 8 characters long.' : ''
+                  );
+                }}
+              />
               </div>
-              <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>
-                Save Changes
+              <button type="submit" className="btn btn-success me-2" >
+                Update
               </button>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)} style={{ width: '200px' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
                 Cancel
               </button>
             </form>
           </div>
         </div>
       )}
+      <ToastContainer position="top-end" className="p-3">
+        <Toast
+          bg={toastBg}
+          show={showToast}
+          onClose={() => setShowToast(false)}
+          delay={3000}
+          autohide
+        >
+          <Toast.Header closeButton>
+            <strong className="me-auto">Notice</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 }

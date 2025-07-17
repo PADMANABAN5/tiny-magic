@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaArrowLeft } from 'react-icons/fa';
-import Supersidebar from '../components/Supersidebar';
-import { Pagination } from 'react-bootstrap';
+import { FaArrowLeft,FaPlus,FaEdit } from 'react-icons/fa';
+import Supersidebar from '../components/Supersidebar';      
+import { Pagination,Toast, ToastContainer } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import '../styles/OrgList.css';
 
@@ -26,7 +26,9 @@ export default function Mentor() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastBg, setToastBg] = useState('primary');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -52,25 +54,36 @@ export default function Mentor() {
     }
   };
 
-  const handleCreateMentor = async (e) => {
-    e.preventDefault();
-    const { email, first_name, last_name, password } = newMentor;
+ const handleCreateMentor = async (e) => {
+  e.preventDefault();
+  const { email, first_name, last_name, password } = newMentor;
 
-    if (!email || !first_name || !last_name || !password) {
-      alert("All fields are required.");
-      return;
-    }
+  if (!email || !first_name || !last_name || !password) {
+    alert("All fields are required.");
+    return;
+  }
 
-    try {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/users/mentor`, newMentor);
-      setShowModal(false);
-      setNewMentor({ email: '', first_name: '', last_name: '', password: '' });
-      fetchMentors();
-    } catch (err) {
+  try {
+    await axios.post(`${process.env.REACT_APP_API_LINK}/users/mentor`, newMentor);
+    setShowModal(false);
+    setNewMentor({ email: '', first_name: '', last_name: '', password: '' });
+    fetchMentors();
+
+    setToastMessage('✅ Mentor created successfully!');
+    setToastBg('primary');
+    setShowToast(true);
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 409) {
+      setToastMessage('⚠️ Mentor with this email already exists.');
+      setToastBg('warning');
+      setShowToast(true);
+    } else {
       console.error("Error creating mentor:", err);
       alert("Failed to create mentor.");
     }
-  };
+  }
+};
+
 
   const handleUpdateClick = (mentor) => {
     setEditMentor({
@@ -84,17 +97,28 @@ export default function Mentor() {
     setShowUpdateModal(true);
   };
 
-  const handleUpdateSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editMentor.user_id}`, editMentor);
-      setShowUpdateModal(false);
-      fetchMentors();
-    } catch (err) {
+ const handleUpdateSubmit = async (e) => {
+  e.preventDefault();
+  try {
+    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editMentor.user_id}`, editMentor);
+    setShowUpdateModal(false);
+    fetchMentors();
+
+    setToastMessage('✅ Mentor updated successfully!');
+    setToastBg('primary');
+    setShowToast(true);
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 409) {
+      setToastMessage('⚠️ Mentor with this email already exists.');
+      setToastBg('danger');
+      setShowToast(true);
+    } else {
       console.error("Error updating mentor:", err);
       alert("Failed to update mentor.");
     }
-  };
+  }
+};
+
 
   useEffect(() => {
     fetchMentors();
@@ -113,19 +137,22 @@ export default function Mentor() {
       <Supersidebar />
       <div className="content-area">
         <div className="container mt-4">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h3>Mentors</h3>
-            <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '200px' }}>
-              Add Mentor
-            </button>
-          </div>
-
           {/* Back Button */}
           <div className="d-flex justify-content-start mb-3">
-            <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{width: '10%'}}>
-              <FaArrowLeft/>
-            </button>
+            <button
+                        className='back-button bg-primary text-white border-0'
+                        onClick={() => navigate(-1)}>
+                        <FaArrowLeft />
+                      </button>
           </div>
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h3>Mentors</h3>
+           <button className="create-btn" onClick={() => setShowModal(true)} style={{ width: '10%' }}>
+                         <FaPlus />
+                       </button>
+          </div>
+
+          
 
           {loading ? (
             <p>Loading mentors...</p>
@@ -133,8 +160,9 @@ export default function Mentor() {
             <p className="text-danger">{error}</p>
           ) : (
             <>
-              <table className="table table-striped table-bordered">
-                <thead>
+            <div className="table-responsive">
+              <table className="table table-striped table-bordered table-hover">
+                  <thead className="bg-primary text-white">
                   <tr>
                     <th>Email</th>
                     <th>Username</th>
@@ -153,7 +181,7 @@ export default function Mentor() {
                         <td>{mentor.last_name}</td>
                         <td>
                           <button className="btn btn-sm btn-warning" onClick={() => handleUpdateClick(mentor)}>
-                            Update
+                            <FaEdit />
                           </button>
                         </td>
                       </tr>
@@ -185,6 +213,7 @@ export default function Mentor() {
                   </Pagination>
                 </div>
               )}
+            </div>
             </>
           )}
         </div>
@@ -213,11 +242,28 @@ export default function Mentor() {
               </div>
               <div className="mb-3">
                 <label className="form-label">Password</label>
-                <input type="password" className="form-control" value={newMentor.password}
-                  onChange={(e) => setNewMentor({ ...newMentor, password: e.target.value })} required />
+                <input
+                type="password"
+                className="form-control"
+                value={newMentor.password}
+                required
+                onChange={(e) => {
+                  const value = e.target.value;
+                  e.target.setCustomValidity(
+                    value.length < 8 ? 'Password must be at least 8 characters long' : ''
+                  );
+                  setNewMentor({ ...newMentor, password: value });
+                }}
+                onInvalid={(e) =>
+                  e.target.setCustomValidity(
+                    e.target.value.length < 8 ? 'Password must be at least 8 characters long' : ''
+                  )
+                }
+                onInput={(e) => e.target.setCustomValidity('')}
+              />
               </div>
-              <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>Create</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>Cancel</button>
+              <button type="submit" className="btn btn-success me-2" >Create</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
             </form>
           </div>
         </div>
@@ -251,15 +297,47 @@ export default function Mentor() {
               </div>
               <div className="mb-3">
                 <label className="form-label">Password (optional)</label>
-                <input type="password" className="form-control" value={editMentor.password}
-                  onChange={(e) => setEditMentor({ ...editMentor, password: e.target.value })} />
+                <input
+                type="password"
+                className="form-control"
+                value={editMentor.password}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  e.target.setCustomValidity(
+                    value.length > 0 && value.length < 8 ? 'Password must be at least 8 characters long' : ''
+                  );
+                  setEditMentor({ ...editMentor, password: value });
+                }}
+                onInvalid={(e) =>
+                  e.target.setCustomValidity(
+                    e.target.value.length > 0 && e.target.value.length < 8
+                      ? 'Password must be at least 8 characters long'
+                      : ''
+                  )
+                }
+                onInput={(e) => e.target.setCustomValidity('')}
+              />
               </div>
-              <button type="submit" className="btn btn-primary me-2" style={{ width: '200px' }}>Update</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowUpdateModal(false)} style={{ width: '200px' }}>Cancel</button>
+              <button type="submit" className="btn btn-primary me-2" >Update</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowUpdateModal(false)}>Cancel</button>
             </form>
           </div>
         </div>
       )}
+      <ToastContainer position="top-end" className="p-3">
+  <Toast
+    bg={toastBg}
+    show={showToast}
+    onClose={() => setShowToast(false)}
+    delay={3000}
+    autohide
+  >
+    <Toast.Header closeButton>
+      <strong className="me-auto">Notice</strong>
+    </Toast.Header>
+    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+  </Toast>
+</ToastContainer>
     </div>
   );
 }

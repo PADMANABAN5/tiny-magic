@@ -94,7 +94,7 @@ function Login() {
           navigate("/orgadmin");
           break;
         case "mentor":
-          navigate("/mentor");
+          navigate("/mentordashboard");
           break;
         default:
           setError("Unknown role");
@@ -178,7 +178,7 @@ function Login() {
                 />
               </div>
 
-              <button type="submit">Login</button>
+              <button className="login-btn" type="submit">Login</button>
             </form>
           )}
         </div>
@@ -221,6 +221,7 @@ function Login() {
             {error && <div className="error-msg">{error}</div>}
 
             <button
+              className="login-btn"
               onClick={handleChangePassword}
               disabled={newPassword !== confirmPassword}
             >

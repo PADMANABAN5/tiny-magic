@@ -251,7 +251,7 @@ box-shadow: 0 0 0px 1000px transparent inset !important;
 
 }
 
-button {
+.login-btn {
     width: 100%;
     padding: 16px; /* Larger button */
     background: linear-gradient(135deg, #0077b6, #00b4d8); /* Brighter, more inviting gradient */
@@ -266,13 +266,13 @@ button {
     letter-spacing: 0.5px; /* Slightly increased letter spacing */
 }
 
-button:hover {
+.login-btn:hover {
     background: linear-gradient(135deg, #00b4d8, #0077b6); /* Inverted gradient on hover */
     transform: translateY(-5px); /* More pronounced lift */
     box-shadow: 0 10px 25px rgba(0, 180, 216, 0.6); /* Even stronger shadow on hover */
 }
 
-button:active {
+.login-btn:active {
     transform: translateY(0);
     box-shadow: 0 3px 15px rgba(0, 0, 0, 0.3);
 }
@@ -316,7 +316,7 @@ button:active {
         font-size: 16px;
     }
 
-    button {
+    .login-btn {
         padding: 14px;
         font-size: 17px;
     }
@@ -401,7 +401,7 @@ button:active {
   font-size: 16px;
 }
 
-.modal-content1 button {
+.modal-content1 .login-btn {
   width: 100%;
   padding: 12px;
   font-weight: bold;
@@ -413,7 +413,7 @@ button:active {
   cursor: pointer;
 }
 
-.modal-content1 button:hover {
+.modal-content1 .login-btn:hover {
   background-color: #155a96;
 }
 

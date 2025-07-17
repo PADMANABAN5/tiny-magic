@@ -107,8 +107,8 @@ function Orgadmin() {
             <Card className="shadow-sm rounded-3 mb-4">
               <Card.Body>
                 <div className="table-responsive">
-                  <table className="table table-bordered table-hover">
-                    <thead className="table-primary text-center">
+                  <table className="table table-striped table-bordered table-hover">
+                    <thead className="bg-primary text-white text-center">
                       <tr>
                         <th>S No:</th>
                         <th>Name</th>

@@ -140,7 +140,7 @@ function OrgadminUsers() {
                         <caption className="text-center fw-medium text-white p-2 bg-primary caption-top" style={{ borderTopLeftRadius: '0.5rem', borderTopRightRadius: '0.5rem' }}>
                           List of Users in this Pod
                         </caption>
-                        <thead className="bg-primary text-white">
+                        <thead className=" text-white">
                           <tr>
                             <th className="py-3 text-center" style={{ width: '5%' }}>S.No</th>
                             <th className="py-3" style={{ width: '20%' }}>First Name</th>
@@ -158,7 +158,7 @@ function OrgadminUsers() {
                               <td>{user.email}</td>
                               <td>
                                 <button
-                                  className="btn btn-outline-primary w-100 text-white"
+                                  className="btn btn-outline-primary w-100 text-white bg-primary"
                                   onClick={() => navigate(`/orgadminuserprogress/${user.user_id}`)}
                                 >
                                   View Progress

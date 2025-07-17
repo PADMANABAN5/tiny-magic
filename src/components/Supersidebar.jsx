@@ -52,7 +52,7 @@ function Supersidebar() {
         <div className="ms-auto">
           <div className="dropdown">
             <button
-              className="btn btn-outline-secondary d-flex align-items-center"
+              className="btn btn-outline-secondary d-flex align-items-center login-btn"
               type="button"
               onClick={() => setShowDropdown(!showDropdown)}
               aria-expanded={showDropdown}

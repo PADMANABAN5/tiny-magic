@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
 import '../styles/OrgList.css';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft,FaPlus,FaEdit } from 'react-icons/fa';
 
 export default function Pods() {
   const navigate = useNavigate();
@@ -17,6 +17,10 @@ export default function Pods() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPodId, setSelectedPodId] = useState(null);
+
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastBg, setToastBg] = useState('primary');
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
@@ -77,7 +81,7 @@ export default function Pods() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
       setOrganizations(res.data.data || []);
     } catch (err) {
       console.error('Error fetching organizations:', err);
@@ -146,28 +150,37 @@ export default function Pods() {
     try {
       if (isEditMode && selectedPodId) {
         await axios.put(`${process.env.REACT_APP_API_LINK}/pods/${selectedPodId}`, payload);
+        setToastMessage('✅ Pod updated successfully!');
+        setToastBg('primary');
       } else {
         await axios.post(`${process.env.REACT_APP_API_LINK}/pods`, payload);
+        setToastMessage('✅ Pod created successfully!');
+        setToastBg('primary');
       }
+      setShowToast(true);
       setShowModal(false);
       fetchPods();
     } catch (err) {
       console.error('Error saving pod:', err);
-      alert('Failed to save pod.');
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        setToastMessage('⚠️ Pod name already exists!');
+        setToastBg('warning');
+        setShowToast(true);
+      } else {
+        alert('Failed to save pod.');
+      }
     }
   };
 
-  // Handle organization change to reset batch_id if needed
   const handleOrganizationChange = (e) => {
     const organizationId = e.target.value;
     setPodForm((prev) => ({
       ...prev,
       organization_id: organizationId,
-      batch_id: '', // Reset batch_id when organization changes
+      batch_id: '',
     }));
   };
 
-  // Filter batches based on selected organization
   const filteredBatches = batches.filter(
     (batch) => batch.organization_id?.toString() === podForm.organization_id.toString()
   );
@@ -184,62 +197,18 @@ export default function Pods() {
       <Supersidebar />
       <div className="content-area">
         <div className="container mt-4">
+          <div className="d-flex justify-content-start mb-3">
+           <button
+                           className='back-button bg-primary text-white border-0'
+                                                onClick={() => navigate(-1)}>
+                                                                      <FaArrowLeft />
+                                                                    </button>
+          </div>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>Pods</h3>
-            <button className="btn btn-primary" onClick={openCreateModal} style={{ width: '200px' }}>
-              Add Pod
+            <button className="create-btn" onClick={openCreateModal} style={{ width: '10%' }}>
+              <FaPlus />
             </button>
-          </div>
-          <div className="d-flex justify-content-start mb-3">
-                      <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{ width: '10%' }}>
-                        <FaArrowLeft/>
-                      </button>
-                    </div>
-
-          <div className="card p-3 mb-3">
-            <h5>Filter Pods</h5>
-            <div className="row">
-              <div className="col-md-2">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Pod ID"
-                  name="pod_id"
-                  value={filters.pod_id}
-                  onChange={handleFilterChange}
-                />
-              </div>
-              <div className="col-md-2">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Pod Name"
-                  name="pod_name"
-                  value={filters.pod_name}
-                  onChange={handleFilterChange}
-                />
-              </div>
-              <div className="col-md-3">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Organization ID"
-                  name="organization_id"
-                  value={filters.organization_id}
-                  onChange={handleFilterChange}
-                />
-              </div>
-              <div className="col-md-3">
-                <input
-                  type="text"
-                  className="form-control"
-                  placeholder="Mentor ID"
-                  name="mentor_id"
-                  value={filters.mentor_id}
-                  onChange={handleFilterChange}
-                />
-              </div>
-            </div>
           </div>
 
           {loading ? (
@@ -248,14 +217,14 @@ export default function Pods() {
             <p className="text-danger">{error}</p>
           ) : (
             <>
-              <table className="table table-bordered table-striped">
-                <thead>
+              <div className="table-responsive">
+              <table className="table table-striped table-bordered table-hover">
+                  <thead className="bg-primary text-white">
                   <tr>
-                   
                     <th>Pod Name</th>
-                    <th>Organization ID</th>
-                    <th>Batch ID</th>
-                    <th>Mentor ID</th>
+                    <th>Organization Name</th>
+                    <th>Batch Name</th>
+                    <th>Mentor Name</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -264,41 +233,41 @@ export default function Pods() {
                   {currentPods.length > 0 ? (
                     currentPods.map((pod) => (
                       <tr key={pod.pod_id}>
-                       
                         <td>{pod.pod_name}</td>
-                        <td>{pod.organization_id || '—'}</td>
-                        <td>{pod.batch_id || '—'}</td>
-                        <td>{pod.mentor_id || '—'}</td>
+                        <td>{organizations.find((org) => org.organization_id === pod.organization_id)?.organization_name || '—'}</td>
+                        <td>{batches.find((batch) => batch.batch_id === pod.batch_id)?.batch_name || '—'}</td>
+                       <td>
+                        {(() => {
+                          const mentor = mentors.find((mentor) => mentor.user_id === pod.mentor_id);
+                          return mentor ? `${mentor.first_name || ''} ${mentor.last_name || ''}`.trim() : '—';
+                        })()}
+                      </td>
                         <td>
-                          <span
-                            className={`badge ${pod.is_active ? 'bg-success text-white' : 'bg-secondary text-white'}`}
-                          >
+                          <span className={`badge ${pod.is_active ? 'bg-success text-white' : 'bg-secondary text-white'}`}>
                             {pod.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
                         <td>
                           <button className="btn btn-warning btn-sm" onClick={() => openEditModal(pod)}>
-                            Update
+                            <FaEdit />
                           </button>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="7" className="text-center">No pods found.</td>
+                      <td colSpan="6" className="text-center">No pods found.</td>
                     </tr>
                   )}
                 </tbody>
               </table>
+              </div>
 
               {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
                   <Pagination>
                     <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-                    <Pagination.Prev
-                      onClick={() => handlePageChange(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    />
+                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
                     {[...Array(totalPages).keys()].map((num) => (
                       <Pagination.Item
                         key={num + 1}
@@ -308,14 +277,8 @@ export default function Pods() {
                         {num + 1}
                       </Pagination.Item>
                     ))}
-                    <Pagination.Next
-                      onClick={() => handlePageChange(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    />
-                    <Pagination.Last
-                      onClick={() => handlePageChange(totalPages)}
-                      disabled={currentPage === totalPages}
-                    />
+                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
                   </Pagination>
                 </div>
               )}
@@ -324,8 +287,9 @@ export default function Pods() {
         </div>
       </div>
 
+      {/* Modal */}
       {showModal && (
-        <div className="modal-overlay" >
+        <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>{isEditMode ? 'Update Pod' : 'Create Pod'}</h4>
             <form onSubmit={handleFormSubmit}>
@@ -334,7 +298,7 @@ export default function Pods() {
                 <select
                   className="form-control"
                   value={podForm.organization_id}
-                  onChange={handleOrganizationChange} // Use the new handler
+                  onChange={handleOrganizationChange}
                   required
                 >
                   <option value="">-- Select Organization --</option>
@@ -353,7 +317,7 @@ export default function Pods() {
                   value={podForm.batch_id}
                   onChange={(e) => setPodForm((prev) => ({ ...prev, batch_id: e.target.value }))}
                   required
-                  disabled={!podForm.organization_id} // Disable if no organization is selected
+                  disabled={!podForm.organization_id}
                 >
                   <option value="">-- Select Batch --</option>
                   {filteredBatches.map((batch) => (
@@ -393,9 +357,7 @@ export default function Pods() {
               </div>
 
               <div className="mb-3">
-                <label className="form-label d-block" htmlFor="is_active">
-                  Active Status
-                </label>
+                <label className="form-label d-block" htmlFor="is_active">Active Status</label>
                 <div className="form-check form-switch">
                   <input
                     className="form-check-input"
@@ -411,15 +373,10 @@ export default function Pods() {
               </div>
 
               <div className="d-flex gap-2">
-                <button type="submit" className="btn btn-success" style={{ width: '200px' }}>
+                <button type="submit" className="btn btn-success" >
                   {isEditMode ? 'Update' : 'Create'}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowModal(false)}
-                  style={{ width: '200px' }}
-                >
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
               </div>
@@ -427,6 +384,16 @@ export default function Pods() {
           </div>
         </div>
       )}
+
+      {/* Toast */}
+      <ToastContainer position="top-end" className="p-3">
+        <Toast bg={toastBg} show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide>
+          <Toast.Header closeButton>
+            <strong className="me-auto">Notice</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 }

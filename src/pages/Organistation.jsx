@@ -1,21 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/OrgList.css';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus } from 'react-icons/fa';
 
 export default function OrgList() {
   const [organizations, setOrganizations] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [newOrgName, setNewOrgName] = useState('');
-  const [newOrgIsActive, setNewOrgIsActive] = useState(true);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastBg, setToastBg] = useState('primary');
   const itemsPerPage = 10;
-
   const navigate = useNavigate();
 
   const fetchOrganizations = async () => {
@@ -23,23 +25,15 @@ export default function OrgList() {
     setError(null);
     try {
       const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
-
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       } else {
-        console.error("Unexpected API response structure.", res.data);
         setOrganizations([]);
         setError("Unexpected data format from server.");
       }
     } catch (err) {
       if (axios.isAxiosError(err)) {
-        if (err.response) {
-          setError(`Server error (${err.response.status}): ${err.response.data.message || 'Unknown server error'}`);
-        } else if (err.request) {
-          setError("No response from server.");
-        } else {
-          setError(`Request error: ${err.message}`);
-        }
+        setError(err.response?.data?.message || "Server error.");
       } else {
         setError("Unexpected error occurred.");
       }
@@ -60,11 +54,13 @@ export default function OrgList() {
     );
 
     try {
-      const endpoint = newIsActiveState
-        ? `${process.env.REACT_APP_API_LINK}/organizations/${org.organization_id}/active`
-        : `${process.env.REACT_APP_API_LINK}/organizations/${org.organization_id}/inactive`;
-
-      await axios.get(endpoint);
+      await axios.put(`${process.env.REACT_APP_API_LINK}/organizations/${org.organization_id}`, {
+        organization_name: org.organization_name,
+        is_active: newIsActiveState,
+      });
+      setToastBg(newIsActiveState ? 'primary' : 'secondary');
+      setToastMessage(`Marked as ${newIsActiveState ? 'Active' : 'Inactive'} successfully`);
+      setShowToast(true);
     } catch (err) {
       console.error("Error toggling status:", err);
       setOrganizations(prevOrgs =>
@@ -72,32 +68,46 @@ export default function OrgList() {
           o.organization_id === org.organization_id ? { ...o, is_active: originalIsActive } : o
         )
       );
-      alert("Failed to update status.");
+      alert("Failed to update organization status.");
     }
   };
 
   const handleCreateOrganization = async (e) => {
-    e.preventDefault();
-    if (!newOrgName.trim()) {
-      alert("Organization name cannot be empty.");
-      return;
-    }
+  e.preventDefault();
+  if (!newOrgName.trim()) {
+    alert("Organization name cannot be empty.");
+    return;
+  }
 
-    try {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/organizations`, {
-        organization_name: newOrgName,
-        is_active: newOrgIsActive,
-      });
+  try {
+    await axios.post(`${process.env.REACT_APP_API_LINK}/organizations`, {
+      organization_name: newOrgName,
+      is_active: true,
+    });
 
-      setShowModal(false);
-      setNewOrgName('');
-      setNewOrgIsActive(true);
-      fetchOrganizations();
-    } catch (err) {
-      console.error("Error creating organization:", err);
-      alert("Failed to create organization.");
+    setShowModal(false);
+    setNewOrgName('');
+    fetchOrganizations();
+    setToastBg('primary'); // ✅ set background before showing
+    setToastMessage('✅ Organization created successfully!');
+    setShowToast(true);
+  } catch (err) {
+    console.error("Error creating organization:", err);
+
+     if (axios.isAxiosError(err)) {
+      if (err.response?.status === 409) {
+        setToastMessage('⚠️ Organization name already exists!');
+        setToastBg('warning'); // ✅ set background before showing
+        setShowToast(true);
+      } else {
+        alert("Failed to create organization.");
+      }
+    } else {
+      alert("Unexpected error occurred.");
     }
-  };
+  }
+};
+
 
   useEffect(() => {
     fetchOrganizations();
@@ -115,17 +125,18 @@ export default function OrgList() {
       <Supersidebar />
       <div className="content-area">
         <div className="container mt-4">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h3>Organizations</h3>
-            <button className="btn btn-primary" onClick={() => setShowModal(true)} style={{ width: '200px' }}>
-              Add Organization
-            </button>
+          <div className="d-flex justify-content-start mb-3">
+            <button
+            className='back-button bg-primary text-white border-0'
+            onClick={() => navigate(-1)}>
+            <FaArrowLeft />
+          </button>
           </div>
 
-          {/* Back Button */}
-          <div className="d-flex justify-content-start mb-3">
-            <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{ width: '10%' }}>
-              <FaArrowLeft/>
+          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h3 className="mb-0">Organizations</h3>
+            <button className="create-btn" onClick={() => setShowModal(true)} style={{ width: '10%' }}>
+              <FaPlus />
             </button>
           </div>
 
@@ -135,43 +146,45 @@ export default function OrgList() {
             <p className="text-danger">{error}</p>
           ) : (
             <>
-              <table className="table table-striped table-bordered">
-                <thead>
-                  <tr>
-                    <th>Organization ID</th>
-                    <th>Organization Name</th>
-                    <th>Action (Is Active)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentOrganizations.length > 0 ? (
-                    currentOrganizations.map((org) => (
-                      <tr key={org.organization_id}>
-                        <td>{org.organization_id}</td>
-                        <td>{org.organization_name}</td>
-                        <td>
-                          <div className="form-check form-switch">
-                            <input
-                              className="form-check-input"
-                              type="checkbox"
-                              id={`toggle-${org.organization_id}`}
-                              checked={org.is_active}
-                              onChange={() => toggleIsActive(org)}
-                            />
-                            <label className="form-check-label" htmlFor={`toggle-${org.organization_id}`}>
-                              {org.is_active ? 'Active' : 'Inactive'}
-                            </label>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
+              <div className="table-responsive">
+                <table className="table table-striped table-bordered table-hover">
+                  <thead className="bg-primary text-white">
                     <tr>
-                      <td colSpan="3" className="text-center">No organizations found.</td>
+                      <th>Organization ID</th>
+                      <th>Organization Name</th>
+                      <th>Action (Is Active)</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentOrganizations.length > 0 ? (
+                      currentOrganizations.map((org) => (
+                        <tr key={org.organization_id}>
+                          <td>{org.organization_id}</td>
+                          <td>{org.organization_name}</td>
+                          <td>
+                            <div className="form-check form-switch">
+                              <input
+                                className="form-check-input"
+                                type="checkbox"
+                                id={`toggle-${org.organization_id}`}
+                                checked={org.is_active}
+                                onChange={() => toggleIsActive(org)}
+                              />
+                              <label className="form-check-label" htmlFor={`toggle-${org.organization_id}`}>
+                                {org.is_active ? 'Active' : 'Inactive'}
+                              </label>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="3" className="text-center">No organizations found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
               {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
@@ -213,22 +226,27 @@ export default function OrgList() {
                   required
                 />
               </div>
-              <div className="mb-3 form-check">
-                <input
-                  type="checkbox"
-                  className="form-check-input"
-                  id="isActive"
-                  checked={newOrgIsActive}
-                  onChange={(e) => setNewOrgIsActive(e.target.checked)}
-                />
-                <label className="form-check-label" htmlFor="isActive">Is Active</label>
-              </div>
-              <button type="submit" className="btn btn-success me-2" style={{ width: '200px' }}>Create</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>Cancel</button>
+              <button type="submit" className="btn btn-success me-2 ">Create</button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
             </form>
           </div>
         </div>
       )}
+
+     <ToastContainer position="top-end" className="p-3">
+  <Toast
+    bg={toastBg}
+    show={showToast}
+    onClose={() => setShowToast(false)}
+    delay={3000}
+    autohide
+  >
+    <Toast.Header closeButton>
+      <strong className="me-auto">Notice</strong>
+    </Toast.Header>
+    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+  </Toast>
+</ToastContainer>
     </div>
   );
 }

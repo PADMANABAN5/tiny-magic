@@ -1233,25 +1233,25 @@ function Dashboard() {
                     <div className="stage-progress-content">
                       <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
                         <div className="progress-info">
+      
                           <span>
                             {currentStage <= 1 ? "Starting..." :
                               currentStage === 7 ? "Completed" :
                                 `Stage ${currentStage - 1}/5`}
                           </span>
                           <span>
-                            {currentStage <= 1 ? "0%" :
-                              currentStage === 7 ? "100%" :
-                                `${Math.round(((currentStage - 1) / 5) * 100)}%`}
+                            {(() => {
+                            const completed = Math.max(currentStage - 2, 0);
+                            return `${Math.round((completed / 5) * 100)}%`;
+                          })()}
                           </span>
                         </div>
                         <div className="progress-bar">
                           <div
                             className="progress-fill"
-                            style={{
-                              width: `${currentStage <= 1 ? 0 :
-                                currentStage === 7 ? 100 :
-                                  Math.round(((currentStage - 1) / 5) * 100)}%`
-                            }}
+                           style={{
+                          width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
+                          }}
                           ></div>
                         </div>
                         <div className="substages">

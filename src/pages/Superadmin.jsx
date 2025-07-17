@@ -6,12 +6,14 @@ import {
 } from 'lucide-react'; 
 import Supersidebar from '../components/Supersidebar'; // Import the sidebar component
 import { Container, Row, Col, Card, Button, Nav, Navbar } from 'react-bootstrap'; // React-Bootstrap components
+import '../styles/superadmin.css';
 function Superadmin() {
   const username = sessionStorage.getItem("username");
   const firstname = sessionStorage.getItem("firstname");
   const lastname = sessionStorage.getItem("lastname");
   const fullName = `${firstname || ''} ${lastname || ''}`.trim() || 'User';
   const navigate = useNavigate();
+  
 
   return (
     <div className="d-flex bg-light min-vh-100">
@@ -51,8 +53,8 @@ function Superadmin() {
                   </Card.Text>
                   <Button
                     onClick={() => navigate('/organization')}
-                    variant="primary"
-                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2"
+                    variant="info"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
                   >
                     <Monitor className="me-2" size={18} /> View Organizations
                   </Button>
@@ -73,8 +75,8 @@ function Superadmin() {
                   </Card.Text>
                   <Button
                     onClick={() => navigate('/mentor')}
-                    variant="success"
-                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2"
+                    variant="info"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
                   >
                     <Users className="me-2" size={18} /> Manage Mentors
                   </Button>
@@ -96,8 +98,8 @@ function Superadmin() {
                   </Card.Text>
                   <Button
                     onClick={() => navigate('/addusers')}
-                    variant="warning"
-                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white"
+                    variant="info"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
                   >
                     <User className="me-2" size={18} /> Add Users
                   </Button>
@@ -118,8 +120,8 @@ function Superadmin() {
                   </Card.Text>
                   <Button
                     onClick={() => navigate('/addorgadmin')}
-                    variant="danger"
-                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2"
+                    variant="info"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
                   >
                     <User className="me-2" size={18} /> Manage Admins
                   </Button>
@@ -150,7 +152,7 @@ function Superadmin() {
                   <Button
                     onClick={() => navigate('/concepts')}
                     variant="info"
-                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
                   >
                     <LineChart className="me-2" size={18} /> View Stats
                   </Button>
@@ -171,8 +173,8 @@ function Superadmin() {
                   </Card.Text>
                   <Button
                     onClick={() => navigate('/batch')}
-                    variant="secondary"
-                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2"
+                    variant="info"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
                   >
                     <Clock className="me-2" size={18} /> Manage Batch
                   </Button>
@@ -193,8 +195,8 @@ function Superadmin() {
                   </Card.Text>
                   <Button
                     onClick={() => navigate('/pods')}
-                    variant="warning"
-                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white"
+                    variant="info"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white text-white superadmin-button"
                   >
                     <Settings className="me-2" size={18} /> Manage Pods
                   </Button>
@@ -215,8 +217,8 @@ function Superadmin() {
                   </Card.Text>
                   <Button
                     onClick={() => navigate('/users')}
-                    variant="success"
-                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2"
+                    variant="info"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
                   >
                     <Users className="me-2" size={18} /> Assign Users
                   </Button>

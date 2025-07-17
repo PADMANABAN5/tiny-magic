@@ -16,7 +16,40 @@
   border-right: 1px solid #dee2e6; /* Optional: Add a border to separate from content */
   
 }
-
+.back-button {
+  background-color: #000;     /* Black background */
+  color: white;               /* White icon/text */
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  width: 10%;
+  display: flex;
+  font-size: 1.2rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;         /* Slightly rounded corners */
+}
+.custom-header {
+  background-color: #2034e8;
+  color: white;
+}
+/* Override hover style */
+.back-button:hover {
+  background-color: #000;     /* Same as normal */
+  color: white;               /* No color change */
+  box-shadow: none;           /* Remove any hover shadow if applied by global styles */
+  filter: none;               /* Remove glow, brightness, etc. */
+  transform: none;            /* Prevent lift/scale */
+}
+.single-line-tooltip {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 300px; /* Adjust to fit your design */
+  display: inline-block;
+  vertical-align: middle;
+  cursor: help;
+}
 .content-area {
   flex-grow: 1; /* Allow content area to take up remaining space */
   overflow-y: auto; /* Allow content area to scroll if its content overflows */
@@ -46,4 +79,50 @@
   min-width: 350px; /* Minimum width for the modal */
   max-width: 90%; /* Maximum width for the modal */
   z-index: 1001; /* Ensure content is above overlay */
+}
+.table-hover tbody tr:hover {
+  background-color: #7b7d7f !important;
+}
+
+
+/* Apply bg-primary correctly to thead */
+thead.bg-primary th {
+  background-color: #0d6efd !important;
+  color: white !important;
+}
+
+.create-btn {
+  background-color: #0d6efd;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem; /* Important: needed for icon size */
+  width: 100%;
+  max-width: 150px;
+}
+
+/* Ensure icon inside is visible */
+.create-btn svg {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 576px) {
+  .create-btn {
+    max-width: 50px;
+    padding: 8px;
+    font-size: 1.2rem; /* DO NOT SET TO 0 */
+  }
+  .back-button {
+    width: 50px; /* Adjust width for mobile */
+    padding: 8px; /* Adjust padding for mobile */
+    font-size: 1.2rem; /* Ensure text/icon is visible */
+  }
 }

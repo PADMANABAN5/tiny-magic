@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Select from 'react-select';
-import { Pagination } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft,FaPlus,FaEdit } from 'react-icons/fa';
 
 export default function Batch() {
   const navigate = useNavigate();
@@ -17,8 +17,10 @@ export default function Batch() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState(null);
-
   const [currentPage, setCurrentPage] = useState(1);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastBg, setToastBg] = useState('primary');
   const itemsPerPage = 10;
 
   const [batchForm, setBatchForm] = useState({
@@ -60,7 +62,7 @@ export default function Batch() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       }
@@ -102,7 +104,6 @@ export default function Batch() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-
     const payload = {
       ...batchForm,
       concept_ids: batchForm.concept_ids.map((c) => c.value),
@@ -111,14 +112,24 @@ export default function Batch() {
     try {
       if (isEditMode && selectedBatchId) {
         await axios.put(`${process.env.REACT_APP_API_LINK}/batches/${selectedBatchId}`, payload);
+        setToastMessage('✅ Batch updated successfully!');
       } else {
         await axios.post(`${process.env.REACT_APP_API_LINK}/batches`, payload);
+        setToastMessage('✅ Batch created successfully!');
       }
+      setToastBg('primary');
+      setShowToast(true);
       setShowModal(false);
       fetchBatches();
     } catch (err) {
       console.error("Error saving batch:", err);
-      alert("Failed to save batch.");
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        setToastMessage('⚠️ Batch name already exists!');
+        setToastBg('warning');
+        setShowToast(true);
+      } else {
+        alert("Failed to save batch.");
+      }
     }
   };
 
@@ -145,17 +156,19 @@ export default function Batch() {
       <Supersidebar />
       <div className="content-area">
         <div className="container mt-4">
+          <div className="d-flex justify-content-start mb-3">
+           <button
+                           className='back-button bg-primary text-white border-0'
+                                                onClick={() => navigate(-1)}>
+                                                                      <FaArrowLeft />
+                                                                    </button>
+          </div>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>Batches</h3>
-            <button className="btn btn-primary" onClick={openCreateModal} style={{ width: '200px' }}>
-              Add Batch
+            <button className="create-btn" onClick={openCreateModal} style={{ width: '10%' }}>
+              <FaPlus />
             </button>
           </div>
-          <div className="d-flex justify-content-start mb-3">
-                                          <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{width: '10%'}}>
-                                            <FaArrowLeft/>
-                                          </button>
-                                        </div>
 
           {loading ? (
             <p>Loading batches...</p>
@@ -163,10 +176,10 @@ export default function Batch() {
             <p className="text-danger">{error}</p>
           ) : (
             <>
-              <table className="table table-bordered table-striped">
-                <thead>
+              <div className="table-responsive">
+              <table className="table table-striped table-bordered table-hover">
+                  <thead className="bg-primary text-white">
                   <tr>
-                    
                     <th>Org Name</th>
                     <th>Batch Name</th>
                     <th>Size</th>
@@ -179,7 +192,6 @@ export default function Batch() {
                   {currentBatches.length > 0 ? (
                     currentBatches.map((batch) => (
                       <tr key={batch.batch_id}>
-              
                         <td>{batch.organization_name}</td>
                         <td>{batch.batch_name}</td>
                         <td>{batch.batch_size}</td>
@@ -195,19 +207,19 @@ export default function Batch() {
                         </td>
                         <td>
                           <button className="btn btn-warning btn-sm" onClick={() => openEditModal(batch)}>
-                            Update
+                            <FaEdit />
                           </button>
                         </td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="8" className="text-center">No batches found.</td>
+                      <td colSpan="6" className="text-center">No batches found.</td>
                     </tr>
                   )}
                 </tbody>
               </table>
-
+              </div>
               {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
                   <Pagination>
@@ -232,13 +244,10 @@ export default function Batch() {
         </div>
       </div>
 
+      {/* Modal Form */}
       {showModal && (
-        <div className="modal-overlay" >
-          <div
-            className="modal-content modal-lg"
-            onClick={(e) => e.stopPropagation()}
-            style={{ maxHeight: '90vh', overflowY: 'auto' }}
-          >
+        <div className="modal-overlay">
+          <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
             <h4>{isEditMode ? 'Update Batch' : 'Create New Batch'}</h4>
             <form onSubmit={handleFormSubmit}>
               <div className="mb-3">
@@ -269,16 +278,14 @@ export default function Batch() {
                 />
               </div>
 
-              <div className="mb-3 d-flex gap-3">
-                <div style={{ flex: 1 }}>
-                  <label className="form-label">Batch Size</label>
-                  <input
-                    type="number"
-                    className="form-control"
-                    value={batchForm.batch_size}
-                    onChange={(e) => setBatchForm((prev) => ({ ...prev, batch_size: parseInt(e.target.value) || 0 }))}
-                  />
-                </div>
+              <div className="mb-3">
+                <label className="form-label">Batch Size</label>
+                <input
+                  type="number"
+                  className="form-control"
+                  value={batchForm.batch_size}
+                  onChange={(e) => setBatchForm((prev) => ({ ...prev, batch_size: parseInt(e.target.value) || 0 }))}
+                />
               </div>
 
               <div className="mb-3">
@@ -308,10 +315,10 @@ export default function Batch() {
               </div>
 
               <div className="d-flex justify-content-between">
-                <button type="submit" className="btn btn-success" style={{ width: '200px' }}>
+                <button type="submit" className="btn btn-success">
                   {isEditMode ? 'Update' : 'Create'}
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} style={{ width: '200px' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
                   Cancel
                 </button>
               </div>
@@ -319,6 +326,16 @@ export default function Batch() {
           </div>
         </div>
       )}
+
+      {/* Toast */}
+      <ToastContainer position="top-end" className="p-3">
+        <Toast bg={toastBg} show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide>
+          <Toast.Header closeButton>
+            <strong className="me-auto">Notice</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 }

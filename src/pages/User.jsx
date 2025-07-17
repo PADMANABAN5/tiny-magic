@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer,Badge,OverlayTrigger, Tooltip } from 'react-bootstrap';
 import '../styles/OrgList.css';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft,FaPlus,FaEdit } from 'react-icons/fa';
 
 export default function User() {
   const navigate = useNavigate();
@@ -32,7 +32,10 @@ export default function User() {
   // States for filtered dropdown options
   const [filteredBatches, setFilteredBatches] = useState([]);
   const [filteredPods, setFilteredPods] = useState([]);
-
+  
+   const [showToast, setShowToast] = useState(false);
+   const [toastMessage, setToastMessage] = useState('');
+   const [toastBg, setToastBg] = useState('primary');
   // Form state for adding new user(s)
   const [newUser, setNewUser] = useState({
     organization_name: '',
@@ -47,7 +50,7 @@ export default function User() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
       setOrganizations(res.data.data || []);
       return res.data.data || [];
     } catch (err) {
@@ -125,29 +128,41 @@ export default function User() {
       return;
     }
 
-    try {
-      const usersToAssign = newUser.users.map(user => ({
-  user_identifier: user.email || user.username || user.user_id // Fallback order
-}));
-      await axios.post(`${process.env.REACT_APP_API_LINK}/pod-users`, {
-        organization_name: newUser.organization_name,
-        batch_name: newUser.batch_name,
-        pod_name: newUser.pod_name,
-        batch_id: newUser.batch_id, // Send the IDs for robust backend assignment
-        pod_id: newUser.pod_id,
-        users: usersToAssign,
-      });
-      alert('User(s) added successfully');
-      setShowAddUserModal(false);
-      // Reset form state completely
-      setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
-      setTempSelectedUsers([]);
-      fetchAllUsers(); // Refresh the main user list
-    } catch (err) {
-      console.error('Error adding user:', err);
-      alert(`Failed to add user: ${err.response?.data?.message || err.message}`);
-    }
-  };
+   try {
+  const usersToAssign = newUser.users.map(user => ({
+    user_identifier: user.email || user.username || user.user_id
+  }));
+
+  await axios.post(`${process.env.REACT_APP_API_LINK}/pod-users`, {
+    organization_name: newUser.organization_name,
+    batch_name: newUser.batch_name,
+    pod_name: newUser.pod_name,
+    batch_id: newUser.batch_id,
+    pod_id: newUser.pod_id,
+    users: usersToAssign,
+  });
+
+  setToastMessage('User(s) added successfully');
+  setToastBg('primary');
+  setShowToast(true);
+
+  setShowAddUserModal(false);
+  setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
+  setTempSelectedUsers([]);
+  fetchAllUsers();
+
+} catch (err) {
+  console.error('Error adding user:', err);
+  if (err.response?.status === 409) {
+    setToastMessage(err.response.data.message || 'Conflict: User already exists');
+    setToastBg('warning');
+    setShowToast(true);
+  } else {
+    alert(`Failed to add user: ${err.response?.data?.message || err.message}`);
+  }
+}
+
+};
 
   const handleProgressModal = (userId) => {
     setSelectedUserId(userId);
@@ -157,17 +172,28 @@ export default function User() {
 
   const handleInlineProgressUpdate = async () => {
     try {
-      const formattedProgress = JSON.parse(progressText); // Ensure it's valid JSON
-      await axios.put(`${process.env.REACT_APP_API_LINK}/pod-users/${selectedUserId}`, {
-        progress: formattedProgress
-      });
-      alert('Progress updated successfully');
-      setShowProgressModal(false);
-      fetchAllUsers(); // Refresh data after update
-    } catch (err) {
-      console.error('Error updating progress:', err);
-      alert(`Failed to update progress: ${err.message}. Please ensure JSON format is correct.`);
-    }
+  const formattedProgress = JSON.parse(progressText);
+  await axios.put(`${process.env.REACT_APP_API_LINK}/pod-users/${selectedUserId}`, {
+    progress: formattedProgress
+  });
+
+  setToastMessage('Progress updated successfully');
+  setToastBg('primary');
+  setShowToast(true);
+
+  setShowProgressModal(false);
+  fetchAllUsers();
+} catch (err) {
+  console.error('Error updating progress:', err);
+  if (err.response?.status === 409) {
+    setToastMessage(err.response.data.message || 'Conflict error');
+    setToastBg('warning');
+    setShowToast(true);
+  } else {
+    alert(`Failed to update progress: ${err.message}. Ensure JSON format is correct.`);
+  }
+}
+
   };
 
   const openSelectUsersModal = () => {
@@ -273,9 +299,16 @@ export default function User() {
       <Supersidebar />
       <div className="content-area">
         <div className="container mt-4">
+          <div className="d-flex justify-content-start mb-3">
+            <button
+            className='back-button bg-primary text-white border-0'
+                                                            onClick={() => navigate(-1)}>
+                                                                                  <FaArrowLeft />
+                                                                                </button>
+          </div>
           <div className="d-flex justify-content-between align-items-center mb-3">
-            <h3>Assigned Pod Users</h3>
-            <button className="btn btn-primary" onClick={() => {
+            <h3>Assigned Users</h3>
+            <button className="create-btn" onClick={() => {
               setShowAddUserModal(true);
               // Full reset for Add User Modal
               setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
@@ -283,15 +316,11 @@ export default function User() {
               setTempSelectedUsers([]);
               setFilteredBatches([]); // Clear previous filtered batches
               setFilteredPods([]);     // Clear previous filtered pods
-            }} style={{ width: '200px' }}>
-              Add User
+            }} style={{ width: '10%' }}>
+              <FaPlus />
             </button>
           </div>
-           <div className="d-flex justify-content-start mb-3">
-                                <button className="btn btn-outline-secondary text-white" onClick={() => navigate(-1)} style={{ width: '10%' }}>
-                                  <FaArrowLeft/>
-                                </button>
-                              </div>
+           
           
 
           {loading ? (
@@ -300,45 +329,86 @@ export default function User() {
             <p className="text-danger">{error}</p>
           ) : (
             <>
-              <table className="table table-bordered table-striped">
-                <thead>
-                  <tr>
-                    
-                    <th>Full name</th>
-                    <th>Organization</th>
-                    <th>Pod</th>
-                    <th>Assigned</th>
-                    <th>Concepts</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentUsers.length > 0 ? (
-                    currentUsers.map((user, idx) => (
-                      <tr key={idx}>
-                        
-                        <td>{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '—'}</td>
-                        <td>{user.batch?.organization_name || '—'}</td>
-                        <td>{user.pod?.pod_name || '—'}</td>
-                        <td>{user.assigned ? 'Yes' : 'No'}</td>
-                        <td>
-                          {user.batch?.concepts?.length ? (
-                            <ul className="mb-0">
-                              {user.batch.concepts.map((concept) => (
-                                <li key={concept.concept_id}>{concept.concept_name}</li>
-                              ))}
-                            </ul>
-                          ) : '—'}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td colSpan="6" className="text-center">No assigned users found.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              <div className="table-responsive">
+             <table className="table table-striped table-bordered table-hover">
+                  <thead className="bg-primary text-white">
+              <tr>
+                <th>Full name</th>
+                <th>Organization</th>
+                <th>Pod</th>
+                <th>Concepts</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentUsers.length > 0 ? (
+                currentUsers.map((user, idx) => (
+                  <tr key={idx}>
+                    <td>{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '—'}</td>
+                    <td>{user.batch?.organization_name || '—'}</td>
+                    <td>{user.pod?.pod_name || '—'}</td>
+                    <td>
+  {user.batch?.concepts?.length ? (
+    <OverlayTrigger
+      trigger="click"
+      placement="top"
+      overlay={
+        <Tooltip id={`tooltip-${user.user_id}`}>
+          <ul className="mb-0 ps-3">
+            {user.batch.concepts.map(concept => (
+              <li key={concept.concept_id}>{concept.concept_name}</li>
+            ))}
+          </ul>
+        </Tooltip>
+      }
+      rootClose
+    >
+      <div
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          backgroundColor: '#0d6efd',
+          color: 'white',
+          borderRadius: '0.5rem',
+          padding: '4px 10px',
+          fontSize: '0.85rem',
+          fontWeight: 500,
+          gap: '6px',
+          cursor: 'pointer'
+        }}
+      >
+        Concepts
+        <span
+          style={{
+            backgroundColor: '#6c757d',
+            color: 'white',
+            borderRadius: '999px',
+            padding: '2px 8px',
+            fontSize: '0.75rem',
+            fontWeight: 600
+          }}
+        >
+          {user.batch.concepts.length}
+        </span>
+      </div>
+    </OverlayTrigger>
+  ) : (
+    '—'
+  )}
+</td>
 
+
+
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="5" className="text-center">No assigned users found.</td>
+                </tr>
+              )}
+            </tbody>
+
+              </table>
+              </div>
               {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
                   <Pagination>
@@ -367,7 +437,7 @@ export default function User() {
       {showAddUserModal && (
         <div className="modal-overlay" >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h4>Add User(s) to Pod</h4>
+            <h4>Added User to Pod</h4>
             <form onSubmit={handleAddUser}>
               <div className="mb-3">
                 <label className="form-label">Organization</label>
@@ -463,8 +533,8 @@ export default function User() {
                 )}
               </div>
               <div className="d-flex gap-2">
-                <button type="submit" className="btn btn-success" style={{ width: '200px' }}>Add</button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowAddUserModal(false)} style={{ width: '200px' }}>Cancel</button>
+                <button type="submit" className="btn btn-success" >Add</button>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowAddUserModal(false)}>Cancel</button>
               </div>
             </form>
           </div>
@@ -531,12 +601,20 @@ export default function User() {
               rows={6}
             ></textarea>
             <div className="d-flex gap-2">
-              <button className="btn btn-warning" onClick={handleInlineProgressUpdate} style={{ width: '200px' }}>Update</button>
-              <button className="btn btn-secondary" onClick={() => setShowProgressModal(false)} style={{ width: '200px' }}>Cancel</button>
+              <button className="btn btn-warning" onClick={handleInlineProgressUpdate}>Update</button>
+              <button className="btn btn-secondary" onClick={() => setShowProgressModal(false)}>Cancel</button>
             </div>
           </div>
         </div>
       )}
+     <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
+  <Toast bg={toastBg} show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide>
+    <Toast.Header closeButton>
+      <strong className="me-auto">Notice</strong>
+    </Toast.Header>
+    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+  </Toast>
+</ToastContainer>
     </div>
   );
 }
