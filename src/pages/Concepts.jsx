@@ -34,6 +34,7 @@ export default function Concepts() {
     concept_understanding_rubric: '',
     understanding_skills_rubric: '',
     learning_assessment_dimensions: '',
+    download_link: '',
     is_active: true
   });
 
@@ -70,6 +71,7 @@ export default function Concepts() {
       concept_understanding_rubric: '',
       understanding_skills_rubric: '',
       learning_assessment_dimensions: '',
+      download_link: '',
       is_active: true
     });
     setIsEditMode(false);
@@ -221,89 +223,66 @@ export default function Concepts() {
         <div className="modal-content modal-lg" onClick={(e) => e.stopPropagation()} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
           <h4>{isEditMode ? 'Update Concept' : 'Create New Concept'}</h4>
           <form onSubmit={handleFormSubmit}>
-            <Accordion>
-              <Accordion.Item eventKey="0">
-                <Accordion.Header>🧾 General Info</Accordion.Header>
-                <Accordion.Body>
-                  {['concept_name', 'concept_content', 'concept_enduring_understandings', 'concept_essential_questions', 'concept_knowledge_skills'].map((key) => (
-                    <div className="mb-3" key={key}>
-                      <label className="form-label" htmlFor={key}>
-                        {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                      </label>
-                      <textarea
-                        className="form-control"
-                        id={key}
-                        rows={4}
-                        value={conceptForm[key]}
-                        onChange={(e) => setConceptForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                        required={['concept_name', 'concept_content'].includes(key)}
-                      />
-                    </div>
-                  ))}
-                </Accordion.Body>
-              </Accordion.Item>
+            <Accordion alwaysOpen>
+  {Object.entries({
+    concept_name: 'Concept Name',
+    concept_content: 'Concept Content',
+    concept_enduring_understandings: 'Enduring Understandings',
+    concept_essential_questions: 'Essential Questions',
+    concept_knowledge_skills: 'Knowledge & Skills',
+    stage_1_content: 'Stage 1 Content',
+    stage_2_content: 'Stage 2 Content',
+    stage_3_content: 'Stage 3 Content',
+    stage_4_content: 'Stage 4 Content',
+    stage_5_content: 'Stage 5 Content',
+    concept_understanding_rubric: 'Understanding Rubric',
+    understanding_skills_rubric: 'Skills Rubric',
+    learning_assessment_dimensions: 'Assessment Dimensions',
+    download_link: 'Download Link'
+  }).map(([key, label], index) => (
+    <Accordion.Item eventKey={index.toString()} key={key}>
+      <Accordion.Header>{label}</Accordion.Header>
+      <Accordion.Body>
+        <div className="mb-3">
+          <label className="form-label" htmlFor={key}>{label}</label>
+          <textarea
+            className="form-control"
+            id={key}
+            rows={4}
+            value={conceptForm[key]}
+            onChange={(e) =>
+              setConceptForm((prev) => ({ ...prev, [key]: e.target.value }))
+            }
+            required={['concept_name', 'concept_content'].includes(key)}
+          />
+        </div>
+      </Accordion.Body>
+    </Accordion.Item>
+  ))}
 
-              <Accordion.Item eventKey="1">
-                <Accordion.Header>📚 Stage Content</Accordion.Header>
-                <Accordion.Body>
-                  {['stage_1_content', 'stage_2_content', 'stage_3_content', 'stage_4_content', 'stage_5_content'].map((key) => (
-                    <div className="mb-3" key={key}>
-                      <label className="form-label" htmlFor={key}>
-                        {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                      </label>
-                      <textarea
-                        className="form-control"
-                        id={key}
-                        rows={4}
-                        value={conceptForm[key]}
-                        onChange={(e) => setConceptForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                      />
-                    </div>
-                  ))}
-                </Accordion.Body>
-              </Accordion.Item>
+  {/* Status Field in its own accordion */}
+  <Accordion.Item eventKey="status">
+    <Accordion.Header>⚙️ Active Status</Accordion.Header>
+    <Accordion.Body>
+      <div className="mb-3">
+        <label className="form-label d-block" htmlFor="is_active">Active Status</label>
+        <div className="form-check form-switch">
+          <input
+            className="form-check-input"
+            type="checkbox"
+            id="is_active"
+            checked={conceptForm.is_active}
+            onChange={(e) => setConceptForm((prev) => ({ ...prev, is_active: e.target.checked }))}
+          />
+          <label className="form-check-label" htmlFor="is_active">
+            {conceptForm.is_active ? 'Active' : 'Inactive'}
+          </label>
+        </div>
+      </div>
+    </Accordion.Body>
+  </Accordion.Item>
+</Accordion>
 
-              <Accordion.Item eventKey="2">
-                <Accordion.Header>📊 Rubrics & Dimensions</Accordion.Header>
-                <Accordion.Body>
-                  {['concept_understanding_rubric', 'understanding_skills_rubric', 'learning_assessment_dimensions'].map((key) => (
-                    <div className="mb-3" key={key}>
-                      <label className="form-label" htmlFor={key}>
-                        {key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}
-                      </label>
-                      <textarea
-                        className="form-control"
-                        id={key}
-                        rows={4}
-                        value={conceptForm[key]}
-                        onChange={(e) => setConceptForm((prev) => ({ ...prev, [key]: e.target.value }))}
-                      />
-                    </div>
-                  ))}
-                </Accordion.Body>
-              </Accordion.Item>
-
-              <Accordion.Item eventKey="3">
-                <Accordion.Header>⚙️ Active Status</Accordion.Header>
-                <Accordion.Body>
-                  <div className="mb-3">
-                    <label className="form-label d-block" htmlFor="is_active">Active Status</label>
-                    <div className="form-check form-switch">
-                      <input
-                        className="form-check-input"
-                        type="checkbox"
-                        id="is_active"
-                        checked={conceptForm.is_active}
-                        onChange={(e) => setConceptForm((prev) => ({ ...prev, is_active: e.target.checked }))}
-                      />
-                      <label className="form-check-label" htmlFor="is_active">
-                        {conceptForm.is_active ? 'Active' : 'Inactive'}
-                      </label>
-                    </div>
-                  </div>
-                </Accordion.Body>
-              </Accordion.Item>
-            </Accordion>
 
             <div className="d-flex justify-content-between mt-3">
               <button type="submit" className="btn btn-success me-2">

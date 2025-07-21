@@ -1,167 +1,148 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Card, Nav, Table, Button } from 'react-bootstrap';
+import {
+  Container, Row, Col, Card, Spinner, Alert, Button
+} from 'react-bootstrap';
+import {
+  BookOpen, Key, LineChart, Settings
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import Mentorsidebar from '../components/Mentorsidebar';
 import '../styles/MentorDashboard.css';
-import { CircularProgressbar, buildStyles } from 'react-circular-progressbar';
-import 'react-circular-progressbar/dist/styles.css';
 
-const dummyPods = [
-  {
-    id: 1,
-    name: 'Innovators Pod',
-    // Original pod-level concepts, can be kept or removed based on your application's needs
-    concepts: ['Product Development', 'Market Research', 'Startup Scaling', 'Pitching'],
-    mentees: [
-      { id: 101, name: 'Alice Smith', username: 'alice.s', email: 'alice.s@example.com', phone: '123-456-7890', joinDate: '2024-01-15', progress: 75, lastActivity: 'Reviewed project proposal', status: 'Active', menteeConcepts: ['Product Development', 'Pitching'] },
-      { id: 102, name: 'Charlie Brown', username: 'charlie.b', email: 'charlie.b@example.com', phone: '987-654-3210', joinDate: '2024-02-01', progress: 90, lastActivity: 'Completed final review', status: 'Completed', menteeConcepts: ['Startup Scaling', 'Market Research'] },
-      { id: 103, name: 'Frank Green', username: 'frank.g', email: 'frank.g@example.com', phone: '555-111-2222', joinDate: '2024-03-10', progress: 40, lastActivity: 'Initial setup call', status: 'Active', menteeConcepts: ['Product Development'] },
-    ],
-  },
-  {
-    id: 2,
-    name: 'Growth Hackers Pod',
-    concepts: ['Digital Marketing', 'SEO Optimization', 'Content Strategy', 'Analytics'],
-    mentees: [
-      { id: 201, name: 'Bob Johnson', username: 'bob.j', email: 'bob.j@example.com', phone: '111-222-3333', joinDate: '2024-01-20', progress: 50, lastActivity: 'Scheduled next session', status: 'Active', menteeConcepts: ['Digital Marketing', 'Analytics'] },
-      { id: 202, name: 'Eve Adams', username: 'eve.a', email: 'eve.a@example.com', phone: '444-555-6666', joinDate: '2024-02-25', progress: 60, lastActivity: 'Provided feedback on resume', status: 'Active', menteeConcepts: ['Content Strategy'] },
-    ],
-  },
-  {
-    id: 3,
-    name: 'Future Leaders Pod',
-    concepts: ['Leadership Skills', 'Team Management', 'Public Speaking', 'Conflict Resolution'],
-    mentees: [
-      { id: 301, name: 'Diana Prince', username: 'diana.p', email: 'diana.p@example.com', phone: '777-888-9999', joinDate: '2024-03-05', progress: 30, lastActivity: 'Initial consultation', status: 'Active', menteeConcepts: ['Leadership Skills'] },
-    ],
-  },
-];
-
-// Main Mentordashboard component
 function Mentordashboard() {
   const navigate = useNavigate();
   const firstname = sessionStorage.getItem("firstname");
   const lastname = sessionStorage.getItem("lastname");
-  const organizationName = sessionStorage.getItem("organization_name") || "Your Organization";
   const email = sessionStorage.getItem("email");
+  const fullName = `${firstname || ''} ${lastname || ''}`.trim() || 'User';
 
-  const capitalize = (str) =>
-    str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : '';
+  const [pods, setPods] = useState([]);
+  const [conceptsMap, setConceptsMap] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const fullName = `${capitalize(firstname)} ${capitalize(lastname)}`.trim() || 'User';
+  useEffect(() => {
+    const fetchPodsAndConcepts = async () => {
+      try {
+        const podsRes = await axios.get(`${process.env.REACT_APP_API_LINK}/mentor/pods/${email}`);
+        const podsData = podsRes.data.data || [];
+        setPods(podsData);
+
+        const conceptsRes = await axios.get(`${process.env.REACT_APP_API_LINK}/mentor/pods/${email}/concepts`);
+        const conceptsList = conceptsRes.data.data || [];
+
+        const map = {};
+        conceptsList.forEach(entry => {
+          map[entry.pod_id] = entry.concepts || [];
+        });
+
+        setConceptsMap(map);
+      } catch (err) {
+        setError('Failed to fetch data: ' + err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (email) fetchPodsAndConcepts();
+  }, [email]);
 
   return (
-    <div className="app-container">
+    <div className="main-layout-container">
       <Mentorsidebar />
       <div className="content-area">
-        <div className="container mt-4">
-          <Card className="shadow-sm mb-3 mt-2 rounded-3 align-items-center" style={{ boxShadow: '0 10px 10px rgba(33, 150, 243, 0.2)' }}>
-            <Card.Body className="p-4">
-              <h1 className="fs-2 fw-bold text-dark mb-2">
-                Welcome, <span className="text-primary">{fullName}</span> 👋 from <span className="text-primary">{organizationName}</span>
-              </h1>
-              <p className="text-secondary fs-5">
-                Manage users, monitor activities, and oversee your organization efficiently. Your central control point.
-              </p>
+        <Container className="mt-4">
+
+          {/* Welcome Section */}
+          <Card className="shadow-sm mb-4 text-center">
+            <Card.Body>
+              <h2>Welcome, <span className="text-primary">{fullName}</span> 👋</h2>
+              <p className="text-muted">Here are your assigned pods and concepts overview.</p>
             </Card.Body>
           </Card>
 
-          {/* Pods Section */}
-          <h2 className="dashboard-title mt-5">Your Pods</h2>
-          <Row>
-            {dummyPods.map((pod) => (
-              <Col lg={12} className="mb-4" key={pod.id}>
-                <Card className="card-custom pod-card">
-                  <Card.Header className="card-header-custom">
-                    <div className="pod-name">
-                      <i data-lucide="users" className="lucide-icon"></i> {pod.name}
-                    </div>
-                    <span className="mentee-count">{pod.mentees.length} Mentees</span>
-                  </Card.Header>
-                  <Card.Body>
-                    {/* Removed pod-level concepts display if you're now showing mentee-specific concepts */}
-                    {/*
-                    {pod.concepts && pod.concepts.length > 0 && (
-                      <ul className="pod-concepts">
-                        {pod.concepts.map((concept, index) => (
-                          <li key={index} className="pod-concept-item">
-                            {concept}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    */}
+          {/* Loader */}
+          {loading && (
+            <div className="text-center my-5">
+              <Spinner animation="border" variant="primary" />
+              <p className="mt-2">Loading your data...</p>
+            </div>
+          )}
 
-                    <Table responsive hover className="mb-0 pod-mentee-table">
-                      <thead>
-                        <tr>
-                          <th>Name</th>
-                          <th>Username</th> {/* New Column */}
-                          <th>Email</th>
-                          <th>Concepts</th> {/* Updated Column */}
-                          <th>Join Date</th>
-                          <th>Progress</th>
-                          <th>Last Activity</th>
-                          <th>Status</th>
-                          <th>Download</th> {/* New Column */}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pod.mentees.map((mentee) => (
-                          <tr key={mentee.id}>
-                            <td>{mentee.name}</td>
-                            <td>{mentee.username}</td> {/* Display username */}
-                            <td>{mentee.email}</td>
-                            <td>
-                              {mentee.menteeConcepts && mentee.menteeConcepts.length > 0 ? (
-                                <ul className="list-unstyled mb-0"> {/* Use list-unstyled for no default list styling */}
-                                  {mentee.menteeConcepts.map((concept, idx) => (
-                                    <li key={idx}>- {concept}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                'N/A'
-                              )}
-                            </td>
-                            <td>{mentee.joinDate}</td>
-                            <td>
-                              <div style={{ width: 50, height: 50 }}>
-                                <CircularProgressbar
-                                  value={mentee.progress}
-                                  text={`${mentee.progress}%`}
-                                  styles={buildStyles({
-                                    rotation: 0.25,
-                                    strokeLinecap: 'butt',
-                                    textSize: '24px',
-                                    pathColor: `rgba(62, 152, 199, ${mentee.progress / 100})`,
-                                    textColor: '#0d6efd',
-                                    trailColor: '#d6d6d6',
-                                    backgroundColor: '#3e98c7',
-                                  })}
-                                />
-                              </div>
-                            </td>
-                            <td>{mentee.lastActivity}</td>
-                            <td>
-                              <span className={`badge ${mentee.status === 'Active' ? 'bg-success' : 'bg-secondary'}`}>
-                                {mentee.status}
-                              </span>
-                            </td>
-                            <td>
-                              <Button variant="outline-primary" size="sm">
-                                <i data-lucide="download" className="lucide-icon"></i> Download
-                              </Button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </Table>
-                  </Card.Body>
-                </Card>
-              </Col>
-            ))}
-          </Row>
-        </div>
+          {/* Error */}
+          {error && (
+            <Alert variant="danger" className="text-center">
+              {error}
+            </Alert>
+          )}
+
+          {/* Empty State */}
+          {!loading && pods.length === 0 && !error && (
+            <Alert variant="info" className="text-center">
+              You are not assigned to any pods yet.
+            </Alert>
+          )}
+
+          {/* Advanced Configuration Section */}
+          {!loading && pods.length > 0 && (
+            <div className="mb-5">
+              <div className="d-flex align-items-center mb-4 text-dark text-center">
+                <Settings className="me-3 text-info" size={32} />
+                <h2 className="fs-3 fw-bold">Advanced Configuration</h2>
+              </div>
+              <div className="d-flex justify-content-center">
+                <Row xs={1} sm={2} md={2} className="g-4 justify-content-center">
+
+                  {/* Concepts Card */}
+                  <Col className="d-flex justify-content-center">
+                    <Card className="shadow-sm h-100 border-0 rounded-3" style={{ width: '22rem' }}>
+                      <Card.Body className="p-4 text-center">
+                        <div className="p-3 bg-info-subtle rounded-circle d-inline-flex mb-3">
+                          <BookOpen className="text-info" size={32} />
+                        </div>
+                        <Card.Title className="fs-5 fw-semibold text-dark mb-2">Concepts Overview</Card.Title>
+                        <Card.Text className="text-secondary mb-3 fs-6">
+                          View and analyze all the concepts you are guiding your pods through. Get insights into completion rate and engagement level.
+                        </Card.Text>
+                        <Button
+                          onClick={() => navigate('/mentorconcepts')}
+                          variant="info"
+                          className="w-100 py-2 text-white superadmin-button"
+                        >
+                          <LineChart className="me-2" size={18} /> View Stats
+                        </Button>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+
+                  {/* Pods Card */}
+                  <Col className="d-flex justify-content-center">
+                    <Card className="shadow-sm h-100 border-0 rounded-3" style={{ width: '22rem' }}>
+                      <Card.Body className="p-4 text-center">
+                        <div className="p-3 bg-warning-subtle rounded-circle d-inline-flex mb-3">
+                          <Key className="text-warning" size={32} />
+                        </div>
+                        <Card.Title className="fs-5 fw-semibold text-dark mb-2">Manage Pods</Card.Title>
+                        <Card.Text className="text-secondary mb-3 fs-6">
+                          Access and manage all the pods assigned to you. Configure resources, check assignments, and monitor pod and user activity.
+                        </Card.Text>
+                        <Button
+                          onClick={() => navigate('/mentorpods')}
+                          variant="info"
+                          className="w-100 py-2 text-white superadmin-button"
+                        >
+                          <Settings className="me-2" size={18} /> Manage Pods
+                        </Button>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+
+                </Row>
+              </div>
+            </div>
+          )}
+        </Container>
       </div>
     </div>
   );

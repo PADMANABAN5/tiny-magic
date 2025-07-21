@@ -126,3 +126,17 @@ thead.bg-primary th {
     font-size: 1.2rem; /* Ensure text/icon is visible */
   }
 }
+.custom-tooltip {
+  background-color: #e0e0e0 !important; /* light gray */
+  color: black !important;
+  max-width: 250px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.custom-tooltip .concept-item {
+  color: rgb(240, 231, 231);
+  font-weight: 500;
+  font-size: 0.9rem;
+}

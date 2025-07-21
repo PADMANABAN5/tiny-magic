@@ -75,10 +75,11 @@ export default function User() {
       const userPromises = orgs.map(org =>
         axios.get(`${process.env.REACT_APP_API_LINK}/pod-users/all/${org.organization_identifier || org.organization_name}`)
       );
-
+      
       const results = await Promise.all(userPromises);
       const allPodUsers = results.flatMap(res => res.data.data || []);
       setPodUsers(allPodUsers);
+      
 
     } catch (err) {
       console.error('Error fetching pod users:', err);
@@ -86,6 +87,7 @@ export default function User() {
     } finally {
       setLoading(false);
     }
+    
   };
 
   const fetchAllBatchesAndPods = async () => {
@@ -348,20 +350,23 @@ export default function User() {
                     <td>{user.pod?.pod_name || '—'}</td>
                     <td>
   {user.batch?.concepts?.length ? (
-    <OverlayTrigger
-      trigger="click"
-      placement="top"
-      overlay={
-        <Tooltip id={`tooltip-${user.user_id}`}>
-          <ul className="mb-0 ps-3">
-            {user.batch.concepts.map(concept => (
-              <li key={concept.concept_id}>{concept.concept_name}</li>
-            ))}
-          </ul>
-        </Tooltip>
-      }
-      rootClose
-    >
+   <OverlayTrigger
+  trigger="click"
+  placement="top"
+  overlay={
+    <Tooltip id={`tooltip-${user.user_id}`} className="custom-tooltip">
+      <ul className="mb-0 ps-3">
+        {user.batch.concepts.map(concept => (
+          <li key={concept.concept_id} className="concept-item">
+            {concept.concept_name}
+          </li>
+        ))}
+      </ul>
+    </Tooltip>
+  }
+  rootClose
+>
+
       <div
         style={{
           display: 'inline-flex',

@@ -20,6 +20,7 @@ import {
   FiAlertCircle
 } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
+import { FaDownload } from 'react-icons/fa';
 import axios from "axios";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
@@ -511,7 +512,13 @@ function Dashboard() {
       setIsLoading(false);
     }
   };
-
+  const handleDownloadConcept = (downloadLink, conceptName) => {
+  if (!downloadLink) {
+    toast.warn(`No download available for ${conceptName}`);
+    return;
+  }
+  window.open(downloadLink, '_blank');
+};
   const getCurrentStageForAPI = (saveStatus) => {
     // If user is manually setting status, use that
     if (saveStatus === "not_started") {
@@ -1175,29 +1182,45 @@ function Dashboard() {
               </div>
 
               {showConceptDropdown && (
-                <div className="concept-dropdown">
-                  {conceptsLoading ? (
-                    <div className="concept-option">
-                      <div className="concept-name">Loading...</div>
-                    </div>
-                  ) : concepts.length > 0 ? (
-                    concepts.map((concept) => (
-                      <div
-                        key={concept.concept_id}
-                        className="concept-option"
-                        onClick={() => handleConceptSelect(concept)}
-                      >
-                        <div className="concept-name">{concept.concept_name}</div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="concept-option">
-                      <div className="concept-name">No concepts available</div>
-                      <div className="concept-description">Contact your administrator</div>
-                    </div>
-                  )}
-                </div>
-              )}
+  <div className="concept-dropdown">
+    {conceptsLoading ? (
+      <div className="concept-option">
+        <div className="concept-name">Loading...</div>
+      </div>
+    ) : concepts.length > 0 ? (
+      concepts.map((concept) => (
+        <div
+          key={concept.concept_id}
+          className="concept-option flex items-center justify-between cursor-pointer"
+          onClick={() => handleConceptSelect(concept)}
+        >
+          <div className="concept-name">{concept.concept_name}</div>
+          {concept.download_link && (
+            <button
+              className="download-btn1 relative group"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDownloadConcept(concept.download_link, concept.concept_name);
+              }}
+              data-tooltip="Download concept material"
+              aria-label={`Download ${concept.concept_name} material`}
+            >
+              <FiDownload className="w-5 h-5" />
+              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+  Download
+</span>
+            </button>
+          )}
+        </div>
+      ))
+    ) : (
+      <div className="concept-option">
+        <div className="concept-name">No concepts available</div>
+        <div className="concept-description">Contact your administrator</div>
+      </div>
+    )}
+  </div>
+)}
             </div>
           </div>
 

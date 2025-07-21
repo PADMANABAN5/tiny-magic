@@ -31,8 +31,7 @@ import AssessmentDisplay, {
   formatCriterionName 
 } from '../components/AssessmentDisplay.jsx';
 import '../styles/orgadminusers.css';
-
-function Orgadminuserprogress() {
+function MentorPodusersprogress() {
   const navigate = useNavigate();
   const { userId } = useParams();
   const [userData, setUserData] = useState(null);
@@ -880,5 +879,4 @@ function Orgadminuserprogress() {
     </div>
   );
 }
-
-export default Orgadminuserprogress;
+export default MentorPodusersprogress

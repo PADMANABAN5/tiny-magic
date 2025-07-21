@@ -23,6 +23,10 @@ import OrgadminUsers from './pages/OrgadminUsers.jsx';
 import Orgadminuserprogress from './pages/Orgadminuserprogress.jsx';
 import ConversationHistory from './pages/ConversationHistory.jsx';
 import Mentordashboard from './pages/Mentordashboard.jsx';
+import Mentorconcepts from './pages/Mentorconcepts.jsx';
+import Mentorpods from './pages/Mentorpods.jsx';
+import Mentorpodusers from './pages/Mentorpodusers.jsx';
+import MentorPodusersprogress from './pages/MentorPodusersprogress.jsx';
 
 // ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
@@ -120,6 +124,20 @@ function App() {
         <Route path="/mentordashboard" element={
           <PrivateRoute roles={["mentor"]}><Mentordashboard /></PrivateRoute>
         } />
+        <Route path="/mentorconcepts" element={
+          <PrivateRoute roles={["mentor"]}><Mentorconcepts /></PrivateRoute>
+        } />
+        <Route path="/mentorpods" element={
+          <PrivateRoute roles={["mentor"]}><Mentorpods /></PrivateRoute>
+        } />
+        <Route path="/mentorpodusers/:podId" element={
+          <PrivateRoute roles={["mentor"]}><Mentorpodusers /></PrivateRoute>
+        }/>
+        <Route path="/mentorpodusersprogress/:userId" element={
+          <PrivateRoute roles={["mentor"]}><MentorPodusersprogress /></PrivateRoute>
+        }/>
+
+        {/* Redirect to login if no route matches */}
       </Routes>
     </Router>
   );

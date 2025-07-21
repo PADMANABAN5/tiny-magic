@@ -5,7 +5,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 // Set up pdfMake fonts
 pdfMake.vfs = pdfFonts.vfs;
 
-const PDFDownloader = ({ chatHistory, selectedConcept }) => {
+const PDFDownloader = ({ chatHistory, selectedConcept, first_name, last_name, updated_at }) => {
   // Helper function to remove emojis
   const removeEmojis = (text) =>
     text.replace(
@@ -490,11 +490,16 @@ const PDFDownloader = ({ chatHistory, selectedConcept }) => {
       pageMargins: [40, 60, 40, 60],
     };
 
-    // Generate and download PDF
-    const fileName = selectedConcept 
-      ? `learning-session-${selectedConcept.concept_name.replace(/\s+/g, '-').toLowerCase()}.pdf`
-      : 'learning-session.pdf';
-      
+   const userFirstName = first_name || "no-firstname";
+   const userLastName = last_name || "no-lastname";
+   const conceptName = selectedConcept?.concept_name?.replace(/\s+/g, "_") || "no-concept";
+   const formattedTimestamp = updated_at
+  ? new Date(updated_at).toISOString().replace(/[:.]/g, "-")
+  : new Date().toISOString().replace(/[:.]/g, "-");
+
+   const fileName = `${userFirstName}_${userLastName}_${conceptName}_${formattedTimestamp}.pdf`;
+
+
     pdfMake.createPdf(docDefinition).download(fileName);
   };
 

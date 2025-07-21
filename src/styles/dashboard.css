@@ -449,6 +449,72 @@ html, body {
   flex: 1; /* Allow cards to grow */
   min-height: 40px; /* Minimum height for consistency */
 }
+.concept-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+}
+.concept-option:hover {
+  background-color: #f3f4f6;
+}
+.concept-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.download-btn1 {
+  position: relative;
+  margin-left: 0.5rem;
+  background-color: #f9fafb;
+  border: none;
+  padding: 6px;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s, transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.download-btn1:hover {
+  background-color: #e5f0ff;
+  transform: scale(1.05);
+}
+
+.download-btn1 svg {
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.download-btn1:hover svg {
+  color: #2563eb; /* Tailwind blue-600 */
+}
+
+/* Tooltip styling */
+.download-btn1 span {
+  display: none;
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #4b5563; /* Tailwind gray-700 */
+  color: #fff;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+}
+
+.download-btn1:hover span {
+  display: block;
+  opacity: 1;
+}
 
 .stage-card.active {
   border-color: #667eea;
