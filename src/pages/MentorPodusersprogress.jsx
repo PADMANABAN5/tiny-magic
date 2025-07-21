@@ -433,7 +433,7 @@ function MentorPodusersprogress() {
                   'Summarizing': conversation.scoring.understanding_skills.summarizing_confirming,
                   'Challenging Ideas': conversation.scoring.understanding_skills.challenging_ideas,
                   'Comparing Concepts': conversation.scoring.understanding_skills.comparing_concepts,
-                  'Abstract Thinking': conversation.scoring.understanding_skills.abstract_concrete
+                  'Abstract vs Concrete': conversation.scoring.understanding_skills.abstract_concrete
                 }).map(([key, value]) => (
                   <div key={key} className="mini-item">
                     <span>{key}</span>

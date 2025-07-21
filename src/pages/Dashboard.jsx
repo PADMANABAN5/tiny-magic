@@ -492,7 +492,7 @@ function Dashboard() {
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
 
-        setCurrentStage(7);
+        // setCurrentStage(7);
         setCurrentChatStatus('completed');
 
         if (newInteractionCompleted) {
@@ -523,19 +523,17 @@ function Dashboard() {
     // If user is manually setting status, use that
     if (saveStatus === "not_started") {
       return 0;
-    } else if (saveStatus === "completed") {
-      return 5;
-    } else if (saveStatus === "inprogress") {
+    } else if (saveStatus === "inprogress" || saveStatus === "completed") {
       // For inprogress, calculate stage based on current frontend state
       if (currentStage === 0) return 0; // Just started, no progress yet
-      if (currentStage === 7) return 5; // Assessment completed = stage 5
       return Math.min(Math.max(currentStage - 1, 0), 5); // Convert progress stages 1-6 to API stages 0-5
     }
+ 
 
     // Fallback: determine from current frontend state
     const frontendStatus = getStageStatus();
     if (frontendStatus === 'not-started') return 0;
-    if (frontendStatus === 'completed') return 5;
+    // if (frontendStatus === 'completed') return 5;
 
     // For in-progress, map currentStage to API stage
     if (currentStage === 0) return 0;

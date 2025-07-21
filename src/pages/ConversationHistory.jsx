@@ -59,6 +59,7 @@ const ConversationHistory = () => {
   // Get user data from session storage
   const userId = sessionStorage.getItem("userId");
   const username = sessionStorage.getItem("username");
+  const [userData, setUserData] = useState(null);
 
   // Convert conversation to format expected by PDFDownloader
   const convertConversationForPDF = (conversation) => {
@@ -69,16 +70,16 @@ const ConversationHistory = () => {
       system: entry.system || ""
     }));
   };
+  useEffect(() => {
+  const storedUser = JSON.parse(sessionStorage.getItem("user"));
+  if (storedUser) {
+    setUserData(storedUser);
+  }
+}, []);
 
   // Create concept object for PDFDownloader
   const createConceptObject = (conversation) => ({
     concept_name: conversation.concept_name || "Learning Session"
-  });
-
-  // Initialize PDF downloader for the selected conversation
-  const { handleDownloadPDF } = PDFDownloader({
-    chatHistory: selectedConversation ? convertConversationForPDF(selectedConversation) : [],
-    selectedConcept: selectedConversation ? createConceptObject(selectedConversation) : null
   });
 
   // Handle PDF download with loading state
@@ -91,7 +92,10 @@ const ConversationHistory = () => {
       // Create temporary PDF downloader instance for this specific conversation
       const tempPDFDownloader = PDFDownloader({
         chatHistory: convertConversationForPDF(conversation),
-        selectedConcept: createConceptObject(conversation)
+        selectedConcept: createConceptObject(conversation),
+        first_name: userData?.first_name || sessionStorage.getItem("firstname"),
+        last_name: userData?.last_name || sessionStorage.getItem("lastname"),
+        updated_at: conversation.updated_at
       });
 
       // Call the PDF generation
@@ -572,7 +576,7 @@ const ConversationHistory = () => {
                   'Summarizing': conversation.scoring.understanding_skills.summarizing_confirming,
                   'Challenging Ideas': conversation.scoring.understanding_skills.challenging_ideas,
                   'Comparing Concepts': conversation.scoring.understanding_skills.comparing_concepts,
-                  'Abstract Thinking': conversation.scoring.understanding_skills.abstract_concrete
+                  'Abstract vs Concrete': conversation.scoring.understanding_skills.abstract_concrete
                 }).map(([key, value]) => (
                   <div key={key} className="mini-item">
                     <span>{key}</span>

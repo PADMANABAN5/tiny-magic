@@ -490,8 +490,8 @@ const PDFDownloader = ({ chatHistory, selectedConcept, first_name, last_name, up
       pageMargins: [40, 60, 40, 60],
     };
 
-   const userFirstName = first_name || "no-firstname";
-   const userLastName = last_name || "no-lastname";
+   const userFirstName = first_name || sessionStorage.getItem("firstname");
+   const userLastName = last_name || sessionStorage.getItem("lastname");
    const conceptName = selectedConcept?.concept_name?.replace(/\s+/g, "_") || "no-concept";
    const formattedTimestamp = updated_at
   ? new Date(updated_at).toISOString().replace(/[:.]/g, "-")
