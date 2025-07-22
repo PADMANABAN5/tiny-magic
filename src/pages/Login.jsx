@@ -94,7 +94,7 @@ function Login() {
           navigate("/orgadmin");
           break;
         case "mentor":
-          navigate("/mentordashboard");
+          navigate("/mentorpods");
           break;
         default:
           setError("Unknown role");

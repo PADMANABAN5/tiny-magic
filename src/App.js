@@ -43,7 +43,7 @@ function getRedirectPath() {
       case "orgadmin":
         return "/orgadmin";
       case "mentor":
-        return "/mentordashboard";
+        return "/mentorpods";
       case "orguser":
         return selectedModel ? "/dashboard" : "/login";
       default:
