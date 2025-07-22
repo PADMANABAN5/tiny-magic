@@ -65,10 +65,14 @@ function Mentorpods() {
    * --------------------------------------------------------- */
   const [filterStartDate, setFilterStartDate] = useState(null); // Will store Date object or null
   const [filterEndDate, setFilterEndDate] = useState(null);   // Will store Date object or null
+  const [currentPodPage, setCurrentPodPage] = useState(1);
+  const podsPerPage = 8;
+  const totalPodPages = Math.ceil(pods.length / podsPerPage);
+const currentPagePods = pods.slice(
+  (currentPodPage - 1) * podsPerPage,
+  currentPodPage * podsPerPage
+);
 
-  /* -----------------------------------------------------------
-   * Fetch pods
-   * --------------------------------------------------------- */
   useEffect(() => {
     const fetchPods = async () => {
       if (!email) {
@@ -489,11 +493,12 @@ function Mentorpods() {
                 <Card className="shadow-sm rounded-3 mb-4">
                   <Card.Body>
                     <div className="table-responsive">
-                      <table
+                      <table 
+                        className="table table-striped table-bordered table-hover"
                         id="mentor-progress-report-table"
                         style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}
                       >
-                        <thead>
+                        <thead className="bg-primary text-white">
                           <tr style={{ backgroundColor: '#f2f2f2' }}>
                             <th style={thStyle}>Full Name</th>
                             <th style={thStyle}>Email</th>
@@ -543,55 +548,78 @@ function Mentorpods() {
           )}
 
           {!pageLoading && !podsError && pods.length > 0 && (
-            <div className="d-flex flex-wrap gap-4">
-              {pods.map((pod) => (
-                <Card
-                  key={pod.pod_id}
-                  className="shadow-sm rounded-3 border-primary clickable-card"
-                  style={{
-                    width: '300px',
-                    cursor: 'pointer',
-                    transition: 'transform 0.2s ease-in-out, box-shadow 0.3s ease',
-                    boxShadow: '0 10px 10px rgba(33, 180, 234, 0.1)',
-                  }}
-                  onClick={() => navigate(`/mentorpodusers/${pod.pod_id}`)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'scale(1.03)';
-                    e.currentTarget.style.boxShadow = '0 12px 20px rgba(33, 180, 234, 0.3)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = '0 10px 10px rgba(33, 180, 234, 0.1)';
-                  }}
-                >
-                  <Card.Header className="fw-bold fs-5 text-white bg-primary text-center">
-                    {pod.pod_name}
-                    <Badge bg={pod.pod_is_active ? 'success' : 'secondary'} className="ms-2">
-                      {pod.pod_is_active ? 'Active' : 'Inactive'}
-                    </Badge>
-                  </Card.Header>
+  <>
+    <div className="d-flex flex-wrap gap-4 justify-content-center">
+      {currentPagePods.map((pod) => (
+        <Card
+          key={pod.pod_id}
+          className="shadow-sm rounded-3 border-primary clickable-card"
+          style={{
+            width: '300px',
+            cursor: 'pointer',
+            transition: 'transform 0.2s ease-in-out, box-shadow 0.3s ease',
+            boxShadow: '0 10px 10px rgba(33, 180, 234, 0.1)',
+          }}
+          onClick={() => navigate(`/mentorpodusers/${pod.pod_id}`)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = 'scale(1.03)';
+            e.currentTarget.style.boxShadow = '0 12px 20px rgba(33, 180, 234, 0.3)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = 'scale(1)';
+            e.currentTarget.style.boxShadow = '0 10px 10px rgba(33, 180, 234, 0.1)';
+          }}
+        >
+          <Card.Header className="fw-bold fs-5 text-white bg-primary text-center">
+            {pod.pod_name}
+            <Badge bg={pod.pod_is_active ? 'success' : 'secondary'} className="ms-2">
+              {pod.pod_is_active ? 'Active' : 'Inactive'}
+            </Badge>
+          </Card.Header>
 
-                  <Card.Body>
-                    <Card.Title className="text-center mb-3">Pod Details</Card.Title>
+          <Card.Body>
+            <Card.Title className="text-center mb-3">Pod Details</Card.Title>
 
-                    <div className="d-flex flex-column gap-2 align-items-center">
-                      <Badge bg="info" className="p-2 text-wrap text-center">
-                        Organization: {pod.organization_name}
-                      </Badge>
+            <div className="d-flex flex-column gap-2 align-items-center">
+              <Badge bg="info" className="p-2 text-wrap text-center">
+                Organization: {pod.organization_name}
+              </Badge>
 
-                      <Badge bg="secondary" className="p-2 text-wrap text-center">
-                        Batch: {pod.batch_name}
-                      </Badge>
+              <Badge bg="secondary" className="p-2 text-wrap text-center">
+                Batch: {pod.batch_name}
+              </Badge>
 
-                      <Badge bg="warning" className="p-2 text-wrap text-center text-dark">
-                        Batch Size: {pod.batch_size}
-                      </Badge>
-                    </div>
-                  </Card.Body>
-                </Card>
-              ))}
+              <Badge bg="warning" className="p-2 text-wrap text-center text-dark">
+                Batch Size: {pod.batch_size}
+              </Badge>
             </div>
-          )}
+          </Card.Body>
+        </Card>
+      ))}
+    </div>
+
+    {totalPodPages > 1 && (
+      <div className="d-flex justify-content-center mt-4">
+        <Pagination>
+          <Pagination.First onClick={() => setCurrentPodPage(1)} disabled={currentPodPage === 1} />
+          <Pagination.Prev onClick={() => setCurrentPodPage((p) => Math.max(1, p - 1))} disabled={currentPodPage === 1} />
+          {[...Array(totalPodPages)].map((_, idx) => (
+            <Pagination.Item
+              key={idx + 1}
+              active={idx + 1 === currentPodPage}
+              onClick={() => setCurrentPodPage(idx + 1)}
+            >
+              {idx + 1}
+            </Pagination.Item>
+          ))}
+          <Pagination.Next onClick={() => setCurrentPodPage((p) => Math.min(totalPodPages, p + 1))} disabled={currentPodPage === totalPodPages} />
+          <Pagination.Last onClick={() => setCurrentPodPage(totalPodPages)} disabled={currentPodPage === totalPodPages} />
+        </Pagination>
+      </div>
+    )}
+  </>
+)}
+
         </Container>
       </div>
     </div>

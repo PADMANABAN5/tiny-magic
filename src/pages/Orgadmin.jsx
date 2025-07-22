@@ -493,8 +493,8 @@ function Orgadmin() {
                 <Card className="shadow-sm rounded-3 mb-4">
                   <Card.Body>
                     <div className="table-responsive">
-                      <table id="progress-report-table" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
-                        <thead>
+                      <table id="progress-report-table" className="table table-striped table-bordered table-hover" style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
+                        <thead className="bg-primary text-white">
                           <tr style={{ backgroundColor: '#f2f2f2' }}>
                             <th style={thStyle}>Full Name</th>
                             <th style={thStyle}>Email</th>
