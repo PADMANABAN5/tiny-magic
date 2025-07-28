@@ -98,7 +98,7 @@ export const getScoreLabel = (score) => {
 };
 
 // Format criterion name from camelCase to readable format
-export const formatCriterionName = (name) => {
+export const formatCriterionName = (name) => {console.log(name);
   return name.replace(/([A-Z])/g, ' $1').trim();
 };
 
@@ -192,7 +192,7 @@ export const ScoringTable = ({ content }) => {
         <div className="scoring-section">
           <h5>🎯 Understanding Skills</h5>
           <div className="scoring-grid">
-            {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map((key) => {
+            {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractvsConcrete"].map((key) => {
               if (!scoringData.UnderstandingSkills[key]) return null;
 
               const skillData = scoringData.UnderstandingSkills[key];
@@ -308,13 +308,12 @@ export const OverallScoreAndSummary = ({ content }) => {
               </div>
             </div>
           )}
-
           {/* Understanding Skills Breakdown */}
           {scoringData.UnderstandingSkills && (
             <div className="breakdown-section">
               <h6>🎯 Understanding Skills</h6>
               <div className="breakdown-grid">
-                {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map(skill => {
+                {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractvsConcrete"].map(skill => {
                   if (!scoringData.UnderstandingSkills[skill]) return null;
                   const score = scoringData.UnderstandingSkills[skill].score || 0;
                   const color = getScoreColor(score);

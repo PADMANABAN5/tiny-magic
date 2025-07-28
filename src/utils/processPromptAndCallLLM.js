@@ -31,22 +31,42 @@ const processTemplate = (templateContent, selectedConcept) => {
   return processedContent;
 };
 
-const loadTemplate = async (templateName) => {
+const loadTemplate = async (templateName, organization_id, batch_id) => {
+  if (!organization_id || !batch_id) {
+    throw new Error(`Missing organization_id or batch_id for template: ${templateName}`);
+  }
+
   try {
-    const response = await fetch(`/data/${templateName}.txt`);
+    const response = await fetch(
+      `http://localhost:5000/api/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`
+    );
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText} - File not found: /data/${templateName}.txt`);
+      throw new Error(`Fallback API failed: ${response.status} ${response.statusText}`);
     }
 
-    const content = await response.text();
-    return content;
+    const data = await response.json();
+
+    // NEW: Extract from array
+    const matchingPrompt = data?.data?.find(
+      (item) => item.prompt_type === templateName
+    );
+
+    const template = matchingPrompt?.prompt_content;
+
+    if (!template) {
+      throw new Error(`Template content not found in fallback response for ${templateName}`);
+    }
+
+    return template;
 
   } catch (error) {
-    console.error(`❌ Error loading template ${templateName}:`, error);
-    throw new Error(`Failed to load template: ${templateName}. Please ensure the file exists in public/data/${templateName}.txt`);
+    console.error(`❌ Error loading template from fallback API for ${templateName}:`, error);
+    throw error;
   }
 };
+
+
 
 // Integrated OpenAI GPT-4o API call function
 const callOpenAI = async (messages) => {
@@ -98,26 +118,34 @@ const callOpenAI = async (messages) => {
 export const processPromptAndCallLLM = async ({
   username,
   selectedPrompt,
-  selectedModel, // This parameter is now ignored since we're using GPT-4o only
+  selectedModel,
   sessionHistory,
   userPrompt,
-  selectedConcept, // Add selectedConcept parameter
+  selectedConcept,
+  organizationId, // ✅ add this
+  batchId          // ✅ add this
 }) => {
+
   try {
     // Load the appropriate template
-    let templateContent;
-    try {
-      if (selectedPrompt === 'conceptMentor') {
-        templateContent = await loadTemplate('conceptMentor');
-      } else if (selectedPrompt === 'assessmentPrompt') {
-        templateContent = await loadTemplate('assessmentPrompt');
-      } else {
-        throw new Error(`Unknown prompt type: ${selectedPrompt}`);
-      }
-    } catch (templateError) {
-      console.error('Template loading failed:', templateError);
-      throw new Error(`Failed to load template for ${selectedPrompt}. Please ensure the template file exists.`);
-    }
+   // Load the appropriate template using fallback API only
+let templateContent;
+try {
+  console.log("📦 Loading template with", {
+    selectedPrompt,
+    organizationId,
+    batchId
+  });
+  templateContent = await loadTemplate(
+    selectedPrompt,
+    organizationId,
+    batchId
+  );
+} catch (templateError) {
+  console.error('Template loading failed:', templateError);
+  throw new Error(`Failed to load template for ${selectedPrompt}. Please ensure the fallback API is reachable.`);
+}
+
 
     // Process template with selected concept data
     const processedSystemContent = processTemplate(templateContent, selectedConcept);
@@ -169,9 +197,13 @@ export const processPromptAndCallLLM = async ({
     };
 
     if (selectedPrompt === 'assessmentPrompt') {
-      parsedResponse.apiResponseText = llmResponse;
-      return parsedResponse;
-    }
+  console.log("📤 Assessment LLM raw response:", llmResponse); // Add this line
+  parsedResponse.apiResponseText = llmResponse;
+  return parsedResponse;
+}
+if (!llmResponse || llmResponse.trim() === "") {
+  parsedResponse.apiResponseText = "⚠️ No assessment response was generated.";
+}
     try {
       try {
         const parsed = JSON.parse(llmResponse.trim());

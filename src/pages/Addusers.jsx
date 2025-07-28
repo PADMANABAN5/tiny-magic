@@ -3,7 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft,FaPlus,FaEdit} from 'react-icons/fa';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer,Form } from 'react-bootstrap';
 import '../styles/OrgList.css';
 
 export default function Addusers() {
@@ -22,11 +22,14 @@ export default function Addusers() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [toastMessage, setToastMessage] = useState('');
   const [toastBg, setToastBg] = useState('primary');
   const [showToast, setShowToast] = useState(false);
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+const [selectedOrganization, setSelectedOrganization] = useState('');
+
 
 
   const capitalize = (str) =>
@@ -64,84 +67,158 @@ export default function Addusers() {
   };
 
   const handleCreateUser = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const trimmedUser = {
-      organization_name: newUser.organization_name.trim(),
-      email: newUser.email.trim(),
-      first_name: capitalize(newUser.first_name.trim()),
-      last_name: capitalize(newUser.last_name.trim()),
-      password: newUser.password.trim()
-    };
+  const trimmedUser = {
+    organization_name: newUser.organization_name.trim(),
+    email: newUser.email.trim(),
+    first_name: capitalize(newUser.first_name.trim()),
+    last_name: capitalize(newUser.last_name.trim()),
+    password: newUser.password.trim()
+  };
 
-    if (!trimmedUser.organization_name || !trimmedUser.first_name || !trimmedUser.last_name) {
-      alert("Organization, First Name, and Last Name are required.");
-      return;
-    }
-
-    const payload = {
-      organization_name: trimmedUser.organization_name,
-      first_name: trimmedUser.first_name,
-      last_name: trimmedUser.last_name
-    };
-
-    if (trimmedUser.email) payload.email = trimmedUser.email;
-    if (trimmedUser.password) payload.password = trimmedUser.password;
-
-    try {
-  await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload);
-  setShowModal(false);
-  setNewUser({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
-  fetchOrgUsers();
-
-  setToastMessage('User created successfully!');
-  setToastBg('primary');
-  setShowToast(true);
-} catch (err) {
-  if (err.response?.status === 409) {
-    setToastMessage('User already exists!');
+  if (!trimmedUser.organization_name || !trimmedUser.first_name || !trimmedUser.last_name) {
+    setToastMessage('Organization, First Name, and Last Name are required.');
     setToastBg('warning');
     setShowToast(true);
-  } else {
-    alert('Failed to create user.');
+    return;
   }
-}
 
+  const payload = {
+    organization_name: trimmedUser.organization_name,
+    first_name: trimmedUser.first_name,
+    last_name: trimmedUser.last_name
   };
+
+  if (trimmedUser.email) payload.email = trimmedUser.email;
+  if (trimmedUser.password) payload.password = trimmedUser.password;
+
+  try {
+    await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload);
+    setShowModal(false);
+    setNewUser({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
+    fetchOrgUsers();
+
+    setToastMessage('User created successfully!');
+    setToastBg('primary'); // Changed to primary for consistency
+    setShowToast(true);
+  } catch (err) {
+    let errorMessage = 'Failed to create user.';
+    
+    if (err.response) {
+      switch (err.response.status) {
+        case 400:
+          errorMessage = err.response.data.message || 'Bad request: Invalid input data.';
+          break;
+        
+        case 409:
+          errorMessage = 'User already exists!';
+          break;
+        case 422:
+          errorMessage = 'Validation error: ' + 
+            (err.response.data.errors?.map(e => e.msg).join(', ') || 'Invalid data');
+          break;
+        case 500:
+          errorMessage = 'Server error: Please try again later.';
+          break;
+        default:
+          errorMessage = `Error: ${err.response.status} - ${err.response.statusText}`;
+      }
+    } else if (err.request) {
+      errorMessage = 'Network error: Could not connect to server.';
+    } else {
+      errorMessage = 'Error: ' + err.message;
+    }
+
+    setToastMessage(errorMessage);
+    setToastBg('warning');
+    setShowToast(true);
+  }
+};
 
   const handleUpdateUser = async (e) => {
-    e.preventDefault();
-    const updatedUser = {
-      username: editingUser.username?.trim() || '',
-      email: editingUser.email?.trim() || '',
-      first_name: editingUser.first_name?.trim() || '',
-      last_name: editingUser.last_name?.trim() || '',
-      password: editingUser.password?.trim() || ''
-    };
+  e.preventDefault();
+  
+  // Validate required fields
+  if (!editingUser.first_name?.trim() || !editingUser.last_name?.trim()) {
+    setToastMessage('First Name and Last Name are required.');
+    setToastBg('warning');
+    setShowToast(true);
+    return;
+  }
 
-   try {
-      await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingUser.user_id}`, updatedUser);
-      setToastBg('primary');
-      setToastMessage('User updated successfully!');
-      setShowToast(true);
-      setShowEditModal(false);
-      setEditingUser(null);
-      fetchOrgUsers();
-    } catch (error) {
-      console.error("Update failed", error);
-      alert("Failed to update user.");
-    }
+  const updatedUser = {
+    username: editingUser.username?.trim() || '',
+    email: editingUser.email?.trim() || '',
+    first_name: capitalize(editingUser.first_name.trim()),
+    last_name: capitalize(editingUser.last_name.trim()),
+    password: editingUser.password?.trim() || ''
   };
 
+  try {
+    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingUser.user_id}`, updatedUser);
+    setShowEditModal(false);
+    setEditingUser(null);
+    fetchOrgUsers();
+
+    setToastMessage('User updated successfully!');
+    setToastBg('primary'); // Changed to primary for consistency
+    setShowToast(true);
+  } catch (err) {
+    let errorMessage = 'Failed to update user.';
+    
+    if (err.response) {
+      switch (err.response.status) {
+        case 400:
+          errorMessage = err.response.data.message || 
+            (err.response.data.error?.message || 'Bad request: Invalid input data.');
+          break;
+        case 404:
+          errorMessage = 'User not found.';
+          break;
+        case 409:
+          errorMessage = 'Conflict: ' + 
+            (err.response.data.message || 'Username or email already exists.');
+          break;
+        case 422:
+          errorMessage = 'Validation error: ' + 
+            (err.response.data.errors?.map(e => e.msg).join(', ') || 'Invalid data');
+          break;
+        case 500:
+          errorMessage = 'Server error: Please try again later.';
+          break;
+        default:
+          errorMessage = `Error: ${err.response.status} - ${err.response.statusText}`;
+      }
+    } else if (err.request) {
+      errorMessage = 'Network error: Could not connect to server.';
+    } else {
+      errorMessage = 'Error: ' + err.message;
+    }
+
+    console.error("Update failed", err);
+    setToastMessage(errorMessage);
+    setToastBg('warning');
+    setShowToast(true);
+  }
+};
   useEffect(() => {
     fetchOrgUsers();
     fetchOrganizations();
   }, []);
+  
+  const filteredUsers = orgUsers.filter((user) => {
+  const fullName = `${user.first_name} ${user.last_name}`.toLowerCase();
+  const matchesFullName = fullName.includes(searchTerm.toLowerCase());
+  const matchesOrganization =
+    !selectedOrganization || user.organization_name === selectedOrganization;
+  return matchesFullName && matchesOrganization;
+});
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentUsers = orgUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(orgUsers.length / itemsPerPage);
+  const currentUsers = filteredUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   return (
@@ -164,7 +241,59 @@ export default function Addusers() {
                                      <FaPlus />
             </button>
           </div>
-          
+          <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
+  <div className="d-flex align-items-center">
+    <span className="me-2">Show entries:</span>
+    <Form.Select
+      style={{ width: '100px' }}
+      value={itemsPerPage}
+      onChange={(e) => {
+        setCurrentPage(1);
+        setItemsPerPage(Number(e.target.value));
+      }}
+    >
+      {[5, 10, 15, 20, 50].map((num) => (
+        <option key={num} value={num}>
+          {num}
+        </option>
+      ))}
+    </Form.Select>
+  </div>
+
+        <div className="d-flex gap-3 mb-3">
+  {/* Full Name Filter */}
+  <input
+    type="text"
+    className="form-control"
+    style={{ maxWidth: '250px' }}
+    placeholder="Search by Full Name..."
+    value={searchTerm}
+    onChange={(e) => {
+      setSearchTerm(e.target.value);
+      setCurrentPage(1); // reset pagination
+    }}
+  />
+
+  {/* Organization Filter */}
+  <select
+    className="form-select"
+    style={{ maxWidth: '200px' }}
+    value={selectedOrganization}
+    onChange={(e) => {
+      setSelectedOrganization(e.target.value);
+      setCurrentPage(1); // reset pagination
+    }}
+  >
+    <option value="">All Organizations</option>
+    {organizations.map((org) => (
+      <option key={org.organization_id} value={org.organization_name}>
+        {org.organization_name}
+      </option>
+    ))}
+  </select>
+</div>
+</div>
+
 
           {loading ? (
             <p>Loading users...</p>
@@ -179,8 +308,8 @@ export default function Addusers() {
                     <th>Organization</th>
                     <th>Email</th>
                     <th>Username</th>
-                    <th>First Name</th>
-                    <th>Last Name</th>
+                    <th>Full Name</th>
+                  
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -191,8 +320,7 @@ export default function Addusers() {
                         <td>{user.organization_name}</td>
                         <td>{user.email}</td>
                         <td>{user.username || '-'}</td>
-                        <td>{user.first_name}</td>
-                        <td>{user.last_name}</td>
+                        <td>{`${user.first_name} ${user.last_name}`}</td>
                         <td>
                           <button
                             className="btn btn-sm btn-warning"
@@ -208,7 +336,7 @@ export default function Addusers() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="6" className="text-center">No users found.</td>
+                      <td colSpan="5" className="text-center">No users found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -216,24 +344,42 @@ export default function Addusers() {
               </div>
 
               {totalPages > 1 && (
-                <div className="d-flex justify-content-center mt-4">
-                  <Pagination>
-                    <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                    {[...Array(totalPages).keys()].map((num) => (
-                      <Pagination.Item
-                        key={num + 1}
-                        active={num + 1 === currentPage}
-                        onClick={() => handlePageChange(num + 1)}
-                      >
-                        {num + 1}
-                      </Pagination.Item>
-                    ))}
-                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
-                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
-                  </Pagination>
-                </div>
-              )}
+                              <div className="d-flex justify-content-center mt-4">
+                                <Pagination>
+                                  <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                                  <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                            
+                                  {(() => {
+                                    const pageNumbers = [];
+                                    const visiblePages = 5;
+                                    let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                                    let endPage = startPage + visiblePages - 1;
+                            
+                                    if (endPage > totalPages) {
+                                      endPage = totalPages;
+                                      startPage = Math.max(1, endPage - visiblePages + 1);
+                                    }
+                            
+                                    for (let i = startPage; i <= endPage; i++) {
+                                      pageNumbers.push(
+                                        <Pagination.Item
+                                          key={i}
+                                          active={i === currentPage}
+                                          onClick={() => handlePageChange(i)}
+                                        >
+                                          {i}
+                                        </Pagination.Item>
+                                      );
+                                    }
+                            
+                                    return pageNumbers;
+                                  })()}
+                            
+                                  <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                                  <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                                </Pagination>
+                              </div>
+                            )}
             
             </>
           )}
@@ -363,10 +509,10 @@ export default function Addusers() {
                <input
                 type="password"
                 className="form-control"
-                value={newUser.password}
+                value={editingUser.password || ''}
                 onChange={(e) => {
                   const value = e.target.value;
-                  setNewUser({ ...newUser, password: value });
+                  setEditingUser({ ...editingUser, password: value });
                   e.target.setCustomValidity(
                     value && value.length < 8 ? 'Password must be at least 8 characters long.' : ''
                   );

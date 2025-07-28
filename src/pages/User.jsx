@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination, Toast, ToastContainer,Badge,OverlayTrigger, Tooltip } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer, Badge, OverlayTrigger, Tooltip } from 'react-bootstrap';
 import '../styles/OrgList.css';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft,FaPlus,FaEdit } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus, FaEdit } from 'react-icons/fa';
 
 export default function User() {
   const navigate = useNavigate();
   const [podUsers, setPodUsers] = useState([]);
   const [organizations, setOrganizations] = useState([]);
-  const [batches, setBatches] = useState([]); // All batches from API
-  const [pods, setPods] = useState([]);     // All pods from API
+  const [batches, setBatches] = useState([]);
+  const [pods, setPods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -21,29 +21,34 @@ export default function User() {
 
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [progressText, setProgressText] = useState('');
-
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 7;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const [unassignedOrgUsers, setUnassignedOrgUsers] = useState([]);
   const [tempSelectedUsers, setTempSelectedUsers] = useState([]);
   const [userSearchTerm, setUserSearchTerm] = useState('');
 
-  // States for filtered dropdown options
   const [filteredBatches, setFilteredBatches] = useState([]);
   const [filteredPods, setFilteredPods] = useState([]);
-  
-   const [showToast, setShowToast] = useState(false);
-   const [toastMessage, setToastMessage] = useState('');
-   const [toastBg, setToastBg] = useState('primary');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastBg, setToastBg] = useState('primary');
+
+  // State for filters
+  const [filters, setFilters] = useState({
+    organization_name: '',
+    batch_name: '', // Added for batch name filter
+    pod_name: '',
+  });
+
   // Form state for adding new user(s)
   const [newUser, setNewUser] = useState({
     organization_name: '',
-    batch_name: '', // Kept for display/potentially backend
-    batch_id: '',   // Crucial for filtering pods
-    pod_name: '',   // Kept for display/potentially backend
-    pod_id: '',     // Crucial for adding pod user
-    users: [],      // Array of user emails
+    batch_name: '',
+    batch_id: '',
+    pod_name: '',
+    pod_id: '',
+    users: [],
   });
 
   // --- API Fetching Functions ---
@@ -63,31 +68,24 @@ export default function User() {
   const fetchAllUsers = async () => {
     setLoading(true);
     try {
-      const orgs = await fetchOrganizations(); // Ensure organizations are fetched first
-
+      const orgs = await fetchOrganizations();
       if (orgs.length === 0) {
         setPodUsers([]);
         setLoading(false);
         return;
       }
-
-      // Fetch pod users for each organization
       const userPromises = orgs.map(org =>
         axios.get(`${process.env.REACT_APP_API_LINK}/pod-users/all/${org.organization_identifier || org.organization_name}`)
       );
-      
       const results = await Promise.all(userPromises);
       const allPodUsers = results.flatMap(res => res.data.data || []);
       setPodUsers(allPodUsers);
-      
-
     } catch (err) {
       console.error('Error fetching pod users:', err);
       setError('Failed to load pod users');
     } finally {
       setLoading(false);
     }
-    
   };
 
   const fetchAllBatchesAndPods = async () => {
@@ -129,42 +127,42 @@ export default function User() {
       alert('Please ensure Organization, Batch, and Pod are selected.');
       return;
     }
-
-   try {
-  const usersToAssign = newUser.users.map(user => ({
-    user_identifier: user.email || user.username || user.user_id
-  }));
-
-  await axios.post(`${process.env.REACT_APP_API_LINK}/pod-users`, {
-    organization_name: newUser.organization_name,
-    batch_name: newUser.batch_name,
-    pod_name: newUser.pod_name,
-    batch_id: newUser.batch_id,
-    pod_id: newUser.pod_id,
-    users: usersToAssign,
-  });
-
-  setToastMessage('User(s) added successfully');
-  setToastBg('primary');
-  setShowToast(true);
-
-  setShowAddUserModal(false);
-  setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
-  setTempSelectedUsers([]);
-  fetchAllUsers();
-
-} catch (err) {
-  console.error('Error adding user:', err);
-  if (err.response?.status === 409) {
-    setToastMessage(err.response.data.message || 'Conflict: User already exists');
-    setToastBg('warning');
-    setShowToast(true);
-  } else {
-    alert(`Failed to add user: ${err.response?.data?.message || err.message}`);
-  }
-}
-
-};
+    try {
+      const usersToAssign = newUser.users.map(user => ({
+        user_identifier: user.email || user.username || user.user_id
+      }));
+      await axios.post(`${process.env.REACT_APP_API_LINK}/pod-users`, {
+        organization_name: newUser.organization_name,
+        batch_name: newUser.batch_name,
+        pod_name: newUser.pod_name,
+        batch_id: newUser.batch_id,
+        pod_id: newUser.pod_id,
+        users: usersToAssign,
+      });
+      setToastMessage('User(s) added successfully');
+      setToastBg('primary');
+      setShowToast(true);
+      setShowAddUserModal(false);
+      setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
+      setTempSelectedUsers([]);
+      fetchAllUsers();
+    } catch (err) {
+      console.error('Error adding user:', err);
+      let message = 'Failed to add user';
+      if (err.response?.status === 409) {
+        message = err.response.data.message || 'One or more users are already assigned';
+        setToastBg('warning');
+      } else if (err.response?.status === 400) {
+        message = err.response.data.message || 'Invalid input provided';
+        setToastBg('warning');
+      } else {
+        message = err.response?.data?.message || 'An unexpected error occurred';
+        setToastBg('warning');
+      }
+      setToastMessage(message);
+      setShowToast(true);
+    }
+  };
 
   const handleProgressModal = (userId) => {
     setSelectedUserId(userId);
@@ -174,28 +172,25 @@ export default function User() {
 
   const handleInlineProgressUpdate = async () => {
     try {
-  const formattedProgress = JSON.parse(progressText);
-  await axios.put(`${process.env.REACT_APP_API_LINK}/pod-users/${selectedUserId}`, {
-    progress: formattedProgress
-  });
-
-  setToastMessage('Progress updated successfully');
-  setToastBg('primary');
-  setShowToast(true);
-
-  setShowProgressModal(false);
-  fetchAllUsers();
-} catch (err) {
-  console.error('Error updating progress:', err);
-  if (err.response?.status === 409) {
-    setToastMessage(err.response.data.message || 'Conflict error');
-    setToastBg('warning');
-    setShowToast(true);
-  } else {
-    alert(`Failed to update progress: ${err.message}. Ensure JSON format is correct.`);
-  }
-}
-
+      const formattedProgress = JSON.parse(progressText);
+      await axios.put(`${process.env.REACT_APP_API_LINK}/pod-users/${selectedUserId}`, {
+        progress: formattedProgress
+      });
+      setToastMessage('Progress updated successfully');
+      setToastBg('primary');
+      setShowToast(true);
+      setShowProgressModal(false);
+      fetchAllUsers();
+    } catch (err) {
+      console.error('Error updating progress:', err);
+      if (err.response?.status === 409) {
+        setToastMessage(err.response.data.message || 'Conflict error');
+        setToastBg('warning');
+        setShowToast(true);
+      } else {
+        alert(`Failed to update progress: ${err.message}. Ensure JSON format is correct.`);
+      }
+    }
   };
 
   const openSelectUsersModal = () => {
@@ -203,22 +198,22 @@ export default function User() {
       alert('Please select an Organization first to load unassigned users.');
       return;
     }
-    setTempSelectedUsers([...newUser.users]); // Initialize temp selections
-    setUserSearchTerm(''); // Clear search bar
+    setTempSelectedUsers([...newUser.users]);
+    setUserSearchTerm('');
     setShowSelectUsersModal(true);
   };
 
- const handleUserCheckboxChange = (user) => {
-  setTempSelectedUsers(prev =>
-    prev.some(u => u.user_id === user.user_id)
-      ? prev.filter(u => u.user_id !== user.user_id)
-      : [...prev, user]
-  );
-};
+  const handleUserCheckboxChange = (user) => {
+    setTempSelectedUsers(prev =>
+      prev.some(u => u.user_id === user.user_id)
+        ? prev.filter(u => u.user_id !== user.user_id)
+        : [...prev, user]
+    );
+  };
 
   const confirmUserSelection = () => {
-    setNewUser(prevNewUser => ({
-      ...prevNewUser,
+    setNewUser(prev => ({
+      ...prev,
       users: tempSelectedUsers,
     }));
     setShowSelectUsersModal(false);
@@ -227,25 +222,34 @@ export default function User() {
   // --- Filtering and Pagination ---
 
   const filteredUnassignedUsers = unassignedOrgUsers.filter(user =>
-    (user.email || '').toLowerCase().includes(userSearchTerm.toLowerCase()) // Added null check for user.email
+    (user.email || '').toLowerCase().includes(userSearchTerm.toLowerCase())
   );
 
   const assignedUsers = podUsers.filter(user => user.assigned);
+
+  const filteredAssignedUsers = assignedUsers.filter((user) => {
+    const fullName = `${user.first_name || ''} ${user.last_name || ''}`.toLowerCase();
+    const orgMatch = !filters.organization_name || (user.batch?.organization_name || '').toLowerCase() === filters.organization_name.toLowerCase();
+    const batchMatch = !filters.batch_name || (user.batch?.batch_name || '').toLowerCase().includes(filters.batch_name.toLowerCase());
+    const podMatch = !filters.pod_name || (user.pod?.pod_name || '').toLowerCase().includes(filters.pod_name.toLowerCase());
+    const nameMatch = !userSearchTerm || fullName.includes(userSearchTerm.toLowerCase());
+    return orgMatch && batchMatch && podMatch && nameMatch;
+  });
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentUsers = assignedUsers.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(assignedUsers.length / itemsPerPage);
+  const currentUsers = filteredAssignedUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredAssignedUsers.length / itemsPerPage);
+
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   // --- useEffect Hooks ---
 
-  // Initial data fetch for all assigned users and dropdown data
   useEffect(() => {
     fetchAllUsers();
-    fetchAllBatchesAndPods(); // Fetch all batches and pods once
+    fetchAllBatchesAndPods();
   }, []);
 
-  // Effect to filter batches when organization_name changes
   useEffect(() => {
     if (newUser.organization_name && batches.length > 0) {
       const newFilteredBatches = batches.filter(
@@ -255,46 +259,37 @@ export default function User() {
     } else {
       setFilteredBatches([]);
     }
-    // Reset batch and pod when organization changes
     setNewUser(prev => ({
       ...prev,
-      batch_name: '', batch_id: '',
-      pod_name: '', pod_id: '',
-      users: [] // Clear users as unassigned users depend on org
+      batch_name: '',
+      batch_id: '',
+      pod_name: '',
+      pod_id: '',
+      users: []
     }));
-    setUnassignedOrgUsers([]); // Clear unassigned users
-    setTempSelectedUsers([]); // Clear temp selections
-  }, [newUser.organization_name, batches]); // Depend on organization_name and all batches
+    setUnassignedOrgUsers([]);
+    setTempSelectedUsers([]);
+  }, [newUser.organization_name, batches]);
 
-  // Effect to filter pods when batch_id changes
   useEffect(() => {
-    console.log("Filtering Pods - Selected Batch ID:", newUser.batch_id);
-    console.log("All Pods in state:", pods); // Important debug check
-
     if (newUser.batch_id && pods.length > 0) {
-      // Ensure strict equality and type matching (e.g., if IDs are numbers from backend)
       const newFilteredPods = pods.filter(
-        pod => String(pod.batch_id) === String(newUser.batch_id) // Robust comparison
+        pod => String(pod.batch_id) === String(newUser.batch_id)
       );
       setFilteredPods(newFilteredPods);
-      console.log("Filtered Pods:", newFilteredPods); // See what made it through the filter
     } else {
       setFilteredPods([]);
-      console.log("Filtered Pods: [] (No batch ID selected or no pods in state)");
     }
-    // Reset pod when batch changes
     setNewUser(prev => ({ ...prev, pod_name: '', pod_id: '' }));
-  }, [newUser.batch_id, pods]); // Depend on selected batch_id and all pods
+  }, [newUser.batch_id, pods]);
 
-  // Effect to fetch unassigned users for the selected organization
   useEffect(() => {
     if (newUser.organization_name) {
       fetchUnassignedUsersForOrg(newUser.organization_name);
     } else {
       setUnassignedOrgUsers([]);
-      // No need to clear newUser.users here, it's done on org change
     }
-  }, [newUser.organization_name]); // Depend on organization_name
+  }, [newUser.organization_name]);
 
   return (
     <div className="main-layout-container">
@@ -303,27 +298,106 @@ export default function User() {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-            className='back-button bg-primary text-white border-0'
-                                                            onClick={() => navigate(-1)}>
-                                                                                  <FaArrowLeft />
-                                                                                </button>
+              className="back-button bg-primary text-white border-0"
+              onClick={() => navigate(-1)}
+            >
+              <FaArrowLeft />
+            </button>
           </div>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>Assigned Users</h3>
-            <button className="create-btn" onClick={() => {
-              setShowAddUserModal(true);
-              // Full reset for Add User Modal
-              setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
-              setUnassignedOrgUsers([]);
-              setTempSelectedUsers([]);
-              setFilteredBatches([]); // Clear previous filtered batches
-              setFilteredPods([]);     // Clear previous filtered pods
-            }} style={{ width: '10%' }}>
+            <button
+              className="create-btn"
+              onClick={() => {
+                setShowAddUserModal(true);
+                setNewUser({ organization_name: '', batch_name: '', batch_id: '', pod_name: '', pod_id: '', users: [] });
+                setUnassignedOrgUsers([]);
+                setTempSelectedUsers([]);
+                setFilteredBatches([]);
+                setFilteredPods([]);
+              }}
+              style={{ width: '10%' }}
+            >
               <FaPlus />
             </button>
           </div>
-           
-          
+          <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
+            <div className="d-flex align-items-center">
+              <label className="me-2 mb-0">Show entries:</label>
+              <select
+                className="form-select"
+                style={{ width: '100px' }}
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                {[5, 10, 20, 50].map((num) => (
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
+            </div>
+            <input
+              type="text"
+              className="form-control"
+              style={{ maxWidth: '200px' }}
+              placeholder="Search Full Name"
+              value={userSearchTerm}
+              onChange={(e) => {
+                setUserSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <select
+              className="form-select"
+              style={{ maxWidth: '200px' }}
+              value={filters.organization_name}
+              onChange={(e) => {
+                setFilters(prev => ({
+                  ...prev,
+                  organization_name: e.target.value,
+                  batch_name: '', // Reset batch filter when organization changes
+                }));
+                setCurrentPage(1);
+              }}
+            >
+              <option value="">All Organizations</option>
+              {organizations.map(org => (
+                <option key={org.organization_id} value={org.organization_name}>
+                  {org.organization_name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              className="form-control"
+              style={{ maxWidth: '200px' }}
+              placeholder="Search Batch Name"
+              value={filters.batch_name}
+              onChange={(e) => {
+                setFilters(prev => ({
+                  ...prev,
+                  batch_name: e.target.value,
+                }));
+                setCurrentPage(1);
+              }}
+            />
+            <input
+              type="text"
+              className="form-control"
+              style={{ maxWidth: '200px' }}
+              placeholder="Search Pod Name"
+              value={filters.pod_name}
+              onChange={(e) => {
+                setFilters(prev => ({
+                  ...prev,
+                  pod_name: e.target.value,
+                }));
+                setCurrentPage(1);
+              }}
+            />
+          </div>
 
           {loading ? (
             <p>Loading users...</p>
@@ -332,102 +406,112 @@ export default function User() {
           ) : (
             <>
               <div className="table-responsive">
-             <table className="table table-striped table-bordered table-hover">
+                <table className="table table-striped table-bordered table-hover">
                   <thead className="bg-primary text-white">
-              <tr>
-                <th>Full name</th>
-                <th>Organization</th>
-                <th>Pod</th>
-                <th>Concepts</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentUsers.length > 0 ? (
-                currentUsers.map((user, idx) => (
-                  <tr key={idx}>
-                    <td>{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '—'}</td>
-                    <td>{user.batch?.organization_name || '—'}</td>
-                    <td>{user.pod?.pod_name || '—'}</td>
-                    <td>
-  {user.batch?.concepts?.length ? (
-   <OverlayTrigger
-  trigger="click"
-  placement="top"
-  overlay={
-    <Tooltip id={`tooltip-${user.user_id}`} className="custom-tooltip">
-      <ul className="mb-0 ps-3">
-        {user.batch.concepts.map(concept => (
-          <li key={concept.concept_id} className="concept-item">
-            {concept.concept_name}
-          </li>
-        ))}
-      </ul>
-    </Tooltip>
-  }
-  rootClose
->
-
-      <div
-        style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          backgroundColor: '#0d6efd',
-          color: 'white',
-          borderRadius: '0.5rem',
-          padding: '4px 10px',
-          fontSize: '0.85rem',
-          fontWeight: 500,
-          gap: '6px',
-          cursor: 'pointer'
-        }}
-      >
-        Concepts
-        <span
-          style={{
-            backgroundColor: '#6c757d',
-            color: 'white',
-            borderRadius: '999px',
-            padding: '2px 8px',
-            fontSize: '0.75rem',
-            fontWeight: 600
-          }}
-        >
-          {user.batch.concepts.length}
-        </span>
-      </div>
-    </OverlayTrigger>
-  ) : (
-    '—'
-  )}
-</td>
-
-
-
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="text-center">No assigned users found.</td>
-                </tr>
-              )}
-            </tbody>
-
-              </table>
+                    <tr>
+                      <th>Full name</th>
+                      <th>Organization</th>
+                      <th>Batch</th>
+                      <th>Pod</th>
+                      <th>Concepts</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {currentUsers.length > 0 ? (
+                      currentUsers.map((user, idx) => (
+                        <tr key={idx}>
+                          <td>{user.first_name && user.last_name ? `${user.first_name} ${user.last_name}` : '—'}</td>
+                          <td>{user.batch?.organization_name || '—'}</td>
+                          <td>{user.batch?.batch_name || '—'}</td>
+                          <td>{user.pod?.pod_name || '—'}</td>
+                          <td>
+                            {user.batch?.concepts?.length ? (
+                              <OverlayTrigger
+                                trigger="click"
+                                placement="top"
+                                overlay={
+                                  <Tooltip id={`tooltip-${user.user_id}`} className="custom-tooltip">
+                                    <ul className="mb-0 ps-3">
+                                      {user.batch.concepts.map(concept => (
+                                        <li key={concept.concept_id} className="concept-item">
+                                          {concept.concept_name}
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </Tooltip>
+                                }
+                                rootClose
+                              >
+                                <div
+                                  style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    backgroundColor: '#0d6efd',
+                                    color: 'white',
+                                    borderRadius: '0.5rem',
+                                    padding: '4px 10px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 500,
+                                    gap: '6px',
+                                    cursor: 'pointer'
+                                  }}
+                                >
+                                  Concepts
+                                  <span
+                                    style={{
+                                      backgroundColor: '#6c757d',
+                                      color: 'white',
+                                      borderRadius: '999px',
+                                      padding: '2px 8px',
+                                      fontSize: '0.75rem',
+                                      fontWeight: 600
+                                    }}
+                                  >
+                                    {user.batch.concepts.length}
+                                  </span>
+                                </div>
+                              </OverlayTrigger>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="text-center">No assigned users found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
               {totalPages > 1 && (
                 <div className="d-flex justify-content-center mt-4">
                   <Pagination>
                     <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
                     <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                    {[...Array(totalPages).keys()].map((num) => (
-                      <Pagination.Item
-                        key={num + 1}
-                        active={num + 1 === currentPage}
-                        onClick={() => handlePageChange(num + 1)}
-                      >
-                        {num + 1}
-                      </Pagination.Item>
-                    ))}
+                    {(() => {
+                      const pageNumbers = [];
+                      const visiblePages = 5;
+                      let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                      let endPage = startPage + visiblePages - 1;
+                      if (endPage > totalPages) {
+                        endPage = totalPages;
+                        startPage = Math.max(1, endPage - visiblePages + 1);
+                      }
+                      for (let i = startPage; i <= endPage; i++) {
+                        pageNumbers.push(
+                          <Pagination.Item
+                            key={i}
+                            active={i === currentPage}
+                            onClick={() => handlePageChange(i)}
+                          >
+                            {i}
+                          </Pagination.Item>
+                        );
+                      }
+                      return pageNumbers;
+                    })()}
                     <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
                     <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
                   </Pagination>
@@ -440,9 +524,9 @@ export default function User() {
 
       {/* Add User Main Modal */}
       {showAddUserModal && (
-        <div className="modal-overlay" >
+        <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h4>Added User to Pod</h4>
+            <h4>Add User to Pod</h4>
             <form onSubmit={handleAddUser}>
               <div className="mb-3">
                 <label className="form-label">Organization</label>
@@ -454,8 +538,10 @@ export default function User() {
                     setNewUser(prev => ({
                       ...prev,
                       organization_name: selectedOrgName,
-                      batch_name: '', batch_id: '', // Reset batch and pod related fields
-                      pod_name: '', pod_id: '',
+                      batch_name: '',
+                      batch_id: '',
+                      pod_name: '',
+                      pod_id: '',
                       users: []
                     }));
                   }}
@@ -471,7 +557,7 @@ export default function User() {
                 <label className="form-label">Batch</label>
                 <select
                   className="form-control"
-                  value={newUser.batch_id} // Bind to batch_id for selection
+                  value={newUser.batch_id}
                   onChange={(e) => {
                     const selectedBatchId = e.target.value;
                     const selectedBatch = filteredBatches.find(batch => String(batch.batch_id) === String(selectedBatchId));
@@ -479,8 +565,8 @@ export default function User() {
                       ...prev,
                       batch_id: selectedBatchId,
                       batch_name: selectedBatch ? selectedBatch.batch_name : '',
-                      pod_name: '', // Reset pod
-                      pod_id: ''    // Reset pod_id
+                      pod_name: '',
+                      pod_id: ''
                     }));
                   }}
                   required
@@ -496,7 +582,7 @@ export default function User() {
                 <label className="form-label">Pod</label>
                 <select
                   className="form-control"
-                  value={newUser.pod_id} // Bind to pod_id for selection
+                  value={newUser.pod_id}
                   onChange={(e) => {
                     const selectedPodId = e.target.value;
                     const selectedPod = filteredPods.find(pod => String(pod.pod_id) === String(selectedPodId));
@@ -507,7 +593,7 @@ export default function User() {
                     }));
                   }}
                   required
-                  disabled={!newUser.batch_id} // Depends on batch_id being selected
+                  disabled={!newUser.batch_id}
                 >
                   <option value="">-- Select Pod --</option>
                   {filteredPods.map(pod => (
@@ -519,10 +605,10 @@ export default function User() {
                 <label className="form-label">Selected User Email(s)</label>
                 <div className="d-flex align-items-center border p-2 rounded">
                   <span className="flex-grow-1 text-muted">
-  {newUser.users.length > 0
-    ? newUser.users.map(u => `${u.first_name} ${u.last_name} (${u.username})`).join(', ')
-    : 'No users selected'}
-</span>
+                    {newUser.users.length > 0
+                      ? newUser.users.map(u => `${u.first_name} ${u.last_name} (${u.username})`).join(', ')
+                      : 'No users selected'}
+                  </span>
                   <button
                     type="button"
                     className="btn btn-info btn-sm ms-2"
@@ -538,7 +624,7 @@ export default function User() {
                 )}
               </div>
               <div className="d-flex gap-2">
-                <button type="submit" className="btn btn-success" >Add</button>
+                <button type="submit" className="btn btn-success">Add</button>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowAddUserModal(false)}>Cancel</button>
               </div>
             </form>
@@ -547,53 +633,52 @@ export default function User() {
       )}
 
       {showSelectUsersModal && (
-  <div className="modal-overlay" onClick={() => setShowSelectUsersModal(false)}>
-    <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-      <h4>Select Unassigned Users for {newUser.organization_name}</h4>
-      <div className="mb-3">
-        <input
-          type="text"
-          className="form-control"
-          placeholder="Search user name or email..."
-          value={userSearchTerm}
-          onChange={(e) => setUserSearchTerm(e.target.value)}
-        />
-      </div>
-      <div className="user-list-container" style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
-        {filteredUnassignedUsers.length > 0 ? (
-          <ul className="list-group">
-            {filteredUnassignedUsers.map(user => (
-              <li key={user.user_id} className="list-group-item d-flex align-items-center">
-                <input
-                  type="checkbox"
-                  className="form-check-input me-2"
-                  id={`user-${user.user_id}`}
-                  checked={tempSelectedUsers.some(u => u.user_id === user.user_id)}
-                  onChange={() => handleUserCheckboxChange(user)}
-                />
-                <label htmlFor={`user-${user.user_id}`} className="form-check-label flex-grow-1">
-                  {user.first_name} {user.last_name} ({user.username})
-                </label>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="text-center text-muted">
-            {newUser.organization_name ? 'No unassigned users found for this organization or matching your search.' : 'Select an organization first.'}
-          </p>
-        )}
-      </div>
-      <div className="d-flex gap-2 mt-3">
-        <button className="btn btn-success" onClick={confirmUserSelection} style={{ width: '200px' }}>
-          Add Selected Users ({tempSelectedUsers.length})
-        </button>
-        <button className="btn btn-secondary" onClick={() => setShowSelectUsersModal(false)} style={{ width: '200px' }}>Cancel</button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="modal-overlay" onClick={() => setShowSelectUsersModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h4>Select Unassigned Users for {newUser.organization_name}</h4>
+            <div className="mb-3">
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Search user name or email..."
+                value={userSearchTerm}
+                onChange={(e) => setUserSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="user-list-container" style={{ maxHeight: '300px', overflowY: 'auto', border: '1px solid #ccc', padding: '10px', borderRadius: '5px' }}>
+              {filteredUnassignedUsers.length > 0 ? (
+                <ul className="list-group">
+                  {filteredUnassignedUsers.map(user => (
+                    <li key={user.user_id} className="list-group-item d-flex align-items-center">
+                      <input
+                        type="checkbox"
+                        className="form-check-input me-2"
+                        id={`user-${user.user_id}`}
+                        checked={tempSelectedUsers.some(u => u.user_id === user.user_id)}
+                        onChange={() => handleUserCheckboxChange(user)}
+                      />
+                      <label htmlFor={`user-${user.user_id}`} className="form-check-label flex-grow-1">
+                        {user.first_name} {user.last_name} ({user.username})
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-center text-muted">
+                  {newUser.organization_name ? 'No unassigned users found for this organization or matching your search.' : 'Select an organization first.'}
+                </p>
+              )}
+            </div>
+            <div className="d-flex gap-2 mt-3">
+              <button className="btn btn-success" onClick={confirmUserSelection} style={{ width: '200px' }}>
+                Add Selected Users ({tempSelectedUsers.length})
+              </button>
+              <button className="btn btn-secondary" onClick={() => setShowSelectUsersModal(false)} style={{ width: '200px' }}>Cancel</button>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Update Progress Modal */}
       {showProgressModal && (
         <div className="modal-overlay" onClick={() => setShowProgressModal(false)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -612,14 +697,14 @@ export default function User() {
           </div>
         </div>
       )}
-     <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
-  <Toast bg={toastBg} show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide>
-    <Toast.Header closeButton>
-      <strong className="me-auto">Notice</strong>
-    </Toast.Header>
-    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-  </Toast>
-</ToastContainer>
+      <ToastContainer position="top-end" className="p-3" style={{ zIndex: 1060 }}>
+        <Toast bg={toastBg} show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide>
+          <Toast.Header closeButton>
+            <strong className="me-auto">Notice</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 }

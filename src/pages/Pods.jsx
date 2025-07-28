@@ -4,7 +4,7 @@ import Supersidebar from '../components/Supersidebar';
 import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
 import '../styles/OrgList.css';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft,FaPlus,FaEdit } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus, FaEdit } from 'react-icons/fa';
 
 export default function Pods() {
   const navigate = useNavigate();
@@ -23,7 +23,13 @@ export default function Pods() {
   const [toastBg, setToastBg] = useState('primary');
 
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 6;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchPodName, setSearchPodName] = useState('');
+  const [selectedOrganization, setSelectedOrganization] = useState('');
+  // Changed from selectedBatch to searchBatchName for input field
+  const [searchBatchName, setSearchBatchName] = useState('');
+  // Changed from selectedMentor to searchMentorName for input field
+  const [searchMentorName, setSearchMentorName] = useState('');
 
   const [podForm, setPodForm] = useState({
     organization_id: '',
@@ -33,27 +39,31 @@ export default function Pods() {
     is_active: true,
   });
 
-  const [filters, setFilters] = useState({
-    pod_id: '',
-    pod_name: '',
-    organization_id: '',
-    mentor_id: '',
-  });
-
+  // Filters state is no longer directly used for batch/mentor search inputs
+  // The individual state variables (searchBatchName, searchMentorName) are used instead.
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
+    // This function is kept for consistency if other filters are added to the 'filters' state
+    // but for batch/mentor, we'll use their specific state setters.
     setCurrentPage(1);
   };
 
   const filteredPods = pods.filter((pod) => {
-    return (
-      (filters.pod_id === '' || pod.pod_id?.toString().includes(filters.pod_id)) &&
-      (filters.pod_name === '' || pod.pod_name?.toLowerCase().includes(filters.pod_name.toLowerCase())) &&
-      (filters.organization_id === '' || pod.organization_id?.toString().includes(filters.organization_id)) &&
-      (filters.mentor_id === '' || pod.mentor_id?.toString().includes(filters.mentor_id))
-    );
+    const podNameMatch = pod.pod_name?.toLowerCase().includes(searchPodName.toLowerCase());
+    const orgMatch = selectedOrganization === '' || pod.organization_id?.toString() === selectedOrganization;
+
+    // Filter by batch name (text input)
+    const batchName = batches.find(b => b.batch_id === pod.batch_id)?.batch_name || '';
+    const batchMatch = searchBatchName === '' || batchName.toLowerCase().includes(searchBatchName.toLowerCase());
+
+    // Filter by mentor name (text input)
+    const mentor = mentors.find(m => m.user_id === pod.mentor_id);
+    const mentorFullName = mentor ? `${mentor.first_name || ''} ${mentor.last_name || ''}`.trim() : '';
+    const mentorMatch = searchMentorName === '' || mentorFullName.toLowerCase().includes(searchMentorName.toLowerCase());
+
+    return podNameMatch && orgMatch && batchMatch && mentorMatch;
   });
+
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -132,52 +142,87 @@ export default function Pods() {
     setShowModal(true);
   };
 
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
+ const handleFormSubmit = async (e) => {
+  e.preventDefault();
 
-    const selectedOrg = organizations.find((org) => org.organization_id === parseInt(podForm.organization_id));
-    const selectedBatch = batches.find((batch) => batch.batch_id === parseInt(podForm.batch_id));
-    const selectedMentor = mentors.find((mentor) => mentor.user_id === parseInt(podForm.mentor_id));
+  const selectedOrg = organizations.find(
+    (org) => org.organization_id === parseInt(podForm.organization_id)
+  );
+  const selectedBatch = batches.find(
+    (batch) => batch.batch_id === parseInt(podForm.batch_id)
+  );
+  const selectedMentor = mentors.find(
+    (mentor) => mentor.user_id === parseInt(podForm.mentor_id)
+  );
 
-    const payload = {
-      organization_name: selectedOrg ? selectedOrg.organization_name : '',
-      batch_name: selectedBatch ? selectedBatch.batch_name : '',
-      mentor_email: selectedMentor ? selectedMentor.email : '',
-      pod_name: podForm.pod_name,
-      is_active: podForm.is_active,
-    };
-
-    try {
-      if (isEditMode && selectedPodId) {
-        await axios.put(`${process.env.REACT_APP_API_LINK}/pods/${selectedPodId}`, payload);
-        setToastMessage('✅ Pod updated successfully!');
-        setToastBg('primary');
-      } else {
-        await axios.post(`${process.env.REACT_APP_API_LINK}/pods`, payload);
-        setToastMessage('✅ Pod created successfully!');
-        setToastBg('primary');
-      }
-      setShowToast(true);
-      setShowModal(false);
-      fetchPods();
-    } catch (err) {
-      console.error('Error saving pod:', err);
-      if (axios.isAxiosError(err) && err.response?.status === 409) {
-        setToastMessage('⚠️ Pod name already exists!');
-        setToastBg('warning');
-        setShowToast(true);
-      } else {
-        alert('Failed to save pod.');
-      }
-    }
+  const payload = {
+    organization_name: selectedOrg ? selectedOrg.organization_name : '',
+    batch_name: selectedBatch ? selectedBatch.batch_name : '',
+    mentor_email: selectedMentor ? selectedMentor.email : '',
+    pod_name: podForm.pod_name,
+    is_active: podForm.is_active,
   };
+
+  try {
+    if (isEditMode && selectedPodId) {
+      await axios.put(`${process.env.REACT_APP_API_LINK}/pods/${selectedPodId}`, payload);
+      setToastMessage('✅ Pod updated successfully!');
+      setToastBg('primary'); // Changed to primary for consistency
+    } else {
+      await axios.post(`${process.env.REACT_APP_API_LINK}/pods`, payload);
+      setToastMessage('✅ Pod created successfully!');
+      setToastBg('primary'); // Changed to primary for consistency
+    }
+    setShowToast(true);
+    setShowModal(false);
+    fetchPods();
+  } catch (err) {
+    console.error('Error saving pod:', err);
+    
+    if (axios.isAxiosError(err) && err.response) {
+      const status = err.response.status;
+      const data = err.response.data;
+      
+      switch (status) {
+        case 400:
+          setToastMessage(`⚠️ ${data.message || 'Invalid request parameters'}`);
+          setToastBg('warning');
+          break;
+        
+        case 404:
+          setToastMessage(`⚠️ ${data.message || 'Resource not found'}`);
+          setToastBg('warning');
+          break;
+          
+        case 409:
+          setToastMessage('⚠️ Pod name already exists!');
+          setToastBg('warning');
+          break;
+          
+        case 500:
+          setToastMessage('⚠️ Server error. Please try again later');
+          setToastBg('warning');
+          break;
+          
+        default:
+          setToastMessage('⚠️ An unexpected error occurred');
+          setToastBg('warning');
+      }
+    } else {
+      setToastMessage('⚠️ Network error. Please check your connection');
+      setToastBg('warning');
+    }
+    
+    setShowToast(true);
+  }
+};
 
   const handleOrganizationChange = (e) => {
     const organizationId = e.target.value;
     setPodForm((prev) => ({
       ...prev,
       organization_id: organizationId,
-      batch_id: '',
+      batch_id: '', // Reset batch when organization changes
     }));
   };
 
@@ -194,15 +239,17 @@ export default function Pods() {
 
   return (
     <div className="main-layout-container">
-      <Supersidebar />
+      {/* Supersidebar is assumed to be a separate component */}
+       <Supersidebar />
       <div className="content-area">
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
-           <button
-                           className='back-button bg-primary text-white border-0'
-                                                onClick={() => navigate(-1)}>
-                                                                      <FaArrowLeft />
-                                                                    </button>
+            <button
+              className='back-button bg-primary text-white border-0'
+              onClick={() => navigate(-1)}
+            >
+              <FaArrowLeft />
+            </button>
           </div>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>Pods</h3>
@@ -210,6 +257,84 @@ export default function Pods() {
               <FaPlus />
             </button>
           </div>
+          <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
+            {/* Show Entries */}
+            <div className="d-flex align-items-center">
+              <span className="me-2">Show entries:</span>
+              <select
+                className="form-select"
+                style={{ width: '100px' }}
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(parseInt(e.target.value));
+                  setCurrentPage(1);
+                }}
+              >
+                {[5, 6, 10, 20, 50].map((num) => (
+                  <option key={num} value={num}>{num}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Filters Row */}
+  <div className="d-flex align-items-center gap-3 flex-grow-1" style={{ flexWrap: 'nowrap' }}>
+              <input
+                type="text"
+                className="form-control"
+                style={{ maxWidth: '200px' }}
+                placeholder="Search Pod Name"
+                value={searchPodName}
+                onChange={(e) => {
+                  setSearchPodName(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+
+              {/* Changed Batch filter to input */}
+              <input
+                type="text"
+                className="form-control"
+                style={{ maxWidth: '200px' }}
+                placeholder="Search Batch Name"
+                value={searchBatchName}
+                onChange={(e) => {
+                  setSearchBatchName(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+
+              <select
+                className="form-select"
+                style={{ maxWidth: '200px' }}
+                value={selectedOrganization}
+                onChange={(e) => {
+                  setSelectedOrganization(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Organizations</option>
+                {organizations.map((org) => (
+                  <option key={org.organization_id} value={org.organization_id}>
+                    {org.organization_name}
+                  </option>
+                ))}
+              </select>
+
+              {/* Changed Mentor filter to input */}
+              <input
+                type="text"
+                className="form-control"
+                style={{ maxWidth: '200px' }}
+                placeholder="Search Mentor Name"
+                value={searchMentorName}
+                onChange={(e) => {
+                  setSearchMentorName(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+
 
           {loading ? (
             <p>Loading pods...</p>
@@ -218,70 +343,88 @@ export default function Pods() {
           ) : (
             <>
               <div className="table-responsive">
-              <table className="table table-striped table-bordered table-hover">
+                <table className="table table-striped table-bordered table-hover">
                   <thead className="bg-primary text-white">
-                  <tr>
-                    <th>Pod Name</th>
-                    <th>Organization Name</th>
-                    <th>Batch Name</th>
-                    <th>Mentor Name</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentPods.length > 0 ? (
-                    currentPods.map((pod) => (
-                      <tr key={pod.pod_id}>
-                        <td>{pod.pod_name}</td>
-                        <td>{organizations.find((org) => org.organization_id === pod.organization_id)?.organization_name || '—'}</td>
-                        <td>{batches.find((batch) => batch.batch_id === pod.batch_id)?.batch_name || '—'}</td>
-                       <td>
-                        {(() => {
-                          const mentor = mentors.find((mentor) => mentor.user_id === pod.mentor_id);
-                          return mentor ? `${mentor.first_name || ''} ${mentor.last_name || ''}`.trim() : '—';
-                        })()}
-                      </td>
-                        <td>
-                          <span className={`badge ${pod.is_active ? 'bg-success text-white' : 'bg-secondary text-white'}`}>
-                            {pod.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </td>
-                        <td>
-                          <button className="btn btn-warning btn-sm" onClick={() => openEditModal(pod)}>
-                            <FaEdit />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
                     <tr>
-                      <td colSpan="6" className="text-center">No pods found.</td>
+                      <th>Pod Name</th>
+                      <th>Organization Name</th>
+                      <th>Batch Name</th>
+                      <th>Mentor Name</th>
+                      <th>Status</th>
+                      <th>Action</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {currentPods.length > 0 ? (
+                      currentPods.map((pod) => (
+                        <tr key={pod.pod_id}>
+                          <td>{pod.pod_name}</td>
+                          <td>{organizations.find((org) => org.organization_id === pod.organization_id)?.organization_name || '—'}</td>
+                          <td>{batches.find((batch) => batch.batch_id === pod.batch_id)?.batch_name || '—'}</td>
+                          <td>
+                            {(() => {
+                              const mentor = mentors.find((mentor) => mentor.user_id === pod.mentor_id);
+                              return mentor ? `${mentor.first_name || ''} ${mentor.last_name || ''}`.trim() : '—';
+                            })()}
+                          </td>
+                          <td>
+                            <span className={`badge ${pod.is_active ? 'bg-success text-white' : 'bg-secondary text-white'}`}>
+                              {pod.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </td>
+                          <td>
+                            <button className="btn btn-warning btn-sm" onClick={() => openEditModal(pod)}>
+                              <FaEdit />
+                            </button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="6" className="text-center">No pods found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
               </div>
 
-              {totalPages > 1 && (
-                <div className="d-flex justify-content-center mt-4">
-                  <Pagination>
-                    <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                    {[...Array(totalPages).keys()].map((num) => (
-                      <Pagination.Item
-                        key={num + 1}
-                        active={currentPage === num + 1}
-                        onClick={() => handlePageChange(num + 1)}
-                      >
-                        {num + 1}
-                      </Pagination.Item>
-                    ))}
-                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
-                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
-                  </Pagination>
-                </div>
-              )}
+             {totalPages > 1 && (
+                                        <div className="d-flex justify-content-center mt-4">
+                                              <Pagination>
+                                                  <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                                                        <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                                                                             
+                                                        {(() => {
+                                                          const pageNumbers = [];
+                                                                const visiblePages = 5;
+                                                                    let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                                                                  let endPage = startPage + visiblePages - 1;
+                                                                             
+                                                                    if (endPage > totalPages) {
+                                                                       endPage = totalPages;
+                                                                             startPage = Math.max(1, endPage - visiblePages + 1);
+                                                                              }
+                                                                             
+                                                                              for (let i = startPage; i <= endPage; i++) {
+                                                                              pageNumbers.push(
+                                                                                         <Pagination.Item
+                                                                                           key={i}
+                                                                                           active={i === currentPage}
+                                                                                           onClick={() => handlePageChange(i)}
+                                                                                         >
+                                                                                           {i}
+                                                                                         </Pagination.Item>
+                                                                                       );
+                                                                                     }
+                                                                             
+                                                                                     return pageNumbers;
+                                                                                   })()}
+                                                                             
+                                                                                   <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                                                                                   <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                                                                                 </Pagination>
+                                                                               </div>
+                                                                    )}
             </>
           )}
         </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer,Form } from 'react-bootstrap';
 import { FaArrowLeft,FaPlus,FaEdit} from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import '../styles/OrgList.css';
@@ -27,8 +27,11 @@ export default function Addorgadmin() {
   const [showToast, setShowToast] = useState(false);
   const passwordRef = useRef(null);
   const editPasswordRef = useRef(null);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10); 
   const navigate = useNavigate();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedOrganization, setSelectedOrganization] = useState('');
+
 
   // Fetch admins & orgs
   const fetchOrgAdmins = async () => {
@@ -76,13 +79,41 @@ const handleCreateAdmin = async (e) => {
     setNewAdmin({ organization_name:'', email:'', first_name:'', last_name:'', password:'' });
     fetchOrgAdmins();
   } catch (err) {
-    if (err.response?.status === 409) {
-      setToastBg('warning');
-      setToastMessage('⚠️ Admin with this email already exists.');
-      setShowToast(true);
-    } else {
-      alert("Failed to create admin.");
+    let toastMessage = '';
+    let toastBg = 'warning';
+    
+    switch (err.response?.status) {
+      case 400:
+        // Handle specific backend error messages
+        if (err.response.data?.message) {
+          toastMessage = `⚠️ ${err.response.data.message}`;
+        } else if (err.response.data?.error === "Bad request") {
+          toastMessage = '⚠️ Invalid request: ' + (
+            err.response.data?.message || 'Missing required fields or invalid data'
+          );
+        } else {
+          toastMessage = '⚠️ Invalid request. Please check your input.';
+        }
+        break;
+        
+      case 409:
+        toastMessage = '⚠️ ' + (
+          err.response.data?.message || 
+          'Admin with this email or username already exists'
+        );
+        break;
+        
+      case 500:
+        toastMessage = '⚠️ Server error. Please try again later.';
+        break;
+        
+      default:
+        toastMessage = '⚠️ Failed to create admin. Please try again.';
     }
+
+    setToastBg(toastBg);
+    setToastMessage(toastMessage);
+    setShowToast(true);
   }
 };
 
@@ -104,13 +135,36 @@ const handleCreateAdmin = async (e) => {
     setEditingAdmin(null);
     fetchOrgAdmins();
   } catch (err) {
-    if (err.response?.status === 409) {
-      setToastBg('warning');
-      setToastMessage('Oraganization Admin already exists.');
-      setShowToast(true);
-    } else {
-      alert("Failed to update admin.");
+    let toastMessage = '';
+    let toastBg = 'warning';
+    
+    switch (err.response?.status) {
+      case 400:
+        toastMessage = '⚠️ Invalid request. Please check your input.';
+        break;
+      case 401:
+        toastMessage = '⚠️ Unauthorized. Please login again.';
+        break;
+      case 403:
+        toastMessage = '⚠️ Forbidden. You don\'t have permission to update this admin.';
+        break;
+      case 404:
+        toastMessage = '⚠️ Admin not found.';
+        break;
+      case 409:
+        toastMessage = '⚠️ Organization Admin with this email already exists.';
+        toastBg = 'warning';
+        break;
+      case 500:
+        toastMessage = '⚠️ Server error. Please try again later.';
+        break;
+      default:
+        toastMessage = '⚠️ Failed to update admin. Please try again.';
     }
+
+    setToastBg(toastBg);
+    setToastMessage(toastMessage);
+    setShowToast(true);
   }
 };
 
@@ -119,11 +173,19 @@ const handleCreateAdmin = async (e) => {
     fetchOrgAdmins();
     fetchOrganizations();
   }, []);
+const filteredAdmins = orgAdmins.filter((admin) => {
+  const fullName = `${admin.first_name} ${admin.last_name}`.toLowerCase();
+  const matchesFullName = fullName.includes(searchTerm.toLowerCase());
+  const matchesOrganization = !selectedOrganization || admin.organization_name === selectedOrganization;
+  return matchesFullName && matchesOrganization;
+});
 
-  const idxLast = currentPage * itemsPerPage;
-  const idxFirst = idxLast - itemsPerPage;
-  const currentAdmins = orgAdmins.slice(idxFirst, idxLast);
-  const totalPages = Math.ceil(orgAdmins.length / itemsPerPage);
+const idxLast = currentPage * itemsPerPage;
+const idxFirst = idxLast - itemsPerPage;
+const currentAdmins = filteredAdmins.slice(idxFirst, idxLast);
+const totalPages = Math.ceil(filteredAdmins.length / itemsPerPage);
+const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
 
   return (
     <div className="main-layout-container">
@@ -143,6 +205,58 @@ const handleCreateAdmin = async (e) => {
                 <FaPlus />
               </button>
           </div>
+          <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
+  <div className="d-flex align-items-center">
+    <span className="me-2">Show entries:</span>
+    <Form.Select
+      style={{ width: '100px' }}
+      value={itemsPerPage}
+      onChange={(e) => {
+        setCurrentPage(1);
+        setItemsPerPage(Number(e.target.value));
+      }}
+    >
+      {[5, 10, 15, 20, 50].map((num) => (
+        <option key={num} value={num}>
+          {num}
+        </option>
+      ))}
+    </Form.Select>
+  </div>
+
+        <div className="d-flex gap-3 mb-3">
+  {/* Full Name Filter */}
+  <input
+    type="text"
+    className="form-control"
+    style={{ maxWidth: '250px' }}
+    placeholder="Search by Full Name..."
+    value={searchTerm}
+    onChange={(e) => {
+      setSearchTerm(e.target.value);
+      setCurrentPage(1); // reset pagination
+    }}
+  />
+
+  {/* Organization Filter */}
+  <select
+    className="form-select"
+    style={{ maxWidth: '200px' }}
+    value={selectedOrganization}
+    onChange={(e) => {
+      setSelectedOrganization(e.target.value);
+      setCurrentPage(1); // reset pagination
+    }}
+  >
+    <option value="">All Organizations</option>
+    {organizations.map((org) => (
+      <option key={org.organization_id} value={org.organization_name}>
+        {org.organization_name}
+      </option>
+    ))}
+  </select>
+</div>
+</div>
 
           {loading ? <p>Loading admins...</p> :
            error ? <p className="text-danger">{error}</p> :
@@ -152,7 +266,7 @@ const handleCreateAdmin = async (e) => {
                   <thead className="bg-primary text-white">
                 <tr>
                   <th>Organization</th><th>Email</th><th>Username</th>
-                  <th>First Name</th><th>Last Name</th><th>Action</th>
+                  <th>Full Name</th><th>Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,8 +275,7 @@ const handleCreateAdmin = async (e) => {
                     <td>{admin.organization_name}</td>
                     <td>{admin.email}</td>
                     <td>{admin.username || '-'}</td>
-                    <td>{admin.first_name}</td>
-                    <td>{admin.last_name}</td>
+                    <td>{`${admin.first_name} ${admin.last_name}`}</td>
                     <td>
                       <button className="btn btn-sm btn-warning" onClick={() => {
                         setEditingAdmin({ ...admin, password:'' });
@@ -173,25 +286,48 @@ const handleCreateAdmin = async (e) => {
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan="6" className="text-center">No admins found.</td></tr>
+                  <tr><td colSpan="5" className="text-center">No admins found.</td></tr>
                 )}
               </tbody>
             </table>
             </div>
             {totalPages > 1 && (
-              <Pagination className="justify-content-center">
-                <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
-                <Pagination.Prev onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1} />
-                {[...Array(totalPages)].map((_, idx) => (
-                  <Pagination.Item key={idx+1} active={currentPage === idx+1}
-                                   onClick={() => setCurrentPage(idx+1)}>
-                    {idx+1}
-                  </Pagination.Item>
-                ))}
-                <Pagination.Next onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages} />
-                <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
-              </Pagination>
-            )}
+                                          <div className="d-flex justify-content-center mt-4">
+                                            <Pagination>
+                                              <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                                              <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                                        
+                                              {(() => {
+                                                const pageNumbers = [];
+                                                const visiblePages = 5;
+                                                let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                                                let endPage = startPage + visiblePages - 1;
+                                        
+                                                if (endPage > totalPages) {
+                                                  endPage = totalPages;
+                                                  startPage = Math.max(1, endPage - visiblePages + 1);
+                                                }
+                                        
+                                                for (let i = startPage; i <= endPage; i++) {
+                                                  pageNumbers.push(
+                                                    <Pagination.Item
+                                                      key={i}
+                                                      active={i === currentPage}
+                                                      onClick={() => handlePageChange(i)}
+                                                    >
+                                                      {i}
+                                                    </Pagination.Item>
+                                                  );
+                                                }
+                                        
+                                                return pageNumbers;
+                                              })()}
+                                        
+                                              <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                                              <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                                            </Pagination>
+                                          </div>
+                                        )}
           </>}
         </div>
       </div>

@@ -2,12 +2,13 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaArrowLeft,FaPlus,FaEdit } from 'react-icons/fa';
 import Supersidebar from '../components/Supersidebar';      
-import { Pagination,Toast, ToastContainer } from 'react-bootstrap';
+import { Pagination,Toast, ToastContainer,Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import '../styles/OrgList.css';
 
 export default function Mentor() {
   const [mentors, setMentors] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [newMentor, setNewMentor] = useState({
@@ -30,7 +31,7 @@ export default function Mentor() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastBg, setToastBg] = useState('primary');
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const navigate = useNavigate();
 
@@ -58,13 +59,13 @@ export default function Mentor() {
   e.preventDefault();
   const { email, first_name, last_name, password } = newMentor;
 
-  if (!email || !first_name || !last_name || !password) {
-    alert("All fields are required.");
-    return;
-  }
-
   try {
-    await axios.post(`${process.env.REACT_APP_API_LINK}/users/mentor`, newMentor);
+    const response = await axios.post(
+      `${process.env.REACT_APP_API_LINK}/users/mentor`,
+      newMentor
+    );
+
+    // Success
     setShowModal(false);
     setNewMentor({ email: '', first_name: '', last_name: '', password: '' });
     fetchMentors();
@@ -72,14 +73,33 @@ export default function Mentor() {
     setToastMessage('✅ Mentor created successfully!');
     setToastBg('primary');
     setShowToast(true);
+
   } catch (err) {
-    if (axios.isAxiosError(err) && err.response?.status === 409) {
-      setToastMessage('⚠️ Mentor with this email already exists.');
-      setToastBg('warning');
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || "Failed to create mentor";
+      const errorType = err.response?.status;
+
+      switch (errorType) {
+        case 400:
+          setToastMessage(`⚠️ ${errorMessage}`);
+          setToastBg('warning');
+          break;
+        case 409:
+          setToastMessage('⚠️ Mentor with this email already exists.');
+          setToastBg('warning');
+          break;
+        case 500:
+          setToastMessage('⚠️ Server error. Please try later.');
+          setToastBg('warning');
+          break;
+        default:
+          setToastMessage('⚠️ Unexpected error occurred.');
+          setToastBg('warning');
+      }
       setShowToast(true);
     } else {
-      console.error("Error creating mentor:", err);
-      alert("Failed to create mentor.");
+      console.error("Non-Axios error:", err);
+      alert("An unexpected error occurred.");
     }
   }
 };
@@ -100,21 +120,48 @@ export default function Mentor() {
  const handleUpdateSubmit = async (e) => {
   e.preventDefault();
   try {
-    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editMentor.user_id}`, editMentor);
+    const response = await axios.put(
+      `${process.env.REACT_APP_API_LINK}/users/${editMentor.user_id}`,
+      editMentor
+    );
+
+    // Success case
     setShowUpdateModal(false);
     fetchMentors();
-
     setToastMessage('✅ Mentor updated successfully!');
     setToastBg('primary');
     setShowToast(true);
+
   } catch (err) {
-    if (axios.isAxiosError(err) && err.response?.status === 409) {
-      setToastMessage('⚠️ Mentor with this email already exists.');
-      setToastBg('danger');
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || "Failed to update mentor";
+      const errorType = err.response?.status;
+
+      switch (errorType) {
+        case 400:
+          setToastMessage(`⚠️ ${errorMessage}`);
+          setToastBg('warning');
+          break;
+        case 404:
+          setToastMessage('⚠️ Mentor not found');
+          setToastBg('warning');
+          break;
+        case 409:
+          setToastMessage('⚠️ Email already in use by another user');
+          setToastBg('warning');
+          break;
+        case 500:
+          setToastMessage('⚠️ Server error. Please try later.');
+          setToastBg('warning');
+          break;
+        default:
+          setToastMessage('⚠️ Unexpected error occurred');
+          setToastBg('warning');
+      }
       setShowToast(true);
     } else {
-      console.error("Error updating mentor:", err);
-      alert("Failed to update mentor.");
+      console.error("Non-Axios error:", err);
+      alert("An unexpected error occurred.");
     }
   }
 };
@@ -124,14 +171,17 @@ export default function Mentor() {
     fetchMentors();
   }, []);
 
+  const filteredMentors = mentors.filter((mentor) =>
+    `${mentor.first_name} ${mentor.last_name}`.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentMentors = mentors.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(mentors.length / itemsPerPage);
-
+  const currentMentors = filteredMentors.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredMentors.length / itemsPerPage);
+  
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-
+  
   return (
     <div className="main-layout-container">
       <Supersidebar />
@@ -151,8 +201,40 @@ export default function Mentor() {
                          <FaPlus />
                        </button>
           </div>
+         <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
+  <div className="d-flex align-items-center">
+    <span className="me-2">Show entries:</span>
+    <Form.Select
+      style={{ width: '100px' }}
+      value={itemsPerPage}
+      onChange={(e) => {
+        setCurrentPage(1);
+        setItemsPerPage(Number(e.target.value));
+      }}
+    >
+      {[5, 10, 15, 20, 50].map((num) => (
+        <option key={num} value={num}>
+          {num}
+        </option>
+      ))}
+    </Form.Select>
+  </div>
 
-          
+  <div style={{ maxWidth: '300px', flexGrow: 1 }}>
+    <input
+      type="text"
+      className="form-control"
+      placeholder="Search by Full Name..."
+      value={searchTerm}
+      onChange={(e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1);
+      }}
+    />
+  </div>
+</div>
+
+
 
           {loading ? (
             <p>Loading mentors...</p>
@@ -166,8 +248,7 @@ export default function Mentor() {
                   <tr>
                     <th>Email</th>
                     <th>Username</th>
-                    <th>First Name</th>
-                    <th>Last Name</th>
+                    <th>Full Name</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -177,8 +258,7 @@ export default function Mentor() {
                       <tr key={mentor.user_id}>
                         <td>{mentor.email}</td>
                         <td>{mentor.username || '-'}</td>
-                        <td>{mentor.first_name}</td>
-                        <td>{mentor.last_name}</td>
+                        <td>{`${mentor.first_name} ${mentor.last_name}`}</td>
                         <td>
                           <button className="btn btn-sm btn-warning" onClick={() => handleUpdateClick(mentor)}>
                             <FaEdit />
@@ -188,7 +268,7 @@ export default function Mentor() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan="5" className="text-center">No mentors found.</td>
+                      <td colSpan="4" className="text-center">No mentors found.</td>
                     </tr>
                   )}
                 </tbody>
@@ -199,15 +279,33 @@ export default function Mentor() {
                   <Pagination>
                     <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
                     <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                    {[...Array(totalPages).keys()].map((num) => (
-                      <Pagination.Item
-                        key={num + 1}
-                        active={num + 1 === currentPage}
-                        onClick={() => handlePageChange(num + 1)}
-                      >
-                        {num + 1}
-                      </Pagination.Item>
-                    ))}
+              
+                    {(() => {
+                      const pageNumbers = [];
+                      const visiblePages = 5;
+                      let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                      let endPage = startPage + visiblePages - 1;
+              
+                      if (endPage > totalPages) {
+                        endPage = totalPages;
+                        startPage = Math.max(1, endPage - visiblePages + 1);
+                      }
+              
+                      for (let i = startPage; i <= endPage; i++) {
+                        pageNumbers.push(
+                          <Pagination.Item
+                            key={i}
+                            active={i === currentPage}
+                            onClick={() => handlePageChange(i)}
+                          >
+                            {i}
+                          </Pagination.Item>
+                        );
+                      }
+              
+                      return pageNumbers;
+                    })()}
+              
                     <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
                     <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
                   </Pagination>
@@ -296,7 +394,7 @@ export default function Mentor() {
                   onChange={(e) => setEditMentor({ ...editMentor, last_name: e.target.value })} required />
               </div>
               <div className="mb-3">
-                <label className="form-label">Password (optional)</label>
+                <label className="form-label">Password</label>
                 <input
                 type="password"
                 className="form-control"

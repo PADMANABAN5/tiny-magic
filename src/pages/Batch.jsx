@@ -21,7 +21,10 @@ export default function Batch() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastBg, setToastBg] = useState('primary');
-  const itemsPerPage = 10;
+const [itemsPerPage, setItemsPerPage] = useState(10);
+const [searchBatchName, setSearchBatchName] = useState('');
+const [selectedOrganization, setSelectedOrganization] = useState('');
+
 
   const [batchForm, setBatchForm] = useState({
     organization_name: '',
@@ -103,36 +106,70 @@ export default function Batch() {
   };
 
   const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    const payload = {
-      ...batchForm,
-      concept_ids: batchForm.concept_ids.map((c) => c.value),
-    };
-
-    try {
-      if (isEditMode && selectedBatchId) {
-        await axios.put(`${process.env.REACT_APP_API_LINK}/batches/${selectedBatchId}`, payload);
-        setToastMessage('✅ Batch updated successfully!');
-      } else {
-        await axios.post(`${process.env.REACT_APP_API_LINK}/batches`, payload);
-        setToastMessage('✅ Batch created successfully!');
-      }
-      setToastBg('primary');
-      setShowToast(true);
-      setShowModal(false);
-      fetchBatches();
-    } catch (err) {
-      console.error("Error saving batch:", err);
-      if (axios.isAxiosError(err) && err.response?.status === 409) {
-        setToastMessage('⚠️ Batch name already exists!');
-        setToastBg('warning');
-        setShowToast(true);
-      } else {
-        alert("Failed to save batch.");
-      }
-    }
+  e.preventDefault();
+  const payload = {
+    ...batchForm,
+    concept_ids: batchForm.concept_ids.map((c) => c.value),
   };
 
+  try {
+    if (isEditMode && selectedBatchId) {
+      await axios.put(`${process.env.REACT_APP_API_LINK}/batches/${selectedBatchId}`, payload);
+      setToastMessage('✅ Batch updated successfully!');
+    } else {
+      await axios.post(`${process.env.REACT_APP_API_LINK}/batches`, payload);
+      setToastMessage('✅ Batch created successfully!');
+    }
+    setToastBg('primary');
+    setShowToast(true);
+    setShowModal(false);
+    fetchBatches();
+  } catch (err) {
+    console.error("Error saving batch:", err);
+    
+    if (axios.isAxiosError(err) && err.response) {
+      const status = err.response.status;
+      const errorData = err.response.data;
+      
+      switch (status) {
+        case 400:
+          // Handle all validation errors
+          setToastMessage(`⚠️ ${errorData.message || 'Invalid request'}`);
+          setToastBg('warning');
+          break;
+          
+        case 404:
+          // Handle batch not found (update only)
+          setToastMessage('⚠️ Batch not found');
+          setToastBg('warning');
+          break;
+          
+        case 409:
+          // Handle duplicate batch name or sequence conflict
+          setToastMessage(`⚠️ ${errorData.message}`);
+          setToastBg('warning');
+          break;
+          
+        case 500:
+          // Handle server errors
+          setToastMessage('⚠️ Server error. Please try again later.');
+          setToastBg('warning');
+          break;
+          
+        default:
+          // Handle other errors
+          setToastMessage('⚠️ Unexpected error occurred');
+          setToastBg('warning');
+      }
+    } else {
+      // Handle network errors
+      setToastMessage('⚠️ Network error. Please check your connection.');
+      setToastBg('warning');
+    }
+    
+    setShowToast(true);
+  }
+};
   useEffect(() => {
     fetchConcepts();
     fetchOrganizations();
@@ -146,8 +183,15 @@ export default function Batch() {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentBatches = batches.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(batches.length / itemsPerPage);
+  const filteredBatches = batches.filter((batch) =>
+  batch.batch_name.toLowerCase().includes(searchBatchName.toLowerCase()) &&
+  (selectedOrganization === '' || batch.organization_name === selectedOrganization)
+);
+
+
+const totalPages = Math.ceil(filteredBatches.length / itemsPerPage);
+const currentBatches = filteredBatches.slice(indexOfFirstItem, indexOfLastItem);
+
 
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
@@ -169,6 +213,56 @@ export default function Batch() {
               <FaPlus />
             </button>
           </div>
+         <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
+  <div className="d-flex align-items-center">
+    <span className="me-2">Show entries:</span>
+    <select
+      className="form-select"
+      style={{ width: '100px' }}
+      value={itemsPerPage}
+      onChange={(e) => {
+        setItemsPerPage(parseInt(e.target.value));
+        setCurrentPage(1);
+      }}
+    >
+      {[5, 10, 20, 50, 100].map((num) => (
+        <option key={num} value={num}>{num}</option>
+      ))}
+    </select>
+  </div>
+
+  {/* Filters in single line */}
+  <div className="d-flex align-items-center gap-3 flex-grow-1" style={{ flexWrap: 'nowrap' }}>
+    <input
+      type="text"
+      className="form-control"
+      style={{ maxWidth: '220px' }}
+      placeholder="Search by Batch Name"
+      value={searchBatchName}
+      onChange={(e) => {
+        setSearchBatchName(e.target.value);
+        setCurrentPage(1);
+      }}
+    />
+    <select
+      className="form-select"
+      style={{ maxWidth: '200px' }}
+      value={selectedOrganization}
+      onChange={(e) => {
+        setSelectedOrganization(e.target.value);
+        setCurrentPage(1); // reset pagination
+      }}
+    >
+      <option value="">All Organizations</option>
+      {organizations.map((org) => (
+        <option key={org.organization_id} value={org.organization_name}>
+          {org.organization_name}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
+
 
           {loading ? (
             <p>Loading batches...</p>
@@ -220,25 +314,43 @@ export default function Batch() {
                 </tbody>
               </table>
               </div>
-              {totalPages > 1 && (
-                <div className="d-flex justify-content-center mt-4">
-                  <Pagination>
-                    <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                    {[...Array(totalPages).keys()].map((num) => (
-                      <Pagination.Item
-                        key={num + 1}
-                        active={num + 1 === currentPage}
-                        onClick={() => handlePageChange(num + 1)}
-                      >
-                        {num + 1}
-                      </Pagination.Item>
-                    ))}
-                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
-                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
-                  </Pagination>
-                </div>
-              )}
+             {totalPages > 1 && (
+                           <div className="d-flex justify-content-center mt-4">
+                                 <Pagination>
+                                     <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                                           <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                                                                
+                                           {(() => {
+                                             const pageNumbers = [];
+                                                   const visiblePages = 5;
+                                                       let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                                                     let endPage = startPage + visiblePages - 1;
+                                                                
+                                                       if (endPage > totalPages) {
+                                                          endPage = totalPages;
+                                                                startPage = Math.max(1, endPage - visiblePages + 1);
+                                                                 }
+                                                                
+                                                                 for (let i = startPage; i <= endPage; i++) {
+                                                                 pageNumbers.push(
+                                                                            <Pagination.Item
+                                                                              key={i}
+                                                                              active={i === currentPage}
+                                                                              onClick={() => handlePageChange(i)}
+                                                                            >
+                                                                              {i}
+                                                                            </Pagination.Item>
+                                                                          );
+                                                                        }
+                                                                
+                                                                        return pageNumbers;
+                                                                      })()}
+                                                                
+                                                                      <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                                                                      <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                                                                    </Pagination>
+                                                                  </div>
+                                                       )}
             </>
           )}
         </div>

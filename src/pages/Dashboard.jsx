@@ -154,48 +154,63 @@ function Dashboard() {
     }
   };
 
-  // Fetch concepts from API
   const fetchConcepts = async () => {
-    if (!username || conceptsLoading) return;
+  if (!username || conceptsLoading) return;
 
-    setConceptsLoading(true);
-    try {
-      console.log("🎯 Fetching concepts for user:", username);
-      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`);
+  setConceptsLoading(true);
+  try {
+    const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`);
 
-      if (response.data && response.data.success && response.data.data) {
-        const conceptsData = response.data.data.batch?.concepts || [];
-        console.log("✅ Concepts loaded:", conceptsData.length);
-        setConcepts(conceptsData);
+    if (response.data && response.data.success && response.data.data) {
+      const data = response.data.data;
+      const conceptsData = data.batch?.concepts || [];
 
-        // Auto-select first active concept if none selected and auto-start conversation
-        const firstActiveConcept = conceptsData.find(concept => concept.is_active) || conceptsData[0];
-        if (firstActiveConcept && !selectedConcept) {
-          console.log("🎯 Auto-selecting concept:", firstActiveConcept.concept_name);
-          setSelectedConcept(firstActiveConcept);
+      console.log("✅ Concepts loaded:", conceptsData.length);
+      setConcepts(conceptsData);
 
-          // If we have API key and no chat history, auto-start conversation
-          if (sessionStorage.getItem(`apiKey_${username}`) && chatHistory.length === 0 && !isInitializing) {
-            console.log("🚀 Auto-starting conversation after concept selection");
-            setTimeout(async () => {
-              await initiateFirstMentorMessageWithConcept(firstActiveConcept);
-            }, 500);
-          }
-        }
+      // ✅ Store org and batch ID safely in sessionStorage
+      const batch =  response.data.data.batch;
+      if (batch?.batch_id && batch?.organization_id) {
+        sessionStorage.setItem("batchId", batch.batch_id);
+        sessionStorage.setItem("organizationId", batch.organization_id);
+        console.log("✅ Stored batchId and orgId in sessionStorage", {
+          batchId: batch.batch_id,
+          orgId: batch.organization_id,
+        });
       } else {
-        console.warn("⚠️ No concepts data in response");
-        setConcepts([]);
+        console.warn("⚠️ Could not find batchId or orgId in pod-user response.");
       }
-    } catch (error) {
-      console.error("❌ Error fetching concepts:", error);
+
+      // Auto-select first concept
+      const firstActiveConcept = conceptsData.find(c => c.is_active) || conceptsData[0];
+      if (firstActiveConcept && !selectedConcept) {
+        setSelectedConcept(firstActiveConcept);
+
+        if (
+          sessionStorage.getItem(`apiKey_${username}`) &&
+          chatHistory.length === 0 &&
+          !isInitializing
+        ) {
+          setTimeout(async () => {
+            await initiateFirstMentorMessageWithConcept(firstActiveConcept);
+          }, 500);
+        }
+      }
+    } else {
       setConcepts([]);
-      if (error.response?.status !== 404) {
+    }
+  } catch (error) {
+    console.error("❌ Error fetching concepts:", error);
+    setConcepts([]);
+    if (error.response?.status !== 404) {
         toast.error("Failed to load concepts. Please try again.");
       }
-    } finally {
-      setConceptsLoading(false);
-    }
-  };
+  } finally {
+    setConceptsLoading(false);
+  }
+};
+
+
 
   // Initiate first mentor message with specific concept
   const initiateFirstMentorMessageWithConcept = async (concept) => {
@@ -203,7 +218,8 @@ function Dashboard() {
       setIsInitializing(false);
       return;
     }
-
+    const organizationId = sessionStorage.getItem("organizationId");
+const batchId = sessionStorage.getItem("batchId");
     console.log("🚀 Initiating first mentor message with concept:", concept.concept_name);
     setIsLoading(true);
     try {
@@ -215,6 +231,8 @@ function Dashboard() {
         sessionHistory: [],
         userPrompt: "",
         selectedConcept: concept,
+        organizationId: organizationId, // Pass organization ID
+        batchId: batchId // Pass batch ID
       });
 
       const mentorMessage = response.apiResponseText;
@@ -417,17 +435,23 @@ function Dashboard() {
     try {
       const userPrompt = prompt.trim();
       setPrompt("");
+      const organizationId = sessionStorage.getItem("organizationId");
+  const batchId = sessionStorage.getItem("batchId");
 
-      const initialResponse = await processPromptAndCallLLM({
-        username,
-        selectedPrompt,
-        selectedModel: "gpt-4o",
-        sessionHistory,
-        userPrompt: userPrompt,
-        selectedConcept: selectedConcept,
-      });
+  const initialResponse = await processPromptAndCallLLM({
+    username,
+    selectedPrompt,
+    selectedModel: "gpt-4o",
+    sessionHistory,
+    userPrompt: userPrompt,
+    selectedConcept: selectedConcept,
+    organizationId, // ✅ properly fetched from sessionStorage
+    batchId, 
+  });
 
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
+      
+     
 
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
@@ -458,9 +482,10 @@ function Dashboard() {
       ]);
 
       // Check for end conditions
-      if (newEndRequested || newInteractionCompleted) {
+      if ( newEndRequested || newInteractionCompleted) {
         console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
-
+        const organizationId = sessionStorage.getItem("organizationId");
+const batchId = sessionStorage.getItem("batchId");
         const assessmentResponse = await processPromptAndCallLLM({
           username,
           selectedPrompt: "assessmentPrompt",
@@ -471,6 +496,8 @@ function Dashboard() {
           ],
           userPrompt: userPrompt,
           selectedConcept: selectedConcept,
+          organizationId,     // ✅ Add this
+  batchId   
         });
 
         setLlmContent(assessmentResponse.apiResponseText);
@@ -491,7 +518,9 @@ function Dashboard() {
           ...prev,
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
-
+        console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
+        
+        
         // setCurrentStage(7);
         setCurrentChatStatus('completed');
 

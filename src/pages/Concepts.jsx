@@ -18,7 +18,10 @@ export default function Concepts() {
   const [toastMessage, setToastMessage] = useState('');
   const [toastBg, setToastBg] = useState('primary');
   const [showToast, setShowToast] = useState(false);
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+
+
 
   const [conceptForm, setConceptForm] = useState({
     concept_name: '',
@@ -87,40 +90,61 @@ export default function Concepts() {
   };
 
   const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    try {
-      if (isEditMode && selectedConceptId) {
-        await axios.put(`${process.env.REACT_APP_API_LINK}/concepts/${selectedConceptId}`, conceptForm);
-        setToastBg('primary');
-        setToastMessage('✅ Concept updated successfully!');
-      } else {
-        await axios.post(`${process.env.REACT_APP_API_LINK}/concepts`, conceptForm);
-        setToastBg('primary');
-        setToastMessage('✅ Concept created successfully!');
-      }
-      setShowModal(false);
-      fetchConcepts();
-      setShowToast(true);
-    } catch (err) {
-      console.error("Error saving concept:", err);
-      if (axios.isAxiosError(err) && err.response?.status === 409) {
-        setToastBg('warning');
-        setToastMessage('⚠️ Concept name already exists!');
-        setShowToast(true);
-      } else {
-        alert("Failed to save concept.");
-      }
+  e.preventDefault();
+  try {
+    if (isEditMode && selectedConceptId) {
+      await axios.put(`${process.env.REACT_APP_API_LINK}/concepts/${selectedConceptId}`, conceptForm);
+      setToastBg('primary');
+      setToastMessage('✅ Concept updated successfully!');
+    } else {
+      await axios.post(`${process.env.REACT_APP_API_LINK}/concepts`, conceptForm);
+      setToastBg('primary');
+      setToastMessage('✅ Concept created successfully!');
     }
-  };
-
+    setShowModal(false);
+    fetchConcepts();
+    setShowToast(true);
+  } catch (err) {
+    console.error("Error saving concept:", err);
+    
+    if (axios.isAxiosError(err) && err.response) {
+      // Handle different error statuses with specific toast messages
+      switch (err.response.status) {
+        case 400:
+          setToastBg('warning');
+          setToastMessage('⚠️ Bad request. Please check your input.');
+          break;
+        case 409:
+          setToastBg('warning');
+          setToastMessage('⚠️ Concept name already exists!');
+          break;
+        case 500:
+          setToastBg('warning');
+          setToastMessage('⚠️ Server error. Please try again later.');
+          break;
+        default:
+          setToastBg('warning');
+          setToastMessage(`⚠️ Unexpected error: ${err.message}`);
+      }
+      setShowToast(true);
+    } else {
+      // Non-Axios errors or network issues
+      setToastBg('warning');
+      setToastMessage('⚠️ Network error. Please check your connection.');
+      setShowToast(true);
+    }
+  }
+};
   useEffect(() => {
     fetchConcepts();
   }, []);
-
+  const filteredConcepts = concepts.filter(concept =>
+  concept.concept_name.toLowerCase().includes(searchTerm.toLowerCase())
+);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentConcepts = concepts.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(concepts.length / itemsPerPage);
+  const currentConcepts = filteredConcepts.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredConcepts.length / itemsPerPage);
   const handlePageChange = (pageNum) => setCurrentPage(pageNum);
 
   return (
@@ -143,6 +167,40 @@ export default function Concepts() {
             <FaPlus />
           </button>
         </div>
+      <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
+  <div className="d-flex align-items-center">
+    <span className="me-2">Show entries:</span>
+    <select
+      className="form-select"
+      style={{ width: '100px' }}
+      value={itemsPerPage}
+      onChange={(e) => {
+        setItemsPerPage(parseInt(e.target.value));
+        setCurrentPage(1);
+      }}
+    >
+      {[5, 10, 20, 50, 100].map((num) => (
+        <option key={num} value={num}>{num}</option>
+      ))}
+    </select>
+  </div>
+
+  <div className="d-flex gap-3 mb-3">
+    <input
+      type="text"
+      className="form-control"
+      style={{ maxWidth: '250px' }}
+      placeholder="Search by Concept Name..."
+      value={searchTerm}
+      onChange={(e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1);
+      }}
+    />
+  </div>
+</div>
+
+
 
         {loading ? (
           <p>Loading concepts...</p>
@@ -155,8 +213,8 @@ export default function Concepts() {
                 <thead className="bg-primary text-white">
                   <tr>
                     <th>Concept ID</th>
-                    <th>Name</th>
-                    <th>Content</th>
+                    <th>Concept Name</th>
+                    <th>Concept Content</th>
                     <th>Status</th>
                     <th>Action</th>
                   </tr>
@@ -193,25 +251,43 @@ export default function Concepts() {
               </table>
             </div>
 
-            {totalPages > 1 && (
+           {totalPages > 1 && (
               <div className="d-flex justify-content-center mt-4">
-                <Pagination>
-                  <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-                  <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                  {[...Array(totalPages)].map((_, index) => (
-                    <Pagination.Item
-                      key={index + 1}
-                      active={currentPage === index + 1}
-                      onClick={() => handlePageChange(index + 1)}
-                    >
-                      {index + 1}
-                    </Pagination.Item>
-                  ))}
-                  <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
-                  <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
-                </Pagination>
-              </div>
-            )}
+                    <Pagination>
+                        <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+                              <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+                                                   
+                              {(() => {
+                                const pageNumbers = [];
+                                      const visiblePages = 5;
+                                          let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                                        let endPage = startPage + visiblePages - 1;
+                                                   
+                                          if (endPage > totalPages) {
+                                             endPage = totalPages;
+                                                   startPage = Math.max(1, endPage - visiblePages + 1);
+                                                    }
+                                                   
+                                                    for (let i = startPage; i <= endPage; i++) {
+                                                    pageNumbers.push(
+                                                               <Pagination.Item
+                                                                 key={i}
+                                                                 active={i === currentPage}
+                                                                 onClick={() => handlePageChange(i)}
+                                                               >
+                                                                 {i}
+                                                               </Pagination.Item>
+                                                             );
+                                                           }
+                                                   
+                                                           return pageNumbers;
+                                                         })()}
+                                                   
+                                                         <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+                                                         <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+                                                       </Pagination>
+                                                     </div>
+                                          )}
           </>
         )}
       </div>

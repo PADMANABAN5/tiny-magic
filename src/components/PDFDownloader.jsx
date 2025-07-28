@@ -49,8 +49,8 @@ const PDFDownloader = ({ chatHistory, selectedConcept, first_name, last_name, up
       "Summarizing and Confirming",
       "Challenging Ideas",
       "Comparing Concepts",
-      "AbstractConcrete",
-      "Abstract",
+      "Abstract vs Concrete",
+      "Abstract  ",
       "Concrete"
     ];
 

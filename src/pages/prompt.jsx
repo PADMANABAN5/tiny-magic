@@ -1,698 +1,267 @@
-import React, { useState, useEffect, useRef } from 'react';
-import Sidebar from '../components/Sidebar.jsx';
-import { Tab, Nav, Row, Col, Button } from 'react-bootstrap';
-import { FaEdit, FaSave, FaEye, FaSyncAlt } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FaPlus, FaHistory } from 'react-icons/fa';
+import { Button, Table, Spinner, Alert, Modal, Form } from 'react-bootstrap';
+import { useNavigate } from 'react-router-dom'; 
+import EditablePromptEditor from '../components/EditablePromptEditor.jsx';
+import Supersidebar from '../components/Supersidebar';
 
-// Improved username retrieval with fallbacks
-const getUsername = () => {
-  return sessionStorage.getItem("username") ||
-    localStorage.getItem("username") ||
-    localStorage.getItem("selectedModel") ||
-    "guest_user";
-};
-
-const username = getUsername();
-
-const initialTexts = {
-  tab1: { label: 'Concept mentor', content: '' },
-  tab2: { label: 'Assessment prompt', content: '' },
-  tab3: { label: 'Default values', content: '' },
-};
-
-// Improved JSON Editor Component for tab3
-
-function ImprovedJSONEditor({ content, onChange, isEditable }) {
-  const [jsonData, setJsonData] = useState({});
+export default function Prompt() {
+    const navigate = useNavigate();
+  const [allPrompts, setAllPrompts] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showEditor, setShowEditor] = useState(false);
+  const [editPrompt, setEditPrompt] = useState(null);
+  const [updatedUserContent, setUpdatedUserContent] = useState('');
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [selectedPromptId, setSelectedPromptId] = useState(null);
+  const [orgList, setOrgList] = useState([]);
+  const [batchList, setBatchList] = useState([]);
+  const [selectedOrgId, setSelectedOrgId] = useState('');
+  const [selectedBatchId, setSelectedBatchId] = useState('');
+  const [filteredPrompts, setFilteredPrompts] = useState([]);
 
-  // Helper function to clean quotes and escape characters
-  const cleanValue = (value) => {
-    if (typeof value !== 'string') return value;
 
-    // Trim and remove trailing commas
-    let trimmed = value.trim().replace(/,$/, '');
+  // Fetch all prompts (global + assigned)
+ const fetchPrompts = async () => {
+  try {
+    const [globalRes, allRes] = await Promise.all([
+      axios.get('http://localhost:5000/api/prompts/global'),
+      axios.get('http://localhost:5000/api/prompts/batch'),
+    ]);
 
-    try {
-      // Try to parse it as a JSON string (handles escaped quotes correctly)
-      return JSON.parse(trimmed);
-    } catch (e) {
-      // If parsing fails, fallback to manual unescaping
-      return trimmed
-        .replace(/^"(.*)"$/, '$1')  // Remove outer quotes if present
-        .replace(/\\"/g, '"')       // Replace escaped quotes
-        .replace(/\\n/g, '\n')      // Replace \n with newline
-        .replace(/\\t/g, '\t')      // Replace \t with tab
-        .replace(/\\\\/g, '\\');    // Replace escaped backslashes
-    }
-  };
+    const globalData = globalRes.data.data.map(p => ({ ...p, source: 'Global' }));
+    const assignedData = allRes.data.data
+      .filter(p => p.organization_name && p.batch_name)
+      .map(p => ({ ...p, source: 'Assigned' }));
 
-  useEffect(() => {
-    try {
-      if (content.trim()) {
-        const parsed = JSON.parse(content);
-
-        // Clean all the parsed data
-        const cleanedData = {};
-        Object.keys(parsed).forEach(key => {
-          // Clean both key and value
-          const cleanKey = cleanValue(key);
-          const cleanValueData = cleanValue(parsed[key]);
-          cleanedData[cleanKey] = cleanValueData;
-        });
-
-        setJsonData(cleanedData);
-        setError('');
-      } else {
-        setJsonData({});
-      }
-    } catch (e) {
-      setError('Invalid JSON format');
-      setJsonData({});
-    }
-  }, [content]);
-
-  const handleFieldChange = (key, value) => {
-    const updated = { ...jsonData, [key]: value };
-    setJsonData(updated);
-    // Immediately notify parent component of changes
-    onChange(JSON.stringify(updated, null, 2));
-  };
-
-  const formatLabel = (key) => {
-    // Clean the key first, then format it
-    const cleanKey = cleanValue(key);
-    return cleanKey.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
-  };
-
-  const renderFieldInput = (key, value) => { 
-    const cleanedValue = cleanValue(value); 
-    const stringValue = String(cleanedValue || '');
-
-    if (stringValue.length > 100 || stringValue.includes('\n') || stringValue.includes('\\n')) {
-      const displayValue = stringValue.replace(/\\n/g, '\n');
-      return (
-        <textarea
-          className="form-control"
-          rows={Math.max(4, Math.min(10, displayValue.split('\n').length + 2))}
-          value={displayValue}
-          onChange={(e) => handleFieldChange(key, e.target.value.replace(/\n/g, '\\n'))}
-          disabled={!isEditable}
-          style={{
-            minHeight: '100px',
-            fontFamily: 'inherit',
-            resize: 'vertical'
-          }}
-        />
-      );
-    }
-
-    return (
-      <input
-        type="text"
-        className="form-control"
-        value={stringValue}
-        onChange={(e) => handleFieldChange(key, e.target.value)}
-        disabled={!isEditable}
-      />
-    );
-  };
-
-  if (error) {
-    return (
-      <div className="alert alert-danger" role="alert">
-        <strong>JSON Parse Error:</strong> {error}
-        <div className="mt-2">
-          <small>Please check the JSON format and try again.</small>
-        </div>
-      </div>
-    );
+    setAllPrompts([...globalData, ...assignedData]);
+  } catch (err) {
+    console.error(err);
+    setError('Failed to load prompts');
+  } finally {
+    setLoading(false);
   }
+};
 
-  return (
-    // Scrollable container with fixed height
-    <div
-      style={{
-        maxHeight: '400px',
-        overflowY: 'auto',
-        overflowX: 'hidden',
-        padding: '10px',
-        border: '1px solid #dee2e6',
-        borderRadius: '5px',
-        backgroundColor: '#fff'
-      }}
-    >
-      {Object.keys(jsonData).length === 0 ? (
-        <div className="alert alert-info" role="alert">
-          No configuration fields available.
-        </div>
-      ) : (
-        <div>
-          {Object.entries(jsonData).map(([key, value]) => (
-            <div key={key} className="card mb-3">
-              <div className="card-body">
-                <div className="row align-items-start">
-                  <div className="col-md-3">
-                    <label className="form-label fw-bold text-muted">
-                      {formatLabel(key)}
-                    </label>
-                  </div>
-                  <div className="col-md-9">
-                    {renderFieldInput(key, value)}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
+useEffect(() => {
+  fetchPrompts();
+}, []);
 
-function EditableContent({ tabKey, content, onChange, isEditable }) {
-  // Declare all hooks at the top level (before any early returns)
-  const ref = useRef(null);
-  const hasInitialized = useRef(false);
 
-  const parseContent = (text) => {
-    return text.replace(/{{[^}]+}}/g, (match) => {
-      return `<span contenteditable="false" data-token="true" style="user-select: none; background:#e2e3e5;padding:2px;border-radius:3px;">${match}</span>`;
-    });
-  };
-
-  function saveSelection(container) {
-    const sel = window.getSelection();
-    if (sel.rangeCount === 0) return null;
-
-    const range = sel.getRangeAt(0);
-    const preSelectionRange = range.cloneRange();
-    preSelectionRange.selectNodeContents(container);
-    preSelectionRange.setEnd(range.startContainer, range.startOffset);
-    const start = preSelectionRange.toString().length;
-
-    return { start, end: start + range.toString().length };
-  }
-
-  function restoreSelection(container, savedSel) {
-    if (!savedSel) return;
-
-    let charIndex = 0;
-    let range = document.createRange();
-    range.setStart(container, 0);
-    range.collapse(true);
-
-    const nodeStack = [container];
-    let node, foundStart = false, stop = false;
-
-    while (!stop && (node = nodeStack.pop())) {
-      if (node.nodeType === 3) {
-        const nextCharIndex = charIndex + node.length;
-        if (!foundStart && savedSel.start >= charIndex && savedSel.start <= nextCharIndex) {
-          range.setStart(node, savedSel.start - charIndex);
-          foundStart = true;
-        }
-        if (foundStart && savedSel.end >= charIndex && savedSel.end <= nextCharIndex) {
-          range.setEnd(node, savedSel.end - charIndex);
-          stop = true;
-        }
-        charIndex = nextCharIndex;
-      } else {
-        let i = node.childNodes.length;
-        while (i--) nodeStack.push(node.childNodes[i]);
-      }
-    }
-
-    const sel = window.getSelection();
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-
-  const serializeContent = () => {
-    if (!ref.current) return '';
-    const clone = ref.current.cloneNode(true);
-    clone.querySelectorAll('[data-token]').forEach((el) => {
-      const text = el.textContent;
-      el.replaceWith(document.createTextNode(text));
-    });
-    return clone.innerText;
-  };
-
+  // Fetch organizations
   useEffect(() => {
-    hasInitialized.current = false;
-  }, [tabKey]);
-
-  useEffect(() => {
-    if (!ref.current || tabKey === 'tab3') return; // Skip for tab3
-    const container = ref.current;
-    const isFocused = document.activeElement === container;
-    const savedSel = isFocused ? saveSelection(container) : null;
-
-    const newContent = parseContent(content);
-
-    if (container.innerHTML !== newContent) {
-      container.innerHTML = newContent;
-      if (isFocused) restoreSelection(container, savedSel);
-    }
-
-    hasInitialized.current = true;
-  }, [tabKey, content]);
-
-  // Use improved JSON editor for tab3
-  if (tabKey === 'tab3') {
-    return (
-      <ImprovedJSONEditor
-        content={content}
-        onChange={onChange}
-        isEditable={isEditable}
-      />
-    );
-  }
-
-  // Keep existing logic for tab1 and tab2
-  const handleInput = () => {
-    const newText = serializeContent();
-    onChange(newText);
-  };
-
-  return (
-    <div
-      ref={ref}
-      contentEditable={isEditable}
-      suppressContentEditableWarning
-      spellCheck={false}
-      className="p-3 bg-white text-dark border rounded"
-      onInput={handleInput}
-      onBlur={() => onChange(serializeContent())}
-      style={{
-        minHeight: '300px',
-        maxHeight: '400px',
-        overflowY: 'auto',
-        whiteSpace: 'pre-wrap',
-        outline: 'none',
-        resize: 'vertical',
-        fontFamily: 'monospace',
-        userSelect: 'text',
-      }}
-    />
-  );
-}
-
-// This function converts plain text "key: value" format to JSON
-function convertTxtToJson(text) {
-  const lines = text.split('\n');
-  const jsonObj = {};
-
-  lines.forEach(line => {
-    const parts = line.split(':');
-    if (parts.length < 2) return;
-
-    const key = parts[0].trim();
-    const rawVal = parts.slice(1).join(':').trim();
-
-    if (!key) return;
-
-    let value;
-    if (rawVal === 'true') value = true;
-    else if (rawVal === 'false') value = false;
-    else if (!isNaN(rawVal) && rawVal !== '') value = Number(rawVal);
-    else value = rawVal;
-
-    jsonObj[key] = value;
-  });
-
-  return JSON.stringify(jsonObj, null, 2);
-}
-
-function Prompt() {
-  const [texts, setTexts] = useState(initialTexts);
-  const [editMode, setEditMode] = useState({ tab1: false, tab2: false, tab3: false });
-  const [currentTab, setCurrentTab] = useState('tab1');
-  const [editedTexts, setEditedTexts] = useState(initialTexts);
-  const [loadingTabs, setLoadingTabs] = useState({});
-
-  const templateMap = {
-    tab1: 'conceptMentor',
-    tab2: 'assessmentPrompt',
-    tab3: 'defaultTemplateValues',
-  };
-
-  // Function to fetch user's custom template first, then fallback to default
-  const fetchTemplateForTab = async (tabKey) => {
-    const templateType = templateMap[tabKey];
-    if (!templateType) {
-      setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
-      return;
-    }
-
-    const currentUsername = getUsername();
-    if (!currentUsername || currentUsername === 'null' || currentUsername === '') {
-      console.warn('No valid username found, skipping template fetch');
-      setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
-      return;
-    }
-
-    setLoadingTabs(prev => ({ ...prev, [tabKey]: true }));
-
-    let templateContent = '';
-    let templateFound = false;
-
-    try {
-      // First, try to fetch user's custom template
-      const customTemplateUrl = `${process.env.REACT_APP_API_LINK}/templates?username=${currentUsername}&templateType=${templateType}`;
-
-      const customResponse = await axios.get(customTemplateUrl);
-
-      if (customResponse.status === 200 && customResponse.data.success) {
-        if (customResponse.data.data?.template?.content) {
-          templateContent = customResponse.data.data.template.content;
-          templateFound = true;
-        } else if (customResponse.data.data?.content) {
-          templateContent = customResponse.data.data.content;
-          templateFound = true;
-        } else {
-        }
-      } else {
-      }
-    } catch (customErr) {
-
-    }
-
-    // If no custom template found, try default template
-    if (!templateFound) {
-      try {
-        const defaultUrl = `${process.env.REACT_APP_API_LINK}/templates/defaults?templateType=${templateType}`;
-
-        const response = await axios.get(defaultUrl);
-
-        // Handle multiple possible response structures
-        if (response.data.success) {
-          templateContent = response.data.data?.content ||
-            response.data.data?.defaultContent ||
-            response.data.data?.template?.content || '';
-        } else {
-          templateContent = response.data.content ||
-            response.data.defaultContent || '';
-        }
-
-        if (templateContent) {
-          templateFound = true;
-        } else {
-        }
-
-      } catch (err) {
-        console.error(`❌ Failed to load default template for ${tabKey}:`, err);
-        if (axios.isAxiosError(err)) {
-          console.error('Axios error details:', err.response?.data, err.response?.status, err.config?.url);
-        }
-
-        // Show alert after error handling
-        setTimeout(() => {
-          alert(`❌ Failed to load ${initialTexts[tabKey].label}: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
-        }, 100);
-      }
-    }
-
-    // Process the content regardless of source
-    if (templateFound && templateContent) {
-      try {
-        let processedContent = templateContent;
-
-        // Handle tab3 JSON formatting
-        if (tabKey === 'tab3') {
-          try {
-            const parsedJson = JSON.parse(processedContent);
-            processedContent = JSON.stringify(parsedJson, null, 2);
-          } catch (jsonParseError) {
-            console.warn(`Template content for ${tabKey} was not valid JSON, attempting plain text conversion.`, jsonParseError);
-            try {
-              processedContent = convertTxtToJson(processedContent);
-            } catch (txtConvertError) {
-              console.error(`Failed to convert plain text for ${tabKey}:`, txtConvertError);
-              processedContent = `Failed to parse content. Raw: ${processedContent}`;
-            }
-          }
-        }
-
-        const updatedTabData = {
-          label: initialTexts[tabKey].label,
-          content: processedContent,
-        };
-        setTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
-        setEditedTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
-      } catch (processingError) {
-        console.error(`Error processing content for ${tabKey}:`, processingError);
-        alert(`❌ Error processing template content for ${texts[tabKey].label}`);
-      }
-    } else {
-      // Set empty content to stop loading
-      const emptyTabData = {
-        label: initialTexts[tabKey].label,
-        content: '',
-      };
-      setTexts(prev => ({ ...prev, [tabKey]: emptyTabData }));
-      setEditedTexts(prev => ({ ...prev, [tabKey]: emptyTabData }));
-    }
-
-    // Always clear loading state
-    setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
-  };
-
-  // Handle tab selection - fetch data when tab is clicked
-  const handleTabSelect = (tabKey) => {
-    setCurrentTab(tabKey);
-
-    if (!texts[tabKey].content) {
-      fetchTemplateForTab(tabKey);
-    }
-  };
-
-  useEffect(() => {
-    fetchTemplateForTab('tab1');
+    axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`)
+      .then(res => setOrgList(res.data.data || []))
+      .catch(err => console.error('Failed to fetch orgs:', err));
   }, []);
 
-  const handleEdit = (tab) => {
-    setEditMode((prev) => ({ ...prev, [tab]: true }));
-  };
-
-  const handleSave = async (tabKey) => {
-    // Validate username before making API call
-    const currentUsername = getUsername();
-    if (!currentUsername || currentUsername === 'null' || currentUsername === '') {
-      alert('❌ Username is required to save templates. Please log in again.');
+  // Fetch batches for selected org
+  useEffect(() => {
+    if (!selectedOrgId) {
+      setBatchList([]);
+      setSelectedBatchId('');
       return;
     }
 
-    const payload = {
-      username: currentUsername,
-      templateType: templateMap[tabKey],
-      content: editedTexts[tabKey].content,
-    };
+    axios
+      .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgId}`)
+      .then((res) => {
+        setBatchList(res.data.data || []);
+        setSelectedBatchId('');
+      })
+      .catch((err) => {
+        console.error('Failed to fetch batches:', err);
+        setBatchList([]);
+      });
+  }, [selectedOrgId]);
 
-    try {
-      const res = await axios.post(`${process.env.REACT_APP_API_LINK}/templates`, payload);
-
-      // Show success alert after API response
-      setTimeout(() => {
-        alert('✅ Template saved successfully!');
-      }, 100);
-
-      setTexts((prev) => ({ ...prev, [tabKey]: editedTexts[tabKey] }));
-      setEditMode((prev) => ({ ...prev, [tabKey]: false }));
-
-    } catch (err) {
-      console.error('Save error:', err);
-
-      // Show error alert after API response with delay
-      setTimeout(() => {
-        if (axios.isAxiosError(err)) {
-          console.error('Axios save error details:', err.response?.data, err.response?.status);
-          if (err.response?.status === 409) {
-            console.warn(`Received 409 Conflict for ${tabKey}. Message: ${err.response.data?.message}. Template with this type/username already exists.`);
-            alert(`⚠️ Failed to save: Template for '${texts[tabKey].label}' already exists. No new template was created. Please edit the existing template directly.`);
-          } else {
-            alert(`❌ Failed to save: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
-          }
-        } else {
-          alert(`❌ Failed to save: ${err.message || 'An unknown error occurred.'}`);
-        }
-      }, 100);
-    }
+  const handleEditClick = (prompt) => {
+    setEditPrompt(prompt);
+    setUpdatedUserContent(prompt.user_content);
+    setShowEditor(true);
   };
 
-  const handleResetToDefault = async (tabKey) => {
-    const confirmReset = window.confirm(`⚠️ Are you sure you want to reset "${texts[tabKey].label}" to its default? This will overwrite your current template and cannot be undone.`);
-    if (!confirmReset) return;
-
-    // Validate username before making API call
-    const currentUsername = getUsername();
-    if (!currentUsername || currentUsername === 'null' || currentUsername === '') {
-      alert('❌ Username is required to reset templates. Please log in again.');
-      return;
-    }
-
-    setLoadingTabs(prev => ({ ...prev, [tabKey]: true }));
-
-    const payload = {
-      username: currentUsername,
-      templateType: templateMap[tabKey],
-      resetToDefault: true,
-    };
-
-    try {
-      const response = await axios.post(`${process.env.REACT_APP_API_LINK}/templates/defaults`, payload);
-
-      // Show success alert after API response
-      setTimeout(() => {
-        alert(`✅ ${texts[tabKey].label} has been reset to default.`);
-      }, 100);
-
-      // Extract the default content from the response
-      let content = response.data.data?.defaultContent || response.data.data?.content || '';
-
-      // Handle tab3 JSON formatting
-      if (tabKey === 'tab3') {
-        try {
-          const parsedJson = JSON.parse(content);
-          content = JSON.stringify(parsedJson, null, 2);
-        } catch (jsonParseError) {
-          console.warn(`Reset content for ${tabKey} was not valid JSON, attempting plain text conversion.`, jsonParseError);
-          try {
-            content = convertTxtToJson(content);
-          } catch (txtConvertError) {
-            console.error(`Failed to convert plain text for ${tabKey}:`, txtConvertError);
-            content = `Failed to parse content. Raw: ${content}`;
-          }
-        }
-      }
-
-      const updatedTabData = {
-        label: initialTexts[tabKey].label,
-        content,
-      };
-
-      setTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
-      setEditedTexts(prev => ({ ...prev, [tabKey]: updatedTabData }));
-      setEditMode((prev) => ({ ...prev, [tabKey]: false }));
-
-    } catch (err) {
-      console.error('Reset to default error', err);
-
-      // Show error alert after API response with delay
-      setTimeout(() => {
-        if (axios.isAxiosError(err)) {
-          console.error('Axios reset error details:', err.response?.data, err.response?.status);
-        }
-        alert(`❌ Failed to reset to default: ${err.response?.data?.message || err.message || 'An unknown error occurred.'}`);
-      }, 100);
-    } finally {
-      setLoadingTabs(prev => ({ ...prev, [tabKey]: false }));
-    }
+  const handleSave = () => {
+    axios.put(`http://localhost:5000/api/prompts/${editPrompt.prompt_id}`, {
+      user_content: updatedUserContent,
+      json_content: editPrompt.json_content
+    })
+      .then(() => {
+        setShowEditor(false);
+        window.location.reload(); // Or re-fetch prompts
+      })
+      .catch((err) => {
+        console.error(err);
+        alert("Failed to update prompt");
+      });
   };
+
+  const handleAssignPrompt = () => {
+  if (!selectedPromptId || !selectedOrgId || !selectedBatchId) {
+    alert('Please select all fields.');
+    return;
+  }
+
+  axios.post('http://localhost:5000/api/prompts/batch', {
+    prompt_id: selectedPromptId,
+    organization_id: parseInt(selectedOrgId),
+    batch_id: parseInt(selectedBatchId),
+  })
+    .then(() => {
+      alert('✅ Prompt assigned successfully!');
+      setShowAssignModal(false);
+      fetchPrompts(); // 🔄 Refresh table without full reload
+    })
+    .catch((err) => {
+      console.error(err);
+      alert('❌ Failed to assign prompt');
+    });
+};
+
+
+  if (loading) return <Spinner animation="border" variant="primary" />;
+  if (error) return <Alert variant="danger">{error}</Alert>;
 
   return (
-    <div className="d-flex flex-column flex-md-row dashboard-container position-relative">
-      <Sidebar />
-      <div className="flex-grow-1 pt-3 px-4">
-        <h3 className="mb-3 text-center">Prompt Management</h3>
-        <Tab.Container activeKey={currentTab} onSelect={handleTabSelect}>
-          <Row>
-            <Col sm={3}>
-              <Nav variant="pills" className="flex-column">
-                {Object.keys(texts).map((tabKey) => (
-                  <Nav.Item key={tabKey}>
-                    <Nav.Link
-                      eventKey={tabKey}
-                      className="text-start border prompt-nav nav-link"
-                    >
-                      {texts[tabKey].label}
-                      {loadingTabs[tabKey] && (
-                        <span className="ms-2 spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                      )}
-                    </Nav.Link>
-                  </Nav.Item>
-                ))}
-              </Nav>
-            </Col>
-            <Col sm={9}>
-              <Tab.Content>
-                {Object.keys(texts).map((tabKey) => (
-                  <Tab.Pane eventKey={tabKey} key={tabKey}>
-                    <div className="border rounded p-3 shadow-sm bg-light">
-                      <div className="d-flex justify-content-between align-items-center mb-2">
-                        <h5 className="mb-0">
-                          <FaEye className="me-2" />
-                          Editor
-                          {loadingTabs[tabKey] && (
-                            <span className="ms-2 text-muted">Loading...</span>
-                          )}
-                        </h5>
-                        <div className="d-flex gap-2">
-                          {!editMode[tabKey] ? (
-                            <>
-                              <Button
-                                style={{ width: '70px', color: '#fff' }}
-                                variant="warning"
-                                size="sm"
-                                onClick={() => handleEdit(tabKey)}
-                                disabled={loadingTabs[tabKey]}
-                              >
-                                <FaEdit className="me-1" />Edit
-                              </Button>
-                              <Button
-                                style={{ width: '80px' }}
-                                variant="danger"
-                                size="sm"
-                                onClick={() => handleResetToDefault(tabKey)}
-                                title="Reset to Default"
-                                disabled={loadingTabs[tabKey]}
-                              >
-                                <FaSyncAlt className="me-1" />Reset
-                              </Button>
-                            </>
-                          ) : (
-                            <Button
-                              style={{ width: '70px', color: '#fff' }}
-                              variant="success"
-                              size="sm"
-                              onClick={() => handleSave(tabKey)}
-                              disabled={loadingTabs[tabKey]}
-                            >
-                              <FaSave className="me-1" />Save
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      {loadingTabs[tabKey] ? (
-                        <div className="text-center p-4">
-                          <div className="spinner-border" role="status">
-                            <span className="visually-hidden">Loading...</span>
-                          </div>
-                          <div className="mt-2">Loading {texts[tabKey].label}...</div>
-                        </div>
-                      ) : (
-                        <EditableContent
-                          tabKey={tabKey}
-                          content={editedTexts[tabKey].content}
-                          onChange={(newVal) =>
-                            setEditedTexts((prev) => ({
-                              ...prev,
-                              [tabKey]: { ...prev[tabKey], content: newVal },
-                            }))
-                          }
-                          isEditable={editMode[tabKey]}
-                        />
-                      )}
-                    </div>
-                  </Tab.Pane>
-                ))}
-              </Tab.Content>
-            </Col>
-          </Row>
-        </Tab.Container>
+    <div className="main-layout-container">
+      {/* Supersidebar is assumed to be a separate component */}
+       <Supersidebar />
+      <div className="content-area">
+    <div className="container mt-4">
+      <h3>Global & Assigned Prompts</h3>
+
+      <div className="mt-3 text-end">
+        <Button variant="secondary" onClick={() => navigate('/archived')} style={{ marginRight: '10px' }}>
+            <FaHistory className="me-2" /> 
+  </Button>
+        <Button variant="primary" onClick={() => setShowAssignModal(true)}>
+            <FaPlus className="me-2" /> 
+        </Button>
       </div>
+
+      <Table striped bordered hover responsive className="mt-3">
+        <thead>
+          <tr>
+            <th>Prompt Type</th>
+            <th>Prompt Level</th>
+            <th>Organization Name</th>
+            <th>Batch Name</th>
+            <th>Version</th>
+            {/* <th>Source</th> */}
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {allPrompts.map((prompt) => (
+            <tr key={prompt.prompt_id}>
+              <td>{prompt.prompt_type}</td>
+              <td>{prompt.prompt_level}</td>
+              <td>{prompt.organization_name || '—'}</td>
+              <td>{prompt.batch_name || '—'}</td>
+              <td>{prompt.version}</td>
+              {/* <td>{prompt.source}</td> */}
+              <td>
+                <Button
+                  variant="warning"
+                  size="sm"
+                  className="me-2"
+                  onClick={() => handleEditClick(prompt)}
+                >
+                  Edit
+                </Button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </Table>
+
+      {/* Edit Prompt Modal */}
+      <Modal show={showEditor} onHide={() => setShowEditor(false)} size="lg">
+        <Modal.Header closeButton>
+          <Modal.Title>Edit Prompt</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <EditablePromptEditor
+            initialContent={editPrompt?.user_content || ''}
+            onSave={(updatedText) => setUpdatedUserContent(updatedText)}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowEditor(false)}>Cancel</Button>
+          <Button variant="success" onClick={handleSave}>Save Changes</Button>
+        </Modal.Footer>
+      </Modal>
+
+      {/* Assign Prompt Modal */}
+      <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Assign Prompt to Batch</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Group className="mb-3">
+            <Form.Label>Select Prompt</Form.Label>
+            <Form.Select
+              value={selectedPromptId || ''}
+              onChange={(e) => setSelectedPromptId(e.target.value)}
+            >
+              <option value="">-- Select --</option>
+              {allPrompts
+                .filter(p => p.source === 'Global') // Only global prompts can be reassigned
+                .map((prompt) => (
+                  <option key={prompt.prompt_id} value={prompt.prompt_id}>
+                    {prompt.prompt_type} - v{prompt.version}
+                  </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Select Organization</Form.Label>
+            <Form.Select
+              value={selectedOrgId}
+              onChange={(e) => setSelectedOrgId(e.target.value)}
+            >
+              <option value="">-- Select --</option>
+              {orgList.map((org) => (
+                <option key={org.organization_id} value={org.organization_id}>
+                  {org.organization_name}
+                </option>
+              ))}
+            </Form.Select>
+          </Form.Group>
+
+          <Form.Group className="mb-3">
+            <Form.Label>Select Batch</Form.Label>
+            <Form.Select
+              value={selectedBatchId}
+              onChange={(e) => setSelectedBatchId(e.target.value)}
+              disabled={!selectedOrgId}
+            >
+              <option value="">-- Select --</option>
+              {batchList
+                .filter(batch => batch.organization_id?.toString() === selectedOrgId?.toString())
+                .map(batch => (
+                  <option key={batch.batch_id} value={batch.batch_id}>
+                    {batch.batch_name}
+                  </option>
+                ))}
+            </Form.Select>
+          </Form.Group>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowAssignModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="success" onClick={handleAssignPrompt}>
+            Assign
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </div>
+    </div>
+    </div>
+    
   );
 }
-
-export default Prompt;

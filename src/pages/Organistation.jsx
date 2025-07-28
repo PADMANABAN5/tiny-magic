@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer,Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/OrgList.css';
@@ -17,7 +17,8 @@ export default function OrgList() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastBg, setToastBg] = useState('primary');
-  const itemsPerPage = 10;
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+
   const navigate = useNavigate();
 
   const fetchOrganizations = async () => {
@@ -59,7 +60,7 @@ export default function OrgList() {
         is_active: newIsActiveState,
       });
       setToastBg(newIsActiveState ? 'primary' : 'secondary');
-      setToastMessage(`Marked as ${newIsActiveState ? 'Active' : 'Inactive'} successfully`);
+      setToastMessage(`Marked as ${newIsActiveState ? 'Active' : 'inactive'} successfully`);
       setShowToast(true);
     } catch (err) {
       console.error("Error toggling status:", err);
@@ -75,7 +76,9 @@ export default function OrgList() {
   const handleCreateOrganization = async (e) => {
   e.preventDefault();
   if (!newOrgName.trim()) {
-    alert("Organization name cannot be empty.");
+    setToastMessage('⚠️ Organization name cannot be empty!');
+    setToastBg('warning');
+    setShowToast(true);
     return;
   }
 
@@ -88,26 +91,47 @@ export default function OrgList() {
     setShowModal(false);
     setNewOrgName('');
     fetchOrganizations();
-    setToastBg('primary'); // ✅ set background before showing
     setToastMessage('✅ Organization created successfully!');
+    setToastBg('success');
     setShowToast(true);
   } catch (err) {
     console.error("Error creating organization:", err);
 
-     if (axios.isAxiosError(err)) {
-      if (err.response?.status === 409) {
-        setToastMessage('⚠️ Organization name already exists!');
-        setToastBg('warning'); // ✅ set background before showing
-        setShowToast(true);
-      } else {
-        alert("Failed to create organization.");
+    if (axios.isAxiosError(err)) {
+      switch (err.response?.status) {
+        case 400:
+          // Bad Request (missing fields or invalid data)
+          setToastMessage(`⚠️ ${err.response.data?.message || 'Invalid organization data'}`);
+          setToastBg('warning');
+          break;
+        case 404:
+          // Not Found (though unlikely for POST, but could happen if endpoint is wrong)
+          setToastMessage('⚠️ Resource not found');
+          setToastBg('danger');
+          break;
+        case 409:
+          // Conflict (organization name exists)
+          setToastMessage('⚠️ Organization name already exists!');
+          setToastBg('warning');
+          break;
+        case 500:
+          // Internal Server Error
+          setToastMessage('⚠️ Server error. Please try again later.');
+          setToastBg('danger');
+          break;
+        default:
+          // Other errors
+          setToastMessage('⚠️ Failed to create organization');
+          setToastBg('danger');
       }
     } else {
-      alert("Unexpected error occurred.");
+      // Non-Axios errors (network errors, etc.)
+      setToastMessage('⚠️ Network error. Please check your connection.');
+      setToastBg('danger');
     }
+    setShowToast(true);
   }
 };
-
 
   useEffect(() => {
     fetchOrganizations();
@@ -133,12 +157,31 @@ export default function OrgList() {
           </button>
           </div>
 
-          <div className="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-            <h3 className="mb-0">Organizations</h3>
-            <button className="create-btn" onClick={() => setShowModal(true)} style={{ width: '10%' }}>
-              <FaPlus />
-            </button>
-          </div>
+          <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+  <h3 className="mb-0">Organizations</h3>
+  <button className="create-btn" onClick={() => setShowModal(true)} style={{ width: '10%' }}>
+    <FaPlus />
+  </button>
+</div>
+
+<div className="d-flex justify-content-start align-items-center mb-3">
+  <span className="me-2">Show entries:</span>
+  <Form.Select
+    style={{ width: '100px' }}
+    value={itemsPerPage}
+    onChange={(e) => {
+      setCurrentPage(1);
+      setItemsPerPage(Number(e.target.value));
+    }}
+  >
+    {[5, 10, 15, 20, 50].map((num) => (
+      <option key={num} value={num}>
+        {num}
+      </option>
+    ))}
+  </Form.Select>
+</div>
+
 
           {loading ? (
             <p>Loading organizations...</p>
@@ -187,24 +230,43 @@ export default function OrgList() {
               </div>
 
               {totalPages > 1 && (
-                <div className="d-flex justify-content-center mt-4">
-                  <Pagination>
-                    <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-                    <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                    {[...Array(totalPages).keys()].map((num) => (
-                      <Pagination.Item
-                        key={num + 1}
-                        active={num + 1 === currentPage}
-                        onClick={() => handlePageChange(num + 1)}
-                      >
-                        {num + 1}
-                      </Pagination.Item>
-                    ))}
-                    <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
-                    <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
-                  </Pagination>
-                </div>
-              )}
+  <div className="d-flex justify-content-center mt-4">
+    <Pagination>
+      <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
+      <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
+
+      {(() => {
+        const pageNumbers = [];
+        const visiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+        let endPage = startPage + visiblePages - 1;
+
+        if (endPage > totalPages) {
+          endPage = totalPages;
+          startPage = Math.max(1, endPage - visiblePages + 1);
+        }
+
+        for (let i = startPage; i <= endPage; i++) {
+          pageNumbers.push(
+            <Pagination.Item
+              key={i}
+              active={i === currentPage}
+              onClick={() => handlePageChange(i)}
+            >
+              {i}
+            </Pagination.Item>
+          );
+        }
+
+        return pageNumbers;
+      })()}
+
+      <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+      <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
+    </Pagination>
+  </div>
+)}
+
             </>
           )}
         </div>

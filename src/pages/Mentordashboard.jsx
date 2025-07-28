@@ -78,6 +78,7 @@ function Mentordashboard() {
         try {
           const userId = sessionStorage.getItem("userId"); // Use mentorId directly as userId
           const res = await axios.get(`${process.env.REACT_APP_API_LINK}/reports/progress?mentor_id=${userId}`);
+          console.log("✅ Progress data:", res.data.data);
           if (res.data.success && Array.isArray(res.data.data)) {
             setMentorProgressReportData(res.data.data);
           } else {
@@ -233,6 +234,7 @@ function Mentordashboard() {
             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.concept_name}</td>
             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.status}</td>
             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.current_stage}</td>
+            <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.final_weighted_score || 'N/A'}</td>
             <td style={{ padding: '8px', border: '1px solid #ddd' }} rowSpan={rowSpan}>{item.organization_name || 'N/A'}</td> {/* Assuming 'organization_name' from API */}
             <td style={{ padding: '8px', border: '1px solid #ddd' }} rowSpan={rowSpan}>{item.batch_name}</td>
             <td style={{ padding: '8px', border: '1px solid #ddd' }} rowSpan={rowSpan}>{item.pod_name}</td>
@@ -245,6 +247,7 @@ function Mentordashboard() {
             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.concept_name}</td>
             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.status}</td>
             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.current_stage}</td>
+            <td style={{ padding: '8px', border: '1px solid #ddd' }}>{item.final_weighted_score || 'N/A'}</td>
             <td style={{ padding: '8px', border: '1px solid #ddd' }}>{new Date(item.updated_at).toLocaleString()}</td>
           </tr>
         );
@@ -335,6 +338,8 @@ function Mentordashboard() {
                             <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Concept Name</th>
                             <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Status</th>
                             <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Current Stage</th>
+                            <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Final Score</th>
+
                             <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Organization</th>
                             <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Batch Name</th>
                             <th style={{ padding: '8px', border: '1px solid #ddd', textAlign: 'left' }}>Pod Name</th>

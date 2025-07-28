@@ -7,6 +7,8 @@ import {
   FaSignOutAlt,
   FaUser,
   FaCaretDown,
+  FaHistory,
+  FaSlidersH 
 } from "react-icons/fa";
 
 function Supersidebar() {
@@ -75,6 +77,16 @@ function Supersidebar() {
                     <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
                     Dashboard
                   </Link>
+                   <Link
+                      to="/prompt"
+                      className={`dropdown-item d-flex align-items-center ${
+                      location.pathname === "/prompt" ? "active" : ""
+                      }`}
+                      onClick={() => setShowDropdown(false)}
+                      >
+                      <FaSlidersH  className="me-2" style={{ fontSize: "16px" }} />
+                      Prompt
+                      </Link>
                 </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>
