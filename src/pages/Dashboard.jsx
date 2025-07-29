@@ -778,24 +778,26 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
       setIsCountsLoading(false);
     }
   };
-
+   
   const checkSessionStatus = async (conceptName = null) => {
-    if (!username || !userId) {
-      setIsInitializing(false);
-      await fetchConcepts();
-      return;
-    }
-
-    // Check if we already have an API key, if not fetch it
+    // STEP 1: Ensure we have a valid API key first before doing anything
     if (!apiKey) {
       const newKey = await fetchApiKey();
       if (!newKey) {
         setIsInitializing(false);
         await fetchConcepts();
-        return;
+        return; 
       }
     }
-
+    
+    if (!username || !userId) {
+      setIsInitializing(false);
+      await fetchConcepts();
+      return;
+    }
+    
+    
+    
     setIsLoading(true);
     setIsInitializing(true);
 
@@ -1047,11 +1049,30 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
     return 'in-progress';
   };
 
+  // Initialize API key first, then handle session
   useEffect(() => {
-    if (username && userId) {
-      // Get the first available concept and call checkSessionStatus with it
-      const initializeWithConcept = async () => {
-        // First fetch concepts if not already loaded
+    const initializeApiKey = async () => {
+      if (username && userId && !apiKey) {
+        console.log("🔑 Initializing API key...");
+        const fetchedKey = await fetchApiKey();
+        if (!fetchedKey) {
+          console.error("❌ Failed to fetch API key during initialization");
+          setIsInitializing(false);
+        }
+        // Don't proceed further here - let the next useEffect handle the rest
+      }
+    };
+
+    initializeApiKey();
+  }, [username, userId]);
+
+  // Handle session initialization after API key is available
+  useEffect(() => {
+    if (username && userId && apiKey) {
+      const initializeSession = async () => {
+        console.log("🚀 Starting session initialization with API key available");
+        
+        // Fetch concepts if not already loaded
         if (concepts.length === 0) {
           await fetchConcepts();
         }
@@ -1073,9 +1094,9 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
         }
       };
 
-      initializeWithConcept();
+      initializeSession();
     }
-  }, [username, userId]);
+  }, [username, userId, apiKey]); // Now depends on apiKey
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -1231,45 +1252,45 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
               </div>
 
               {showConceptDropdown && (
-  <div className="concept-dropdown">
-    {conceptsLoading ? (
-      <div className="concept-option">
-        <div className="concept-name">Loading...</div>
-      </div>
-    ) : concepts.length > 0 ? (
-      concepts.map((concept) => (
-        <div
-          key={concept.concept_id}
-          className="concept-option flex items-center justify-between cursor-pointer"
-          onClick={() => handleConceptSelect(concept)}
-        >
-          <div className="concept-name">{concept.concept_name}</div>
-          {concept.download_link && (
-            <button
-              className="download-btn1 relative group"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDownloadConcept(concept.download_link, concept.concept_name);
-              }}
-              data-tooltip="Download concept material"
-              aria-label={`Download ${concept.concept_name} material`}
-            >
-              <FiDownload className="w-5 h-5" />
-              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-  Download
-</span>
-            </button>
-          )}
-        </div>
-      ))
-    ) : (
-      <div className="concept-option">
-        <div className="concept-name">No concepts available</div>
-        <div className="concept-description">Contact your administrator</div>
-      </div>
-    )}
-  </div>
-)}
+                <div className="concept-dropdown">
+                  {conceptsLoading ? (
+                    <div className="concept-option">
+                      <div className="concept-name">Loading...</div>
+                    </div>
+                  ) : concepts.length > 0 ? (
+                    concepts.map((concept) => (
+                      <div
+                        key={concept.concept_id}
+                        className="concept-option flex items-center justify-between cursor-pointer"
+                        onClick={() => handleConceptSelect(concept)}
+                      >
+                        <div className="concept-name">{concept.concept_name}</div>
+                        {concept.download_link && (
+                          <button
+                            className="download-btn1 relative group"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadConcept(concept.download_link, concept.concept_name);
+                            }}
+                            data-tooltip="Download concept material"
+                            aria-label={`Download ${concept.concept_name} material`}
+                          >
+                            <FiDownload className="w-5 h-5" />
+                            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                              Download
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="concept-option">
+                      <div className="concept-name">No concepts available</div>
+                      <div className="concept-description">Contact your administrator</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1305,7 +1326,6 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
                     <div className="stage-progress-content">
                       <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
                         <div className="progress-info">
-      
                           <span>
                             {currentStage <= 1 ? "Starting..." :
                               currentStage === 7 ? "Completed" :
@@ -1313,17 +1333,17 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
                           </span>
                           <span>
                             {(() => {
-                            const completed = Math.max(currentStage - 2, 0);
-                            return `${Math.round((completed / 5) * 100)}%`;
-                          })()}
+                              const completed = Math.max(currentStage - 2, 0);
+                              return `${Math.round((completed / 5) * 100)}%`;
+                            })()}
                           </span>
                         </div>
                         <div className="progress-bar">
                           <div
                             className="progress-fill"
-                           style={{
-                          width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
-                          }}
+                            style={{
+                              width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
+                            }}
                           ></div>
                         </div>
                         <div className="substages">
