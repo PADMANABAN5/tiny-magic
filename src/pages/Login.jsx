@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "../styles/login.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useAuth } from "../components/AuthContext"; // ✅ Import Auth context
 
 function Login() {
   const [identifier, setIdentifier] = useState("");
@@ -12,135 +13,124 @@ function Login() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
+
   const BASE_URL = process.env.REACT_APP_API_LINK;
   const navigate = useNavigate();
+  const { login } = useAuth(); // ✅ Use login from context
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
+    e.preventDefault();
+    setError("");
 
-  if (!identifier || !password) {
-    setError("Both fields are required.");
-    return;
-  }
-
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/users/login`,
-      { identifier, password },
-      { headers: { "Content-Type": "application/json" } }
-    );
-
-    const { data: user } = response.data;
-
-    if (user.is_default_password) {
-      setUserDetails(user); // Save user temporarily
-      setShowPasswordChangeModal(true); // Show modal
+    if (!identifier || !password) {
+      setError("Both fields are required.");
       return;
     }
 
-    handleSessionAndRedirect(user);
-  } catch (err) {
-    // ✅ Custom handling for specific error status codes
-    const status = err.response?.status;
-    if (status === 401) {
-      setError("❌ Invalid credentials. Please try again.");
-    } else if (status === 403) {
-      const message = err.response?.data?.message || "Access denied.";
-      if (message.includes("Account is inactive")) {
-        setError("❌ Your account is inactive. Contact admin.");
-      } else if (message.includes("Organization is inactive")) {
-        setError("❌ Your organization is inactive. Contact support.");
-      } else {
-        setError("❌ Access denied.");
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/users/login`,
+        { identifier, password },
+        { headers: { "Content-Type": "application/json" } }
+      );
+
+      const { data: user } = response.data;
+
+      if (user.is_default_password) {
+        setUserDetails(user);
+        setShowPasswordChangeModal(true);
+        return;
       }
-    } else if (status === 400) {
-      setError("❗ Missing credentials. Fill in all fields.");
-    } else {
-      setError(err.response?.data?.error || "⚠️ Login failed. Try again.");
+
+      login(user); // ✅ Save session/token using AuthContext
+      redirectBasedOnRole(user);
+    } catch (err) {
+      const status = err.response?.status;
+      if (status === 401) {
+        setError("❌ Invalid credentials. Please try again.");
+      } else if (status === 403) {
+        const message = err.response?.data?.message || "Access denied.";
+        if (message.includes("Account is inactive")) {
+          setError("❌ Your account is inactive. Contact admin.");
+        } else if (message.includes("Organization is inactive")) {
+          setError("❌ Your organization is inactive. Contact support.");
+        } else {
+          setError("❌ Access denied.");
+        }
+      } else if (status === 400) {
+        setError("❗ Missing credentials. Fill in all fields.");
+      } else {
+        setError(err.response?.data?.error || "⚠️ Login failed. Try again.");
+      }
+      setIsLoggedIn(false);
     }
+  };
 
-    setIsLoggedIn(false);
-  }
-};
-  const handleSessionAndRedirect = (user) => {
-    sessionStorage.setItem("token", user.token || "");
-    sessionStorage.setItem("email", user.email || "");
-    sessionStorage.setItem("username", user.username);
-    sessionStorage.setItem("userId", user.user_id);
-    sessionStorage.setItem("role_name", user.role);
-    sessionStorage.setItem("organization_name", user.organization_name || "");
-    sessionStorage.setItem("selectedModel", "gpt4o");
-    sessionStorage.setItem("firstname", user.first_name || "");
-    sessionStorage.setItem("lastname", user.last_name || "");
-
+  const redirectBasedOnRole = (user) => {
     setIsLoggedIn(true);
 
-    if (user.role === "orguser") {
-      setTimeout(() => {
-        navigate("/dashboard", {
-          state: {
-            selectedModel: "gpt4o",
-            username: user.username,
-          },
-        });
-      }, 2000);
-    } else {
-      switch (user.role) {
-        case "superadmin":
-          navigate("/dashboard", { state: { username: user.username } });
-          break;
-        case "orgadmin":
-          navigate("/orgadmin");
-          break;
-        case "mentor":
-          navigate("/mentorpods");
-          break;
-        default:
-          setError("Unknown role");
-      }
+    switch (user.role) {
+      case "orguser":
+        setTimeout(() => {
+          navigate("/dashboard", {
+            state: {
+              selectedModel: "gpt4o",
+              username: user.username,
+            },
+          });
+        }, 2000);
+        break;
+      case "superadmin":
+        navigate("/superadmin", { state: { username: user.username } });
+        break;
+      case "orgadmin":
+        navigate("/orgadmin");
+        break;
+      case "mentor":
+        navigate("/mentorpods");
+        break;
+      default:
+        setError("Unknown role");
     }
   };
 
   const handleChangePassword = async () => {
-  setError("");
+    setError("");
 
-  if (!newPassword || !confirmPassword) {
-    setError("Both new password fields are required.");
-    return;
-  }
+    if (!newPassword || !confirmPassword) {
+      setError("Both new password fields are required.");
+      return;
+    }
 
-  if (newPassword.length < 8) {
-    setError("Password must be at least 8 characters long.");
-    return;
-  }
+    if (newPassword.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
 
-  if (newPassword !== confirmPassword) {
-    setError("Passwords do not match.");
-    return;
-  }
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
 
-  try {
-    await axios.put(
-      `${BASE_URL}/users/${userDetails.user_id}`,
-      {
-        password: newPassword,
-      },
-      { headers: { "Content-Type": "application/json" } }
-    );
+    try {
+      await axios.put(
+        `${BASE_URL}/users/${userDetails.user_id}`,
+        { password: newPassword },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-    setShowPasswordChangeModal(false);
-    setUserDetails(null);
-    setIdentifier("");
-    setPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
+      setShowPasswordChangeModal(false);
+      setUserDetails(null);
+      setIdentifier("");
+      setPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
 
-    alert("Password updated successfully! Please login with new password.");
-  } catch (err) {
-    setError(err.response?.data?.error || "Failed to change password.");
-  }
-};
+      alert("Password updated successfully! Please login with new password.");
+    } catch (err) {
+      setError(err.response?.data?.error || "Failed to change password.");
+    }
+  };
 
   return (
     <div className="login-page-wrapper">
@@ -189,6 +179,7 @@ function Login() {
         <div className="modal-overlay1">
           <div className="modal-content1">
             <h3 className="login-title">Change Password</h3>
+
             <div className="input-group">
               <label>New Password</label>
               <input
@@ -197,6 +188,7 @@ function Login() {
                 onChange={(e) => setNewPassword(e.target.value)}
               />
             </div>
+
             <div className="input-group">
               <label>Confirm Password</label>
               <input

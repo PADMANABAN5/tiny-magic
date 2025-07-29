@@ -39,7 +39,7 @@ function getRedirectPath() {
   if (token && role) {
     switch (role) {
       case "superadmin":
-        return "/dashboard";
+        return "/superadmin";
       case "orgadmin":
         return "/orgadmin";
       case "mentor":
@@ -56,7 +56,7 @@ function getRedirectPath() {
 
 function App() {
   return (
-    <Router>
+    
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
@@ -75,17 +75,17 @@ function App() {
           <PrivateRoute roles={["orguser"]}><Prompt /></PrivateRoute>
         } />
 
-        {/* <Route path="/superadmin" element={
+         <Route path="/superadmin" element={
           <PrivateRoute roles={["superadmin"]}><Superadmin /></PrivateRoute>
-        } /> */}
-        {/* <Route path="/mentor" element={
+        } />
+         <Route path="/mentor" element={
           <PrivateRoute roles={["superadmin"]}><Mentor /></PrivateRoute>
-        } /> */}
+        } />
         <Route path="/orgadmin" element={
           <PrivateRoute roles={["orgadmin"]}><Orgadmin /></PrivateRoute>
         } />
 
-        {/* <Route path="/organization" element={
+        <Route path="/organization" element={
           <PrivateRoute roles={["superadmin"]}><OrgList /></PrivateRoute>
         } />
         <Route path="/concepts" element={
@@ -108,7 +108,7 @@ function App() {
         } />
         <Route path="/addorgadmin" element={
           <PrivateRoute roles={["superadmin"]}><Addorgadmin /></PrivateRoute>
-        } /> */}
+        } /> 
         <Route path="/orgadminbatch" element={
           <PrivateRoute roles={["orgadmin"]}><OrgadminBatch /></PrivateRoute>
         } />
@@ -139,7 +139,7 @@ function App() {
 
         {/* Redirect to login if no route matches */}
       </Routes>
-    </Router>
+
   );
 }
 
