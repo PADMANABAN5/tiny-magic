@@ -49,12 +49,9 @@ const loadTemplate = async (templateName) => {
 };
 
 // Integrated OpenAI GPT-4o API call function
-const callOpenAI = async (messages) => {
-  const username = sessionStorage.getItem("username");
-  const apiKey = sessionStorage.getItem(`apiKey_${username}`);
-
+const callOpenAI = async (messages, apiKey) => {
   if (!apiKey) {
-    console.error("No API key found in sessionStorage for user:", username);
+    console.error("No API key found in sessionStorage for user:");
     throw new Error("No API key provided. Please enter an API key in the dashboard.");
   }
 
@@ -98,11 +95,13 @@ const callOpenAI = async (messages) => {
 export const processPromptAndCallLLM = async ({
   username,
   selectedPrompt,
-  selectedModel, // This parameter is now ignored since we're using GPT-4o only
+  selectedModel,
   sessionHistory,
   userPrompt,
-  selectedConcept, // Add selectedConcept parameter
+  selectedConcept,
+  apiKey,
 }) => {
+
   try {
     // Load the appropriate template
     let templateContent;
@@ -156,7 +155,8 @@ export const processPromptAndCallLLM = async ({
     }
 
     // Call OpenAI API directly
-    const llmResponse = await callOpenAI(messages);
+   const llmResponse = await callOpenAI(messages, apiKey);
+
 
     // Default response structure in case parsing fails
     let parsedResponse = {

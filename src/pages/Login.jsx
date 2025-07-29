@@ -88,7 +88,7 @@ function Login() {
     } else {
       switch (user.role) {
         case "superadmin":
-          navigate("/superadmin", { state: { username: user.username } });
+          navigate("/dashboard", { state: { username: user.username } });
           break;
         case "orgadmin":
           navigate("/orgadmin");

@@ -1,11 +1,9 @@
-export async function callLLM(provider, config, messages) {
-  const username = sessionStorage.getItem("username");
-  const apiKey = sessionStorage.getItem(`apiKey_${username}`);
-
-  if (!apiKey && provider.toLowerCase() === "groq") {
-    console.error("No API key found in sessionStorage for user:", username);
+export async function callLLM(provider, config, messages, apiKey) {
+  if (!apiKey && ["groq", "openai", "gpt4o"].includes(provider.toLowerCase())) {
+    console.error("No API key provided");
     return "Error: No API key provided. Please enter an API key in the dashboard.";
   }
+
   try {
     switch (provider.toLowerCase()) {
       case "gpt4o":
@@ -14,10 +12,10 @@ export async function callLLM(provider, config, messages) {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${apiKey}`,  
+            Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
-            model: config.model,  
+            model: config.model,
             messages,
             temperature: config.temperature,
             max_tokens: config.maxTokens,
@@ -35,25 +33,21 @@ export async function callLLM(provider, config, messages) {
         return data?.choices?.[0]?.message?.content || "No response from OpenAI";
       }
 
-
       case "groq": {
-        const res = await fetch(
-          "https://api.groq.com/openai/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${apiKey}`,
-            },
-            body: JSON.stringify({
-              model: config.model,
-              messages,
-              temperature: config.temperature,
-              max_tokens: config.maxTokens,
-              top_p: config.topP,
-            }),
-          }
-        );
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model: config.model,
+            messages,
+            temperature: config.temperature,
+            max_tokens: config.maxTokens,
+            top_p: config.topP,
+          }),
+        });
 
         const data = await res.json();
         return data?.choices?.[0]?.message?.content || "No response from Groq";
@@ -83,10 +77,7 @@ export async function callLLM(provider, config, messages) {
         );
 
         const data = await res.json();
-        return (
-          data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-          "No response from Gemini"
-        );
+        return data?.candidates?.[0]?.content?.parts?.[0]?.text || "No response from Gemini";
       }
 
       default: {
