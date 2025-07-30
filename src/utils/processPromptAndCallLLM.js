@@ -36,35 +36,46 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
     throw new Error(`Missing organization_id or batch_id for template: ${templateName}`);
   }
 
-  try {
-    const response = await fetch(
-      `${process.env.REACT_APP_API_LINK}/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`
-    );
+  // Helper function to fetch and extract template
+  const fetchTemplate = async (url) => {
+    const response = await fetch(url);
 
     if (!response.ok) {
-      throw new Error(`Fallback API failed: ${response.status} ${response.statusText}`);
+      throw new Error(`API failed: ${response.status} ${response.statusText}`);
     }
 
     const data = await response.json();
-
-    // NEW: Extract from array
     const matchingPrompt = data?.data?.find(
       (item) => item.prompt_type === templateName
     );
 
-    const template = matchingPrompt?.prompt_content;
+    return matchingPrompt?.prompt_content || null;
+  };
+
+  try {
+    // Try fallback API
+    const fallbackUrl = `${process.env.REACT_APP_API_LINK}/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`;
+    let template = await fetchTemplate(fallbackUrl);
+
+    // If not found, try global API
+    if (!template) {
+      console.warn(`⚠️ Template not found in fallback, trying global API for ${templateName}`);
+      const globalUrl = `${process.env.REACT_APP_API_LINK}/prompts/global`;
+      template = await fetchTemplate(globalUrl);
+    }
 
     if (!template) {
-      throw new Error(`Template content not found in fallback response for ${templateName}`);
+      throw new Error(`Template content not found in any API for ${templateName}`);
     }
 
     return template;
 
   } catch (error) {
-    console.error(`❌ Error loading template from fallback API for ${templateName}:`, error);
+    console.error(`❌ Error loading template "${templateName}":`, error);
     throw error;
   }
 };
+
 
 
 
