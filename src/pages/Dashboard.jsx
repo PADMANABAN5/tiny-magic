@@ -1077,10 +1077,26 @@ const batchId = sessionStorage.getItem("batchId");
   };
 
   useEffect(() => {
-    if (username && userId) {
-      // Get the first available concept and call checkSessionStatus with it
-      const initializeWithConcept = async () => {
-        // First fetch concepts if not already loaded
+    const initializeApiKey = async () => {
+      if (username && userId && !apiKey) {
+        console.log("🔑 Initializing API key...");
+        const fetchedKey = await fetchApiKey();
+        if (!fetchedKey) {
+          console.error("❌ Failed to fetch API key during initialization");
+          setIsInitializing(false);
+        }
+        // Don't proceed further here - let the next useEffect handle the rest
+      }
+    };
+
+    initializeApiKey();
+  }, [username, userId]);
+
+
+   useEffect(() => {
+    if (username && userId && apiKey) {
+      const initializeSession = async () => {
+        console.log("🚀 Starting session initialization with API key available");
         if (concepts.length === 0) {
           await fetchConcepts();
         }
@@ -1102,9 +1118,9 @@ const batchId = sessionStorage.getItem("batchId");
         }
       };
 
-      initializeWithConcept();
+      initializeSession();
     }
-  }, [username, userId]);
+  }, [username, userId, apiKey]);
 
   useEffect(() => {
     if (chatEndRef.current) {
