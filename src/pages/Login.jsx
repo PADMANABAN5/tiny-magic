@@ -13,6 +13,12 @@ function Login() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   const BASE_URL = process.env.REACT_APP_API_LINK;
   const navigate = useNavigate();
@@ -114,10 +120,15 @@ function Login() {
 
     try {
       await axios.put(
-        `${BASE_URL}/users/${userDetails.user_id}`,
-        { password: newPassword },
-        { headers: { "Content-Type": "application/json" } }
-      );
+  `${BASE_URL}/users/${userDetails.user_id}`,
+  { password: newPassword },                // 2️⃣ data (not config!)
+  {
+    headers: {
+      Authorization: `Bearer ${storedToken}`, // ✅ correct use
+      "Content-Type": "application/json"
+    }
+  }
+);
 
       setShowPasswordChangeModal(false);
       setUserDetails(null);
