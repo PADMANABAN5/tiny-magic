@@ -27,6 +27,12 @@ export default function Addusers() {
   const [toastBg, setToastBg] = useState('primary');
   const [showToast, setShowToast] = useState(false);
   const navigate = useNavigate();
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
 
   const capitalize = (str) =>
@@ -36,7 +42,7 @@ export default function Addusers() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orguser`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orguser`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setOrgUsers(res.data.data);
       } else {
@@ -89,7 +95,7 @@ export default function Addusers() {
     if (trimmedUser.password) payload.password = trimmedUser.password;
 
     try {
-  await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload);
+  await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload, config);
   setShowModal(false);
   setNewUser({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
   fetchOrgUsers();
@@ -120,7 +126,7 @@ export default function Addusers() {
     };
 
    try {
-      await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingUser.user_id}`, updatedUser);
+      await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingUser.user_id}`, updatedUser, config);
       setToastBg('primary');
       setToastMessage('User updated successfully!');
       setShowToast(true);
