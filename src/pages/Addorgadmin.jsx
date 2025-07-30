@@ -32,13 +32,18 @@ export default function Addorgadmin() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedOrganization, setSelectedOrganization] = useState('');
 
-
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
   // Fetch admins & orgs
   const fetchOrgAdmins = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orgadmin`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orgadmin`, config);
       setOrgAdmins(Array.isArray(res.data.data) ? res.data.data : []);
     } catch {
       setError("Failed to load organization admins.");
@@ -71,7 +76,7 @@ const handleCreateAdmin = async (e) => {
   }
   passwordRef.current.setCustomValidity(""); // Clear error before submit
   try {
-    await axios.post(`${process.env.REACT_APP_API_LINK}/users/orgadmin`, newAdmin);
+    await axios.post(`${process.env.REACT_APP_API_LINK}/users/orgadmin`, newAdmin, config);
     setToastBg('primary');
     setToastMessage('Admin created successfully!');
     setShowToast(true);
@@ -127,7 +132,7 @@ const handleCreateAdmin = async (e) => {
   }
   editPasswordRef.current.setCustomValidity(""); // Clear error
   try {
-    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingAdmin.user_id}`, editingAdmin);
+    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingAdmin.user_id}`, editingAdmin, config);
     setToastBg('primary');
     setToastMessage('Admin updated successfully!');
     setShowToast(true);

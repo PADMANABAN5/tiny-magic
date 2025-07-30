@@ -17,6 +17,12 @@ function Login() {
   const BASE_URL = process.env.REACT_APP_API_LINK;
   const navigate = useNavigate();
   const { login } = useAuth(); // ✅ Use login from context
+   const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -114,10 +120,15 @@ function Login() {
 
     try {
       await axios.put(
-        `${BASE_URL}/users/${userDetails.user_id}`,
-        { password: newPassword },
-        { headers: { "Content-Type": "application/json" } }
-      );
+  `${BASE_URL}/users/${userDetails.user_id}`,
+  { password: newPassword },
+  {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+      "Content-Type": "application/json"
+    }
+  }
+);
 
       setShowPasswordChangeModal(false);
       setUserDetails(null);

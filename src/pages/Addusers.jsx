@@ -29,7 +29,12 @@ export default function Addusers() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
 const [selectedOrganization, setSelectedOrganization] = useState('');
-
+ const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
 
   const capitalize = (str) =>
@@ -39,7 +44,7 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orguser`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orguser`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setOrgUsers(res.data.data);
       } else {
@@ -94,7 +99,7 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
   if (trimmedUser.password) payload.password = trimmedUser.password;
 
   try {
-    await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload);
+    await axios.post(`${process.env.REACT_APP_API_LINK}/users/orguser`, payload, config);
     setShowModal(false);
     setNewUser({ organization_name: '', email: '', first_name: '', last_name: '', password: '' });
     fetchOrgUsers();
@@ -156,7 +161,7 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
   };
 
   try {
-    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingUser.user_id}`, updatedUser);
+    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editingUser.user_id}`, updatedUser, config);
     setShowEditModal(false);
     setEditingUser(null);
     fetchOrgUsers();

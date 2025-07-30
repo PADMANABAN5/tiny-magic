@@ -32,6 +32,12 @@ export default function Mentor() {
   const [toastBg, setToastBg] = useState('primary');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+   const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   const navigate = useNavigate();
 
@@ -39,7 +45,7 @@ export default function Mentor() {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setMentors(res.data.data);
       } else {
@@ -62,7 +68,8 @@ export default function Mentor() {
   try {
     const response = await axios.post(
       `${process.env.REACT_APP_API_LINK}/users/mentor`,
-      newMentor
+      newMentor,
+      config
     );
 
     // Success
@@ -122,7 +129,8 @@ export default function Mentor() {
   try {
     const response = await axios.put(
       `${process.env.REACT_APP_API_LINK}/users/${editMentor.user_id}`,
-      editMentor
+      editMentor,
+      config
     );
 
     // Success case
