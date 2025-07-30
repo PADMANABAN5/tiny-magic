@@ -27,7 +27,7 @@ function Archivedconcepts() {
  
  
     useEffect(() => {
-        axios.get('http://localhost:5000/api/concepts/archived') // ✅ Updated API URL
+        axios.get(`${process.env.REACT_APP_API_LINK}/concepts/archived`) // ✅ Updated API URL
             .then(res => setArchivedConcepts(res.data.data || []))
             .catch(err => {
                 console.error('Failed to fetch archived concepts:', err);
