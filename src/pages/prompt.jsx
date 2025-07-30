@@ -27,8 +27,8 @@ export default function Prompt() {
  const fetchPrompts = async () => {
   try {
     const [globalRes, allRes] = await Promise.all([
-      axios.get(`${process.env.REACT_APP_API_LINK}/api/prompts/global`),
-      axios.get(`${process.env.REACT_APP_API_LINK}/api/prompts/batch`),
+      axios.get(`${process.env.REACT_APP_API_LINK}/prompts/global`),
+      axios.get(`${process.env.REACT_APP_API_LINK}/prompts/batch`),
     ]);
 
     const globalData = globalRes.data.data.map(p => ({ ...p, source: 'Global' }));
@@ -84,7 +84,7 @@ useEffect(() => {
   };
 
   const handleSave = () => {
-    axios.put(`${process.env.REACT_APP_API_LINK}/api/prompts/${editPrompt.prompt_id}`, {
+    axios.put(`${process.env.REACT_APP_API_LINK}/prompts/${editPrompt.prompt_id}`, {
       user_content: updatedUserContent,
       json_content: editPrompt.json_content
     })
@@ -104,7 +104,7 @@ useEffect(() => {
     return;
   }
 
-  axios.post(`${process.env.REACT_APP_API_LINK}/api/prompts/batch`, {
+  axios.post(`${process.env.REACT_APP_API_LINK}/prompts/batch`, {
     prompt_id: selectedPromptId,
     organization_id: parseInt(selectedOrgId),
     batch_id: parseInt(selectedBatchId),
