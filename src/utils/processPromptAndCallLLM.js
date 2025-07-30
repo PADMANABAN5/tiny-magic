@@ -38,7 +38,7 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
 
   try {
     const response = await fetch(
-      `${process.env.REACT_APP_API_LINK}/api/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`
+      `${process.env.REACT_APP_API_LINK}/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`
     );
 
     if (!response.ok) {
