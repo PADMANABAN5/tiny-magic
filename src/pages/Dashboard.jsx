@@ -54,6 +54,7 @@ function Dashboard() {
   const [resumedFromStatus, setResumedFromStatus] = useState(null);
   const [currentChatStatus, setCurrentChatStatus] = useState('not_started');
   const [isInitializing, setIsInitializing] = useState(true);
+  const [apiKey, setApiKey] = useState(null);
 
   // New states for chat ending functionality
   const [isChatEnded, setIsChatEnded] = useState(false);
@@ -70,6 +71,49 @@ function Dashboard() {
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
   const topSaveOptionsRef = useRef(null);
+  const SECRET_KEY_HEX = process.env.REACT_APP_SECRET_KEY_HEX; // Move to .env
+
+const hexToBuffer = (hex) => {
+  return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+};
+
+const concatBuffer = (cipherHex, tagHex) => {
+  const cipher = hexToBuffer(cipherHex);
+  const tag = hexToBuffer(tagHex);
+  const combined = new Uint8Array(cipher.length + tag.length);
+  combined.set(cipher);
+  combined.set(tag, cipher.length);
+  return combined;
+};
+
+const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
+  try {
+    const key = await crypto.subtle.importKey(
+      "raw",
+      hexToBuffer(SECRET_KEY_HEX),
+      { name: "AES-GCM" },
+      false,
+      ["decrypt"]
+    );
+
+    const combinedCiphertext = concatBuffer(encryptedApiKey, authTag);
+
+    const decipher = await crypto.subtle.decrypt(
+      {
+        name: "AES-GCM",
+        iv: hexToBuffer(iv),
+      },
+      key,
+      combinedCiphertext
+    );
+
+    return new TextDecoder().decode(decipher);
+  } catch (err) {
+    console.error("🔐 Decryption failed:", err);
+    throw new Error("Failed to decrypt API key");
+  }
+};
+
 
   const [chatCounts, setChatCounts] = useState({
     not_started: 0,
@@ -86,24 +130,25 @@ function Dashboard() {
 
   // Function to fetch API key from API
   const fetchApiKey = async () => {
-    try {
-      console.log("🔑 Fetching API key from server...");
-      const response = await axios.get(`${BASE_URL}/apikey`);
+  try {
+    console.log("🔑 Fetching encrypted API key...");
+    const response = await axios.get(`${BASE_URL}/apikey`);
+    const { encryptedApiKey, iv, authTag } = response.data;
 
-      if (response.data && response.data.apiKey) {
-        const apiKey = response.data.apiKey;
-        sessionStorage.setItem(`apiKey_${username}`, apiKey);
-        console.log("✅ API key fetched and stored successfully");
-        return apiKey;
-      } else {
-        throw new Error("No API key received from server");
-      }
-    } catch (error) {
-      console.error("❌ Error fetching API key:", error);
-      toast.error("Failed to fetch API key from server. Please try again or contact support.");
-      return null;
+    if (!encryptedApiKey || !iv || !authTag) {
+      throw new Error("Incomplete API key payload from server");
     }
-  };
+
+    const decryptedKey = await decryptApiKey(encryptedApiKey, iv, authTag);
+    setApiKey(decryptedKey); // only keep it in memory
+    console.log("✅ API key decrypted and stored in memory");
+    return decryptedKey;
+  } catch (error) {
+    console.error("❌ Error fetching or decrypting API key:", error);
+    toast.error("Failed to retrieve secure API key. Please contact support.");
+    return null;
+  }
+};
 
   // Handle outside click to close dropdowns
   useEffect(() => {
@@ -186,17 +231,15 @@ function Dashboard() {
       if (firstActiveConcept && !selectedConcept) {
         setSelectedConcept(firstActiveConcept);
 
-        if (
-          sessionStorage.getItem(`apiKey_${username}`) &&
-          chatHistory.length === 0 &&
-          !isInitializing
-        ) {
-          setTimeout(async () => {
-            await initiateFirstMentorMessageWithConcept(firstActiveConcept);
-          }, 500);
+          if (apiKey && chatHistory.length === 0 && !isInitializing) {
+            console.log("🚀 Auto-starting conversation after concept selection");
+            setTimeout(async () => {
+              await initiateFirstMentorMessageWithConcept(firstActiveConcept);
+            }, 500);
+          }
         }
-      }
     } else {
+      console.warn("⚠️ No concepts data in response");
       setConcepts([]);
     }
   } catch (error) {
@@ -214,7 +257,7 @@ function Dashboard() {
 
   // Initiate first mentor message with specific concept
   const initiateFirstMentorMessageWithConcept = async (concept) => {
-    if (!sessionStorage.getItem(`apiKey_${username}`) || !concept) {
+     if (!apiKey || !concept) {
       setIsInitializing(false);
       return;
     }
@@ -231,6 +274,7 @@ const batchId = sessionStorage.getItem("batchId");
         sessionHistory: [],
         userPrompt: "",
         selectedConcept: concept,
+        apiKey,
         organizationId: organizationId, // Pass organization ID
         batchId: batchId // Pass batch ID
       });
@@ -293,7 +337,7 @@ const batchId = sessionStorage.getItem("batchId");
   };
 
   const initiateFirstMentorMessage = async () => {
-    if (!sessionStorage.getItem(`apiKey_${username}`) || !selectedConcept) {
+    if (!apiKey || !selectedConcept) {
       setIsInitializing(false);
       return;
     }
@@ -308,6 +352,7 @@ const batchId = sessionStorage.getItem("batchId");
         sessionHistory: [],
         userPrompt: "",
         selectedConcept: selectedConcept,
+        apiKey
       });
 
       const mentorMessage = response.apiResponseText;
@@ -445,6 +490,7 @@ const batchId = sessionStorage.getItem("batchId");
     sessionHistory,
     userPrompt: userPrompt,
     selectedConcept: selectedConcept,
+    apiKey,
     organizationId, // ✅ properly fetched from sessionStorage
     batchId, 
   });
@@ -496,6 +542,7 @@ const batchId = sessionStorage.getItem("batchId");
           ],
           userPrompt: userPrompt,
           selectedConcept: selectedConcept,
+          apiKey,
           organizationId,     // ✅ Add this
   batchId   
         });
@@ -731,9 +778,10 @@ const batchId = sessionStorage.getItem("batchId");
   };
 
   const fetchChatCounts = async () => {
-    if (!userId || !sessionStorage.getItem(`apiKey_${username}`)) {
+    if (!userId || !apiKey) {
       return;
     }
+
 
     setIsCountsLoading(true);
     try {
@@ -758,22 +806,24 @@ const batchId = sessionStorage.getItem("batchId");
   };
 
   const checkSessionStatus = async (conceptName = null) => {
+    // STEP 1: Ensure we have a valid API key first before doing anything
+    if (!apiKey) {
+      const newKey = await fetchApiKey();
+      if (!newKey) {
+        setIsInitializing(false);
+        await fetchConcepts();
+        return; 
+      }
+    }
+    
     if (!username || !userId) {
       setIsInitializing(false);
       await fetchConcepts();
       return;
     }
-
-    // Check if we already have an API key, if not fetch it
-    if (!sessionStorage.getItem(`apiKey_${username}`)) {
-      const apiKey = await fetchApiKey();
-      if (!apiKey) {
-        setIsInitializing(false);
-        await fetchConcepts();
-        return;
-      }
-    }
-
+    
+    
+    
     setIsLoading(true);
     setIsInitializing(true);
 
@@ -988,6 +1038,7 @@ const batchId = sessionStorage.getItem("batchId");
     }
   };
 
+
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -1007,7 +1058,7 @@ const batchId = sessionStorage.getItem("batchId");
     setCurrentChatStatus('not_started');
 
     // Check session status with the selected concept
-    if (sessionStorage.getItem(`apiKey_${username}`)) {
+    if (apiKey) {
       console.log("🔍 Checking session status for concept:", concept.concept_name);
       await checkSessionStatus(concept.concept_name);
     }

@@ -192,7 +192,7 @@ export const ScoringTable = ({ content }) => {
         <div className="scoring-section">
           <h5>🎯 Understanding Skills</h5>
           <div className="scoring-grid">
-            {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractvsConcrete"].map((key) => {
+            {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map((key) => {
               if (!scoringData.UnderstandingSkills[key]) return null;
 
               const skillData = scoringData.UnderstandingSkills[key];

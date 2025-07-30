@@ -38,7 +38,7 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
 
   try {
     const response = await fetch(
-      `http://localhost:5000/api/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`
+      `${process.env.REACT_APP_API_LINK}/api/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`
     );
 
     if (!response.ok) {
@@ -69,14 +69,11 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
 
 
 // Integrated OpenAI GPT-4o API call function
-const callOpenAI = async (messages) => {
-  const username = sessionStorage.getItem("username");
-  const apiKey = sessionStorage.getItem(`apiKey_${username}`);
-
+const callOpenAI = async (messages, apiKey) => {
   if (!apiKey) {
-    console.error("No API key found in sessionStorage for user:", username);
-    throw new Error("No API key provided. Please enter an API key in the dashboard.");
-  }
+  console.error("❌ No API key provided to callOpenAI");
+  throw new Error("No API key provided. Please check your decryption or dashboard setup.");
+}
 
   try {
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -122,6 +119,7 @@ export const processPromptAndCallLLM = async ({
   sessionHistory,
   userPrompt,
   selectedConcept,
+  apiKey,
   organizationId, // ✅ add this
   batchId          // ✅ add this
 }) => {
@@ -184,7 +182,7 @@ try {
     }
 
     // Call OpenAI API directly
-    const llmResponse = await callOpenAI(messages);
+    const llmResponse = await callOpenAI(messages, apiKey);
 
     // Default response structure in case parsing fails
     let parsedResponse = {

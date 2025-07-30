@@ -57,7 +57,7 @@ function getRedirectPath() {
 
 function App() {
   return (
-    <Router>
+    
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
@@ -143,7 +143,7 @@ function App() {
 
         {/* Redirect to login if no route matches */}
       </Routes>
-    </Router>
+  
   );
 }
 

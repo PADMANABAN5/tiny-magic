@@ -13,7 +13,7 @@ function Archived() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/prompts/archived')
+    axios.get(`${process.env.REACT_APP_API_LINK}/api/prompts/archived`)
       .then(res => setArchivedPrompts(res.data.data || []))
       .catch(err => {
         console.error('Failed to fetch archived prompts:', err);
