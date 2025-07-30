@@ -41,28 +41,75 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
   const fetchOrgUsers = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orguser`, config);
-      if (res.data && Array.isArray(res.data.data)) {
-        setOrgUsers(res.data.data);
-      } else {
-        setError("Unexpected data format received from server.");
-        setOrgUsers([]);
-      }
-    } catch (err) {
-      console.error("Error fetching org users:", err);
-      setError("Failed to load organization users.");
+  setLoading(true);
+  setError(null);
+
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orguser`, config);
+
+    if (res.status === 200 && Array.isArray(res.data?.data)) {
+      setOrgUsers(res.data.data);
+    } else {
       setOrgUsers([]);
-    } finally {
-      setLoading(false);
+      setToastMessage("⚠️ Unexpected data format received from server.");
+      setToastBg("warning");
+      setShowToast(true);
     }
-  };
+
+  } catch (err) {
+    console.error("Error fetching org users:", err);
+
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || "Failed to load organization users.";
+      const status = err.response?.status;
+
+      switch (status) {
+        case 400:
+          setToastMessage(`⚠️ ${errorMessage}`);
+          setToastBg("warning");
+          break;
+        case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          setToastBg("danger");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: Access denied.");
+          setToastBg("danger");
+          break;
+        case 404:
+          setToastMessage("⚠️ Organization users not found.");
+          setToastBg("warning");
+          break;
+        case 409:
+          setToastMessage("⚠️ Conflict: User data conflict.");
+          setToastBg("warning");
+          break;
+        case 500:
+          setToastMessage("⚠️ Server error. Please try again later.");
+          setToastBg("danger");
+          break;
+        default:
+          setToastMessage("⚠️ Unexpected error occurred.");
+          setToastBg("warning");
+      }
+
+      setShowToast(true);
+    } else {
+      setToastMessage("⚠️ Network error. Please check your connection.");
+      setToastBg("danger");
+      setShowToast(true);
+    }
+
+    setOrgUsers([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       }
@@ -115,7 +162,14 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
         case 400:
           errorMessage = err.response.data.message || 'Bad request: Invalid input data.';
           break;
-        
+         case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          setToastBg("danger");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: Access denied.");
+          setToastBg("danger");
+          break;
         case 409:
           errorMessage = 'User already exists!';
           break;
@@ -177,6 +231,14 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
         case 400:
           errorMessage = err.response.data.message || 
             (err.response.data.error?.message || 'Bad request: Invalid input data.');
+          break;
+           case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          setToastBg("danger");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: Access denied.");
+          setToastBg("danger");
           break;
         case 404:
           errorMessage = 'User not found.';

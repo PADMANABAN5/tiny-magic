@@ -55,6 +55,8 @@ function Dashboard() {
   const [currentChatStatus, setCurrentChatStatus] = useState('not_started');
   const [isInitializing, setIsInitializing] = useState(true);
   const [apiKey, setApiKey] = useState(null);
+  const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
+
 
   // New states for chat ending functionality
   const [isChatEnded, setIsChatEnded] = useState(false);
@@ -382,6 +384,56 @@ const batchId = sessionStorage.getItem("batchId");
   const handleRestartChat = () => {
     setShowRestartDialog(true);
   };
+  const handleEndSession = async () => {
+  setShowEndSessionDialog(false);
+  setIsLoading(true);
+
+  try {
+    const organizationId = sessionStorage.getItem("organizationId");
+    const batchId = sessionStorage.getItem("batchId");
+
+    const assessmentResponse = await processPromptAndCallLLM({
+      username,
+      selectedPrompt: "assessmentPrompt",
+      selectedModel: "gpt-4o",
+      sessionHistory,
+      userPrompt: "", // empty for manual trigger
+      selectedConcept,
+      apiKey,
+      organizationId,
+      batchId
+    });
+
+    setLlmContent(assessmentResponse.apiResponseText);
+
+    const assessmentChatEntry = {
+      user: "",
+      system: assessmentResponse.apiResponseText,
+    };
+
+    setChatHistory((prev) => {
+      const finalHistory = [...prev, assessmentChatEntry];
+      sessionStorage.setItem("chatHistory", JSON.stringify(finalHistory));
+      return finalHistory;
+    });
+
+    setSessionHistory((prev) => [
+      ...prev,
+      { Mentee: "", Mentor: assessmentResponse.apiResponseText },
+    ]);
+
+    setCurrentChatStatus("completed");
+    setIsChatEnded(true);
+    setEndReason("endRequested");
+
+  } catch (error) {
+    toast.error("❌ Failed to end session and load assessment.");
+    console.error("End session error:", error);
+  } finally {
+    setIsLoading(false);
+  }
+};
+
 
   // Function to restart without saving
   const restartWithoutSaving = async () => {
@@ -1246,6 +1298,36 @@ const batchId = sessionStorage.getItem("batchId");
           </div>
         </div>
       )}
+      {showEndSessionDialog && (
+  <div className="restart-dialog-overlay">
+    <div className="restart-dialog">
+      <div className="restart-dialog-header">
+        <FiAlertCircle className="restart-dialog-icon" />
+        <h3>End Current Session?</h3>
+      </div>
+      <div className="restart-dialog-content">
+        <p>This will end your current learning session and show an assessment. Are you sure?</p>
+      </div>
+      <div className="restart-dialog-actions">
+        <button
+          className="restart-btn save-and-restart"
+          onClick={handleEndSession}
+          disabled={isLoading}
+        >
+          <FiCheckCircle /> Yes, End Session
+        </button>
+        <button
+          className="restart-btn cancel"
+          onClick={() => setShowEndSessionDialog(false)}
+          disabled={isLoading}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* Main Dashboard Layout */}
       <div className="dashboard-layout">
@@ -1400,7 +1482,7 @@ const batchId = sessionStorage.getItem("batchId");
             <div className="save-section">
               <button
                 ref={topSaveButtonRef}
-                className="top-action-btn"
+                className="top-action-btn top-save-btn"
                 onClick={() => setShowSaveOptions(!showSaveOptions)}
                 disabled={chatHistory.length === 0}
                 data-tooltip="Save Progress"
@@ -1526,6 +1608,17 @@ const batchId = sessionStorage.getItem("batchId");
               )}
 
               <div className="chat-input-wrapper">
+              <div className="tooltip-container" data-tooltip="End Session">
+  <button
+    className="end-session-btn"
+    onClick={() => setShowEndSessionDialog(true)}
+    disabled={chatHistory.length === 0 || isChatEnded}
+  >
+    <FiStopCircle />
+  </button>
+</div>
+
+
                 <textarea
                   className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
                   placeholder={

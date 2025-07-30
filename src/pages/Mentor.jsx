@@ -42,24 +42,71 @@ export default function Mentor() {
   const navigate = useNavigate();
 
   const fetchMentors = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`, config);
-      if (res.data && Array.isArray(res.data.data)) {
-        setMentors(res.data.data);
-      } else {
-        setError("Unexpected data format received from server.");
-        setMentors([]);
-      }
-    } catch (err) {
-      console.error("Error fetching mentors:", err);
-      setError("Failed to load mentors.");
+  setLoading(true);
+  setError(null);
+
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`, config);
+
+    if (res.status === 200 && Array.isArray(res.data?.data)) {
+      setMentors(res.data.data);
+    } else {
       setMentors([]);
-    } finally {
-      setLoading(false);
+      setToastMessage("⚠️ Unexpected data format received from server.");
+      setToastBg("warning");
+      setShowToast(true);
     }
-  };
+
+  } catch (err) {
+    console.error("Error fetching mentors:", err);
+
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || "Failed to load mentors";
+      const errorType = err.response?.status;
+
+      switch (errorType) {
+        case 400:
+          setToastMessage(`⚠️ ${errorMessage}`);
+          setToastBg("warning");
+          break;
+        case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          setToastBg("warning");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: You do not have permission.");
+          setToastBg("warning");
+          break;
+        case 404:
+          setToastMessage("⚠️ Mentor data not found.");
+          setToastBg("warning");
+          break;
+        case 409:
+          setToastMessage("⚠️ Conflict: Data inconsistency.");
+          setToastBg("warning");
+          break;
+        case 500:
+          setToastMessage("⚠️ Server error. Please try again later.");
+          setToastBg("danger");
+          break;
+        default:
+          setToastMessage("⚠️ Unexpected error occurred.");
+          setToastBg("warning");
+      }
+
+      setShowToast(true);
+    } else {
+      setToastMessage("⚠️ Network error. Please check your connection.");
+      setToastBg("danger");
+      setShowToast(true);
+    }
+
+    setMentors([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
  const handleCreateMentor = async (e) => {
   e.preventDefault();
@@ -90,6 +137,14 @@ export default function Mentor() {
         case 400:
           setToastMessage(`⚠️ ${errorMessage}`);
           setToastBg('warning');
+          break;
+          case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          setToastBg("warning");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: You do not have permission.");
+          setToastBg("warning");
           break;
         case 409:
           setToastMessage('⚠️ Mentor with this email already exists.');
@@ -149,6 +204,14 @@ export default function Mentor() {
         case 400:
           setToastMessage(`⚠️ ${errorMessage}`);
           setToastBg('warning');
+          break;
+          case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          setToastBg("warning");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: You do not have permission.");
+          setToastBg("warning");
           break;
         case 404:
           setToastMessage('⚠️ Mentor not found');

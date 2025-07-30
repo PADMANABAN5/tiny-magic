@@ -419,6 +419,7 @@ html, body {
   color: white;
 }
 
+
 .stage-icon.in-progress {
   background: linear-gradient(135deg, #3b82f6, #1d4ed8);
   color: white;
@@ -428,6 +429,33 @@ html, body {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
 }
+.tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+.tooltip-container::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 120%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #222;
+  color: #fff;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 100;
+}
+
+.tooltip-container:hover::after {
+  opacity: 1;
+}
+
  
 .stage-cards {
   display: flex;
@@ -491,6 +519,23 @@ html, body {
 
 .download-btn1:hover svg {
   color: #2563eb; /* Tailwind blue-600 */
+}
+.end-session-btn{
+  width: 48px;
+    height: 48px;
+    border: none;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #ea667c, #764ba2);
+    color: white;
+    display: flex
+;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px
 }
 
 /* Tooltip styling */
@@ -943,7 +988,7 @@ html, body {
   top: calc(100% + 8px);
   left: 0;
   right: 0;
-  background: white;
+  background: rgb(148, 229, 245);
   border-radius: 12px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   border: 1px solid #e2e8f0;

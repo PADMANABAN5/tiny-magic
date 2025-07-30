@@ -28,6 +28,7 @@ import Mentorpods from './pages/Mentorpods.jsx';
 import Mentorpodusers from './pages/Mentorpodusers.jsx';
 import MentorPodusersprogress from './pages/MentorPodusersprogress.jsx';
 import Archived from './pages/Archived.jsx';
+import ArchivedConcepts from './pages/Archivedconcepts.jsx';
 
 // ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
@@ -139,6 +140,9 @@ function App() {
         }/>
         <Route path="/archived" element={
           <PrivateRoute roles={["superadmin"]}><Archived /></PrivateRoute>
+        } />
+        <Route path="/archivedconcepts" element={
+          <PrivateRoute roles={["superadmin"]}><ArchivedConcepts /></PrivateRoute>
         } />
 
         {/* Redirect to login if no route matches */}

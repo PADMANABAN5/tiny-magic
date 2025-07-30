@@ -20,29 +20,75 @@ export default function OrgList() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const navigate = useNavigate();
-
-  const fetchOrganizations = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`);
-      if (res.data && Array.isArray(res.data.data)) {
-        setOrganizations(res.data.data);
-      } else {
-        setOrganizations([]);
-        setError("Unexpected data format from server.");
-      }
-    } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message || "Server error.");
-      } else {
-        setError("Unexpected error occurred.");
-      }
-      setOrganizations([]);
-    } finally {
-      setLoading(false);
-    }
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
   };
+  const fetchOrganizations = async () => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations`, config);
+
+    if (res.status === 200 && Array.isArray(res.data?.data)) {
+      setOrganizations(res.data.data);
+    } else {
+      setOrganizations([]);
+      setToastMessage("⚠️ Unexpected data format from server.");
+      setToastBg("warning");
+      setShowToast(true);
+    }
+
+  } catch (err) {
+    console.error("Error fetching organizations:", err);
+
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      const message = err.response?.data?.message;
+
+      switch (status) {
+        case 400:
+          setToastMessage(`⚠️ ${message || "Bad request"}`);
+          setToastBg("warning");
+          break;
+        case 401:
+          setToastMessage("⚠️ Unauthorized access try again");
+          setToastBg("warning");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: Access denied try again");
+          setToastBg("warning");
+          break;
+        case 404:
+          setToastMessage("⚠️ Not found: Endpoint or data missing");
+          setToastBg("warning");
+          break;
+        case 409:
+          setToastMessage("⚠️ Conflict: Duplicate data");
+          setToastBg("warning");
+          break;
+        case 500:
+          setToastMessage("⚠️ Server error. Please try again later.");
+          setToastBg("warning");
+          break;
+        default:
+          setToastMessage("⚠️ Failed to fetch organizations.");
+          setToastBg("warning");
+      }
+    } else {
+      setToastMessage("⚠️ Network error. Please check your connection.");
+      setToastBg("danger");
+    }
+
+    setOrganizations([]);
+    setShowToast(true);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const toggleIsActive = async (org) => {
     const originalIsActive = org.is_active;
@@ -56,9 +102,9 @@ export default function OrgList() {
 
     try {
       await axios.put(`${process.env.REACT_APP_API_LINK}/organizations/${org.organization_id}`, {
-        organization_name: org.organization_name,
+        organization_name: org.organization_name, 
         is_active: newIsActiveState,
-      });
+      }, config);
       setToastBg(newIsActiveState ? 'primary' : 'secondary');
       setToastMessage(`Marked as ${newIsActiveState ? 'Active' : 'inactive'} successfully`);
       setShowToast(true);
@@ -86,13 +132,13 @@ export default function OrgList() {
     await axios.post(`${process.env.REACT_APP_API_LINK}/organizations`, {
       organization_name: newOrgName,
       is_active: true,
-    });
+    }, config);
 
     setShowModal(false);
     setNewOrgName('');
     fetchOrganizations();
     setToastMessage('✅ Organization created successfully!');
-    setToastBg('success');
+    setToastBg('primary');
     setShowToast(true);
   } catch (err) {
     console.error("Error creating organization:", err);

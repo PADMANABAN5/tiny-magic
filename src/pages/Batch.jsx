@@ -24,7 +24,12 @@ export default function Batch() {
 const [itemsPerPage, setItemsPerPage] = useState(10);
 const [searchBatchName, setSearchBatchName] = useState('');
 const [selectedOrganization, setSelectedOrganization] = useState('');
-
+ const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   const [batchForm, setBatchForm] = useState({
     organization_name: '',
@@ -37,7 +42,7 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
   const fetchBatches = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setBatches(res.data.data);
       } else {
@@ -54,7 +59,7 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
 
   const fetchConcepts = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/concepts`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/concepts`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setConcepts(res.data.data);
       }
@@ -65,7 +70,7 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setOrganizations(res.data.data);
       }
@@ -114,10 +119,10 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
 
   try {
     if (isEditMode && selectedBatchId) {
-      await axios.put(`${process.env.REACT_APP_API_LINK}/batches/${selectedBatchId}`, payload);
+      await axios.put(`${process.env.REACT_APP_API_LINK}/batches/${selectedBatchId}`, payload, config);
       setToastMessage('✅ Batch updated successfully!');
     } else {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/batches`, payload);
+      await axios.post(`${process.env.REACT_APP_API_LINK}/batches`, payload, config);
       setToastMessage('✅ Batch created successfully!');
     }
     setToastBg('primary');

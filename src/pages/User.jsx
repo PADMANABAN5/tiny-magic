@@ -33,7 +33,12 @@ export default function User() {
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
   const [toastBg, setToastBg] = useState('primary');
-
+   const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
   // State for filters
   const [filters, setFilters] = useState({
     organization_name: '',
@@ -55,7 +60,7 @@ export default function User() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`, config);
       setOrganizations(res.data.data || []);
       return res.data.data || [];
     } catch (err) {
@@ -75,24 +80,49 @@ export default function User() {
         return;
       }
       const userPromises = orgs.map(org =>
-        axios.get(`${process.env.REACT_APP_API_LINK}/pod-users/all/${org.organization_identifier || org.organization_name}`)
+        axios.get(`${process.env.REACT_APP_API_LINK}/pod-users/all/${org.organization_identifier || org.organization_name}`, config)
       );
       const results = await Promise.all(userPromises);
       const allPodUsers = results.flatMap(res => res.data.data || []);
       setPodUsers(allPodUsers);
     } catch (err) {
-      console.error('Error fetching pod users:', err);
-      setError('Failed to load pod users');
-    } finally {
-      setLoading(false);
+    console.error("Error fetching pod users:", err);
+
+    if (axios.isAxiosError(err) && err.response) {
+      switch (err.response.status) {
+        case 400:
+          setError("Bad request – check organization identifiers.");
+          break;
+        case 404:
+          setError("Not found – some organization data missing.");
+          break;
+        case 409:
+          setError("Conflict – data conflict during fetch.");
+          break;
+        case 500:
+          setError("Server error – please try again later.");
+          break;
+        default:
+          setError(`Unexpected error (${err.response.status})`);
+      }
+    } else {
+      setError("Network error – please check your connection.");
     }
-  };
+
+    // Optional Toast UI
+    setToastBg("warning");
+    setToastMessage("⚠️ " + (err.response?.data?.message || "Failed to load pod users"));
+    setShowToast(true);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchAllBatchesAndPods = async () => {
     try {
       const [batchRes, podRes] = await Promise.all([
-        axios.get(`${process.env.REACT_APP_API_LINK}/batches`),
-        axios.get(`${process.env.REACT_APP_API_LINK}/pods`),
+        axios.get(`${process.env.REACT_APP_API_LINK}/batches`, config),
+        axios.get(`${process.env.REACT_APP_API_LINK}/pods`, config),
       ]);
       setBatches(batchRes.data.data || []);
       setPods(podRes.data.data || []);
@@ -107,7 +137,7 @@ export default function User() {
       return;
     }
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pod-users/unassigned/${organizationName}`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pod-users/unassigned/${organizationName}`, config);
       setUnassignedOrgUsers(res.data.data || []);
     } catch (err) {
       console.error(`Error fetching unassigned users for ${organizationName}:`, err);
@@ -138,7 +168,7 @@ export default function User() {
         batch_id: newUser.batch_id,
         pod_id: newUser.pod_id,
         users: usersToAssign,
-      });
+      }, config);
       setToastMessage('User(s) added successfully');
       setToastBg('primary');
       setShowToast(true);
@@ -175,7 +205,7 @@ export default function User() {
       const formattedProgress = JSON.parse(progressText);
       await axios.put(`${process.env.REACT_APP_API_LINK}/pod-users/${selectedUserId}`, {
         progress: formattedProgress
-      });
+      }, config);
       setToastMessage('Progress updated successfully');
       setToastBg('primary');
       setShowToast(true);

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaPlus, FaHistory } from 'react-icons/fa';
-import { Button, Table, Spinner, Alert, Modal, Form } from 'react-bootstrap';
+import { Button, Table, Spinner, Alert, Modal, Form,Pagination } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom'; 
 import EditablePromptEditor from '../components/EditablePromptEditor.jsx';
 import Supersidebar from '../components/Supersidebar';
@@ -21,6 +21,58 @@ export default function Prompt() {
   const [selectedOrgId, setSelectedOrgId] = useState('');
   const [selectedBatchId, setSelectedBatchId] = useState('');
   const [filteredPrompts, setFilteredPrompts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+const promptsPerPage = 10;
+
+const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
+
+
+const indexOfLastPrompt = currentPage * promptsPerPage;
+const indexOfFirstPrompt = indexOfLastPrompt - promptsPerPage;
+const currentPrompts = filteredPrompts.slice(indexOfFirstPrompt, indexOfLastPrompt);
+const totalPages = Math.ceil(filteredPrompts.length / promptsPerPage);
+
+
+const getPaginationItems = () => {
+  const items = [];
+  const maxVisible = 5;
+  let startPage = Math.max(currentPage - Math.floor(maxVisible / 2), 1);
+  let endPage = startPage + maxVisible - 1;
+
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(endPage - maxVisible + 1, 1);
+  }
+
+  for (let number = startPage; number <= endPage; number++) {
+    items.push(
+      <Pagination.Item
+        key={number}
+        active={number === currentPage}
+        onClick={() => setCurrentPage(number)}
+      >
+        {number}
+      </Pagination.Item>
+    );
+  }
+
+  return items;
+};
+  useEffect(() => {
+  const filtered = allPrompts.filter(prompt => {
+    const matchOrg = selectedOrgId ? prompt.organization_id?.toString() === selectedOrgId.toString() : true;
+    const matchBatch = selectedBatchId ? prompt.batch_id?.toString() === selectedBatchId.toString() : true;
+    return matchOrg && matchBatch;
+  });
+
+  setFilteredPrompts(filtered);
+  setCurrentPage(1); // Reset to first page when filter changes
+}, [allPrompts, selectedOrgId, selectedBatchId]);
 
 
   // Fetch all prompts (global + assigned)
@@ -52,7 +104,7 @@ useEffect(() => {
 
   // Fetch organizations
   useEffect(() => {
-    axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`)
+    axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`, config)
       .then(res => setOrgList(res.data.data || []))
       .catch(err => console.error('Failed to fetch orgs:', err));
   }, []);
@@ -112,7 +164,13 @@ useEffect(() => {
     .then(() => {
       alert('✅ Prompt assigned successfully!');
       setShowAssignModal(false);
-      fetchPrompts(); // 🔄 Refresh table without full reload
+      fetchPrompts();
+
+      // 🔁 Reset modal form values
+      setSelectedPromptId(null);
+      setSelectedOrgId('');
+      setSelectedBatchId('');
+      setBatchList([]); // Optional: Reset batch list too
     })
     .catch((err) => {
       console.error(err);
@@ -132,14 +190,44 @@ useEffect(() => {
     <div className="container mt-4">
       <h3>Global & Assigned Prompts</h3>
 
-      <div className="mt-3 text-end">
-        <Button variant="secondary" onClick={() => navigate('/archived')} style={{ marginRight: '10px' }}>
-            <FaHistory className="me-2" /> 
-  </Button>
-        <Button variant="primary" onClick={() => setShowAssignModal(true)}>
-            <FaPlus className="me-2" /> 
-        </Button>
+      <div className="mt-3 text-end" >
+       
+
+<Button
+  variant="secondary"
+  onClick={() => navigate('/archived')}
+  style={{ width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: '10px' }}
+>
+  <FaHistory />
+</Button>
+ <Button
+  variant="primary"
+  onClick={() => setShowAssignModal(true)}
+  style={{ width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+>
+  <FaPlus />
+</Button>
+
       </div>
+      <div className="d-flex gap-3 my-3">
+  <Form.Group>
+    <Form.Label>Filter by Organization</Form.Label>
+    <Form.Select
+      value={selectedOrgId}
+      onChange={(e) => setSelectedOrgId(e.target.value)}
+    >
+      <option value="">All Organizations</option>
+      {orgList.map(org => (
+        <option key={org.organization_id} value={org.organization_id}>
+          {org.organization_name}
+        </option>
+      ))}
+    </Form.Select>
+  </Form.Group>
+
+  
+</div>
+
 
       <Table striped bordered hover responsive className="mt-3">
         <thead>
@@ -154,28 +242,46 @@ useEffect(() => {
           </tr>
         </thead>
         <tbody>
-          {allPrompts.map((prompt) => (
-            <tr key={prompt.prompt_id}>
-              <td>{prompt.prompt_type}</td>
-              <td>{prompt.prompt_level}</td>
-              <td>{prompt.organization_name || '—'}</td>
-              <td>{prompt.batch_name || '—'}</td>
-              <td>{prompt.version}</td>
-              {/* <td>{prompt.source}</td> */}
-              <td>
-                <Button
-                  variant="warning"
-                  size="sm"
-                  className="me-2"
-                  onClick={() => handleEditClick(prompt)}
-                >
-                  Edit
-                </Button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
+  {currentPrompts.map((prompt) => (
+    <tr key={prompt.prompt_id}>
+      <td>{prompt.prompt_type}</td>
+      <td>{prompt.prompt_level}</td>
+      <td>{prompt.organization_name || '—'}</td>
+      <td>{prompt.batch_name || '—'}</td>
+      <td>{prompt.version}</td>
+      <td>
+        <Button
+          variant="warning"
+          size="sm"
+          className="me-2"
+          onClick={() => handleEditClick(prompt)}
+        >
+          Edit
+        </Button>
+      </td>
+    </tr>
+  ))}
+</tbody>
+
       </Table>
+    {totalPages > 1 && (
+  <div className="d-flex justify-content-center my-4">
+    <Pagination>
+      <Pagination.Prev
+        disabled={currentPage === 1}
+        onClick={() => setCurrentPage(prev => prev - 1)}
+      />
+      {getPaginationItems()}
+      <Pagination.Next
+        disabled={currentPage === totalPages}
+        onClick={() => setCurrentPage(prev => prev + 1)}
+      />
+    </Pagination>
+  </div>
+)}
+
+  
+
 
       {/* Edit Prompt Modal */}
       <Modal show={showEditor} onHide={() => setShowEditor(false)} size="lg">

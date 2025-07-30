@@ -30,6 +30,12 @@ export default function Pods() {
   const [searchBatchName, setSearchBatchName] = useState('');
   // Changed from selectedMentor to searchMentorName for input field
   const [searchMentorName, setSearchMentorName] = useState('');
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   const [podForm, setPodForm] = useState({
     organization_id: '',
@@ -38,7 +44,7 @@ export default function Pods() {
     pod_name: '',
     is_active: true,
   });
-
+  
   // Filters state is no longer directly used for batch/mentor search inputs
   // The individual state variables (searchBatchName, searchMentorName) are used instead.
   const handleFilterChange = (e) => {
@@ -74,7 +80,7 @@ export default function Pods() {
   const fetchPods = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setPods(res.data.data);
       } else {
@@ -91,7 +97,7 @@ export default function Pods() {
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`, config);
       setOrganizations(res.data.data || []);
     } catch (err) {
       console.error('Error fetching organizations:', err);
@@ -100,7 +106,7 @@ export default function Pods() {
 
   const fetchBatches = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`, config);
       setBatches(res.data.data || []);
     } catch (err) {
       console.error('Error fetching batches:', err);
@@ -109,7 +115,7 @@ export default function Pods() {
 
   const fetchMentors = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`, config);
       setMentors(res.data.data || []);
     } catch (err) {
       console.error('Error fetching mentors:', err);
@@ -165,11 +171,11 @@ export default function Pods() {
 
   try {
     if (isEditMode && selectedPodId) {
-      await axios.put(`${process.env.REACT_APP_API_LINK}/pods/${selectedPodId}`, payload);
+      await axios.put(`${process.env.REACT_APP_API_LINK}/pods/${selectedPodId}`, payload, config);
       setToastMessage('✅ Pod updated successfully!');
       setToastBg('primary'); // Changed to primary for consistency
     } else {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/pods`, payload);
+      await axios.post(`${process.env.REACT_APP_API_LINK}/pods`, payload, config);
       setToastMessage('✅ Pod created successfully!');
       setToastBg('primary'); // Changed to primary for consistency
     }

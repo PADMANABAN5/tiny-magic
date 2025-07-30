@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination, Toast, ToastContainer,Accordion} from 'react-bootstrap';
+import { Pagination, Toast, ToastContainer,Accordion,Button} from 'react-bootstrap';
 import '../styles/OrgList.css';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft,FaPlus,FaEdit } from 'react-icons/fa';
+import { FaArrowLeft,FaPlus,FaEdit ,FaHistory} from 'react-icons/fa';
 
 export default function Concepts() {
   const navigate = useNavigate();
@@ -20,7 +20,12 @@ export default function Concepts() {
   const [showToast, setShowToast] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState('');
-
+   const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
 
   const [conceptForm, setConceptForm] = useState({
@@ -44,7 +49,7 @@ export default function Concepts() {
   const fetchConcepts = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/concepts`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/concepts`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setConcepts(res.data.data);
       } else {
@@ -93,11 +98,11 @@ export default function Concepts() {
   e.preventDefault();
   try {
     if (isEditMode && selectedConceptId) {
-      await axios.put(`${process.env.REACT_APP_API_LINK}/concepts/${selectedConceptId}`, conceptForm);
+      await axios.put(`${process.env.REACT_APP_API_LINK}/concepts/${selectedConceptId}`, conceptForm, config);
       setToastBg('primary');
       setToastMessage('✅ Concept updated successfully!');
     } else {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/concepts`, conceptForm);
+      await axios.post(`${process.env.REACT_APP_API_LINK}/concepts`, conceptForm, config);
       setToastBg('primary');
       setToastMessage('✅ Concept created successfully!');
     }
@@ -163,9 +168,15 @@ export default function Concepts() {
 
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h3>Concepts</h3>
-          <button className="create-btn" onClick={openCreateModal} style={{ width: '10%' }}>
-            <FaPlus />
-          </button>
+          <div className="d-flex justify-content-between" style={{ width: '26%' }}>
+              <Button variant="secondary" onClick={() => navigate('/archivedconcepts')} style={{ width:'49%' }}>
+                <FaHistory />
+              </Button>
+              <Button variant="primary" onClick={() => openCreateModal()} style={{ width: '49%' }} >
+                <FaPlus  />
+              </Button>
+ 
+            </div>
         </div>
       <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
   <div className="d-flex align-items-center">
@@ -216,6 +227,7 @@ export default function Concepts() {
                     <th>Concept Name</th>
                     <th>Concept Content</th>
                     <th>Status</th>
+                    <th>version</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -235,6 +247,7 @@ export default function Concepts() {
                             {concept.is_active ? 'Active' : 'Inactive'}
                           </span>
                         </td>
+                        <td>{concept.version}</td>
                         <td>
                           <button className="btn btn-warning btn-sm" onClick={() => openEditModal(concept)}>
                             <FaEdit />

@@ -40,21 +40,75 @@ export default function Addorgadmin() {
   };
   // Fetch admins & orgs
   const fetchOrgAdmins = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orgadmin`, config);
-      setOrgAdmins(Array.isArray(res.data.data) ? res.data.data : []);
-    } catch {
-      setError("Failed to load organization admins.");
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null);
+
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/orgadmin`, config);
+
+    if (res.status === 200 && Array.isArray(res.data?.data)) {
+      setOrgAdmins(res.data.data);
+    } else {
+      setOrgAdmins([]);
+      setToastMessage("⚠️ Unexpected data format received from server.");
+      setToastBg("warning");
+      setShowToast(true);
     }
-  };
+
+  } catch (err) {
+    console.error("Error fetching organization admins:", err);
+
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      const message = err.response?.data?.message || "Failed to load organization admins.";
+
+      switch (status) {
+        case 400:
+          setToastMessage(`⚠️ ${message}`);
+          setToastBg("warning");
+          break;
+        case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          setToastBg("danger");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: Access denied.");
+          setToastBg("danger");
+          break;
+        case 404:
+          setToastMessage("⚠️ Organization admins not found.");
+          setToastBg("warning");
+          break;
+        case 409:
+          setToastMessage("⚠️ Conflict: Duplicate admin data.");
+          setToastBg("warning");
+          break;
+        case 500:
+          setToastMessage("⚠️ Server error. Please try again later.");
+          setToastBg("danger");
+          break;
+        default:
+          setToastMessage("⚠️ Unexpected error occurred.");
+          setToastBg("warning");
+      }
+
+      setShowToast(true);
+    } else {
+      setToastMessage("⚠️ Network error. Please check your connection.");
+      setToastBg("danger");
+      setShowToast(true);
+    }
+
+    setOrgAdmins([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`, config);
       setOrganizations(Array.isArray(res.data.data) ? res.data.data : []);
     } catch {
       // ignore
@@ -100,7 +154,14 @@ const handleCreateAdmin = async (e) => {
           toastMessage = '⚠️ Invalid request. Please check your input.';
         }
         break;
-        
+         case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          setToastBg("danger");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: Access denied.");
+          setToastBg("danger");
+          break;
       case 409:
         toastMessage = '⚠️ ' + (
           err.response.data?.message || 
