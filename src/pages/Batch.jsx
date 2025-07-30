@@ -40,22 +40,64 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
   });
 
   const fetchBatches = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`, config);
-      if (res.data && Array.isArray(res.data.data)) {
-        setBatches(res.data.data);
-      } else {
-        setError("Unexpected response format.");
-        setBatches([]);
-      }
-    } catch (err) {
-      console.error("Error fetching batches:", err);
-      setError("Failed to load batches.");
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null); // Optional if you're only using toast
+
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`, config);
+
+    if (res.data && Array.isArray(res.data.data)) {
+      setBatches(res.data.data);
+    } else {
+      setBatches([]);
+      setToastMessage("⚠️ Unexpected response format from server.");
+      setToastBg("warning");
+      setShowToast(true);
     }
-  };
+
+  } catch (err) {
+    console.error("Error fetching batches:", err);
+
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || "Failed to load batches.";
+      const errorType = err.response?.status;
+
+      switch (errorType) {
+        case 400:
+          setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+          break;
+        case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: You do not have permission.");
+          break;
+        case 404:
+          setToastMessage("⚠️ Batches not found.");
+          break;
+        case 409:
+          setToastMessage("⚠️ Conflict: Data inconsistency.");
+          break;
+        case 500:
+          setToastMessage("⚠️ Server error. Please try again later.");
+          break;
+        default:
+          setToastMessage(`⚠️ Failed to fetch batches. (${errorType || "Unknown error"})`);
+      }
+
+      setToastBg("warning");
+    } else {
+      setToastMessage("⚠️ Network error. Please check your connection.");
+      setToastBg("danger");
+    }
+
+    setShowToast(true);
+    setBatches([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchConcepts = async () => {
     try {
@@ -142,6 +184,16 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
           setToastMessage(`⚠️ ${errorData.message || 'Invalid request'}`);
           setToastBg('warning');
           break;
+        case 401:
+          // Handle unauthorized access
+          setToastMessage('⚠️ Unauthorized. Please log in.');
+          setToastBg('warning');
+          break;
+        case 403:
+          // Handle forbidden access
+          setToastMessage('⚠️ Forbidden: You do not have permission to perform this action.');
+          setToastBg('warning');
+          break;  
           
         case 404:
           // Handle batch not found (update only)

@@ -69,11 +69,11 @@ export default function Addorgadmin() {
           break;
         case 401:
           setToastMessage("⚠️ Unauthorized. Please log in.");
-          setToastBg("danger");
+          setToastBg("warning");
           break;
         case 403:
           setToastMessage("⚠️ Forbidden: Access denied.");
-          setToastBg("danger");
+          setToastBg("warning");
           break;
         case 404:
           setToastMessage("⚠️ Organization admins not found.");
@@ -88,7 +88,7 @@ export default function Addorgadmin() {
           setToastBg("danger");
           break;
         default:
-          setToastMessage("⚠️ Unexpected error occurred.");
+          setToastMessage("⚠️ Failed to fetch organization admins. Please try again later.");
           setToastBg("warning");
       }
 
@@ -156,11 +156,11 @@ const handleCreateAdmin = async (e) => {
         break;
          case 401:
           setToastMessage("⚠️ Unauthorized. Please log in.");
-          setToastBg("danger");
+          setToastBg("warning");
           break;
         case 403:
           setToastMessage("⚠️ Forbidden: Access denied.");
-          setToastBg("danger");
+          setToastBg("warning");
           break;
       case 409:
         toastMessage = '⚠️ ' + (

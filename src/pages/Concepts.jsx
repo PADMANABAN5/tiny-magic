@@ -47,22 +47,64 @@ export default function Concepts() {
   });
 
   const fetchConcepts = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/concepts`, config);
-      if (res.data && Array.isArray(res.data.data)) {
-        setConcepts(res.data.data);
-      } else {
-        setError("Unexpected data format.");
-        setConcepts([]);
-      }
-    } catch (err) {
-      console.error("Error fetching concepts:", err);
-      setError("Failed to load concepts.");
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null); 
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_API_LINK}/concepts`, config);
+
+    if (res.data && Array.isArray(res.data.data)) {
+      setConcepts(res.data.data);
+    } else {
+      setConcepts([]);
+      setToastMessage("⚠️ Unexpected data format received from server.");
+      setToastBg("warning");
+      setShowToast(true);
     }
-  };
+
+  } catch (err) {
+    console.error("Error fetching concepts:", err);
+
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || "Failed to load concepts.";
+      const errorType = err.response?.status;
+
+      switch (errorType) {
+        case 400:
+          setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+          break;
+        case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: You do not have permission.");
+          break;
+        case 404:
+          setToastMessage("⚠️ Concepts not found.");
+          break;
+        case 409:
+          setToastMessage("⚠️ Conflict: Data inconsistency.");
+          break;
+        case 500:
+          setToastMessage("⚠️ Server error. Please try again later.");
+          break;
+        default:
+          setToastMessage(`⚠️ Failed to fetch concepts. (${errorType || "Unknown error"})`);
+      }
+
+      setToastBg("warning");
+    } else {
+      setToastMessage("⚠️ Network error. Please check your connection.");
+      setToastBg("danger");
+    }
+
+    setShowToast(true);
+    setConcepts([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const openCreateModal = () => {
     setConceptForm({
@@ -118,6 +160,14 @@ export default function Concepts() {
         case 400:
           setToastBg('warning');
           setToastMessage('⚠️ Bad request. Please check your input.');
+          break;
+        case 401:
+          setToastBg('warning');
+          setToastMessage('⚠️ Unauthorized. Please log in.');
+          break;
+        case 403:
+          setToastBg('warning');
+          setToastMessage('⚠️ Forbidden: You do not have permission to perform this action.');
           break;
         case 409:
           setToastBg('warning');

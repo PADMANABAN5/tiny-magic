@@ -93,6 +93,12 @@ export default function User() {
         case 400:
           setError("Bad request – check organization identifiers.");
           break;
+        case 401:
+          setError("Unauthorized – please log in.");
+          break;
+        case 403:
+          setError("Forbidden – you do not have permission to access this resource.");
+          break;
         case 404:
           setError("Not found – some organization data missing.");
           break;
@@ -181,6 +187,15 @@ export default function User() {
       let message = 'Failed to add user';
       if (err.response?.status === 409) {
         message = err.response.data.message || 'One or more users are already assigned';
+        setToastBg('warning');
+      }else if (err.response?.status === 401) {
+        message = 'Unauthorized. Please log in.';
+        setToastBg('warning');
+      } else if (err.response?.status === 403) {
+        message = 'Forbidden: You do not have permission to perform this action.';
+        setToastBg('warning');
+      } else if (err.response?.status === 500) {
+        message = 'Server error. Please try again later.';
         setToastBg('warning');
       } else if (err.response?.status === 400) {
         message = err.response.data.message || 'Invalid input provided';

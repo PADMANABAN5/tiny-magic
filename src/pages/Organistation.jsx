@@ -75,7 +75,7 @@ export default function OrgList() {
           setToastBg("warning");
           break;
         default:
-          setToastMessage("⚠️ Failed to fetch organizations.");
+          setToastMessage("⚠️ Failed to fetch organizations. please try again later.");
           setToastBg("warning");
       }
     } else {
@@ -91,33 +91,47 @@ export default function OrgList() {
 };
 
   const toggleIsActive = async (org) => {
-    const originalIsActive = org.is_active;
-    const newIsActiveState = !originalIsActive;
+  const originalIsActive = org.is_active;
+  const newIsActiveState = !originalIsActive;
 
+  // Optimistically update UI
+  setOrganizations(prevOrgs =>
+    prevOrgs.map(o =>
+      o.organization_id === org.organization_id ? { ...o, is_active: newIsActiveState } : o
+    )
+  );
+
+  try {
+    await axios.put(
+      `${process.env.REACT_APP_API_LINK}/organizations/${org.organization_id}`,
+      {
+        organization_name: org.organization_name,
+        is_active: newIsActiveState,
+      },
+      config
+    );
+
+    setToastBg(newIsActiveState ? 'primary' : 'secondary');
+    setToastMessage(`✅ Marked as ${newIsActiveState ? 'Active' : 'Inactive'} successfully`);
+    setShowToast(true);
+  } catch (err) {
+    console.error("Error toggling status:", err);
+
+    // Revert optimistic update
     setOrganizations(prevOrgs =>
       prevOrgs.map(o =>
-        o.organization_id === org.organization_id ? { ...o, is_active: newIsActiveState } : o
+        o.organization_id === org.organization_id ? { ...o, is_active: originalIsActive } : o
       )
     );
 
-    try {
-      await axios.put(`${process.env.REACT_APP_API_LINK}/organizations/${org.organization_id}`, {
-        organization_name: org.organization_name, 
-        is_active: newIsActiveState,
-      }, config);
-      setToastBg(newIsActiveState ? 'primary' : 'secondary');
-      setToastMessage(`Marked as ${newIsActiveState ? 'Active' : 'inactive'} successfully`);
+    if (axios.isAxiosError(err) && err.response?.status === 500) {
+      setToastMessage("⚠️ Internal server error. Please try again later.");
+      setToastBg("danger");
       setShowToast(true);
-    } catch (err) {
-      console.error("Error toggling status:", err);
-      setOrganizations(prevOrgs =>
-        prevOrgs.map(o =>
-          o.organization_id === org.organization_id ? { ...o, is_active: originalIsActive } : o
-        )
-      );
-      alert("Failed to update organization status.");
     }
-  };
+  }
+};
+
 
   const handleCreateOrganization = async (e) => {
   e.preventDefault();

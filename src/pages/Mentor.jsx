@@ -87,10 +87,10 @@ export default function Mentor() {
           break;
         case 500:
           setToastMessage("⚠️ Server error. Please try again later.");
-          setToastBg("danger");
+          setToastBg("warning");
           break;
         default:
-          setToastMessage("⚠️ Unexpected error occurred.");
+          setToastMessage("⚠️ Failed to fetch mentor. Please try again later.");
           setToastBg("warning");
       }
 

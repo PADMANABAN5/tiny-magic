@@ -89,7 +89,7 @@ const [selectedOrganization, setSelectedOrganization] = useState('');
           setToastBg("danger");
           break;
         default:
-          setToastMessage("⚠️ Unexpected error occurred.");
+          setToastMessage("⚠️ Failed to fetch organization users. Please try again later.");
           setToastBg("warning");
       }
 

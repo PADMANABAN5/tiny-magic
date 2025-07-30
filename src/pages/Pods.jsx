@@ -78,22 +78,64 @@ export default function Pods() {
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   const fetchPods = async () => {
-    setLoading(true);
-    try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods`, config);
-      if (res.data && Array.isArray(res.data.data)) {
-        setPods(res.data.data);
-      } else {
-        setPods([]);
-        setError('Unexpected API response format.');
-      }
-    } catch (err) {
-      console.error('Error fetching pods:', err);
-      setError('Failed to load pods.');
-    } finally {
-      setLoading(false);
+  setLoading(true);
+  setError(null); // Optional if only using toast
+
+  try {
+    const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods`, config);
+
+    if (res.data && Array.isArray(res.data.data)) {
+      setPods(res.data.data);
+    } else {
+      setPods([]);
+      setToastMessage("⚠️ Unexpected API response format.");
+      setToastBg("warning");
+      setShowToast(true);
     }
-  };
+
+  } catch (err) {
+    console.error("Error fetching pods:", err);
+
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || "Failed to load pods.";
+      const errorType = err.response?.status;
+
+      switch (errorType) {
+        case 400:
+          setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+          break;
+        case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: You do not have permission.");
+          break;
+        case 404:
+          setToastMessage("⚠️ Pods not found.");
+          break;
+        case 409:
+          setToastMessage("⚠️ Conflict: Data inconsistency.");
+          break;
+        case 500:
+          setToastMessage("⚠️ Server error. Please try again later.");
+          break;
+        default:
+          setToastMessage(`⚠️ Failed to fetch pods. (${errorType || "Unknown error"})`);
+      }
+
+      setToastBg("warning");
+    } else {
+      setToastMessage("⚠️ Network error. Please check your connection.");
+      setToastBg("danger");
+    }
+
+    setShowToast(true);
+    setPods([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchOrganizations = async () => {
     try {
@@ -192,6 +234,10 @@ export default function Pods() {
       switch (status) {
         case 400:
           setToastMessage(`⚠️ ${data.message || 'Invalid request parameters'}`);
+          setToastBg('warning');
+          break;
+        case 401:
+          setToastMessage('⚠️ Unauthorized. Please log in.');
           setToastBg('warning');
           break;
         
