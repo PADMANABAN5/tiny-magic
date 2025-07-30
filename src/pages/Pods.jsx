@@ -60,11 +60,17 @@ export default function Pods() {
   const currentPods = filteredPods.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredPods.length / itemsPerPage);
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   const fetchPods = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods`, config);
       if (res.data && Array.isArray(res.data.data)) {
         setPods(res.data.data);
       } else {
@@ -99,7 +105,7 @@ export default function Pods() {
 
   const fetchMentors = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`);
+      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`, config);
       setMentors(res.data.data || []);
     } catch (err) {
       console.error('Error fetching mentors:', err);

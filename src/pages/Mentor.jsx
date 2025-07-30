@@ -106,7 +106,7 @@ export default function Mentor() {
  const handleUpdateSubmit = async (e) => {
   e.preventDefault();
   try {
-    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editMentor.user_id}`, editMentor);
+    await axios.put(`${process.env.REACT_APP_API_LINK}/users/${editMentor.user_id}`, editMentor, config);
     setShowUpdateModal(false);
     fetchMentors();
 
