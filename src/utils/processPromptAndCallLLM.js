@@ -43,11 +43,15 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
   }
 
   // Helper function to fetch and extract template
-  const fetchTemplate = async (url) => {
-    const response = await fetch(url, config);
+  const fetchTemplate = async (url) => { // Removed 'config' parameter from here as it's not needed for what you intend
+    // Use the 'config' object from the outer scope directly here
+    const response = await fetch(url, config); // <--- HERE! Use the 'config' object defined globally
 
     if (!response.ok) {
-      throw new Error(`API failed: ${response.status} ${response.statusText}`);
+      // Improved error message to include the actual token status
+      const errorText = await response.text();
+      console.error(`API Error for ${url}: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`API failed: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
@@ -61,20 +65,13 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
   try {
     // Try fallback API
     const fallbackUrl = `${process.env.REACT_APP_API_LINK}/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`;
-    let template = await fetchTemplate(fallbackUrl, {
-  headers: {
-    Authorization: `Bearer ${storedToken}`,
-  },
-});
+    let template = await fetchTemplate(fallbackUrl); // <--- HERE! No need to pass headers again
+
     // If not found, try global API
     if (!template) {
       console.warn(`⚠️ Template not found in fallback, trying global API for ${templateName}`);
       const globalUrl = `${process.env.REACT_APP_API_LINK}/prompts/global`;
-      template = await fetchTemplate(globalUrl, {
-        headers: {
-          Authorization: `Bearer ${storedToken}`,
-        },
-      });
+      template = await fetchTemplate(globalUrl); // <--- HERE! No need to pass headers again
     }
 
     if (!template) {
@@ -88,6 +85,9 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
     throw error;
   }
 };
+
+// ... (rest of your code, including callOpenAI and processPromptAndCallLLM, remains unchanged)
+
 
 
 
