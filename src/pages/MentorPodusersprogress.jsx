@@ -50,7 +50,12 @@ function MentorPodusersprogress() {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
-
+   const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
   const BASE_URL = process.env.REACT_APP_API_LINK;
 
   // Convert conversation to format expected by PDFDownloader
@@ -99,7 +104,8 @@ function MentorPodusersprogress() {
     const fetchUserProgress = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_API_LINK}/pod-users/user/id/${userId}`
+          `${process.env.REACT_APP_API_LINK}/pod-users/user/id/${userId}`,
+          config
         );
 
         if (response.data.success) {

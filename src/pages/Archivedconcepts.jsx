@@ -24,10 +24,15 @@ function Archivedconcepts() {
     const currentConcepts = filteredConcepts.slice(indexOfFirstItem, indexOfLastItem);
     const totalPages = Math.ceil(filteredConcepts.length / itemsPerPage);
     const handlePageChange = (pageNum) => setCurrentPage(pageNum);
- 
+    const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
  
     useEffect(() => {
-        axios.get(`${process.env.REACT_APP_API_LINK}/concepts/archived`) // ✅ Updated API URL
+        axios.get(`${process.env.REACT_APP_API_LINK}/concepts/archived`, config) // ✅ Updated API URL
             .then(res => setArchivedConcepts(res.data.data || []))
             .catch(err => {
                 console.error('Failed to fetch archived concepts:', err);

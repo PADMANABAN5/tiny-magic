@@ -13,10 +13,16 @@ function Archived() {
   const [currentPage, setCurrentPage] = useState(1);
   const promptsPerPage = 10;
   const navigate = useNavigate();
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   useEffect(() => {
     axios
-      .get(`${process.env.REACT_APP_API_LINK}/prompts/archived`)
+      .get(`${process.env.REACT_APP_API_LINK}/prompts/archived`, config)
       .then((res) => setArchivedPrompts(res.data.data || []))
       .catch((err) => {
         console.error('Failed to fetch archived prompts:', err);

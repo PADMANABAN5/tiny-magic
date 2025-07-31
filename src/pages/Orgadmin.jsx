@@ -88,6 +88,12 @@ const [filterPodName, setFilterPodName] = useState('');
    * --------------------------------------------------------- */
   const [filterStartDate, setFilterStartDate] = useState(null); // Will store Date object or null
   const [filterEndDate, setFilterEndDate] = useState(null); // Will store Date object or null
+   const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
   const getUniqueValues = (data, property) => {
   const values = new Set();
   data.forEach(item => {
@@ -106,7 +112,7 @@ const [filterPodName, setFilterPodName] = useState('');
         return;
       }
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`);
+        const res = await axios.get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`, config);
         if (res.data.success && Array.isArray(res.data.data)) {
           setBatchesData(res.data.data);
         } else {

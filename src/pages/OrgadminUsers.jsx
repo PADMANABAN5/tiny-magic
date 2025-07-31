@@ -19,11 +19,17 @@ function OrgadminUsers() {
   const [podInfo, setPodInfo] = useState(null);
   const usersPerPage = 6;
   const email = sessionStorage.getItem("email");
+   const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods/${podId}`);
+        const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods/${podId}`, config);
         if (res.data.success) {
           const podData = res.data.data;
           setUsers(podData.orgusers || []);

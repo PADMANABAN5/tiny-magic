@@ -60,7 +60,12 @@ const ConversationHistory = () => {
   const userId = sessionStorage.getItem("userId");
   const username = sessionStorage.getItem("username");
   const [userData, setUserData] = useState(null);
-
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
   // Convert conversation to format expected by PDFDownloader
   const convertConversationForPDF = (conversation) => {
     if (!conversation || !conversation.conversation) return [];

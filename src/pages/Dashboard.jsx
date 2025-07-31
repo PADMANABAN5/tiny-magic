@@ -74,6 +74,12 @@ function Dashboard() {
   const topSaveButtonRef = useRef(null);
   const topSaveOptionsRef = useRef(null);
   const SECRET_KEY_HEX = process.env.REACT_APP_SECRET_KEY_HEX; // Move to .env
+  const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
 const hexToBuffer = (hex) => {
   return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
@@ -134,7 +140,7 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
   const fetchApiKey = async () => {
   try {
     console.log("🔑 Fetching encrypted API key...");
-    const response = await axios.get(`${BASE_URL}/apikey`);
+    const response = await axios.get(`${BASE_URL}/apikey`, config);
     const { encryptedApiKey, iv, authTag } = response.data;
 
     if (!encryptedApiKey || !iv || !authTag) {
@@ -184,7 +190,7 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
 
     try {
       console.log("🎯 Fetching concepts for fresh session:", username);
-      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`);
+      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
 
       if (response.data && response.data.success && response.data.data) {
         const conceptsData = response.data.data.batch?.concepts || [];
@@ -206,7 +212,7 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
 
   setConceptsLoading(true);
   try {
-    const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`);
+    const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
 
     if (response.data && response.data.success && response.data.data) {
       const data = response.data.data;

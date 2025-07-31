@@ -22,12 +22,19 @@ function Orgadminpods() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const email = sessionStorage.getItem("email");
+   const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
   useEffect(() => {
     const fetchPods = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_API_LINK}/orgadmin/pods/${email}`
+          `${process.env.REACT_APP_API_LINK}/orgadmin/pods/${email}`,
+          config
         );
         if (response.data.success) {
           const filtered = response.data.data.filter(

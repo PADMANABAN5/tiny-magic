@@ -79,8 +79,8 @@ const getPaginationItems = () => {
  const fetchPrompts = async () => {
   try {
     const [globalRes, allRes] = await Promise.all([
-      axios.get(`${process.env.REACT_APP_API_LINK}/prompts/global`),
-      axios.get(`${process.env.REACT_APP_API_LINK}/prompts/batch`),
+      axios.get(`${process.env.REACT_APP_API_LINK}/prompts/global`, config),
+      axios.get(`${process.env.REACT_APP_API_LINK}/prompts/batch`, config),
     ]);
 
     const globalData = globalRes.data.data.map(p => ({ ...p, source: 'Global' }));
@@ -118,7 +118,7 @@ useEffect(() => {
     }
 
     axios
-      .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgId}`)
+      .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgId}`, config)
       .then((res) => {
         setBatchList(res.data.data || []);
         setSelectedBatchId('');
@@ -139,7 +139,7 @@ useEffect(() => {
     axios.put(`${process.env.REACT_APP_API_LINK}/prompts/${editPrompt.prompt_id}`, {
       user_content: updatedUserContent,
       json_content: editPrompt.json_content
-    })
+    }, config)
       .then(() => {
         setShowEditor(false);
         window.location.reload(); // Or re-fetch prompts
@@ -160,7 +160,7 @@ useEffect(() => {
     prompt_id: selectedPromptId,
     organization_id: parseInt(selectedOrgId),
     batch_id: parseInt(selectedBatchId),
-  })
+  }, config)
     .then(() => {
       alert('✅ Prompt assigned successfully!');
       setShowAssignModal(false);

@@ -1,4 +1,10 @@
 // Template processing function
+const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 const processTemplate = (templateContent, selectedConcept) => {
   if (!templateContent || !selectedConcept) {
     return templateContent;
@@ -38,7 +44,7 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
 
   // Helper function to fetch and extract template
   const fetchTemplate = async (url) => {
-    const response = await fetch(url);
+    const response = await fetch(url, config);
 
     if (!response.ok) {
       throw new Error(`API failed: ${response.status} ${response.statusText}`);
@@ -55,13 +61,20 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
   try {
     // Try fallback API
     const fallbackUrl = `${process.env.REACT_APP_API_LINK}/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`;
-    let template = await fetchTemplate(fallbackUrl);
-
+    let template = await fetchTemplate(fallbackUrl, {
+  headers: {
+    Authorization: `Bearer ${storedToken}`,
+  },
+});
     // If not found, try global API
     if (!template) {
       console.warn(`⚠️ Template not found in fallback, trying global API for ${templateName}`);
       const globalUrl = `${process.env.REACT_APP_API_LINK}/prompts/global`;
-      template = await fetchTemplate(globalUrl);
+      template = await fetchTemplate(globalUrl, {
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+        },
+      });
     }
 
     if (!template) {

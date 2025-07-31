@@ -30,6 +30,12 @@ import Mentorsidebar from '../components/Mentorsidebar';
 // Import react-datepicker and its styles
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css'; // This is the default stylesheet
+ const storedToken = sessionStorage.getItem("token");
+  const config = {
+    headers: {
+      Authorization: `Bearer ${storedToken}`,
+    },
+  };
 
 function Mentorpods() {
   const navigate = useNavigate();
@@ -98,7 +104,7 @@ const getUniqueValues = (data, property) => {
         return;
       }
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_LINK}/mentor/pods/${email}`);
+        const response = await axios.get(`${process.env.REACT_APP_API_LINK}/mentor/pods/${email}`, config);
         if (response?.data?.success) {
           setPods(response.data.data || []);
         } else {
