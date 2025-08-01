@@ -411,7 +411,7 @@ export default function Pods() {
                       currentPods.map((pod) => (
                         <tr key={pod.pod_id}>
                           <td>{pod.pod_name}</td>
-                          <td>{organizations.find((org) => org.organization_id === pod.organization_id)?.organization_name || '—'}</td>
+                          <td>{pod.batch?.organization_name || '—'}</td>
                           <td>{batches.find((batch) => batch.batch_id === pod.batch_id)?.batch_name || '—'}</td>
                           <td>
                             {(() => {
@@ -551,21 +551,7 @@ export default function Pods() {
                 />
               </div>
 
-              <div className="mb-3">
-                <label className="form-label d-block" htmlFor="is_active">Active Status</label>
-                <div className="form-check form-switch">
-                  <input
-                    className="form-check-input"
-                    type="checkbox"
-                    id="is_active"
-                    checked={podForm.is_active}
-                    onChange={(e) => setPodForm((prev) => ({ ...prev, is_active: e.target.checked }))}
-                  />
-                  <label className="form-check-label" htmlFor="is_active">
-                    {podForm.is_active ? 'Active' : 'Inactive'}
-                  </label>
-                </div>
-              </div>
+              
 
               <div className="d-flex gap-2">
                 <button type="submit" className="btn btn-success" >

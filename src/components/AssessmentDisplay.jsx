@@ -98,7 +98,11 @@ export const getScoreLabel = (score) => {
 };
 
 // Format criterion name from camelCase to readable format
-export const formatCriterionName = (name) => {console.log(name);
+export const formatCriterionName = (name) => {
+  // Handle special cases
+  if (name === 'AbstractConcrete') {
+    return 'Abstract vs Concrete';
+  } 
   return name.replace(/([A-Z])/g, ' $1').trim();
 };
 
@@ -313,7 +317,7 @@ export const OverallScoreAndSummary = ({ content }) => {
             <div className="breakdown-section">
               <h6>🎯 Understanding Skills</h6>
               <div className="breakdown-grid">
-                {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractvsConcrete"].map(skill => {
+                {["AskingQuestions", "ClarifyingAmbiguity", "SummarizingConfirming", "ChallengingIdeas", "ComparingConcepts", "AbstractConcrete"].map(skill => {
                   if (!scoringData.UnderstandingSkills[skill]) return null;
                   const score = scoringData.UnderstandingSkills[skill].score || 0;
                   const color = getScoreColor(score);

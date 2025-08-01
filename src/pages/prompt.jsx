@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaPlus, FaHistory } from 'react-icons/fa';
-import { Button, Table, Spinner, Alert, Modal, Form,Pagination } from 'react-bootstrap';
+import { FaPlus, FaHistory , FaEdit } from 'react-icons/fa';
+import { Button, Table, Spinner, Alert, Modal, Form,Pagination,Toast, ToastContainer } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom'; 
 import EditablePromptEditor from '../components/EditablePromptEditor.jsx';
 import Supersidebar from '../components/Supersidebar';
@@ -22,6 +22,10 @@ export default function Prompt() {
   const [selectedBatchId, setSelectedBatchId] = useState('');
   const [filteredPrompts, setFilteredPrompts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showToast, setShowToast] = useState(false);
+const [toastMessage, setToastMessage] = useState('');
+const [toastBg, setToastBg] = useState('primary'); // 'success', 'warning', 'danger', etc.
+
 const promptsPerPage = 10;
 
 const storedToken = sessionStorage.getItem("token");
@@ -90,8 +94,44 @@ const getPaginationItems = () => {
 
     setAllPrompts([...globalData, ...assignedData]);
   } catch (err) {
-    console.error(err);
-    setError('Failed to load prompts');
+    console.error("Error fetching prompts:", err);
+
+    if (axios.isAxiosError(err)) {
+      const errorMessage = err.response?.data?.message || "Failed to load prompts.";
+      const errorType = err.response?.status;
+
+      switch (errorType) {
+        case 400:
+          setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+          break;
+        case 401:
+          setToastMessage("⚠️ Unauthorized. Please log in.");
+          break;
+        case 403:
+          setToastMessage("⚠️ Forbidden: You do not have permission.");
+          break;
+        case 404:
+          setToastMessage("⚠️ Prompts not found.");
+          break;
+        case 409:
+          setToastMessage("⚠️ Conflict: A similar prompt may already exist.");
+          break;
+        case 500:
+          setToastMessage("❌ Server error. Please try again later.");
+          break;
+        default:
+          setToastMessage(`⚠️ Failed to fetch prompts. (${errorType || "Unknown error"})`);
+      }
+
+      setToastBg("warning");
+    } else {
+      setToastMessage("⚠️ Network error. Please check your connection.");
+      setToastBg("danger");
+    }
+
+    setShowToast(true);
+    setAllPrompts([]);
+    setError("Failed to load prompts.");
   } finally {
     setLoading(false);
   }
@@ -136,23 +176,64 @@ useEffect(() => {
   };
 
   const handleSave = () => {
-    axios.put(`${process.env.REACT_APP_API_LINK}/prompts/${editPrompt.prompt_id}`, {
-      user_content: updatedUserContent,
-      json_content: editPrompt.json_content
-    }, config)
-      .then(() => {
-        setShowEditor(false);
-        window.location.reload(); // Or re-fetch prompts
-      })
-      .catch((err) => {
-        console.error(err);
-        alert("Failed to update prompt");
-      });
-  };
+  axios.put(`${process.env.REACT_APP_API_LINK}/prompts/${editPrompt.prompt_id}`, {
+    user_content: updatedUserContent,
+    json_content: editPrompt.json_content
+  }, config)
+    .then(() => {
+      setShowEditor(false);
+      setToastMessage("✅ Prompt updated successfully!");
+      setToastBg("primary");
+      setShowToast(true);
+      fetchPrompts(); 
+    })
+    .catch((err) => {
+      console.error("Error updating prompt:", err);
 
-  const handleAssignPrompt = () => {
+      if (axios.isAxiosError(err) && err.response) {
+        const status = err.response.status;
+        let errorMsg = '❌ Something went wrong.';
+
+        switch (status) {
+          case 400:
+            errorMsg = '⚠️ Bad request. Please check your input.';
+            break;
+          case 401:
+            errorMsg = '⚠️ Unauthorized. Please log in.';
+            break;
+          case 403:
+            errorMsg = '⚠️ Forbidden. You don’t have permission.';
+            break;
+          case 404:
+            errorMsg = '⚠️ Prompt not found.';
+            break;
+          case 409:
+            errorMsg = '⚠️ Conflict. This prompt might already exist.';
+            break;
+          case 500:
+            errorMsg = '⚠️ Server error. Please try again later.';
+            break;
+          default:
+            errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+        }
+
+        setToastMessage(errorMsg);
+        setToastBg("warning");
+        setShowToast(true);
+      } else {
+        setToastMessage("❌ Network error. Please check your connection.");
+        setToastBg("danger");
+        setShowToast(true);
+      }
+    });
+};
+
+
+ const handleAssignPrompt = () => {
   if (!selectedPromptId || !selectedOrgId || !selectedBatchId) {
-    alert('Please select all fields.');
+    setToastMessage("⚠️ Please select all fields.");
+    setToastBg("warning");
+    setShowToast(true);
     return;
   }
 
@@ -162,21 +243,57 @@ useEffect(() => {
     batch_id: parseInt(selectedBatchId),
   }, config)
     .then(() => {
-      alert('✅ Prompt assigned successfully!');
+      setToastMessage("✅ Prompt assigned successfully!");
+      setToastBg("primary");
+      setShowToast(true);
       setShowAssignModal(false);
       fetchPrompts();
-
-      // 🔁 Reset modal form values
       setSelectedPromptId(null);
       setSelectedOrgId('');
       setSelectedBatchId('');
-      setBatchList([]); // Optional: Reset batch list too
+      setBatchList([]);
     })
     .catch((err) => {
-      console.error(err);
-      alert('❌ Failed to assign prompt');
+      console.error("Error assigning prompt:", err);
+
+      if (axios.isAxiosError(err) && err.response) {
+        const status = err.response.status;
+        let errorMsg = '❌ Something went wrong.';
+
+        switch (status) {
+          case 400:
+            errorMsg = '⚠️ Bad request. Please check the selected values.';
+            break;
+          case 401:
+            errorMsg = '⚠️ Unauthorized. Please log in.';
+            break;
+          case 403:
+            errorMsg = '⚠️ Forbidden. You do not have access.';
+            break;
+          case 404:
+            errorMsg = '⚠️ Resource not found.';
+            break;
+          case 409:
+            errorMsg = '⚠️ Prompt already assigned to this batch.';
+            break;
+          case 500:
+            errorMsg = '⚠️ Server error. Try again later.';
+            break;
+          default:
+            errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+        }
+
+        setToastMessage(errorMsg);
+        setToastBg("warning");
+        setShowToast(true);
+      } else {
+        setToastMessage("❌ Network error. Please check your connection.");
+        setToastBg("danger");
+        setShowToast(true);
+      }
     });
 };
+
 
 
   if (loading) return <Spinner animation="border" variant="primary" />;
@@ -188,26 +305,28 @@ useEffect(() => {
        <Supersidebar />
       <div className="content-area">
     <div className="container mt-4">
+      <div className="d-flex justify-content-between align-items-center mb-3">
       <h3>Global & Assigned Prompts</h3>
 
-      <div className="mt-3 text-end" >
+      <div className="d-flex justify-content-between " style={{ width: '26%' }}>
        
 
 <Button
   variant="secondary"
   onClick={() => navigate('/archived')}
-  style={{ width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginRight: '10px' }}
+ style={{ width: '49%' }}
 >
   <FaHistory />
 </Button>
  <Button
   variant="primary"
   onClick={() => setShowAssignModal(true)}
-  style={{ width: '40px', height: '40px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+  style={{ width: '49%' }}
 >
   <FaPlus />
 </Button>
 
+      </div>
       </div>
       <div className="d-flex gap-3 my-3">
   <Form.Group>
@@ -228,9 +347,9 @@ useEffect(() => {
   
 </div>
 
-
-      <Table striped bordered hover responsive className="mt-3">
-        <thead>
+<div className="table-responsive">
+        <table className="table table-striped table-bordered table-hover">
+                  <thead className="bg-primary text-white">
           <tr>
             <th>Prompt Type</th>
             <th>Prompt Level</th>
@@ -256,14 +375,15 @@ useEffect(() => {
           className="me-2"
           onClick={() => handleEditClick(prompt)}
         >
-          Edit
+          <FaEdit />
         </Button>
       </td>
     </tr>
   ))}
 </tbody>
 
-      </Table>
+      </table>
+      </div>
     {totalPages > 1 && (
   <div className="d-flex justify-content-center my-4">
     <Pagination>
@@ -284,7 +404,7 @@ useEffect(() => {
 
 
       {/* Edit Prompt Modal */}
-      <Modal show={showEditor} onHide={() => setShowEditor(false)} size="lg">
+      <Modal show={showEditor} onHide={() => setShowEditor(false)} size="lg" backdrop="static" >
         <Modal.Header closeButton>
           <Modal.Title>Edit Prompt</Modal.Title>
         </Modal.Header>
@@ -301,7 +421,7 @@ useEffect(() => {
       </Modal>
 
       {/* Assign Prompt Modal */}
-      <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)}>
+      <Modal show={showAssignModal} onHide={() => setShowAssignModal(false)} backdrop="static">
         <Modal.Header closeButton>
           <Modal.Title>Assign Prompt to Batch</Modal.Title>
         </Modal.Header>
@@ -367,6 +487,21 @@ useEffect(() => {
       </Modal>
     </div>
     </div>
+    <ToastContainer position="top-end" className="p-3">
+  <Toast
+    bg={toastBg}
+    show={showToast}
+    onClose={() => setShowToast(false)}
+    delay={3000}
+    autohide
+  >
+    <Toast.Header closeButton>
+      <strong className="me-auto">Notice</strong>
+    </Toast.Header>
+    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+  </Toast>
+</ToastContainer>
+
     </div>
     
   );

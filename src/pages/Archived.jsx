@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Button, Table, Spinner, Alert, Modal, Pagination } from 'react-bootstrap';
+import { Button, Table, Spinner, Alert, Modal, Pagination, Toast,ToastContainer } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css'; 
@@ -13,6 +13,10 @@ function Archived() {
   const [currentPage, setCurrentPage] = useState(1);
   const promptsPerPage = 10;
   const navigate = useNavigate();
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
+  const [toastBg, setToastBg] = useState('primary'); // 'success', 'warning', 'danger', etc.
+  
   const storedToken = sessionStorage.getItem("token");
   const config = {
     headers: {
@@ -21,15 +25,53 @@ function Archived() {
   };
 
   useEffect(() => {
-    axios
-      .get(`${process.env.REACT_APP_API_LINK}/prompts/archived`, config)
-      .then((res) => setArchivedPrompts(res.data.data || []))
-      .catch((err) => {
-        console.error('Failed to fetch archived prompts:', err);
-        setError('Failed to load archived prompts');
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  axios
+    .get(`${process.env.REACT_APP_API_LINK}/prompts/archived`, config)
+    .then((res) => {
+      setArchivedPrompts(res.data.data || []);
+      setError(null);
+    })
+    .catch((err) => {
+      console.error("Failed to fetch archived prompts:", err);
+
+      if (axios.isAxiosError(err) && err.response) {
+        const status = err.response.status;
+        let errorMsg = '❌ Failed to load archived prompts.';
+
+        switch (status) {
+          case 400:
+            errorMsg = '⚠️ Bad request. Something is wrong with the request.';
+            break;
+          case 401:
+            errorMsg = '⚠️ Unauthorized. Please log in.';
+            break;
+          case 403:
+            errorMsg = '⚠️ Forbidden. Access denied.';
+            break;
+          case 404:
+            errorMsg = '⚠️ Archived prompts not found.';
+            break;
+          case 500:
+            errorMsg = '⚠️ Server error while fetching prompts.';
+            break;
+          default:
+            errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+        }
+
+        setError(errorMsg);
+        setToastMessage(errorMsg);
+        setToastBg('warning');
+        setShowToast(true);
+      } else {
+        setError('❌ Network error. Please check your connection.');
+        setToastMessage('❌ Network error. Please check your connection.');
+        setToastBg('danger');
+        setShowToast(true);
+      }
+    })
+    .finally(() => setLoading(false));
+}, []);
+
 
   const indexOfLastPrompt = currentPage * promptsPerPage;
   const indexOfFirstPrompt = indexOfLastPrompt - promptsPerPage;
@@ -81,15 +123,10 @@ function Archived() {
               No archived prompts available.
             </Alert>
           ) : (
-            <Table
-              striped
-              bordered
-              hover
-              responsive
-              className="mt-3"
-              aria-label="Archived Prompts Table"
-            >
-              <thead>
+            
+<div className="table-responsive">
+        <table className="table table-striped table-bordered table-hover">
+                  <thead className="bg-primary text-white">
                 <tr>
                   <th scope="col">Prompt Type</th>
                   <th scope="col">Prompt Level</th>
@@ -123,7 +160,8 @@ function Archived() {
                   </tr>
                 ))}
               </tbody>
-            </Table>
+            </table>
+            </div>
           )}
 
           {totalPages > 1 && (
@@ -183,6 +221,20 @@ function Archived() {
           </Modal>
         </div>
       </div>
+      <ToastContainer position="top-end" className="p-3">
+        <Toast
+          bg={toastBg}
+          show={showToast}
+          onClose={() => setShowToast(false)}
+          delay={3000}
+          autohide
+        >
+          <Toast.Header closeButton>
+            <strong className="me-auto">Notice</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+        </Toast>
+      </ToastContainer>
     </div>
   );
 }
