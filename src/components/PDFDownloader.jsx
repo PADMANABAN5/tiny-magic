@@ -345,7 +345,7 @@ const PDFDownloader = ({ chatHistory, selectedConcept, first_name, last_name, up
           "SummarizingConfirming": "Summarizing and Confirming",
           "ChallengingIdeas": "Challenging Ideas",
           "ComparingConcepts": "Comparing Concepts",
-          "AbstractConcrete": "Abstract/Concrete"
+          "AbstractConcrete": "Abstract Vs Concrete"
         };
 
         skills.forEach(skill => {
