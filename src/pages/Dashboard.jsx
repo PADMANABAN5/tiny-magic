@@ -56,7 +56,7 @@ function Dashboard() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [apiKey, setApiKey] = useState(null);
   const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
-
+  const [isProcessingAssessment, setIsProcessingAssessment] = useState(false); // New state for assessment loading
 
   // New states for chat ending functionality
   const [isChatEnded, setIsChatEnded] = useState(false);
@@ -68,7 +68,8 @@ function Dashboard() {
   const [selectedConcept, setSelectedConcept] = useState(null);
   const [showConceptDropdown, setShowConceptDropdown] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
-
+  const [isCalculatingScore, setIsCalculatingScore] = useState(false);
+  
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
@@ -393,7 +394,8 @@ const batchId = sessionStorage.getItem("batchId");
   const handleEndSession = async () => {
   setShowEndSessionDialog(false);
   setIsLoading(true);
-
+  setIsProcessingAssessment(true);
+  
   try {
     const organizationId = sessionStorage.getItem("organizationId");
     const batchId = sessionStorage.getItem("batchId");
@@ -437,6 +439,7 @@ const batchId = sessionStorage.getItem("batchId");
     console.error("End session error:", error);
   } finally {
     setIsLoading(false);
+    setIsProcessingAssessment(false); // Reset assessment processing state
   }
 };
 
@@ -588,6 +591,7 @@ const batchId = sessionStorage.getItem("batchId");
       // Check for end conditions
       if ( newEndRequested || newInteractionCompleted) {
         console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
+        setIsProcessingAssessment(true);
         const organizationId = sessionStorage.getItem("organizationId");
 const batchId = sessionStorage.getItem("batchId");
         const assessmentResponse = await processPromptAndCallLLM({
@@ -644,6 +648,7 @@ const batchId = sessionStorage.getItem("batchId");
     } finally {
       console.log("🏁 handleSendClick: Setting isLoading to false");
       setIsLoading(false);
+      setIsProcessingAssessment(false);
     }
   };
   const handleDownloadConcept = (downloadLink, conceptName) => {
@@ -1609,16 +1614,27 @@ const batchId = sessionStorage.getItem("batchId");
               {isLoading && (
                 <div className="loading-indicator">
                   <div className="loading-spinner"></div>
-                  <span>AI is thinking...</span>
+                 <span>
+        {isProcessingAssessment
+          ? "Please wait. We are calculating your score"
+          : "AI is thinking..."
+        }
+      </span>
+
                 </div>
               )}
 
               <div className="chat-input-wrapper">
-              <div className="tooltip-container" data-tooltip="End Session">
+             <div className="tooltip-container" data-tooltip={
+  currentChatStatus === 'not_started' ? "Start a conversation first" : 
+  isChatEnded ? "Session already ended" : 
+  "End Session"
+}>
   <button
     className="end-session-btn"
     onClick={() => setShowEndSessionDialog(true)}
-    disabled={chatHistory.length === 0 || isChatEnded}
+    disabled={currentChatStatus === 'not_started' || isChatEnded}
+    style={currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
   >
     <FiStopCircle />
   </button>
@@ -1646,6 +1662,7 @@ const batchId = sessionStorage.getItem("batchId");
                 />
                 <button
                   className="send-button"
+                  
                   onClick={handleSendClick}
                   disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
                 >
