@@ -1664,8 +1664,8 @@ const batchId = sessionStorage.getItem("batchId");
   <button
     className="end-session-btn"
     onClick={() => setShowEndSessionDialog(true)}
-    disabled={currentChatStatus === 'not_started' || isChatEnded}
-    style={currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded}
+    style={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
   >
     <FiStopCircle />
   </button>

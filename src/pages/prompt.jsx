@@ -282,7 +282,7 @@ export default function Prompt() {
  
           switch (status) {
             case 400:
-              errorMsg = '⚠️ Bad request. Please check the selected values.';
+              errorMsg = '⚠️ A non-archived batch prompt with prompt type already exists';
               break;
             case 401:
               errorMsg = '⚠️ Unauthorized. Please log in.';
