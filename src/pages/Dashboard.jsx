@@ -19,7 +19,7 @@ import {
   FiRefreshCw,
   FiAlertCircle
 } from "react-icons/fi";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FaDownload } from 'react-icons/fa';
 import axios from "axios";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
@@ -47,6 +47,8 @@ function Dashboard() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCountsLoading, setIsCountsLoading] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
+  const location = useLocation();
+  const prevPathRef = useRef(location.pathname);
 
   // Enhanced state for proper session management
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -122,6 +124,19 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
     throw new Error("Failed to decrypt API key");
   }
 };
+useEffect(() => {
+  const unlisten = () => {
+    if (isProcessingAssessment && prevPathRef.current !== location.pathname) {
+      toast.warn("⚠️ Assessment is still loading. Please wait...");
+      // Manually push back to previous path
+      navigate(prevPathRef.current, { replace: true });
+    } else {
+      prevPathRef.current = location.pathname;
+    }
+  };
+
+  unlisten(); // Run immediately on mount/update
+}, [location.pathname, isProcessingAssessment]);
 
 
   const [chatCounts, setChatCounts] = useState({
@@ -136,6 +151,7 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
     chatHistory, 
     selectedConcept 
   });
+ 
 
   // Function to fetch API key from API
   const fetchApiKey = async () => {
@@ -158,7 +174,17 @@ const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
     return null;
   }
 };
+useEffect(() => {
+  if (isProcessingAssessment) {
+    const handleBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = 'An assessment is being processed. Are you sure you want to leave?';
+    };
 
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }
+}, [isProcessingAssessment]);
   // Handle outside click to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -1112,6 +1138,10 @@ const batchId = sessionStorage.getItem("batchId");
   };
 
   const handleConceptSelect = async (concept) => {
+    if (isProcessingAssessment) {
+    toast.warn("⚠️ Please wait, assessment is being processed.");
+    return;
+  }
     console.log("🎯 Concept selected:", concept.concept_name);
     setSelectedConcept(concept);
     setShowConceptDropdown(false);
@@ -1255,7 +1285,7 @@ const batchId = sessionStorage.getItem("batchId");
 
   return (
     <div className="learning-dashboard">
-      <Sidebar />
+      <Sidebar isProcessingAssessment={isProcessingAssessment} />
 
       {/* Toast Container for Notifications */}
       <ToastContainer
@@ -1352,8 +1382,8 @@ const batchId = sessionStorage.getItem("batchId");
             </div>
             <div className="concept-selector" ref={conceptDropdownRef}>
               <div
-                className="concept-dropdown-trigger"
-                onClick={() => setShowConceptDropdown(!showConceptDropdown)}
+                className={`concept-dropdown-trigger ${isProcessingAssessment ? 'disabled' : ''}`}
+                onClick={() => !isProcessingAssessment && setShowConceptDropdown(!showConceptDropdown)}
               >
                 <span className="concept-text">
                   {conceptsLoading
@@ -1494,8 +1524,8 @@ const batchId = sessionStorage.getItem("batchId");
               <button
                 ref={topSaveButtonRef}
                 className="top-action-btn top-save-btn"
-                onClick={() => setShowSaveOptions(!showSaveOptions)}
-                disabled={chatHistory.length === 0}
+                onClick={() => !isProcessingAssessment && setShowSaveOptions(!showSaveOptions)}
+                disabled={chatHistory.length === 0 || isProcessingAssessment}
                 data-tooltip="Save Progress"
               >
                 <FiSave />
@@ -1503,7 +1533,8 @@ const batchId = sessionStorage.getItem("batchId");
 
               {showSaveOptions && (
                 <div ref={topSaveOptionsRef} className="top-save-dropdown">
-                  <button className="top-save-option current" onClick={() => handleSaveChat()}>
+                  <button className="top-save-option current" onClick={() => !isProcessingAssessment && handleSaveChat()}
+                    disabled={isProcessingAssessment}>
                     <FiSave /> Save Current Progress
                   </button>
                 </div>
@@ -1512,10 +1543,10 @@ const batchId = sessionStorage.getItem("batchId");
 
             <button
               className="top-action-btn top-download-btn"
-              onClick={handleDownloadPDF}
-              disabled={chatHistory.length === 0}
-              data-tooltip="Export Chat"
-            >
+              onClick={() => !isProcessingAssessment && handleDownloadPDF()}
+  disabled={chatHistory.length === 0 || isProcessingAssessment}
+  data-tooltip="Export Chat"
+>
               <FiDownload />
             </button>
           </div>

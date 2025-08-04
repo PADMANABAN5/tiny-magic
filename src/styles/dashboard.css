@@ -2584,7 +2584,11 @@ body {
   font-size: 1rem;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
-
+.concept-dropdown-trigger.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .send-button:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);

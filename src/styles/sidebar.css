@@ -102,7 +102,14 @@
     width: 100%;
     text-align: left;
 }
-
+/* sidebar.css */
+.navbar-brand.disabled,
+.dropdown-item.disabled,
+.login-btn.disabled {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
 .dropdown-item:hover {
     background-color: var(--hover-background);
     color: var(--text-color-dark);

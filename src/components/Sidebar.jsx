@@ -10,7 +10,7 @@ import {
   FaHistory,
 } from "react-icons/fa";
 
-function Sidebar() {
+function Sidebar({ isProcessingAssessment }) {
   const location = useLocation();
   const username = sessionStorage.getItem("email");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -44,7 +44,11 @@ function Sidebar() {
   return (
     <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
       <div className="container-fluid"> 
-        <Link to="/dashboard" className="navbar-brand d-flex align-items-center">
+        <Link to="/dashboard" className={`navbar-brand d-flex align-items-center ${
+            isProcessingAssessment ? "disabled" : ""
+          }`}
+          onClick={(e) => isProcessingAssessment && e.preventDefault()}
+        >
           <div className="logo-container">
             <img src="/logo.png" alt="Logo" className="logo-image" /> 
           </div>
@@ -53,10 +57,13 @@ function Sidebar() {
         <div className="ms-auto">
           <div className="dropdown">
             <button
-              className="btn btn-outline-secondary d-flex align-items-center login-btn"
+              className={`btn btn-outline-secondary d-flex align-items-center login-btn ${
+                isProcessingAssessment ? "disabled" : ""
+              }`}
               type="button"
-              onClick={() => setShowDropdown(!showDropdown)}
+              onClick={() => !isProcessingAssessment && setShowDropdown(!showDropdown)}
               aria-expanded={showDropdown}
+              disabled={isProcessingAssessment}
             >
               <FaUser className="me-2 text-white" />
               <span className="text-white">{getShortenedUsername(username)}</span>
@@ -70,8 +77,14 @@ function Sidebar() {
                     to="/dashboard"
                     className={`dropdown-item d-flex align-items-center ${
                       location.pathname === "/dashboard" ? "active" : ""
-                    }`}
-                    onClick={() => setShowDropdown(false)}
+                    } ${isProcessingAssessment ? "disabled" : ""}`}
+                    onClick={(e) => {
+                      if (isProcessingAssessment) {
+                        e.preventDefault();
+                      } else {
+                        setShowDropdown(false);
+                      }
+                    }}
                   >
                     <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
                     Dashboard
@@ -80,8 +93,14 @@ function Sidebar() {
                     to="/conversationhistory"
                     className={`dropdown-item d-flex align-items-center ${
                       location.pathname === "/conversationhistory" ? "active" : ""
-                    }`}
-                    onClick={() => setShowDropdown(false)}
+                    } ${isProcessingAssessment ? "disabled" : ""}`}
+                    onClick={(e) => {
+                      if (isProcessingAssessment) {
+                        e.preventDefault();
+                      } else {
+                        setShowDropdown(false);
+                      }
+                    }}
                   >
                     <FaHistory className="me-2" style={{ fontSize: "16px" }} />
                     History
@@ -91,11 +110,17 @@ function Sidebar() {
                 <li>
                   <Link
                     to="/login"
-                    className="dropdown-item d-flex align-items-center text-danger"
-                    onClick={() => {
-                      sessionStorage.removeItem("chatHistory");
-                      sessionStorage.clear();
-                      setShowDropdown(false);
+                   className={`dropdown-item d-flex align-items-center text-danger ${
+                      isProcessingAssessment ? "disabled" : ""
+                    }`}
+                    onClick={(e) => {
+                      if (isProcessingAssessment) {
+                        e.preventDefault();
+                      } else {
+                        sessionStorage.removeItem("chatHistory");
+                        sessionStorage.clear();
+                        setShowDropdown(false);
+                      }
                     }}
                   >
                     <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
