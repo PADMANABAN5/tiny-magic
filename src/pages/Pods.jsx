@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import Supersidebar from '../components/Supersidebar';
-import { Pagination, Toast, ToastContainer } from 'react-bootstrap';
-import '../styles/OrgList.css';
-import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaPlus, FaEdit } from 'react-icons/fa';
+import React, { useEffect, useState } from "react";
+import axios from "axios";
+import Supersidebar from "../components/Supersidebar";
+import { Pagination, Toast, ToastContainer } from "react-bootstrap";
+import "../styles/OrgList.css";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 
 export default function Pods() {
   const navigate = useNavigate();
@@ -19,17 +19,17 @@ export default function Pods() {
   const [selectedPodId, setSelectedPodId] = useState(null);
 
   const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastBg, setToastBg] = useState('primary');
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastBg, setToastBg] = useState("primary");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchPodName, setSearchPodName] = useState('');
-  const [selectedOrganization, setSelectedOrganization] = useState('');
+  const [searchPodName, setSearchPodName] = useState("");
+  const [selectedOrganization, setSelectedOrganization] = useState("");
   // Changed from selectedBatch to searchBatchName for input field
-  const [searchBatchName, setSearchBatchName] = useState('');
+  const [searchBatchName, setSearchBatchName] = useState("");
   // Changed from selectedMentor to searchMentorName for input field
-  const [searchMentorName, setSearchMentorName] = useState('');
+  const [searchMentorName, setSearchMentorName] = useState("");
   const storedToken = sessionStorage.getItem("token");
   const config = {
     headers: {
@@ -38,13 +38,13 @@ export default function Pods() {
   };
 
   const [podForm, setPodForm] = useState({
-    organization_id: '',
-    batch_id: '',
-    mentor_id: '',
-    pod_name: '',
+    organization_id: "",
+    batch_id: "",
+    mentor_id: "",
+    pod_name: "",
     is_active: true,
   });
-  
+
   // Filters state is no longer directly used for batch/mentor search inputs
   // The individual state variables (searchBatchName, searchMentorName) are used instead.
   const handleFilterChange = (e) => {
@@ -55,21 +55,31 @@ export default function Pods() {
   };
 
   const filteredPods = pods.filter((pod) => {
-    const podNameMatch = pod.pod_name?.toLowerCase().includes(searchPodName.toLowerCase());
-    const orgMatch = selectedOrganization === '' || pod.organization_id?.toString() === selectedOrganization;
+    const podNameMatch = pod.pod_name
+      ?.toLowerCase()
+      .includes(searchPodName.toLowerCase());
+    const orgMatch =
+      selectedOrganization === "" ||
+      pod.organization_id?.toString() === selectedOrganization;
 
     // Filter by batch name (text input)
-    const batchName = batches.find(b => b.batch_id === pod.batch_id)?.batch_name || '';
-    const batchMatch = searchBatchName === '' || batchName.toLowerCase().includes(searchBatchName.toLowerCase());
+    const batchName =
+      batches.find((b) => b.batch_id === pod.batch_id)?.batch_name || "";
+    const batchMatch =
+      searchBatchName === "" ||
+      batchName.toLowerCase().includes(searchBatchName.toLowerCase());
 
     // Filter by mentor name (text input)
-    const mentor = mentors.find(m => m.user_id === pod.mentor_id);
-    const mentorFullName = mentor ? `${mentor.first_name || ''} ${mentor.last_name || ''}`.trim() : '';
-    const mentorMatch = searchMentorName === '' || mentorFullName.toLowerCase().includes(searchMentorName.toLowerCase());
+    const mentor = mentors.find((m) => m.user_id === pod.mentor_id);
+    const mentorFullName = mentor
+      ? `${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()
+      : "";
+    const mentorMatch =
+      searchMentorName === "" ||
+      mentorFullName.toLowerCase().includes(searchMentorName.toLowerCase());
 
     return podNameMatch && orgMatch && batchMatch && mentorMatch;
   });
-
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -78,98 +88,111 @@ export default function Pods() {
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
 
   const fetchPods = async () => {
-  setLoading(true);
-  setError(null); // Optional if only using toast
+    setLoading(true);
+    setError(null); // Optional if only using toast
 
-  try {
-    const res = await axios.get(`${process.env.REACT_APP_API_LINK}/pods`, config);
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_LINK}/pods`,
+        config
+      );
 
-    if (res.data && Array.isArray(res.data.data)) {
-      setPods(res.data.data);
-    } else {
-      setPods([]);
-      setToastMessage("⚠️ Unexpected API response format.");
-      setToastBg("warning");
-      setShowToast(true);
-    }
+      if (res.data && Array.isArray(res.data.data)) {
+        setPods(res.data.data);
+      } else {
+        setPods([]);
+        setToastMessage("⚠️ Unexpected API response format.");
+        setToastBg("warning");
+        setShowToast(true);
+      }
+    } catch (err) {
+      console.error("Error fetching pods:", err);
 
-  } catch (err) {
-    console.error("Error fetching pods:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage =
+          err.response?.data?.message || "Failed to load pods.";
+        const errorType = err.response?.status;
 
-    if (axios.isAxiosError(err)) {
-      const errorMessage = err.response?.data?.message || "Failed to load pods.";
-      const errorType = err.response?.status;
+        switch (errorType) {
+          case 400:
+            setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+            break;
+          case 401:
+            setToastMessage("⚠️ Unauthorized. Please log in.");
+            break;
+          case 403:
+            setToastMessage("⚠️ Forbidden: You do not have permission.");
+            break;
+          case 404:
+            setToastMessage("⚠️ Pods not found.");
+            break;
+          case 409:
+            setToastMessage("⚠️ Conflict: Data inconsistency.");
+            break;
+          case 500:
+            setToastMessage("⚠️ Server error. Please try again later.");
+            break;
+          default:
+            setToastMessage(
+              `⚠️ Failed to fetch pods. (${errorType || "Unknown error"})`
+            );
+        }
 
-      switch (errorType) {
-        case 400:
-          setToastMessage(`⚠️ Bad request: ${errorMessage}`);
-          break;
-        case 401:
-          setToastMessage("⚠️ Unauthorized. Please log in.");
-          break;
-        case 403:
-          setToastMessage("⚠️ Forbidden: You do not have permission.");
-          break;
-        case 404:
-          setToastMessage("⚠️ Pods not found.");
-          break;
-        case 409:
-          setToastMessage("⚠️ Conflict: Data inconsistency.");
-          break;
-        case 500:
-          setToastMessage("⚠️ Server error. Please try again later.");
-          break;
-        default:
-          setToastMessage(`⚠️ Failed to fetch pods. (${errorType || "Unknown error"})`);
+        setToastBg("warning");
+      } else {
+        setToastMessage("⚠️ Network error. Please check your connection.");
+        setToastBg("danger");
       }
 
-      setToastBg("warning");
-    } else {
-      setToastMessage("⚠️ Network error. Please check your connection.");
-      setToastBg("danger");
+      setShowToast(true);
+      setPods([]);
+    } finally {
+      setLoading(false);
     }
-
-    setShowToast(true);
-    setPods([]);
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const fetchOrganizations = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/organizations/active`, config);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_LINK}/organizations/active`,
+        config
+      );
       setOrganizations(res.data.data || []);
     } catch (err) {
-      console.error('Error fetching organizations:', err);
+      console.error("Error fetching organizations:", err);
     }
   };
 
   const fetchBatches = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/batches`, config);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_LINK}/batches`,
+        config
+      );
       setBatches(res.data.data || []);
     } catch (err) {
-      console.error('Error fetching batches:', err);
+      console.error("Error fetching batches:", err);
     }
   };
 
   const fetchMentors = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_LINK}/users/role/mentor`, config);
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_LINK}/users/role/mentor`,
+        config
+      );
       setMentors(res.data.data || []);
     } catch (err) {
-      console.error('Error fetching mentors:', err);
+      console.error("Error fetching mentors:", err);
     }
   };
 
   const openCreateModal = () => {
     setPodForm({
-      organization_id: '',
-      batch_id: '',
-      mentor_id: '',
-      pod_name: '',
+      organization_id: "",
+      batch_id: "",
+      mentor_id: "",
+      pod_name: "",
       is_active: true,
     });
     setIsEditMode(false);
@@ -179,10 +202,10 @@ export default function Pods() {
 
   const openEditModal = (pod) => {
     setPodForm({
-      organization_id: pod.organization_id || '',
-      batch_id: pod.batch_id || '',
-      mentor_id: pod.mentor_id || '',
-      pod_name: pod.pod_name || '',
+      organization_id: pod.organization_id || "",
+      batch_id: pod.batch_id || "",
+      mentor_id: pod.mentor_id || "",
+      pod_name: pod.pod_name || "",
       is_active: pod.is_active || false,
     });
     setIsEditMode(true);
@@ -190,96 +213,107 @@ export default function Pods() {
     setShowModal(true);
   };
 
- const handleFormSubmit = async (e) => {
-  e.preventDefault();
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
 
-  const selectedOrg = organizations.find(
-    (org) => org.organization_id === parseInt(podForm.organization_id)
-  );
-  const selectedBatch = batches.find(
-    (batch) => batch.batch_id === parseInt(podForm.batch_id)
-  );
-  const selectedMentor = mentors.find(
-    (mentor) => mentor.user_id === parseInt(podForm.mentor_id)
-  );
+    const selectedOrg = organizations.find(
+      (org) => org.organization_id === parseInt(podForm.organization_id)
+    );
+    const selectedBatch = batches.find(
+      (batch) => batch.batch_id === parseInt(podForm.batch_id)
+    );
+    const selectedMentor = mentors.find(
+      (mentor) => mentor.user_id === parseInt(podForm.mentor_id)
+    );
 
-  const payload = {
-    organization_name: selectedOrg ? selectedOrg.organization_name : '',
-    batch_name: selectedBatch ? selectedBatch.batch_name : '',
-    mentor_email: selectedMentor ? selectedMentor.email : '',
-    pod_name: podForm.pod_name,
-    is_active: podForm.is_active,
-  };
+    const payload = {
+      organization_name: selectedOrg ? selectedOrg.organization_name : "",
+      batch_name: selectedBatch ? selectedBatch.batch_name : "",
+      mentor_email: selectedMentor ? selectedMentor.email : "",
+      pod_name: podForm.pod_name,
+      is_active: podForm.is_active,
+    };
 
-  try {
-    if (isEditMode && selectedPodId) {
-      await axios.put(`${process.env.REACT_APP_API_LINK}/pods/${selectedPodId}`, payload, config);
-      setToastMessage('✅ Pod updated successfully!');
-      setToastBg('primary'); // Changed to primary for consistency
-    } else {
-      await axios.post(`${process.env.REACT_APP_API_LINK}/pods`, payload, config);
-      setToastMessage('✅ Pod created successfully!');
-      setToastBg('primary'); // Changed to primary for consistency
-    }
-    setShowToast(true);
-    setShowModal(false);
-    fetchPods();
-  } catch (err) {
-    console.error('Error saving pod:', err);
-    
-    if (axios.isAxiosError(err) && err.response) {
-      const status = err.response.status;
-      const data = err.response.data;
-      
-      switch (status) {
-        case 400:
-          setToastMessage(`⚠️ ${data.message || 'Invalid request parameters'}`);
-          setToastBg('warning');
-          break;
-        case 401:
-          setToastMessage('⚠️ Unauthorized. Please log in.');
-          setToastBg('warning');
-          break;
-        
-        case 404:
-          setToastMessage(`⚠️ ${data.message || 'Resource not found'}`);
-          setToastBg('warning');
-          break;
-          
-        case 409:
-          setToastMessage('⚠️ Pod name already exists!');
-          setToastBg('warning');
-          break;
-          
-        case 500:
-          setToastMessage('⚠️ Server error. Please try again later');
-          setToastBg('warning');
-          break;
-          
-        default:
-          setToastMessage('⚠️ An unexpected error occurred');
-          setToastBg('warning');
+    try {
+      if (isEditMode && selectedPodId) {
+        await axios.put(
+          `${process.env.REACT_APP_API_LINK}/pods/${selectedPodId}`,
+          payload,
+          config
+        );
+        setToastMessage("✅ Pod updated successfully!");
+        setToastBg("primary"); // Changed to primary for consistency
+      } else {
+        await axios.post(
+          `${process.env.REACT_APP_API_LINK}/pods`,
+          payload,
+          config
+        );
+        setToastMessage("✅ Pod created successfully!");
+        setToastBg("primary"); // Changed to primary for consistency
       }
-    } else {
-      setToastMessage('⚠️ Network error. Please check your connection');
-      setToastBg('warning');
+      setShowToast(true);
+      setShowModal(false);
+      fetchPods();
+    } catch (err) {
+      console.error("Error saving pod:", err);
+
+      if (axios.isAxiosError(err) && err.response) {
+        const status = err.response.status;
+        const data = err.response.data;
+
+        switch (status) {
+          case 400:
+            setToastMessage(
+              `⚠️ ${data.message || "Invalid request parameters"}`
+            );
+            setToastBg("warning");
+            break;
+          case 401:
+            setToastMessage("⚠️ Unauthorized. Please log in.");
+            setToastBg("warning");
+            break;
+
+          case 404:
+            setToastMessage(`⚠️ ${data.message || "Resource not found"}`);
+            setToastBg("warning");
+            break;
+
+          case 409:
+            setToastMessage("⚠️ Pod name already exists!");
+            setToastBg("warning");
+            break;
+
+          case 500:
+            setToastMessage("⚠️ Server error. Please try again later");
+            setToastBg("warning");
+            break;
+
+          default:
+            setToastMessage("⚠️ An unexpected error occurred");
+            setToastBg("warning");
+        }
+      } else {
+        setToastMessage("⚠️ Network error. Please check your connection");
+        setToastBg("warning");
+      }
+
+      setShowToast(true);
     }
-    
-    setShowToast(true);
-  }
-};
+  };
 
   const handleOrganizationChange = (e) => {
     const organizationId = e.target.value;
     setPodForm((prev) => ({
       ...prev,
       organization_id: organizationId,
-      batch_id: '', // Reset batch when organization changes
+      batch_id: "", // Reset batch when organization changes
     }));
   };
 
   const filteredBatches = batches.filter(
-    (batch) => batch.organization_id?.toString() === podForm.organization_id.toString()
+    (batch) =>
+      batch.organization_id?.toString() === podForm.organization_id.toString()
   );
 
   useEffect(() => {
@@ -292,12 +326,12 @@ export default function Pods() {
   return (
     <div className="main-layout-container">
       {/* Supersidebar is assumed to be a separate component */}
-       <Supersidebar />
+      <Supersidebar />
       <div className="content-area">
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-              className='back-button bg-primary text-white border-0'
+              className="back-button bg-primary text-white border-0"
               onClick={() => navigate(-1)}
             >
               <FaArrowLeft />
@@ -305,7 +339,11 @@ export default function Pods() {
           </div>
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>Pods</h3>
-            <button className="create-btn" onClick={openCreateModal} style={{ width: '10%' }}>
+            <button
+              className="create-btn"
+              onClick={openCreateModal}
+              style={{ width: "10%" }}
+            >
               <FaPlus />
             </button>
           </div>
@@ -315,7 +353,7 @@ export default function Pods() {
               <span className="me-2">Show entries:</span>
               <select
                 className="form-select"
-                style={{ width: '100px' }}
+                style={{ width: "100px" }}
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(parseInt(e.target.value));
@@ -323,17 +361,22 @@ export default function Pods() {
                 }}
               >
                 {[5, 6, 10, 20, 50].map((num) => (
-                  <option key={num} value={num}>{num}</option>
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
                 ))}
               </select>
             </div>
 
             {/* Filters Row */}
-  <div className="d-flex align-items-center gap-3 flex-grow-1" style={{ flexWrap: 'nowrap' }}>
+            <div
+              className="d-flex align-items-center gap-3 flex-grow-1"
+              style={{ flexWrap: "nowrap" }}
+            >
               <input
                 type="text"
                 className="form-control"
-                style={{ maxWidth: '200px' }}
+                style={{ maxWidth: "200px" }}
                 placeholder="Search Pod Name"
                 value={searchPodName}
                 onChange={(e) => {
@@ -346,7 +389,7 @@ export default function Pods() {
               <input
                 type="text"
                 className="form-control"
-                style={{ maxWidth: '200px' }}
+                style={{ maxWidth: "200px" }}
                 placeholder="Search Batch Name"
                 value={searchBatchName}
                 onChange={(e) => {
@@ -357,7 +400,7 @@ export default function Pods() {
 
               <select
                 className="form-select"
-                style={{ maxWidth: '200px' }}
+                style={{ maxWidth: "200px" }}
                 value={selectedOrganization}
                 onChange={(e) => {
                   setSelectedOrganization(e.target.value);
@@ -376,7 +419,7 @@ export default function Pods() {
               <input
                 type="text"
                 className="form-control"
-                style={{ maxWidth: '200px' }}
+                style={{ maxWidth: "200px" }}
                 placeholder="Search Mentor Name"
                 value={searchMentorName}
                 onChange={(e) => {
@@ -386,7 +429,6 @@ export default function Pods() {
               />
             </div>
           </div>
-
 
           {loading ? (
             <p>Loading pods...</p>
@@ -411,21 +453,40 @@ export default function Pods() {
                       currentPods.map((pod) => (
                         <tr key={pod.pod_id}>
                           <td>{pod.pod_name}</td>
-                          <td>{pod.batch?.organization_name || '—'}</td>
-                          <td>{batches.find((batch) => batch.batch_id === pod.batch_id)?.batch_name || '—'}</td>
+                          <td>{pod.batch?.organization_name || "—"}</td>
+                          <td>
+                            {batches.find(
+                              (batch) => batch.batch_id === pod.batch_id
+                            )?.batch_name || "—"}
+                          </td>
                           <td>
                             {(() => {
-                              const mentor = mentors.find((mentor) => mentor.user_id === pod.mentor_id);
-                              return mentor ? `${mentor.first_name || ''} ${mentor.last_name || ''}`.trim() : '—';
+                              const mentor = mentors.find(
+                                (mentor) => mentor.user_id === pod.mentor_id
+                              );
+                              return mentor
+                                ? `${mentor.first_name || ""} ${
+                                    mentor.last_name || ""
+                                  }`.trim()
+                                : "—";
                             })()}
                           </td>
                           <td>
-                            <span className={`badge ${pod.is_active ? 'bg-success text-white' : 'bg-secondary text-white'}`}>
-                              {pod.is_active ? 'Active' : 'Inactive'}
+                            <span
+                              className={`badge ${
+                                pod.is_active
+                                  ? "bg-success text-white"
+                                  : "bg-secondary text-white"
+                              }`}
+                            >
+                              {pod.is_active ? "Active" : "Inactive"}
                             </span>
                           </td>
                           <td>
-                            <button className="btn btn-warning btn-sm" onClick={() => openEditModal(pod)}>
+                            <button
+                              className="btn btn-warning btn-sm"
+                              onClick={() => openEditModal(pod)}
+                            >
                               <FaEdit />
                             </button>
                           </td>
@@ -433,50 +494,67 @@ export default function Pods() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan="6" className="text-center">No pods found.</td>
+                        <td colSpan="6" className="text-center">
+                          No pods found.
+                        </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
               </div>
 
-             {totalPages > 1 && (
-                                        <div className="d-flex justify-content-center mt-4">
-                                              <Pagination>
-                                                  <Pagination.First onClick={() => handlePageChange(1)} disabled={currentPage === 1} />
-                                                        <Pagination.Prev onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-                                                                             
-                                                        {(() => {
-                                                          const pageNumbers = [];
-                                                                const visiblePages = 5;
-                                                                    let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
-                                                                  let endPage = startPage + visiblePages - 1;
-                                                                             
-                                                                    if (endPage > totalPages) {
-                                                                       endPage = totalPages;
-                                                                             startPage = Math.max(1, endPage - visiblePages + 1);
-                                                                              }
-                                                                             
-                                                                              for (let i = startPage; i <= endPage; i++) {
-                                                                              pageNumbers.push(
-                                                                                         <Pagination.Item
-                                                                                           key={i}
-                                                                                           active={i === currentPage}
-                                                                                           onClick={() => handlePageChange(i)}
-                                                                                         >
-                                                                                           {i}
-                                                                                         </Pagination.Item>
-                                                                                       );
-                                                                                     }
-                                                                             
-                                                                                     return pageNumbers;
-                                                                                   })()}
-                                                                             
-                                                                                   <Pagination.Next onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
-                                                                                   <Pagination.Last onClick={() => handlePageChange(totalPages)} disabled={currentPage === totalPages} />
-                                                                                 </Pagination>
-                                                                               </div>
-                                                                    )}
+              {totalPages > 1 && (
+                <div className="d-flex justify-content-center mt-4">
+                  <Pagination>
+                    <Pagination.First
+                      onClick={() => handlePageChange(1)}
+                      disabled={currentPage === 1}
+                    />
+                    <Pagination.Prev
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                    />
+
+                    {(() => {
+                      const pageNumbers = [];
+                      const visiblePages = 5;
+                      let startPage = Math.max(
+                        1,
+                        currentPage - Math.floor(visiblePages / 2)
+                      );
+                      let endPage = startPage + visiblePages - 1;
+
+                      if (endPage > totalPages) {
+                        endPage = totalPages;
+                        startPage = Math.max(1, endPage - visiblePages + 1);
+                      }
+
+                      for (let i = startPage; i <= endPage; i++) {
+                        pageNumbers.push(
+                          <Pagination.Item
+                            key={i}
+                            active={i === currentPage}
+                            onClick={() => handlePageChange(i)}
+                          >
+                            {i}
+                          </Pagination.Item>
+                        );
+                      }
+
+                      return pageNumbers;
+                    })()}
+
+                    <Pagination.Next
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                    />
+                    <Pagination.Last
+                      onClick={() => handlePageChange(totalPages)}
+                      disabled={currentPage === totalPages}
+                    />
+                  </Pagination>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -486,10 +564,12 @@ export default function Pods() {
       {showModal && (
         <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h4>{isEditMode ? 'Update Pod' : 'Create Pod'}</h4>
+            <h4>{isEditMode ? "Update Pod" : "Create Pod"}</h4>
             <form onSubmit={handleFormSubmit}>
               <div className="mb-3">
-                <label className="form-label">Organization</label>
+                <label className="form-label">
+                  Organization <span style={{ color: "red" }}>*</span>
+                </label>
                 <select
                   className="form-control"
                   value={podForm.organization_id}
@@ -498,7 +578,10 @@ export default function Pods() {
                 >
                   <option value="">-- Select Organization --</option>
                   {organizations.map((org) => (
-                    <option key={org.organization_id} value={org.organization_id}>
+                    <option
+                      key={org.organization_id}
+                      value={org.organization_id}
+                    >
                       {org.organization_name}
                     </option>
                   ))}
@@ -506,11 +589,18 @@ export default function Pods() {
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Batch</label>
+                <label className="form-label">
+                  Batch <span style={{ color: "red" }}>*</span>
+                </label>
                 <select
                   className="form-control"
                   value={podForm.batch_id}
-                  onChange={(e) => setPodForm((prev) => ({ ...prev, batch_id: e.target.value }))}
+                  onChange={(e) =>
+                    setPodForm((prev) => ({
+                      ...prev,
+                      batch_id: e.target.value,
+                    }))
+                  }
                   required
                   disabled={!podForm.organization_id}
                 >
@@ -524,11 +614,18 @@ export default function Pods() {
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Mentor</label>
+                <label className="form-label">
+                  Mentor <span style={{ color: "red" }}>*</span>
+                </label>
                 <select
                   className="form-control"
                   value={podForm.mentor_id}
-                  onChange={(e) => setPodForm((prev) => ({ ...prev, mentor_id: e.target.value }))}
+                  onChange={(e) =>
+                    setPodForm((prev) => ({
+                      ...prev,
+                      mentor_id: e.target.value,
+                    }))
+                  }
                   required
                 >
                   <option value="">-- Select Mentor --</option>
@@ -541,23 +638,32 @@ export default function Pods() {
               </div>
 
               <div className="mb-3">
-                <label className="form-label">Pod Name</label>
+                <label className="form-label">
+                  Pod Name <span style={{ color: "red" }}>*</span>
+                </label>
                 <input
                   type="text"
                   className="form-control"
                   value={podForm.pod_name}
-                  onChange={(e) => setPodForm((prev) => ({ ...prev, pod_name: e.target.value }))}
+                  onChange={(e) =>
+                    setPodForm((prev) => ({
+                      ...prev,
+                      pod_name: e.target.value,
+                    }))
+                  }
                   required
                 />
               </div>
 
-              
-
               <div className="d-flex gap-2">
-                <button type="submit" className="btn btn-success" >
-                  {isEditMode ? 'Update' : 'Create'}
+                <button type="submit" className="btn btn-success">
+                  {isEditMode ? "Update" : "Create"}
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowModal(false)}
+                >
                   Cancel
                 </button>
               </div>
@@ -568,7 +674,13 @@ export default function Pods() {
 
       {/* Toast */}
       <ToastContainer position="top-end" className="p-3">
-        <Toast bg={toastBg} show={showToast} onClose={() => setShowToast(false)} delay={3000} autohide>
+        <Toast
+          bg={toastBg}
+          show={showToast}
+          onClose={() => setShowToast(false)}
+          delay={3000}
+          autohide
+        >
           <Toast.Header closeButton>
             <strong className="me-auto">Notice</strong>
           </Toast.Header>
