@@ -11,6 +11,7 @@ function Login() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
 
@@ -21,6 +22,7 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    setIsSubmitting(true);
 
     const sanitizedIdentifier = identifier.trim();
     const sanitizedPassword = password.trim();
@@ -50,6 +52,9 @@ function Login() {
       }
 
       redirectBasedOnRole(user);
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 2000);
     } catch (err) {
       const status = err.response?.status;
       if (status === 401) {
@@ -69,35 +74,38 @@ function Login() {
         setError(err.response?.data?.error || "⚠️ Login failed. Try again.");
       }
       setIsLoggedIn(false);
+      setTimeout(() => {
+        setIsSubmitting(false);
+      }, 2000);
     }
   };
 
   const redirectBasedOnRole = (user) => {
-    setIsLoggedIn(true);
-    setTimeout(() => {
-      switch (user.role) {
-        case "orguser":
-          navigate("/dashboard", {
-            state: {
-              selectedModel: "gpt4o",
-              username: user.username,
-            },
-          });
-          break;
-        case "superadmin":
-          navigate("/superadmin", { state: { username: user.username } });
-          break;
-        case "orgadmin":
-          navigate("/orgadmin");
-          break;
-        case "mentor":
-          navigate("/mentorpods");
-          break;
-        default:
-          setError("Unknown role");
-      }
-    }, 2000); // 2000 milliseconds = 2 seconds
-  };
+    setIsLoggedIn(true);
+    setTimeout(() => {
+      switch (user.role) {
+        case "orguser":
+          navigate("/dashboard", {
+            state: {
+              selectedModel: "gpt4o",
+              username: user.username,
+            },
+          });
+          break;
+        case "superadmin":
+          navigate("/superadmin", { state: { username: user.username } });
+          break;
+        case "orgadmin":
+          navigate("/orgadmin");
+          break;
+        case "mentor":
+          navigate("/mentorpods");
+          break;
+        default:
+          setError("Unknown role");
+      }
+    }, 2000); // 2000 milliseconds = 2 seconds
+  };
 
   const handleChangePassword = async () => {
     setError("");
@@ -197,8 +205,12 @@ function Login() {
                 />
               </div>
 
-              <button className="login-btn" type="submit" disabled={isLoggedIn}>
-                Login
+              <button
+                className="login-btn"
+                type="submit"
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? "Please Wait..." : "Login"}
               </button>
             </form>
           )}
@@ -206,9 +218,15 @@ function Login() {
       </div>
 
       {showPasswordChangeModal && (
-        <div className="modal-overlay1" role="dialog" aria-labelledby="modal-title">
+        <div
+          className="modal-overlay1"
+          role="dialog"
+          aria-labelledby="modal-title"
+        >
           <div className="modal-content1">
-            <h3 id="modal-title" className="login-title">Change Password</h3>
+            <h3 id="modal-title" className="login-title">
+              Change Password
+            </h3>
             {/* <button
               className="close-btn"
               onClick={() => setShowPasswordChangeModal(false)}
