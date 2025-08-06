@@ -1,8 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "../styles/login.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { useAuth } from "../components/AuthContext"; // ✅ Import Auth context
+import { useAuth } from "../components/AuthContext";
 
 function Login() {
   const [identifier, setIdentifier] = useState("");
@@ -16,19 +16,15 @@ function Login() {
 
   const BASE_URL = process.env.REACT_APP_API_LINK;
   const navigate = useNavigate();
-  const { login } = useAuth(); // ✅ Use login from context
-   const storedToken = sessionStorage.getItem("token");
-  const config = {
-    headers: {
-      Authorization: `Bearer ${storedToken}`,
-    },
-  };
+  const { login, token } = useAuth();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
 
-    if (!identifier || !password) {
+    const sanitizedIdentifier = identifier.trim();
+    const sanitizedPassword = password.trim();
+    if (!sanitizedIdentifier || !sanitizedPassword) {
       setError("Both fields are required.");
       return;
     }
@@ -36,19 +32,23 @@ function Login() {
     try {
       const response = await axios.post(
         `${BASE_URL}/users/login`,
-        { identifier, password },
+        { identifier: sanitizedIdentifier, password: sanitizedPassword },
         { headers: { "Content-Type": "application/json" } }
       );
 
       const { data: user } = response.data;
+      if (!user) {
+        setError("Unexpected response from server.");
+        return;
+      }
 
+      login(user); // Store token and user data in AuthContext
       if (user.is_default_password) {
         setUserDetails(user);
         setShowPasswordChangeModal(true);
         return;
       }
 
-      login(user); // ✅ Save session/token using AuthContext
       redirectBasedOnRole(user);
     } catch (err) {
       const status = err.response?.status;
@@ -73,32 +73,31 @@ function Login() {
   };
 
   const redirectBasedOnRole = (user) => {
-    setIsLoggedIn(true);
-
-    switch (user.role) {
-      case "orguser":
-        setTimeout(() => {
-          navigate("/dashboard", {
-            state: {
-              selectedModel: "gpt4o",
-              username: user.username,
-            },
-          });
-        }, 2000);
-        break;
-      case "superadmin":
-        navigate("/superadmin", { state: { username: user.username } });
-        break;
-      case "orgadmin":
-        navigate("/orgadmin");
-        break;
-      case "mentor":
-        navigate("/mentorpods");
-        break;
-      default:
-        setError("Unknown role");
-    }
-  };
+    setIsLoggedIn(true);
+    setTimeout(() => {
+      switch (user.role) {
+        case "orguser":
+          navigate("/dashboard", {
+            state: {
+              selectedModel: "gpt4o",
+              username: user.username,
+            },
+          });
+          break;
+        case "superadmin":
+          navigate("/superadmin", { state: { username: user.username } });
+          break;
+        case "orgadmin":
+          navigate("/orgadmin");
+          break;
+        case "mentor":
+          navigate("/mentorpods");
+          break;
+        default:
+          setError("Unknown role");
+      }
+    }, 2000); // 2000 milliseconds = 2 seconds
+  };
 
   const handleChangePassword = async () => {
     setError("");
@@ -118,17 +117,24 @@ function Login() {
       return;
     }
 
+    if (!token) {
+      setError("Session expired. Please log in again.");
+      setShowPasswordChangeModal(false);
+      navigate("/login");
+      return;
+    }
+
     try {
       await axios.put(
-  `${BASE_URL}/users/${userDetails.user_id}`,
-  { password: newPassword },
-  {
-    headers: {
-      Authorization: `Bearer ${storedToken}`,
-      "Content-Type": "application/json"
-    }
-  }
-);
+        `${BASE_URL}/users/${userDetails.user_id}`,
+        { password: newPassword },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       setShowPasswordChangeModal(false);
       setUserDetails(null);
@@ -136,12 +142,24 @@ function Login() {
       setPassword("");
       setNewPassword("");
       setConfirmPassword("");
-
       alert("Password updated successfully! Please login with new password.");
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to change password.");
+      setError(
+        err.response?.data?.error ||
+          err.response?.data?.message ||
+          "Failed to change password."
+      );
     }
   };
+
+  // Add Escape key support for modal
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === "Escape") setShowPasswordChangeModal(false);
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, []);
 
   return (
     <div className="login-page-wrapper">
@@ -179,17 +197,25 @@ function Login() {
                 />
               </div>
 
-              <button className="login-btn" type="submit">Login</button>
+              <button className="login-btn" type="submit" disabled={isLoggedIn}>
+                Login
+              </button>
             </form>
           )}
         </div>
       </div>
 
-      {/* 🔒 Password Change Modal */}
       {showPasswordChangeModal && (
-        <div className="modal-overlay1">
+        <div className="modal-overlay1" role="dialog" aria-labelledby="modal-title">
           <div className="modal-content1">
-            <h3 className="login-title">Change Password</h3>
+            <h3 id="modal-title" className="login-title">Change Password</h3>
+            {/* <button
+              className="close-btn"
+              onClick={() => setShowPasswordChangeModal(false)}
+              aria-label="Close modal"
+            >
+              ×
+            </button> */}
 
             <div className="input-group">
               <label>New Password</label>
