@@ -1,10 +1,16 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
-import Supersidebar from '../components/Supersidebar';
-import { Pagination, Toast, ToastContainer, Accordion, Button } from 'react-bootstrap';
-import '../styles/OrgList.css';
-import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft, FaPlus, FaEdit, FaHistory } from 'react-icons/fa';
+import React, { useEffect, useState, useMemo } from "react";
+import axios from "axios";
+import Supersidebar from "../components/Supersidebar";
+import {
+  Pagination,
+  Toast,
+  ToastContainer,
+  Accordion,
+  Button,
+} from "react-bootstrap";
+import "../styles/OrgList.css";
+import { useNavigate } from "react-router-dom";
+import { FaArrowLeft, FaPlus, FaEdit, FaHistory } from "react-icons/fa";
 
 export default function Concepts() {
   const navigate = useNavigate();
@@ -15,39 +21,40 @@ export default function Concepts() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedConceptId, setSelectedConceptId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastBg, setToastBg] = useState('primary');
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastBg, setToastBg] = useState("primary");
   const [showToast, setShowToast] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const storedToken = sessionStorage.getItem("token");
   const [isLoading, setIsLoading] = useState(false);
-  const [activeAccordionKey, setActiveAccordionKey] = useState('0');
+  const [activeAccordionKey, setActiveAccordionKey] = useState("0");
 
   const [originalConcept, setOriginalConcept] = useState({
-    concept_title: '',
-    concept_description: '',
+    concept_title: "",
+    concept_description: "",
   });
 
   const [conceptForm, setConceptForm] = useState({
-    concept_name: '',
-    concept_content: '',
-    concept_enduring_understandings: '',
-    concept_essential_questions: '',
-    concept_knowledge_skills: '',
-    stage_1_content: '',
-    stage_2_content: '',
-    stage_3_content: '',
-    stage_4_content: '',
-    stage_5_content: '',
-    concept_understanding_rubric: '',
-    understanding_skills_rubric: '',
-    learning_assessment_dimensions: '',
-    download_link: '',
+    concept_name: "",
+    concept_content: "",
+    concept_enduring_understandings: "",
+    concept_essential_questions: "",
+    concept_knowledge_skills: "",
+    stage_1_content: "",
+    stage_2_content: "",
+    stage_3_content: "",
+    stage_4_content: "",
+    stage_5_content: "",
+    concept_understanding_rubric: "",
+    understanding_skills_rubric: "",
+    learning_assessment_dimensions: "",
+    download_link: "",
     is_active: true,
   });
 
-  const API_BASE_URL = process.env.REACT_APP_API_LINK || 'http://localhost:3000/api';
+  const API_BASE_URL =
+    process.env.REACT_APP_API_LINK || "http://localhost:3000/api";
   const config = {
     headers: {
       Authorization: `Bearer ${storedToken}`,
@@ -62,12 +69,12 @@ export default function Concepts() {
   // Handle Escape key to close modal
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && showModal) {
+      if (e.key === "Escape" && showModal) {
         setShowModal(false);
       }
     };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [showModal]);
 
   const fetchConcepts = async () => {
@@ -88,7 +95,8 @@ export default function Concepts() {
       console.error("Error fetching concepts:", err);
 
       if (axios.isAxiosError(err)) {
-        const errorMessage = err.response?.data?.message || "Failed to load concepts.";
+        const errorMessage =
+          err.response?.data?.message || "Failed to load concepts.";
         const errorType = err.response?.status;
 
         switch (errorType) {
@@ -111,7 +119,9 @@ export default function Concepts() {
             setToastMessage("⚠️ Server error. Please try again later.");
             break;
           default:
-            setToastMessage(`⚠️ Failed to fetch concepts. (${errorType || "Unknown error"})`);
+            setToastMessage(
+              `⚠️ Failed to fetch concepts. (${errorType || "Unknown error"})`
+            );
         }
         setToastBg("warning");
       } else {
@@ -131,26 +141,26 @@ export default function Concepts() {
 
   const openCreateModal = () => {
     setConceptForm({
-      concept_name: '',
-      concept_content: '',
-      concept_enduring_understandings: '',
-      concept_essential_questions: '',
-      concept_knowledge_skills: '',
-      stage_1_content: '',
-      stage_2_content: '',
-      stage_3_content: '',
-      stage_4_content: '',
-      stage_5_content: '',
-      concept_understanding_rubric: '',
-      understanding_skills_rubric: '',
-      learning_assessment_dimensions: '',
-      download_link: '',
+      concept_name: "",
+      concept_content: "",
+      concept_enduring_understandings: "",
+      concept_essential_questions: "",
+      concept_knowledge_skills: "",
+      stage_1_content: "",
+      stage_2_content: "",
+      stage_3_content: "",
+      stage_4_content: "",
+      stage_5_content: "",
+      concept_understanding_rubric: "",
+      understanding_skills_rubric: "",
+      learning_assessment_dimensions: "",
+      download_link: "",
       is_active: true,
     });
     setIsEditMode(false);
     setShowModal(true);
     setSelectedConceptId(null);
-    setActiveAccordionKey('0');
+    setActiveAccordionKey("0");
   };
 
   const openEditModal = (concept) => {
@@ -159,7 +169,7 @@ export default function Concepts() {
     setIsEditMode(true);
     setShowModal(true);
     setSelectedConceptId(concept.concept_id);
-    setActiveAccordionKey('0');
+    setActiveAccordionKey("0");
   };
 
   const handleFormSubmit = async (e) => {
@@ -168,8 +178,8 @@ export default function Concepts() {
 
     // Client-side validation
     if (!conceptForm.concept_name || !conceptForm.concept_content) {
-      setToastBg('warning');
-      setToastMessage('⚠️ Concept Name and Content are required.');
+      setToastBg("warning");
+      setToastMessage("⚠️ Concept Name and Content are required.");
       setShowToast(true);
       setIsLoading(false);
       return;
@@ -181,20 +191,24 @@ export default function Concepts() {
           (key) => conceptForm[key] === originalConcept[key]
         );
         if (isFormUnchanged) {
-          setToastBg('warning');
-          setToastMessage('⚠️ No changes detected.');
+          setToastBg("warning");
+          setToastMessage("⚠️ No changes detected.");
           setShowToast(true);
           setIsLoading(false);
           return;
         }
 
-        await axios.put(`${API_BASE_URL}/concepts/${selectedConceptId}`, conceptForm, config);
-        setToastBg('primary');
-        setToastMessage('✅ Concept updated successfully!');
+        await axios.put(
+          `${API_BASE_URL}/concepts/${selectedConceptId}`,
+          conceptForm,
+          config
+        );
+        setToastBg("primary");
+        setToastMessage("✅ Concept updated successfully!");
       } else {
         await axios.post(`${API_BASE_URL}/concepts`, conceptForm, config);
-        setToastBg('primary');
-        setToastMessage('✅ Concept created successfully!');
+        setToastBg("primary");
+        setToastMessage("✅ Concept created successfully!");
       }
 
       setShowModal(false);
@@ -204,35 +218,39 @@ export default function Concepts() {
       console.error("Error saving concept:", err);
 
       if (axios.isAxiosError(err) && err.response) {
-        const errorMessage = err.response.data?.message || 'An error occurred';
+        const errorMessage = err.response.data?.message || "An error occurred";
         const validationErrors = err.response.data?.errors;
         if (validationErrors) {
-          setToastMessage(`⚠️ ${errorMessage}: ${Object.values(validationErrors).join(', ')}`);
+          setToastMessage(
+            `⚠️ ${errorMessage}: ${Object.values(validationErrors).join(", ")}`
+          );
         } else {
           switch (err.response.status) {
             case 400:
-              setToastMessage('⚠️ Bad request. Please check your input.');
+              setToastMessage("⚠️ Bad request. Please check your input.");
               break;
             case 401:
-              setToastMessage('⚠️ Unauthorized. Please log in.');
+              setToastMessage("⚠️ Unauthorized. Please log in.");
               break;
             case 403:
-              setToastMessage('⚠️ Forbidden: You do not have permission to perform this action.');
+              setToastMessage(
+                "⚠️ Forbidden: You do not have permission to perform this action."
+              );
               break;
             case 409:
-              setToastMessage('⚠️ Concept name already exists!');
+              setToastMessage("⚠️ Concept name already exists!");
               break;
             case 500:
-              setToastMessage('⚠️ Server error. Please try again later.');
+              setToastMessage("⚠️ Server error. Please try again later.");
               break;
             default:
               setToastMessage(`⚠️ Unexpected error: ${errorMessage}`);
           }
         }
-        setToastBg('warning');
+        setToastBg("warning");
       } else {
-        setToastBg('danger');
-        setToastMessage('⚠️ Network error. Please check your connection.');
+        setToastBg("danger");
+        setToastMessage("⚠️ Network error. Please check your connection.");
       }
       setShowToast(true);
     } finally {
@@ -254,7 +272,10 @@ export default function Concepts() {
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentConcepts = filteredConcepts.slice(indexOfFirstItem, indexOfLastItem);
+  const currentConcepts = filteredConcepts.slice(
+    indexOfFirstItem,
+    indexOfLastItem
+  );
   const totalPages = Math.ceil(filteredConcepts.length / itemsPerPage);
   const handlePageChange = (pageNum) => setCurrentPage(pageNum);
 
@@ -275,11 +296,14 @@ export default function Concepts() {
 
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>Concepts</h3>
-            <div className="d-flex justify-content-between" style={{ width: '26%' }}>
+            <div
+              className="d-flex justify-content-between"
+              style={{ width: "26%" }}
+            >
               <Button
                 variant="secondary"
-                onClick={() => navigate('/archivedconcepts')}
-                style={{ width: '49%' }}
+                onClick={() => navigate("/archivedconcepts")}
+                style={{ width: "49%" }}
                 aria-label="View archived concepts"
               >
                 <FaHistory />
@@ -287,7 +311,7 @@ export default function Concepts() {
               <Button
                 variant="primary"
                 onClick={() => openCreateModal()}
-                style={{ width: '49%' }}
+                style={{ width: "49%" }}
                 aria-label="Create new concept"
               >
                 <FaPlus />
@@ -300,7 +324,7 @@ export default function Concepts() {
               <span className="me-2">Show entries:</span>
               <select
                 className="form-select"
-                style={{ width: '100px' }}
+                style={{ width: "100px" }}
                 value={itemsPerPage}
                 onChange={(e) => {
                   setItemsPerPage(parseInt(e.target.value));
@@ -308,7 +332,9 @@ export default function Concepts() {
                 aria-label="Select number of entries per page"
               >
                 {[5, 10, 20, 50, 100].map((num) => (
-                  <option key={num} value={num}>{num}</option>
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
                 ))}
               </select>
             </div>
@@ -317,7 +343,7 @@ export default function Concepts() {
               <input
                 type="text"
                 className="form-control"
-                style={{ maxWidth: '250px' }}
+                style={{ maxWidth: "250px" }}
                 placeholder="Search by Concept Name..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -351,13 +377,22 @@ export default function Concepts() {
                           <td>{concept.concept_id}</td>
                           <td>{concept.concept_name}</td>
                           <td>
-                            <span className="single-line-tooltip" title={concept.concept_content}>
+                            <span
+                              className="single-line-tooltip"
+                              title={concept.concept_content}
+                            >
                               {concept.concept_content}
                             </span>
                           </td>
                           <td>
-                            <span className={`badge ${concept.is_active ? 'bg-success' : 'bg-secondary'}`}>
-                              {concept.is_active ? 'Active' : 'Inactive'}
+                            <span
+                              className={`badge ${
+                                concept.is_active
+                                  ? "bg-success"
+                                  : "bg-secondary"
+                              }`}
+                            >
+                              {concept.is_active ? "Active" : "Inactive"}
                             </span>
                           </td>
                           <td>{concept.version}</td>
@@ -400,7 +435,10 @@ export default function Concepts() {
                     {(() => {
                       const pageNumbers = [];
                       const visiblePages = 5;
-                      let startPage = Math.max(1, currentPage - Math.floor(visiblePages / 2));
+                      let startPage = Math.max(
+                        1,
+                        currentPage - Math.floor(visiblePages / 2)
+                      );
                       let endPage = startPage + visiblePages - 1;
 
                       if (endPage > totalPages) {
@@ -444,26 +482,44 @@ export default function Concepts() {
 
       {/* Modal Form */}
       {showModal && (
-        <div className="modal-overlay" role="dialog" aria-labelledby="modal-title">
-          <div className="modal-content modal-lg" style={{ maxHeight: '90vh', overflowY: 'auto' }}>
-            <h4 id="modal-title">{isEditMode ? 'Update Concept' : 'Create New Concept'}</h4>
+        <div
+          className="modal-overlay"
+          role="dialog"
+          aria-labelledby="modal-title"
+        >
+          <div
+            className="modal-content modal-lg"
+            style={{ maxHeight: "90vh", overflowY: "auto" }}
+          >
+            <h4 id="modal-title">
+              {isEditMode ? "Update Concept" : "Create New Concept"}
+            </h4>
+            <button
+              type="button"
+              className="btn-close position-absolute top-0 end-0 m-3"
+              onClick={() => setShowModal(false)}
+              aria-label="Close"
+            ></button>
             <form onSubmit={handleFormSubmit}>
-              <Accordion activeKey={activeAccordionKey} onSelect={handleAccordionSelect}>
+              <Accordion
+                activeKey={activeAccordionKey}
+                onSelect={handleAccordionSelect}
+              >
                 {Object.entries({
-                  concept_name: 'Concept Name',
-                  concept_content: 'Concept Content',
-                  concept_enduring_understandings: 'Enduring Understandings',
-                  concept_essential_questions: 'Essential Questions',
-                  concept_knowledge_skills: 'Knowledge & Skills',
-                  stage_1_content: 'Stage 1 Content',
-                  stage_2_content: 'Stage 2 Content',
-                  stage_3_content: 'Stage 3 Content',
-                  stage_4_content: 'Stage 4 Content',
-                  stage_5_content: 'Stage 5 Content',
-                  concept_understanding_rubric: 'Understanding Rubric',
-                  understanding_skills_rubric: 'Skills Rubric',
-                  learning_assessment_dimensions: 'Assessment Dimensions',
-                  download_link: 'Download Link',
+                  concept_name: "Concept Name",
+                  concept_content: "Concept Content",
+                  concept_enduring_understandings: "Enduring Understandings",
+                  concept_essential_questions: "Essential Questions",
+                  concept_knowledge_skills: "Knowledge & Skills",
+                  stage_1_content: "Stage 1 Content",
+                  stage_2_content: "Stage 2 Content",
+                  stage_3_content: "Stage 3 Content",
+                  stage_4_content: "Stage 4 Content",
+                  stage_5_content: "Stage 5 Content",
+                  concept_understanding_rubric: "Understanding Rubric",
+                  understanding_skills_rubric: "Skills Rubric",
+                  learning_assessment_dimensions: "Assessment Dimensions",
+                  download_link: "Download Link",
                 }).map(([key, label], index) => (
                   <Accordion.Item eventKey={index.toString()} key={key}>
                     <Accordion.Header>{label}</Accordion.Header>
@@ -477,20 +533,26 @@ export default function Concepts() {
                           id={key}
                           name={key}
                           rows={4}
-                          value={conceptForm[key] || ''}
+                          value={conceptForm[key] || ""}
                           onChange={(e) =>
-                            setConceptForm((prev) => ({ ...prev, [key]: e.target.value }))
+                            setConceptForm((prev) => ({
+                              ...prev,
+                              [key]: e.target.value,
+                            }))
                           }
-                          required={['concept_name', 'concept_content'].includes(key)}
-                          aria-required={['concept_name', 'concept_content'].includes(key)}
+                          required={[
+                            "concept_name",
+                            "concept_content",
+                          ].includes(key)}
+                          aria-required={[
+                            "concept_name",
+                            "concept_content",
+                          ].includes(key)}
                         />
                       </div>
                     </Accordion.Body>
                   </Accordion.Item>
                 ))}
-
-                
-                  
               </Accordion>
 
               <div className="d-flex justify-content-between mt-3">
@@ -498,9 +560,9 @@ export default function Concepts() {
                   type="submit"
                   className="btn btn-success me-2"
                   disabled={isLoading}
-                  aria-label={isEditMode ? 'Update concept' : 'Create concept'}
+                  aria-label={isEditMode ? "Update concept" : "Create concept"}
                 >
-                  {isLoading ? 'Saving...' : isEditMode ? 'Update' : 'Create'}
+                  {isLoading ? "Saving..." : isEditMode ? "Update" : "Create"}
                 </button>
                 <button
                   type="button"
