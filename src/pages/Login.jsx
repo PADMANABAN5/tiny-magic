@@ -3,10 +3,12 @@ import "../styles/login.css";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../components/AuthContext";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import the icons
 
 function Login() {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
@@ -14,6 +16,10 @@ function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
+
+  // New state variables for password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   const BASE_URL = process.env.REACT_APP_API_LINK;
   const navigate = useNavigate();
@@ -110,32 +116,59 @@ function Login() {
   const handleChangePassword = async () => {
     setError("");
 
-    if (!newPassword || !confirmPassword) {
-      setError("Both new password fields are required.");
+    // Client-side validations
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError("⚠️ Please fill in all password fields.");
+      return;
+    }
+
+    if (currentPassword === newPassword) {
+      setError("⚠️ New password cannot be the same as the current password.");
       return;
     }
 
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters long.");
+      setError("🔑 Password must be at least 8 characters long.");
+      return;
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+      setError("🔑 Password must contain at least one uppercase letter.");
+      return;
+    }
+
+    if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPassword)) {
+      setError("🔑 Password must contain at least one special character.");
+      return;
+    }
+
+
+    if (!/[0-9]/.test(newPassword)) {
+      setError("🔑 Password must contain at least one number.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Passwords do not match.");
+      setError("❌ New password and confirm password do not match.");
       return;
     }
 
     if (!token) {
-      setError("Session expired. Please log in again.");
+      setError("⏳ Session expired. Please log in again.");
       setShowPasswordChangeModal(false);
+      setIsSubmitting(false);
       navigate("/login");
       return;
     }
 
+    // API request
     try {
-      await axios.put(
-        `${BASE_URL}/users/${userDetails.user_id}`,
-        { password: newPassword },
+      await axios.post(
+        `${BASE_URL}/users/change-password`,
+        {
+          currentPassword: currentPassword,
+          newPassword: newPassword,
+        },
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -148,15 +181,26 @@ function Login() {
       setUserDetails(null);
       setIdentifier("");
       setPassword("");
+      setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      alert("Password updated successfully! Please login with new password.");
+      setIsSubmitting(false);
+      alert("✅ Password updated successfully! Please login with your new password.");
     } catch (err) {
-      setError(
-        err.response?.data?.error ||
-          err.response?.data?.message ||
-          "Failed to change password."
-      );
+      const status = err.response?.status;
+      const apiMessage = err.response?.data?.error || err.response?.data?.message;
+
+      if (status === 400) {
+        setError("⚠️ Invalid request. Please check your inputs.");
+      } else if (status === 401) {
+        setError("❌ Current password is incorrect.");
+      } else if (status === 403) {
+        setError("🚫 You do not have permission to change the password.");
+      } else if (status === 404) {
+        setError("⚠️ Change password route not found. Contact support.");
+      } else {
+        setError(apiMessage || "⚠️ Failed to change password. Please try again.");
+      }
     }
   };
 
@@ -196,13 +240,22 @@ function Login() {
                 />
               </div>
 
-              <div className="input-group">
+              {/* Main Login Password Field with Eye Icon */}
+              <div className="input-group password-group">
                 <label>Password</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
+                <div className="password-input-container">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <span
+                    className="password-toggle-icon"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <FaEyeSlash /> : <FaEye />}
+                  </span>
+                </div>
               </div>
 
               <button
@@ -227,30 +280,59 @@ function Login() {
             <h3 id="modal-title" className="login-title">
               Change Password
             </h3>
-            {/* <button
-              className="close-btn"
-              onClick={() => setShowPasswordChangeModal(false)}
-              aria-label="Close modal"
-            >
-              ×
-            </button> */}
 
-            <div className="input-group">
-              <label>New Password</label>
-              <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-              />
+            {/* Change Password Modal - Current Password with Eye Icon */}
+            <div className="input-group password-group">
+              <label>Current Password</label>
+              <div className="password-input-container">
+                <input
+                  type={showChangePassword ? "text" : "password"}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                />
+                <span
+                  className="password-toggle-icon"
+                  onClick={() => setShowChangePassword(!showChangePassword)}
+                >
+                  {showChangePassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
             </div>
 
-            <div className="input-group">
+            {/* Change Password Modal - New Password with Eye Icon */}
+            <div className="input-group password-group">
+              <label>New Password</label>
+              <div className="password-input-container">
+                <input
+                  type={showChangePassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                />
+                <span
+                  className="password-toggle-icon"
+                  onClick={() => setShowChangePassword(!showChangePassword)}
+                >
+                  {showChangePassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
+            </div>
+
+            {/* Change Password Modal - Confirm Password with Eye Icon */}
+            <div className="input-group password-group">
               <label>Confirm Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
+              <div className="password-input-container">
+                <input
+                  type={showChangePassword ? "text" : "password"}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                />
+                <span
+                  className="password-toggle-icon"
+                  onClick={() => setShowChangePassword(!showChangePassword)}
+                >
+                  {showChangePassword ? <FaEyeSlash /> : <FaEye />}
+                </span>
+              </div>
             </div>
 
             {confirmPassword && (
