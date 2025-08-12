@@ -386,11 +386,10 @@ export default function Concepts() {
                           </td>
                           <td>
                             <span
-                              className={`badge ${
-                                concept.is_active
+                              className={`badge ${concept.is_active
                                   ? "bg-success"
                                   : "bg-secondary"
-                              }`}
+                                }`}
                             >
                               {concept.is_active ? "Active" : "Inactive"}
                             </span>
@@ -522,12 +521,19 @@ export default function Concepts() {
                   download_link: "Download Link",
                 }).map(([key, label], index) => (
                   <Accordion.Item eventKey={index.toString()} key={key}>
-                    <Accordion.Header>{label}</Accordion.Header>
+                    <Accordion.Header>{label}
+                      {[
+                        "concept_name",
+                        "concept_content"
+                      ].includes(key) && (
+                          <span style={{ color: "red" }}>*</span>
+                        )}
+                    </Accordion.Header>
                     <Accordion.Body>
                       <div className="mb-3">
-                        <label className="form-label" htmlFor={key}>
+                        {/* <label className="form-label" htmlFor={key}>
                           {label}
-                        </label>
+                        </label> */}
                         <textarea
                           className="form-control"
                           id={key}
@@ -548,6 +554,9 @@ export default function Concepts() {
                             "concept_name",
                             "concept_content",
                           ].includes(key)}
+                          maxlength={[
+                            "concept_name"
+                          ].includes(key) ? 30 : 20000}
                         />
                       </div>
                     </Accordion.Body>
