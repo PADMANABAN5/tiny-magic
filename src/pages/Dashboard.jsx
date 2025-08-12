@@ -1735,7 +1735,7 @@ const batchId = sessionStorage.getItem("batchId");
   rows="1"
 />
 
-{/* 🎤 Mic Button */}
+{/* 🎤 Mic Button
 <button
   className={`mic-button ${isListening ? 'listening' : ''}`}
   onClick={isListening ? stopListening : startListening}
@@ -1743,7 +1743,7 @@ const batchId = sessionStorage.getItem("batchId");
   style={{ marginLeft: "5px" }}
 >
   {isListening ? "🛑" : "🎤"}
-</button>
+</button> */}
 
 {/* Send Button */}
 <button

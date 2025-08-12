@@ -64,7 +64,7 @@ const loadTemplate = async (templateName, organization_id, batch_id) => {
 
   try {
     // Try fallback API
-    const fallbackUrl = `${process.env.REACT_APP_API_LINK}/prompts/fallback?organization_id=${organization_id}&batch_id=${batch_id}`;
+    const fallbackUrl = `${process.env.REACT_APP_API_LINK}/prompts/global`;
     let template = await fetchTemplate(fallbackUrl); // <--- HERE! No need to pass headers again
 
     // If not found, try global API
