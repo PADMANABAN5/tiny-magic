@@ -49,6 +49,49 @@ function Dashboard() {
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const location = useLocation();
   const prevPathRef = useRef(location.pathname);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  const startListening = () => {
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    toast.error("Speech recognition not supported in this browser.");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false; // only final results
+  recognition.continuous = true;
+
+  recognition.onresult = (event) => {
+    let finalTranscript = "";
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      if (event.results[i].isFinal) {
+        finalTranscript += event.results[i][0].transcript + " ";
+      }
+    }
+    setPrompt(prev => (prev ? prev + " " : "") + finalTranscript.trim());
+  };
+
+  recognition.onend = () => {
+    setIsListening(false);
+  };
+
+  recognition.start();
+  recognitionRef.current = recognition;
+  setIsListening(true);
+};
+
+const stopListening = () => {
+  if (recognitionRef.current) {
+    recognitionRef.current.stop();
+    recognitionRef.current = null;
+  }
+  setIsListening(false);
+};
 
   // Enhanced state for proper session management
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -1525,7 +1568,7 @@ const batchId = sessionStorage.getItem("batchId");
                 ref={topSaveButtonRef}
                 className="top-action-btn top-save-btn"
                 onClick={() => !isProcessingAssessment && setShowSaveOptions(!showSaveOptions)}
-                disabled={chatHistory.length === 0 || isProcessingAssessment}
+                disabled={chatHistory.length === 0 || isProcessingAssessment || currentChatStatus === 'not_started'}
                 data-tooltip="Save Progress"
               >
                 <FiSave />
@@ -1534,7 +1577,7 @@ const batchId = sessionStorage.getItem("batchId");
               {showSaveOptions && (
                 <div ref={topSaveOptionsRef} className="top-save-dropdown">
                   <button className="top-save-option current" onClick={() => !isProcessingAssessment && handleSaveChat()}
-                    disabled={isProcessingAssessment}>
+                    disabled={isProcessingAssessment || currentChatStatus === 'not_started'}>
                     <FiSave /> Save Current Progress
                   </button>
                 </div>
@@ -1544,7 +1587,7 @@ const batchId = sessionStorage.getItem("batchId");
             <button
               className="top-action-btn top-download-btn"
               onClick={() => !isProcessingAssessment && handleDownloadPDF()}
-  disabled={chatHistory.length === 0 || isProcessingAssessment}
+  disabled={chatHistory.length === 0 || isProcessingAssessment || currentChatStatus === 'not_started' }
   data-tooltip="Export Chat"
 >
               <FiDownload />
@@ -1673,32 +1716,44 @@ const batchId = sessionStorage.getItem("batchId");
 
 
                 <textarea
-                  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
-                  placeholder={
-                    isChatEnded
-                      ? "This conversation has ended. Please restart to begin a new session."
-                      : isInitializing
-                        ? "Initializing..."
-                        : selectedConcept
-                          ? "Ask your mentor anything..."
-                          : conceptsLoading
-                            ? "Loading concepts..."
-                            : "Please select a concept first..."
-                  }
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
-                  rows="1"
-                />
-                <button
-                  className="send-button"
-                  
-                  onClick={handleSendClick}
-                  disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
-                >
-                  <FiSend />
-                </button>
+  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
+  placeholder={
+    isChatEnded
+      ? "This conversation has ended. Please restart to begin a new session."
+      : isInitializing
+        ? "Initializing..."
+        : selectedConcept
+          ? "Ask your mentor anything..."
+          : conceptsLoading
+            ? "Loading concepts..."
+            : "Please select a concept first..."
+  }
+  value={prompt}
+  onChange={(e) => setPrompt(e.target.value)}
+  onKeyPress={handleKeyPress}
+  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+  rows="1"
+/>
+
+{/* 🎤 Mic Button
+<button
+  className={`mic-button ${isListening ? 'listening' : ''}`}
+  onClick={isListening ? stopListening : startListening}
+  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+  style={{ marginLeft: "5px" }}
+>
+  {isListening ? "🛑" : "🎤"}
+</button> */}
+
+{/* Send Button */}
+<button
+  className="send-button"
+  onClick={handleSendClick}
+  disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
+>
+  <FiSend />
+</button>
+
               </div>
 
               {isChatEnded && (

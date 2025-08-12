@@ -4237,3 +4237,21 @@ body {
 .breakdown-item:hover {
   background: #f3f4f6; 
 }
+
+.mic-button {
+  background: #f1f1f1;
+  border: none;
+  padding: 8px 10px;
+  font-size: 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.mic-button:hover {
+  background: #ddd;
+}
+.mic-button.listening {
+  background: #ff4b4b;
+  color: white;
+}
+
