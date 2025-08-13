@@ -17,7 +17,7 @@ import {
   FiTrendingUp,
   FiStopCircle,
   FiRefreshCw,
-  FiAlertCircle
+  FiAlertCircle,
 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaDownload } from 'react-icons/fa';
@@ -53,45 +53,45 @@ function Dashboard() {
   const recognitionRef = useRef(null);
 
   const startListening = () => {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  if (!SpeechRecognition) {
-    toast.error("Speech recognition not supported in this browser.");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false; // only final results
-  recognition.continuous = true;
-
-  recognition.onresult = (event) => {
-    let finalTranscript = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript + " ";
-      }
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition not supported in this browser.");
+      return;
     }
-    setPrompt(prev => (prev ? prev + " " : "") + finalTranscript.trim());
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.continuous = true;
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + " ";
+        }
+      }
+      setPrompt(prev => (prev ? prev + " " : "") + finalTranscript.trim());
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsListening(true);
   };
 
-  recognition.onend = () => {
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
     setIsListening(false);
   };
-
-  recognition.start();
-  recognitionRef.current = recognition;
-  setIsListening(true);
-};
-
-const stopListening = () => {
-  if (recognitionRef.current) {
-    recognitionRef.current.stop();
-    recognitionRef.current = null;
-  }
-  setIsListening(false);
-};
 
   // Enhanced state for proper session management
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -99,27 +99,23 @@ const stopListening = () => {
   const [resumedFromStatus, setResumedFromStatus] = useState(null);
   const [currentChatStatus, setCurrentChatStatus] = useState('not_started');
   const [isInitializing, setIsInitializing] = useState(true);
-  const [apiKey, setApiKey] = useState(null);
   const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
-  const [isProcessingAssessment, setIsProcessingAssessment] = useState(false); // New state for assessment loading
-
-  // New states for chat ending functionality
+  const [isProcessingAssessment, setIsProcessingAssessment] = useState(false);
   const [isChatEnded, setIsChatEnded] = useState(false);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
-  const [endReason, setEndReason] = useState(null); // 'endRequested' or 'interactionCompleted'
-
+  const [endReason, setEndReason] = useState(null);
   const [concepts, setConcepts] = useState([]);
   const [conceptsLoading, setConceptsLoading] = useState(false);
   const [selectedConcept, setSelectedConcept] = useState(null);
   const [showConceptDropdown, setShowConceptDropdown] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isCalculatingScore, setIsCalculatingScore] = useState(false);
-  
+
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
   const topSaveOptionsRef = useRef(null);
-  const SECRET_KEY_HEX = process.env.REACT_APP_SECRET_KEY_HEX; // Move to .env
+
   const storedToken = sessionStorage.getItem("token");
   const config = {
     headers: {
@@ -127,60 +123,18 @@ const stopListening = () => {
     },
   };
 
-const hexToBuffer = (hex) => {
-  return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-};
+  useEffect(() => {
+    const unlisten = () => {
+      if (isProcessingAssessment && prevPathRef.current !== location.pathname) {
+        toast.warn("⚠️ Assessment is still loading. Please wait...");
+        navigate(prevPathRef.current, { replace: true });
+      } else {
+        prevPathRef.current = location.pathname;
+      }
+    };
 
-const concatBuffer = (cipherHex, tagHex) => {
-  const cipher = hexToBuffer(cipherHex);
-  const tag = hexToBuffer(tagHex);
-  const combined = new Uint8Array(cipher.length + tag.length);
-  combined.set(cipher);
-  combined.set(tag, cipher.length);
-  return combined;
-};
-
-const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
-  try {
-    const key = await crypto.subtle.importKey(
-      "raw",
-      hexToBuffer(SECRET_KEY_HEX),
-      { name: "AES-GCM" },
-      false,
-      ["decrypt"]
-    );
-
-    const combinedCiphertext = concatBuffer(encryptedApiKey, authTag);
-
-    const decipher = await crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: hexToBuffer(iv),
-      },
-      key,
-      combinedCiphertext
-    );
-
-    return new TextDecoder().decode(decipher);
-  } catch (err) {
-    console.error("🔐 Decryption failed:", err);
-    throw new Error("Failed to decrypt API key");
-  }
-};
-useEffect(() => {
-  const unlisten = () => {
-    if (isProcessingAssessment && prevPathRef.current !== location.pathname) {
-      toast.warn("⚠️ Assessment is still loading. Please wait...");
-      // Manually push back to previous path
-      navigate(prevPathRef.current, { replace: true });
-    } else {
-      prevPathRef.current = location.pathname;
-    }
-  };
-
-  unlisten(); // Run immediately on mount/update
-}, [location.pathname, isProcessingAssessment]);
-
+    unlisten();
+  }, [location.pathname, isProcessingAssessment]);
 
   const [chatCounts, setChatCounts] = useState({
     not_started: 0,
@@ -194,40 +148,19 @@ useEffect(() => {
     chatHistory, 
     selectedConcept 
   });
- 
 
-  // Function to fetch API key from API
-  const fetchApiKey = async () => {
-  try {
-    console.log("🔑 Fetching encrypted API key...");
-    const response = await axios.get(`${BASE_URL}/apikey`, config);
-    const { encryptedApiKey, iv, authTag } = response.data;
+  useEffect(() => {
+    if (isProcessingAssessment) {
+      const handleBeforeUnload = (e) => {
+        e.preventDefault();
+        e.returnValue = 'An assessment is being processed. Are you sure you want to leave?';
+      };
 
-    if (!encryptedApiKey || !iv || !authTag) {
-      throw new Error("Incomplete API key payload from server");
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }
+  }, [isProcessingAssessment]);
 
-    const decryptedKey = await decryptApiKey(encryptedApiKey, iv, authTag);
-    setApiKey(decryptedKey); // only keep it in memory
-    console.log("✅ API key decrypted and stored in memory");
-    return decryptedKey;
-  } catch (error) {
-    console.error("❌ Error fetching or decrypting API key:", error);
-    toast.error("Failed to retrieve secure API key. Please contact support.");
-    return null;
-  }
-};
-useEffect(() => {
-  if (isProcessingAssessment) {
-    const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = 'An assessment is being processed. Are you sure you want to leave?';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }
-}, [isProcessingAssessment]);
   // Handle outside click to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -278,69 +211,64 @@ useEffect(() => {
   };
 
   const fetchConcepts = async () => {
-  if (!username || conceptsLoading) return;
+    if (!username || conceptsLoading) return;
 
-  setConceptsLoading(true);
-  try {
-    const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
+    setConceptsLoading(true);
+    try {
+      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
 
-    if (response.data && response.data.success && response.data.data) {
-      const data = response.data.data;
-      const conceptsData = data.batch?.concepts || [];
+      if (response.data && response.data.success && response.data.data) {
+        const data = response.data.data;
+        const conceptsData = data.batch?.concepts || [];
 
-      console.log("✅ Concepts loaded:", conceptsData.length);
-      setConcepts(conceptsData);
+        console.log("✅ Concepts loaded:", conceptsData.length);
+        setConcepts(conceptsData);
 
-      // ✅ Store org and batch ID safely in sessionStorage
-      const batch =  response.data.data.batch;
-      if (batch?.batch_id && batch?.organization_id) {
-        sessionStorage.setItem("batchId", batch.batch_id);
-        sessionStorage.setItem("organizationId", batch.organization_id);
-        console.log("✅ Stored batchId and orgId in sessionStorage", {
-          batchId: batch.batch_id,
-          orgId: batch.organization_id,
-        });
-      } else {
-        console.warn("⚠️ Could not find batchId or orgId in pod-user response.");
-      }
+        const batch = response.data.data.batch;
+        if (batch?.batch_id && batch?.organization_id) {
+          sessionStorage.setItem("batchId", batch.batch_id);
+          sessionStorage.setItem("organizationId", batch.organization_id);
+          console.log("✅ Stored batchId and orgId in sessionStorage", {
+            batchId: batch.batch_id,
+            orgId: batch.organization_id,
+          });
+        } else {
+          console.warn("⚠️ Could not find batchId or orgId in pod-user response.");
+        }
 
-      // Auto-select first concept
-      const firstActiveConcept = conceptsData.find(c => c.is_active) || conceptsData[0];
-      if (firstActiveConcept && !selectedConcept) {
-        setSelectedConcept(firstActiveConcept);
+        const firstActiveConcept = conceptsData.find(c => c.is_active) || conceptsData[0];
+        if (firstActiveConcept && !selectedConcept) {
+          setSelectedConcept(firstActiveConcept);
 
-          if (apiKey && chatHistory.length === 0 && !isInitializing) {
+          if (chatHistory.length === 0 && !isInitializing) {
             console.log("🚀 Auto-starting conversation after concept selection");
             setTimeout(async () => {
               await initiateFirstMentorMessageWithConcept(firstActiveConcept);
             }, 500);
           }
         }
-    } else {
-      console.warn("⚠️ No concepts data in response");
+      } else {
+        console.warn("⚠️ No concepts data in response");
+        setConcepts([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching concepts:", error);
       setConcepts([]);
-    }
-  } catch (error) {
-    console.error("❌ Error fetching concepts:", error);
-    setConcepts([]);
-    if (error.response?.status !== 404) {
+      if (error.response?.status !== 404) {
         toast.error("Failed to load concepts. Please try again.");
       }
-  } finally {
-    setConceptsLoading(false);
-  }
-};
+    } finally {
+      setConceptsLoading(false);
+    }
+  };
 
-
-
-  // Initiate first mentor message with specific concept
   const initiateFirstMentorMessageWithConcept = async (concept) => {
-     if (!apiKey || !concept) {
+    if (!concept) {
       setIsInitializing(false);
       return;
     }
     const organizationId = sessionStorage.getItem("organizationId");
-const batchId = sessionStorage.getItem("batchId");
+    const batchId = sessionStorage.getItem("batchId");
     console.log("🚀 Initiating first mentor message with concept:", concept.concept_name);
     setIsLoading(true);
     try {
@@ -352,9 +280,8 @@ const batchId = sessionStorage.getItem("batchId");
         sessionHistory: [],
         userPrompt: "",
         selectedConcept: concept,
-        apiKey,
-        organizationId: organizationId, // Pass organization ID
-        batchId: batchId // Pass batch ID
+        organizationId,
+        batchId,
       });
 
       const mentorMessage = response.apiResponseText;
@@ -397,25 +324,23 @@ const batchId = sessionStorage.getItem("batchId");
     sessionStorage.removeItem("sessionType");
   };
 
-  // Updated stage mapping to match API response
   const mapApiStageToProgressbarIndex = (apiCurrentStage, status, interactionCompleted) => {
     if (interactionCompleted || status === 'completed') return 7;
     if (status === 'not_started') return 0;
 
-    // For inprogress status, map API stages 0-5 to progress stages 0-6
     switch (apiCurrentStage) {
-      case 0: return 1; // Stage 0 -> Progress 1 (just started)
-      case 1: return 2; // Stage 1 -> Progress 2
-      case 2: return 3; // Stage 2 -> Progress 3
-      case 3: return 4; // Stage 3 -> Progress 4
-      case 4: return 5; // Stage 4 -> Progress 5
-      case 5: return 6; // Stage 5 -> Progress 6
+      case 0: return 1;
+      case 1: return 2;
+      case 2: return 3;
+      case 3: return 4;
+      case 4: return 5;
+      case 5: return 6;
       default: return 1;
     }
   };
 
   const initiateFirstMentorMessage = async () => {
-    if (!apiKey || !selectedConcept) {
+    if (!selectedConcept) {
       setIsInitializing(false);
       return;
     }
@@ -423,6 +348,8 @@ const batchId = sessionStorage.getItem("batchId");
     console.log("🚀 Initiating first mentor message");
     setIsLoading(true);
     try {
+      const organizationId = sessionStorage.getItem("organizationId");
+      const batchId = sessionStorage.getItem("batchId");
       const response = await processPromptAndCallLLM({
         username,
         selectedPrompt: "conceptMentor",
@@ -430,7 +357,8 @@ const batchId = sessionStorage.getItem("batchId");
         sessionHistory: [],
         userPrompt: "",
         selectedConcept: selectedConcept,
-        apiKey
+        organizationId,
+        batchId,
       });
 
       const mentorMessage = response.apiResponseText;
@@ -456,77 +384,73 @@ const batchId = sessionStorage.getItem("batchId");
     }
   };
 
-  // Function to handle chat restart with save dialog
   const handleRestartChat = () => {
     setShowRestartDialog(true);
   };
+
   const handleEndSession = async () => {
-  setShowEndSessionDialog(false);
-  setIsLoading(true);
-  setIsProcessingAssessment(true);
-  
-  try {
-    const organizationId = sessionStorage.getItem("organizationId");
-    const batchId = sessionStorage.getItem("batchId");
+    setShowEndSessionDialog(false);
+    setIsLoading(true);
+    setIsProcessingAssessment(true);
 
-    const assessmentResponse = await processPromptAndCallLLM({
-      username,
-      selectedPrompt: "assessmentPrompt",
-      selectedModel: "gpt-4o",
-      sessionHistory,
-      userPrompt: "", // empty for manual trigger
-      selectedConcept,
-      apiKey,
-      organizationId,
-      batchId
-    });
+    try {
+      const organizationId = sessionStorage.getItem("organizationId");
+      const batchId = sessionStorage.getItem("batchId");
 
-    setLlmContent(assessmentResponse.apiResponseText);
+      const assessmentResponse = await processPromptAndCallLLM({
+        username,
+        selectedPrompt: "assessmentPrompt",
+        selectedModel: "gpt-4o",
+        sessionHistory,
+        userPrompt: "",
+        selectedConcept,
+        organizationId,
+        batchId,
+      });
 
-    const assessmentChatEntry = {
-      user: "",
-      system: assessmentResponse.apiResponseText,
-    };
+      setLlmContent(assessmentResponse.apiResponseText);
 
-    setChatHistory((prev) => {
-      const finalHistory = [...prev, assessmentChatEntry];
-      sessionStorage.setItem("chatHistory", JSON.stringify(finalHistory));
-      return finalHistory;
-    });
+      const assessmentChatEntry = {
+        user: "",
+        system: assessmentResponse.apiResponseText,
+      };
 
-    setSessionHistory((prev) => [
-      ...prev,
-      { Mentee: "", Mentor: assessmentResponse.apiResponseText },
-    ]);
+      setChatHistory((prev) => {
+        const finalHistory = [...prev, assessmentChatEntry];
+        sessionStorage.setItem("chatHistory", JSON.stringify(finalHistory));
+        return finalHistory;
+      });
 
-    setCurrentChatStatus("completed");
-    setIsChatEnded(true);
-    setEndReason("endRequested");
+      setSessionHistory((prev) => [
+        ...prev,
+        { Mentee: "", Mentor: assessmentResponse.apiResponseText },
+      ]);
 
-  } catch (error) {
-    toast.error("❌ Failed to end session and load assessment.");
-    console.error("End session error:", error);
-  } finally {
-    setIsLoading(false);
-    setIsProcessingAssessment(false); // Reset assessment processing state
-  }
-};
+      setCurrentChatStatus("completed");
+      setIsChatEnded(true);
+      setEndReason("endRequested");
 
+    } catch (error) {
+      toast.error("❌ Failed to end session and load assessment.");
+      console.error("End session error:", error);
+    } finally {
+      setIsLoading(false);
+      setIsProcessingAssessment(false);
+    }
+  };
 
-  // Function to restart without saving
   const restartWithoutSaving = async () => {
     setShowRestartDialog(false);
     console.log("🔄 Restarting chat without saving");
 
-    clearSessionData();
     setIsLoading(true);
 
     try {
-      // Start fresh conversation with current selected concept
+      clearSessionData();
+
       if (selectedConcept) {
         await initiateFirstMentorMessageWithConcept(selectedConcept);
       } else {
-        // If no concept selected, fetch concepts and start with first one
         const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
         if (currentConcepts.length > 0) {
           const conceptToUse = currentConcepts[0];
@@ -535,7 +459,6 @@ const batchId = sessionStorage.getItem("batchId");
         }
       }
 
-      // Refresh chat counts
       await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error restarting chat:", error);
@@ -545,7 +468,6 @@ const batchId = sessionStorage.getItem("batchId");
     }
   };
 
-  // Function to restart with saving current session
   const restartWithSaving = async () => {
     setShowRestartDialog(false);
     console.log("💾 Saving session before restart");
@@ -553,14 +475,11 @@ const batchId = sessionStorage.getItem("batchId");
     setIsLoading(true);
 
     try {
-      // Save current session with appropriate status
       const statusToSave = 'completed';
       await handleSaveChat(statusToSave);
 
-      // Clear session data and start fresh
       clearSessionData();
 
-      // Start fresh conversation
       if (selectedConcept) {
         await initiateFirstMentorMessageWithConcept(selectedConcept);
       } else {
@@ -572,7 +491,6 @@ const batchId = sessionStorage.getItem("batchId");
         }
       }
 
-      // Refresh chat counts
       await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error saving and restarting chat:", error);
@@ -611,23 +529,20 @@ const batchId = sessionStorage.getItem("batchId");
       const userPrompt = prompt.trim();
       setPrompt("");
       const organizationId = sessionStorage.getItem("organizationId");
-  const batchId = sessionStorage.getItem("batchId");
+      const batchId = sessionStorage.getItem("batchId");
 
-  const initialResponse = await processPromptAndCallLLM({
-    username,
-    selectedPrompt,
-    selectedModel: "gpt-4o",
-    sessionHistory,
-    userPrompt: userPrompt,
-    selectedConcept: selectedConcept,
-    apiKey,
-    organizationId, // ✅ properly fetched from sessionStorage
-    batchId, 
-  });
+      const initialResponse = await processPromptAndCallLLM({
+        username,
+        selectedPrompt,
+        selectedModel: "gpt-4o",
+        sessionHistory,
+        userPrompt: userPrompt,
+        selectedConcept: selectedConcept,
+        organizationId,
+        batchId,
+      });
 
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-      
-     
 
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
@@ -657,12 +572,11 @@ const batchId = sessionStorage.getItem("batchId");
         { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
       ]);
 
-      // Check for end conditions
-      if ( newEndRequested || newInteractionCompleted) {
+      if (newEndRequested || newInteractionCompleted) {
         console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
         setIsProcessingAssessment(true);
         const organizationId = sessionStorage.getItem("organizationId");
-const batchId = sessionStorage.getItem("batchId");
+        const batchId = sessionStorage.getItem("batchId");
         const assessmentResponse = await processPromptAndCallLLM({
           username,
           selectedPrompt: "assessmentPrompt",
@@ -673,9 +587,8 @@ const batchId = sessionStorage.getItem("batchId");
           ],
           userPrompt: userPrompt,
           selectedConcept: selectedConcept,
-          apiKey,
-          organizationId,     // ✅ Add this
-  batchId   
+          organizationId,
+          batchId,
         });
 
         setLlmContent(assessmentResponse.apiResponseText);
@@ -697,9 +610,7 @@ const batchId = sessionStorage.getItem("batchId");
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
         console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
-        
-        
-        // setCurrentStage(7);
+
         setCurrentChatStatus('completed');
 
         if (newInteractionCompleted) {
@@ -720,42 +631,35 @@ const batchId = sessionStorage.getItem("batchId");
       setIsProcessingAssessment(false);
     }
   };
+
   const handleDownloadConcept = (downloadLink, conceptName) => {
-  if (!downloadLink) {
-    toast.warn(`No download available for ${conceptName}`);
-    return;
-  }
-  window.open(downloadLink, '_blank');
-};
+    if (!downloadLink) {
+      toast.warn(`No download available for ${conceptName}`);
+      return;
+    }
+    window.open(downloadLink, '_blank');
+  };
+
   const getCurrentStageForAPI = (saveStatus) => {
-    // If user is manually setting status, use that
     if (saveStatus === "not_started") {
       return 0;
     } else if (saveStatus === "inprogress" || saveStatus === "completed") {
-      // For inprogress, calculate stage based on current frontend state
-      if (currentStage === 0) return 0; // Just started, no progress yet
-      return Math.min(Math.max(currentStage - 1, 0), 5); // Convert progress stages 1-6 to API stages 0-5
+      if (currentStage === 0) return 0;
+      return Math.min(Math.max(currentStage - 1, 0), 5);
     }
- 
 
-    // Fallback: determine from current frontend state
     const frontendStatus = getStageStatus();
     if (frontendStatus === 'not-started') return 0;
-    // if (frontendStatus === 'completed') return 5;
-
-    // For in-progress, map currentStage to API stage
     if (currentStage === 0) return 0;
     if (currentStage === 7) return 5;
     return Math.min(Math.max(currentStage - 1, 0), 5);
   };
 
   const getFrontendStatusForSave = () => {
-    // If chat has ended (either interactionCompleted or endRequested), save as completed
     if (isChatEnded) {
       return 'completed';
     }
 
-    // Determine current frontend status based on stage and chat state
     if (currentStage === 0 && chatHistory.length <= 1) {
       return 'not_started';
     } else {
@@ -774,12 +678,10 @@ const batchId = sessionStorage.getItem("batchId");
       return;
     }
 
-    // Determine the status to save
     const statusToSave = requestedStatus || getFrontendStatusForSave();
     const stageToSave = getCurrentStageForAPI(statusToSave);
     const conceptNameToSave = selectedConcept?.concept_name || null;
 
-    // Extract scoring data if status is completed and we have llmContent
     let scoring_data = null;
     if (statusToSave === 'completed' && llmContent) {
       scoring_data = extractScoringData(llmContent);
@@ -804,7 +706,6 @@ const batchId = sessionStorage.getItem("batchId");
       let response;
       let actionMessage = "";
 
-      // Build request data with optional scoring
       const requestData = {
         conversation: chatHistory,
         status: statusToSave,
@@ -812,17 +713,14 @@ const batchId = sessionStorage.getItem("batchId");
         concept_name: conceptNameToSave
       };
 
-      // Add scoring data only if it exists and status is completed
       if (statusToSave === 'completed' && scoring_data) {
         requestData.scoring_data = scoring_data;
       }
 
       if (currentChatId && sessionType === "resume") {
-        // Update existing chat
         response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, requestData);
         actionMessage = `Updated existing chat (ID: ${currentChatId})`;
       } else {
-        // Create new chat
         response = await axios.post(`${BASE_URL}/chat`, {
           user_id: userId,
           ...requestData
@@ -840,7 +738,6 @@ const batchId = sessionStorage.getItem("batchId");
         hasScoring: !!response.data.data.scoring
       });
 
-      // Log scoring data if present in response
       if (response.data.data.scoring) {
         console.log("📊 Scoring data saved:", {
           sixFacetsAverage: response.data.data.scoring.six_facets.average,
@@ -910,10 +807,9 @@ const batchId = sessionStorage.getItem("batchId");
   };
 
   const fetchChatCounts = async () => {
-    if (!userId || !apiKey) {
+    if (!userId) {
       return;
     }
-
 
     setIsCountsLoading(true);
     try {
@@ -938,29 +834,16 @@ const batchId = sessionStorage.getItem("batchId");
   };
 
   const checkSessionStatus = async (conceptName = null) => {
-    // STEP 1: Ensure we have a valid API key first before doing anything
-    if (!apiKey) {
-      const newKey = await fetchApiKey();
-      if (!newKey) {
-        setIsInitializing(false);
-        await fetchConcepts();
-        return; 
-      }
-    }
-    
     if (!username || !userId) {
       setIsInitializing(false);
       await fetchConcepts();
       return;
     }
-    
-    
-    
+
     setIsLoading(true);
     setIsInitializing(true);
 
     try {
-      // Build API URL with concept_name parameter if provided
       let apiUrl = `${BASE_URL}/chat/session-status/${userId}`;
       if (conceptName) {
         apiUrl += `?concept_name=${encodeURIComponent(conceptName)}`;
@@ -971,7 +854,6 @@ const batchId = sessionStorage.getItem("batchId");
       if (response.data && response.data.success) {
         const { sessionType, hasActiveSession, shouldStartFresh, chat } = response.data.data;
 
-        // Check if resumed session is completed
         if (chat && chat.status === 'completed') {
           console.log("🎯 Resumed session is completed, starting fresh conversation instead");
           clearSessionData();
@@ -992,7 +874,6 @@ const batchId = sessionStorage.getItem("batchId");
         }
 
         if (sessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
-          // Resume existing session
           console.log("🔄 Resuming existing session:", chat);
 
           setChatHistory(chat.conversation);
@@ -1007,7 +888,6 @@ const batchId = sessionStorage.getItem("batchId");
           setResumedFromStatus(chat.status);
           setCurrentChatStatus(chat.status);
 
-          // Map API stage to progress stage
           const progressStage = mapApiStageToProgressbarIndex(
             chat.current_stage,
             chat.status,
@@ -1026,12 +906,10 @@ const batchId = sessionStorage.getItem("batchId");
           sessionStorage.setItem("currentChatId", chat.id.toString());
           sessionStorage.setItem("sessionType", "resume");
 
-          // If no concepts loaded yet, fetch them
           if (concepts.length === 0) {
             await fetchConcepts();
           }
 
-          // Restore selectedConcept based on the chat's concept_name
           if (chat.concept_name && concepts.length > 0) {
             const matchingConcept = concepts.find(c => c.concept_name === chat.concept_name);
             if (matchingConcept) {
@@ -1039,7 +917,6 @@ const batchId = sessionStorage.getItem("batchId");
               console.log("✅ Concept restored from session:", matchingConcept.concept_name);
             } else {
               console.warn("⚠️ Concept from session not found in available concepts:", chat.concept_name);
-              // If conceptName was provided, try to find it
               if (conceptName) {
                 const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
                 if (providedConcept) {
@@ -1049,7 +926,6 @@ const batchId = sessionStorage.getItem("batchId");
               }
             }
           } else if (conceptName && concepts.length > 0) {
-            // If conceptName was provided in the API call, use it
             const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
             if (providedConcept) {
               setSelectedConcept(providedConcept);
@@ -1058,28 +934,23 @@ const batchId = sessionStorage.getItem("batchId");
           }
 
         } else if (sessionType === "fresh") {
-          // Start fresh session
           console.log("🆕 Starting fresh session");
           clearSessionData();
           setCurrentChatStatus('not_started');
 
-          // Load concepts first, then initiate conversation
           if (concepts.length === 0) {
             await fetchConcepts();
           }
 
-          // Automatically start conversation for fresh session
           setTimeout(async () => {
             const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
             if (currentConcepts.length > 0) {
               let conceptToUse;
 
-              // If conceptName was provided, try to find matching concept
               if (conceptName) {
                 conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
               }
 
-              // Fallback to selected concept or first active concept
               if (!conceptToUse) {
                 conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
               }
@@ -1093,7 +964,6 @@ const batchId = sessionStorage.getItem("batchId");
           }, 1000);
         }
       } else {
-        // Fallback to fresh session
         console.log("⚠️ No session data, starting fresh");
         clearSessionData();
         setCurrentChatStatus('not_started');
@@ -1102,22 +972,15 @@ const batchId = sessionStorage.getItem("batchId");
           await fetchConcepts();
         }
 
-        // Force start fresh conversation
         setTimeout(async () => {
           const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             let conceptToUse;
 
-            // If conceptName was provided, try to find matching concept
             if (conceptName) {
-              const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
-              if (providedConcept) {
-                setSelectedConcept(providedConcept);
-                console.log("🔄 Using provided concept for fresh session:", providedConcept.concept_name);
-              }
+              conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
             }
 
-            // Fallback to selected concept or first active concept
             if (!conceptToUse) {
               conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
             }
@@ -1134,7 +997,6 @@ const batchId = sessionStorage.getItem("batchId");
       await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error checking session status:", error);
-      // On error, force fresh session start
       clearSessionData();
       setCurrentChatStatus('not_started');
 
@@ -1147,12 +1009,10 @@ const batchId = sessionStorage.getItem("batchId");
         if (currentConcepts.length > 0) {
           let conceptToUse;
 
-          // If conceptName was provided, try to find matching concept
           if (conceptName) {
             conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
           }
 
-          // Fallback to selected concept or first active concept
           if (!conceptToUse) {
             conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
           }
@@ -1170,7 +1030,6 @@ const batchId = sessionStorage.getItem("batchId");
     }
   };
 
-
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -1182,81 +1041,56 @@ const batchId = sessionStorage.getItem("batchId");
 
   const handleConceptSelect = async (concept) => {
     if (isProcessingAssessment) {
-    toast.warn("⚠️ Please wait, assessment is being processed.");
-    return;
-  }
+      toast.warn("⚠️ Please wait, assessment is being processed.");
+      return;
+    }
     console.log("🎯 Concept selected:", concept.concept_name);
     setSelectedConcept(concept);
     setShowConceptDropdown(false);
 
-    // Clear current session data
     clearSessionData();
     setCurrentChatStatus('not_started');
 
-    // Check session status with the selected concept
-    if (apiKey) {
-      console.log("🔍 Checking session status for concept:", concept.concept_name);
-      await checkSessionStatus(concept.concept_name);
-    }
+    console.log("🔍 Checking session status for concept:", concept.concept_name);
+    await checkSessionStatus(concept.concept_name);
   };
 
   const getStageStatus = () => {
-    // Priority: Use currentChatStatus from API, fallback to currentStage logic
     if (currentChatStatus === 'completed') return 'completed';
     if (currentChatStatus === 'not_started') return 'not-started';
     if (currentChatStatus === 'inprogress') return 'in-progress';
 
-    // Fallback to stage-based logic
     if (currentStage === 0) return 'not-started';
     if (currentStage === 7) return 'completed';
     return 'in-progress';
   };
 
   useEffect(() => {
-    const initializeApiKey = async () => {
-      if (username && userId && !apiKey) {
-        console.log("🔑 Initializing API key...");
-        const fetchedKey = await fetchApiKey();
-        if (!fetchedKey) {
-          console.error("❌ Failed to fetch API key during initialization");
-          setIsInitializing(false);
-        }
-        // Don't proceed further here - let the next useEffect handle the rest
+    const initializeSession = async () => {
+      if (!username || !userId) {
+        setIsInitializing(false);
+        await fetchConcepts();
+        return;
+      }
+
+      console.log("🚀 Starting session initialization");
+      if (concepts.length === 0) {
+        await fetchConcepts();
+      }
+
+      const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+      if (currentConcepts.length > 0) {
+        const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
+        console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
+        await checkSessionStatus(initialConcept.concept_name);
+      } else {
+        console.log("⚠️ No concepts available, checking session without concept_name");
+        await checkSessionStatus();
       }
     };
 
-    initializeApiKey();
+    initializeSession();
   }, [username, userId]);
-
-
-   useEffect(() => {
-    if (username && userId && apiKey) {
-      const initializeSession = async () => {
-        console.log("🚀 Starting session initialization with API key available");
-        if (concepts.length === 0) {
-          await fetchConcepts();
-        }
-
-        // Get concepts from state or fetch them
-        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
-
-        if (currentConcepts.length > 0) {
-          // Use first active concept or first concept available
-          const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
-          console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
-
-          // Call checkSessionStatus with the initial concept name
-          await checkSessionStatus(initialConcept.concept_name);
-        } else {
-          // No concepts available, call without concept_name as fallback
-          console.log("⚠️ No concepts available, checking session without concept_name");
-          await checkSessionStatus();
-        }
-      };
-
-      initializeSession();
-    }
-  }, [username, userId, apiKey]);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -1309,19 +1143,18 @@ const batchId = sessionStorage.getItem("batchId");
     ) {
       const lastEntry = chatHistory[chatHistory.length - 1];
 
-      // Check if the last entry is an assessment (has empty user input and assessment content)
       const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
 
       if (isAssessmentEntry && currentChatStatus === 'completed') {
         console.log("💾 Detected assessment response, auto-saving as completed...");
-        handleSaveChat('completed', false); // Save as completed without loader
+        handleSaveChat('completed', false);
       } else if (
         lastEntry?.system &&
         lastEntry?.user !== undefined &&
         currentChatStatus === 'inprogress'
       ) {
         console.log("💾 Detected regular LLM response, auto-saving as inprogress...");
-        handleSaveChat('inprogress', false); // Save as inprogress without loader
+        handleSaveChat('inprogress', false);
       }
     }
   }, [chatHistory, isInitializing, currentChatStatus, isLoading]);
@@ -1330,7 +1163,6 @@ const batchId = sessionStorage.getItem("batchId");
     <div className="learning-dashboard">
       <Sidebar isProcessingAssessment={isProcessingAssessment} />
 
-      {/* Toast Container for Notifications */}
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -1343,7 +1175,6 @@ const batchId = sessionStorage.getItem("batchId");
         pauseOnHover
       />
 
-      {/* Restart Dialog Modal */}
       {showRestartDialog && (
         <div className="restart-dialog-overlay">
           <div className="restart-dialog">
@@ -1382,42 +1213,39 @@ const batchId = sessionStorage.getItem("batchId");
           </div>
         </div>
       )}
+
       {showEndSessionDialog && (
-  <div className="restart-dialog-overlay">
-    <div className="restart-dialog">
-      <div className="restart-dialog-header">
-        <FiAlertCircle className="restart-dialog-icon" />
-        <h3>End Current Session?</h3>
-      </div>
-      <div className="restart-dialog-content">
-        <p>This will end your current learning session and show an assessment. Are you sure?</p>
-      </div>
-      <div className="restart-dialog-actions">
-        <button
-          className="restart-btn save-and-restart"
-          onClick={handleEndSession}
-          disabled={isLoading}
-        >
-          <FiCheckCircle /> Yes, End Session
-        </button>
-        <button
-          className="restart-btn cancel"
-          onClick={() => setShowEndSessionDialog(false)}
-          disabled={isLoading}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="restart-dialog-overlay">
+          <div className="restart-dialog">
+            <div className="restart-dialog-header">
+              <FiAlertCircle className="restart-dialog-icon" />
+              <h3>End Current Session?</h3>
+            </div>
+            <div className="restart-dialog-content">
+              <p>This will end your current learning session and show an assessment. Are you sure?</p>
+            </div>
+            <div className="restart-dialog-actions">
+              <button
+                className="restart-btn save-and-restart"
+                onClick={handleEndSession}
+                disabled={isLoading}
+              >
+                <FiCheckCircle /> Yes, End Session
+              </button>
+              <button
+                className="restart-btn cancel"
+                onClick={() => setShowEndSessionDialog(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
-
-      {/* Main Dashboard Layout */}
       <div className="dashboard-layout">
-        {/* Left Control Panel */}
         <div className="control-panel">
-          {/* Concept Selection */}
           <div className="control-section">
             <div className="section-header">
               <FiTarget className="section-icon" />
@@ -1442,49 +1270,48 @@ const batchId = sessionStorage.getItem("batchId");
               </div>
 
               {showConceptDropdown && (
-  <div className="concept-dropdown">
-    {conceptsLoading ? (
-      <div className="concept-option">
-        <div className="concept-name">Loading...</div>
-      </div>
-    ) : concepts.length > 0 ? (
-      concepts.map((concept) => (
-        <div
-          key={concept.concept_id}
-          className="concept-option flex items-center justify-between cursor-pointer"
-          onClick={() => handleConceptSelect(concept)}
-        >
-          <div className="concept-name">{concept.concept_name}</div>
-          {concept.download_link && (
-            <button
-              className="download-btn1 relative group"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDownloadConcept(concept.download_link, concept.concept_name);
-              }}
-              data-tooltip="Download concept material"
-              aria-label={`Download ${concept.concept_name} material`}
-            >
-              <FiDownload className="w-5 h-5" />
-              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-  Download
-</span>
-            </button>
-          )}
-        </div>
-      ))
-    ) : (
-      <div className="concept-option">
-        <div className="concept-name">No concepts available</div>
-        <div className="concept-description">Contact your administrator</div>
-      </div>
-    )}
-  </div>
-)}
+                <div className="concept-dropdown">
+                  {conceptsLoading ? (
+                    <div className="concept-option">
+                      <div className="concept-name">Loading...</div>
+                    </div>
+                  ) : concepts.length > 0 ? (
+                    concepts.map((concept) => (
+                      <div
+                        key={concept.concept_id}
+                        className="concept-option flex items-center justify-between cursor-pointer"
+                        onClick={() => handleConceptSelect(concept)}
+                      >
+                        <div className="concept-name">{concept.concept_name}</div>
+                        {concept.download_link && (
+                          <button
+                            className="download-btn1 relative group"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadConcept(concept.download_link, concept.concept_name);
+                            }}
+                            data-tooltip="Download concept material"
+                            aria-label={`Download ${concept.concept_name} material`}
+                          >
+                            <FiDownload className="w-5 h-5" />
+                            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                              Download
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="concept-option">
+                      <div className="concept-name">No concepts available</div>
+                      <div className="concept-description">Contact your administrator</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Learning Stages */}
           <div className="control-section">
             <div className="section-header">
               <FiTrendingUp className="section-icon" />
@@ -1492,7 +1319,6 @@ const batchId = sessionStorage.getItem("batchId");
             </div>
 
             <div className="stage-cards">
-              {/* Not Started */}
               <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
                 <div className="stage-icon not-started">
                   <FiClock />
@@ -1502,7 +1328,6 @@ const batchId = sessionStorage.getItem("batchId");
                 </div>
               </div>
 
-              {/* In Progress */}
               <div className={`stage-card ${getStageStatus() === 'in-progress' ? 'active' : ''} ${isTransitioning ? 'transitioning' : ''}`}>
                 <div className="stage-icon in-progress">
                   <FiPlay />
@@ -1516,7 +1341,6 @@ const batchId = sessionStorage.getItem("batchId");
                     <div className="stage-progress-content">
                       <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
                         <div className="progress-info">
-      
                           <span>
                             {currentStage <= 1 ? "Starting..." :
                               currentStage === 7 ? "Completed" :
@@ -1524,17 +1348,17 @@ const batchId = sessionStorage.getItem("batchId");
                           </span>
                           <span>
                             {(() => {
-                            const completed = Math.max(currentStage - 2, 0);
-                            return `${Math.round((completed / 5) * 100)}%`;
-                          })()}
+                              const completed = Math.max(currentStage - 2, 0);
+                              return `${Math.round((completed / 5) * 100)}%`;
+                            })()}
                           </span>
                         </div>
                         <div className="progress-bar">
                           <div
                             className="progress-fill"
-                           style={{
-                          width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
-                          }}
+                            style={{
+                              width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
+                            }}
                           ></div>
                         </div>
                         <div className="substages">
@@ -1546,7 +1370,6 @@ const batchId = sessionStorage.getItem("batchId");
                 </div>
               </div>
 
-              {/* Completed */}
               <div className={`stage-card ${getStageStatus() === 'completed' ? 'active' : ''}`}>
                 <div className="stage-icon completed">
                   <FiCheckCircle />
@@ -1559,9 +1382,7 @@ const batchId = sessionStorage.getItem("batchId");
           </div>
         </div>
 
-        {/* Right Chat Panel */}
         <div className="chat-panel">
-          {/* Top Right Action Icons */}
           <div className="top-right-actions">
             <div className="save-section">
               <button
@@ -1576,8 +1397,11 @@ const batchId = sessionStorage.getItem("batchId");
 
               {showSaveOptions && (
                 <div ref={topSaveOptionsRef} className="top-save-dropdown">
-                  <button className="top-save-option current" onClick={() => !isProcessingAssessment && handleSaveChat()}
-                    disabled={isProcessingAssessment || currentChatStatus === 'not_started'}>
+                  <button
+                    className="top-save-option current"
+                    onClick={() => !isProcessingAssessment && handleSaveChat()}
+                    disabled={isProcessingAssessment || currentChatStatus === 'not_started'}
+                  >
                     <FiSave /> Save Current Progress
                   </button>
                 </div>
@@ -1587,9 +1411,9 @@ const batchId = sessionStorage.getItem("batchId");
             <button
               className="top-action-btn top-download-btn"
               onClick={() => !isProcessingAssessment && handleDownloadPDF()}
-  disabled={chatHistory.length === 0 || isProcessingAssessment || currentChatStatus === 'not_started' }
-  data-tooltip="Export Chat"
->
+              disabled={chatHistory.length === 0 || isProcessingAssessment || currentChatStatus === 'not_started'}
+              data-tooltip="Export Chat"
+            >
               <FiDownload />
             </button>
           </div>
@@ -1650,7 +1474,6 @@ const batchId = sessionStorage.getItem("batchId");
                 ))
               )}
 
-              {/* Chat End Message and Restart Button */}
               {isChatEnded && (
                 <div className="chat-end-section">
                   <div className="chat-end-message">
@@ -1661,7 +1484,6 @@ const batchId = sessionStorage.getItem("batchId");
                           : '⏸️ Session Ended with Assessment'
                         }
                       </h4>
-
                       <p className="end-action-hint">
                         Ready to start a new learning session? Click the button below to begin fresh!
                       </p>
@@ -1683,77 +1505,74 @@ const batchId = sessionStorage.getItem("batchId");
               <div ref={chatEndRef} />
             </div>
 
-            {/* Chat Input */}
             <div className="chat-input-container">
               {isLoading && (
                 <div className="loading-indicator">
                   <div className="loading-spinner"></div>
-                 <span>
-        {isProcessingAssessment
-          ? "Please wait. We are calculating your score"
-          : "AI is thinking..."
-        }
-      </span>
-
+                  <span>
+                    {isProcessingAssessment
+                      ? "Please wait. We are calculating your score"
+                      : "AI is thinking..."
+                    }
+                  </span>
                 </div>
               )}
 
               <div className="chat-input-wrapper">
-             <div className="tooltip-container" data-tooltip={
-  currentChatStatus === 'not_started' ? "Start a conversation first" : 
-  isChatEnded ? "Session already ended" : 
-  "End Session"
-}>
-  <button
-    className="end-session-btn"
-    onClick={() => setShowEndSessionDialog(true)}
-    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded}
-    style={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-  >
-    <FiStopCircle />
-  </button>
-</div>
-
+                <div
+                  className="tooltip-container"
+                  data-tooltip={
+                    currentChatStatus === 'not_started' ? "Start a conversation first" :
+                    isChatEnded ? "Session already ended" :
+                    "End Session"
+                  }
+                >
+                  <button
+                    className="end-session-btn"
+                    onClick={() => setShowEndSessionDialog(true)}
+                    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded}
+                    style={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                  >
+                    <FiStopCircle />
+                  </button>
+                </div>
 
                 <textarea
-  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
-  placeholder={
-    isChatEnded
-      ? "This conversation has ended. Please restart to begin a new session."
-      : isInitializing
-        ? "Initializing..."
-        : selectedConcept
-          ? "Ask your mentor anything..."
-          : conceptsLoading
-            ? "Loading concepts..."
-            : "Please select a concept first..."
-  }
-  value={prompt}
-  onChange={(e) => setPrompt(e.target.value)}
-  onKeyPress={handleKeyPress}
-  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
-  rows="1"
-/>
+                  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
+                  placeholder={
+                    isChatEnded
+                      ? "This conversation has ended. Please restart to begin a new session."
+                      : isInitializing
+                        ? "Initializing..."
+                        : selectedConcept
+                          ? "Ask your mentor anything..."
+                          : conceptsLoading
+                            ? "Loading concepts..."
+                            : "Please select a concept first..."
+                  }
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+                  rows="1"
+                />
 
-{/* 🎤 Mic Button
-<button
-  className={`mic-button ${isListening ? 'listening' : ''}`}
-  onClick={isListening ? stopListening : startListening}
-  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
-  style={{ marginLeft: "5px" }}
->
-  {isListening ? "🛑" : "🎤"}
-</button> */}
+                {/* <button
+                  className={`mic-button ${isListening ? 'listening' : ''}`}
+                  onClick={isListening ? stopListening : startListening}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+                  style={{ marginLeft: "5px" }}
+                >
+                  {isListening ? "🛑" : "🎤"}
+                </button> */}
 
-{/* Send Button */}
-<button
-  className="send-button"
-  onClick={handleSendClick}
-  disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
->
-  <FiSend />
-</button>
-
+                <button
+                  className="send-button"
+                  onClick={handleSendClick}
+                  disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
+                >
+                  <FiSend />
+                </button>
               </div>
 
               {isChatEnded && (

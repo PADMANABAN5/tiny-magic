@@ -1,10 +1,8 @@
+import axios from "axios";
+
+const BASE_URL = process.env.REACT_APP_API_LINK;
+
 // Template processing function
-const storedToken = sessionStorage.getItem("token");
-  const config = {
-    headers: {
-      Authorization: `Bearer ${storedToken}`,
-    },
-  };
 const processTemplate = (templateContent, selectedConcept) => {
   if (!templateContent || !selectedConcept) {
     return templateContent;
@@ -37,101 +35,19 @@ const processTemplate = (templateContent, selectedConcept) => {
   return processedContent;
 };
 
-const loadTemplate = async (templateName, organization_id, batch_id) => {
-  if (!organization_id || !batch_id) {
-    throw new Error(`Missing organization_id or batch_id for template: ${templateName}`);
-  }
-
-  // Helper function to fetch and extract template
-  const fetchTemplate = async (url) => { // Removed 'config' parameter from here as it's not needed for what you intend
-    // Use the 'config' object from the outer scope directly here
-    const response = await fetch(url, config); // <--- HERE! Use the 'config' object defined globally
+const loadTemplate = async (templateName) => {
+  try {
+    const response = await fetch(`/data/${templateName}.txt`);
 
     if (!response.ok) {
-      // Improved error message to include the actual token status
-      const errorText = await response.text();
-      console.error(`API Error for ${url}: ${response.status} ${response.statusText} - ${errorText}`);
-      throw new Error(`API failed: ${response.status} ${response.statusText} - ${errorText}`);
+      throw new Error(`HTTP ${response.status}: ${response.statusText} - File not found: /data/${templateName}.txt`);
     }
 
-    const data = await response.json();
-    const matchingPrompt = data?.data?.find(
-      (item) => item.prompt_type === templateName
-    );
-
-    return matchingPrompt?.prompt_content || null;
-  };
-
-  try {
-    // Try fallback API
-    const fallbackUrl = `${process.env.REACT_APP_API_LINK}/prompts/global`;
-    let template = await fetchTemplate(fallbackUrl); // <--- HERE! No need to pass headers again
-
-    // If not found, try global API
-    if (!template) {
-      console.warn(`⚠️ Template not found in fallback, trying global API for ${templateName}`);
-      const globalUrl = `${process.env.REACT_APP_API_LINK}/prompts/global`;
-      template = await fetchTemplate(globalUrl); // <--- HERE! No need to pass headers again
-    }
-
-    if (!template) {
-      throw new Error(`Template content not found in any API for ${templateName}`);
-    }
-
-    return template;
-
+    const content = await response.text();
+    return content;
   } catch (error) {
-    console.error(`❌ Error loading template "${templateName}":`, error);
-    throw error;
-  }
-};
-
-// ... (rest of your code, including callOpenAI and processPromptAndCallLLM, remains unchanged)
-
-
-
-
-
-// Integrated OpenAI GPT-4o API call function
-const callOpenAI = async (messages, apiKey) => {
-  if (!apiKey) {
-  console.error("❌ No API key provided to callOpenAI");
-  throw new Error("No API key provided. Please check your decryption or dashboard setup.");
-}
-
-  try {
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-4o", // Fixed to use GPT-4o
-        messages,
-        temperature: 0.7,
-        max_tokens: 4000,
-        top_p: 1,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenAI API Error:", response.status, errorText);
-      throw new Error(`OpenAI API Error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    const responseText = data?.choices?.[0]?.message?.content;
-
-    if (!responseText) {
-      throw new Error("No response content from OpenAI API");
-    }
-    return responseText;
-
-  } catch (error) {
-    console.error("❌ Error calling OpenAI API:", error);
-    throw error;
+    console.error(`❌ Error loading template ${templateName}:`, error);
+    throw new Error(`Failed to load template: ${templateName}. Please ensure the file exists in public/data/${templateName}.txt`);
   }
 };
 
@@ -143,31 +59,24 @@ export const processPromptAndCallLLM = async ({
   sessionHistory,
   userPrompt,
   selectedConcept,
-  apiKey,
-  organizationId, // ✅ add this
-  batchId          // ✅ add this
+  organizationId,
+  batchId,
 }) => {
-
   try {
     // Load the appropriate template
-   // Load the appropriate template using fallback API only
-let templateContent;
-try {
-  console.log("📦 Loading template with", {
-    selectedPrompt,
-    organizationId,
-    batchId
-  });
-  templateContent = await loadTemplate(
-    selectedPrompt,
-    organizationId,
-    batchId
-  );
-} catch (templateError) {
-  console.error('Template loading failed:', templateError);
-  throw new Error(`Failed to load template for ${selectedPrompt}. Please ensure the fallback API is reachable.`);
-}
-
+    let templateContent;
+    try {
+      if (selectedPrompt === 'conceptMentor') {
+        templateContent = await loadTemplate('conceptMentor');
+      } else if (selectedPrompt === 'assessmentPrompt') {
+        templateContent = await loadTemplate('assessmentPrompt');
+      } else {
+        throw new Error(`Unknown prompt type: ${selectedPrompt}`);
+      }
+    } catch (templateError) {
+      console.error('Template loading failed:', templateError);
+      throw new Error(`Failed to load template for ${selectedPrompt}. Please ensure the template file exists.`);
+    }
 
     // Process template with selected concept data
     const processedSystemContent = processTemplate(templateContent, selectedConcept);
@@ -177,55 +86,71 @@ try {
     const userInput = isFirstMessage
       ? userPrompt
       : [
-        ...sessionHistory.map(
-          (entry) => `Mentee: ${entry.Mentee}\nMentor: ${entry.Mentor}`
-        ),
-        `Mentee: ${userPrompt}`,
-      ].join("\n");
+          ...sessionHistory.map(
+            (entry) => `Mentee: ${entry.Mentee}\nMentor: ${entry.Mentor}`
+          ),
+          `Mentee: ${userPrompt}`,
+        ].join("\n");
 
-    // Prepare messages for OpenAI API
+    // Prepare messages for the backend
     const messages = [
       {
         role: "system",
-        content: processedSystemContent
-      }
+        content: processedSystemContent,
+      },
     ];
 
-    // Add user message only if there's actual content
     if (userInput && userInput.trim()) {
       messages.push({
         role: "user",
-        content: userInput.trim()
+        content: userInput.trim(),
       });
     } else {
-      // For initial message (empty userPrompt), add empty user message
       messages.push({
         role: "user",
-        content: ""
+        content: "",
       });
     }
 
-    // Call OpenAI API directly
-    const llmResponse = await callOpenAI(messages, apiKey);
+    // Send request to backend proxy endpoint
+    const storedToken = sessionStorage.getItem("token");
+    const response = await axios.post(
+      `${BASE_URL}/apikey/call-llm`,
+      {
+        messages,
+        selectedModel,
+        selectedPrompt,
+        username,
+        selectedConcept,
+        organizationId,
+        batchId,
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${storedToken}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
 
-    // Default response structure in case parsing fails
+    // Handle response
+    const llmResponse = response.data.apiResponseText;
+
+    // Default response structure
     let parsedResponse = {
-      apiResponseText: "The LLM did not return a valid response. Please try again.",
-      interactionCompleted: false,
-      endRequested: false,
-      readyForNextStage: false,
-      currentStage: 0,
-      pauseRequested: false,
+      apiResponseText: llmResponse || "The LLM did not return a valid response. Please try again.",
+      interactionCompleted: response.data.interactionCompleted || false,
+      endRequested: response.data.endRequested || false,
+      readyForNextStage: response.data.readyForNextStage || false,
+      currentStage: response.data.currentStage || 0,
+      pauseRequested: response.data.pauseRequested || false,
     };
 
     if (selectedPrompt === 'assessmentPrompt') {
-  console.log("📤 Assessment LLM raw response:", llmResponse); // Add this line
-  parsedResponse.apiResponseText = llmResponse;
-  return parsedResponse;
-}
-if (!llmResponse || llmResponse.trim() === "") {
-  parsedResponse.apiResponseText = "⚠️ No assessment response was generated.";
-}
+      return parsedResponse;
+    }
+
+    // Try parsing JSON response
     try {
       try {
         const parsed = JSON.parse(llmResponse.trim());
@@ -258,7 +183,6 @@ if (!llmResponse || llmResponse.trim() === "") {
               currentStage: extractedJson.currentStage || 0,
               pauseRequested: extractedJson.pauseRequested || false,
             };
-
             return parsedResponse;
           }
         } catch (blockJsonError) {
@@ -266,12 +190,11 @@ if (!llmResponse || llmResponse.trim() === "") {
         }
       }
 
-      // Method 3: Find any JSON-like structure in the response
+      // Method 3: Find any JSON-like structure
       const jsonRegex = /\{[\s\S]*?"userText"[\s\S]*?\}/g;
       const potentialJsonMatches = llmResponse.match(jsonRegex);
 
       if (potentialJsonMatches) {
-        // Try each potential JSON match
         for (const match of potentialJsonMatches) {
           try {
             const extractedJson = JSON.parse(match);
@@ -284,7 +207,6 @@ if (!llmResponse || llmResponse.trim() === "") {
                 currentStage: extractedJson.currentStage || 0,
                 pauseRequested: extractedJson.pauseRequested || false,
               };
-
               return parsedResponse;
             }
           } catch (matchError) {
@@ -294,7 +216,6 @@ if (!llmResponse || llmResponse.trim() === "") {
       }
 
       console.warn("⚠️ All JSON parsing methods failed, using raw text");
-      parsedResponse.apiResponseText = llmResponse;
       return parsedResponse;
 
     } catch (err) {
