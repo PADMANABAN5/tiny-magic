@@ -53,45 +53,45 @@ function Dashboard() {
   const recognitionRef = useRef(null);
 
   const startListening = () => {
-  const SpeechRecognition =
-    window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
 
-  if (!SpeechRecognition) {
-    toast.error("Speech recognition not supported in this browser.");
-    return;
-  }
-
-  const recognition = new SpeechRecognition();
-  recognition.lang = "en-US";
-  recognition.interimResults = false; // only final results
-  recognition.continuous = true;
-
-  recognition.onresult = (event) => {
-    let finalTranscript = "";
-    for (let i = event.resultIndex; i < event.results.length; i++) {
-      if (event.results[i].isFinal) {
-        finalTranscript += event.results[i][0].transcript + " ";
-      }
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition not supported in this browser.");
+      return;
     }
-    setPrompt(prev => (prev ? prev + " " : "") + finalTranscript.trim());
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false; // only final results
+    recognition.continuous = true;
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + " ";
+        }
+      }
+      setPrompt(prev => (prev ? prev + " " : "") + finalTranscript.trim());
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsListening(true);
   };
 
-  recognition.onend = () => {
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
     setIsListening(false);
   };
-
-  recognition.start();
-  recognitionRef.current = recognition;
-  setIsListening(true);
-};
-
-const stopListening = () => {
-  if (recognitionRef.current) {
-    recognitionRef.current.stop();
-    recognitionRef.current = null;
-  }
-  setIsListening(false);
-};
 
   // Enhanced state for proper session management
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -114,7 +114,7 @@ const stopListening = () => {
   const [showConceptDropdown, setShowConceptDropdown] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isCalculatingScore, setIsCalculatingScore] = useState(false);
-  
+
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
@@ -127,59 +127,59 @@ const stopListening = () => {
     },
   };
 
-const hexToBuffer = (hex) => {
-  return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-};
-
-const concatBuffer = (cipherHex, tagHex) => {
-  const cipher = hexToBuffer(cipherHex);
-  const tag = hexToBuffer(tagHex);
-  const combined = new Uint8Array(cipher.length + tag.length);
-  combined.set(cipher);
-  combined.set(tag, cipher.length);
-  return combined;
-};
-
-const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
-  try {
-    const key = await crypto.subtle.importKey(
-      "raw",
-      hexToBuffer(SECRET_KEY_HEX),
-      { name: "AES-GCM" },
-      false,
-      ["decrypt"]
-    );
-
-    const combinedCiphertext = concatBuffer(encryptedApiKey, authTag);
-
-    const decipher = await crypto.subtle.decrypt(
-      {
-        name: "AES-GCM",
-        iv: hexToBuffer(iv),
-      },
-      key,
-      combinedCiphertext
-    );
-
-    return new TextDecoder().decode(decipher);
-  } catch (err) {
-    console.error("🔐 Decryption failed:", err);
-    throw new Error("Failed to decrypt API key");
-  }
-};
-useEffect(() => {
-  const unlisten = () => {
-    if (isProcessingAssessment && prevPathRef.current !== location.pathname) {
-      toast.warn("⚠️ Assessment is still loading. Please wait...");
-      // Manually push back to previous path
-      navigate(prevPathRef.current, { replace: true });
-    } else {
-      prevPathRef.current = location.pathname;
-    }
+  const hexToBuffer = (hex) => {
+    return new Uint8Array(hex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
   };
 
-  unlisten(); // Run immediately on mount/update
-}, [location.pathname, isProcessingAssessment]);
+  const concatBuffer = (cipherHex, tagHex) => {
+    const cipher = hexToBuffer(cipherHex);
+    const tag = hexToBuffer(tagHex);
+    const combined = new Uint8Array(cipher.length + tag.length);
+    combined.set(cipher);
+    combined.set(tag, cipher.length);
+    return combined;
+  };
+
+  const decryptApiKey = async (encryptedApiKey, iv, authTag) => {
+    try {
+      const key = await crypto.subtle.importKey(
+        "raw",
+        hexToBuffer(SECRET_KEY_HEX),
+        { name: "AES-GCM" },
+        false,
+        ["decrypt"]
+      );
+
+      const combinedCiphertext = concatBuffer(encryptedApiKey, authTag);
+
+      const decipher = await crypto.subtle.decrypt(
+        {
+          name: "AES-GCM",
+          iv: hexToBuffer(iv),
+        },
+        key,
+        combinedCiphertext
+      );
+
+      return new TextDecoder().decode(decipher);
+    } catch (err) {
+      console.error("🔐 Decryption failed:", err);
+      throw new Error("Failed to decrypt API key");
+    }
+  };
+  useEffect(() => {
+    const unlisten = () => {
+      if (isProcessingAssessment && prevPathRef.current !== location.pathname) {
+        toast.warn("⚠️ Assessment is still loading. Please wait...");
+        // Manually push back to previous path
+        navigate(prevPathRef.current, { replace: true });
+      } else {
+        prevPathRef.current = location.pathname;
+      }
+    };
+
+    unlisten(); // Run immediately on mount/update
+  }, [location.pathname, isProcessingAssessment]);
 
 
   const [chatCounts, setChatCounts] = useState({
@@ -190,44 +190,44 @@ useEffect(() => {
   });
 
   // Initialize PDF downloader
-  const { handleDownloadPDF } = PDFDownloader({ 
-    chatHistory, 
-    selectedConcept 
+  const { handleDownloadPDF } = PDFDownloader({
+    chatHistory,
+    selectedConcept
   });
- 
+
 
   // Function to fetch API key from API
   const fetchApiKey = async () => {
-  try {
-    console.log("🔑 Fetching encrypted API key...");
-    const response = await axios.get(`${BASE_URL}/apikey`, config);
-    const { encryptedApiKey, iv, authTag } = response.data;
+    try {
+      console.log("🔑 Fetching encrypted API key...");
+      const response = await axios.get(`${BASE_URL}/apikey`, config);
+      const { encryptedApiKey, iv, authTag } = response.data;
 
-    if (!encryptedApiKey || !iv || !authTag) {
-      throw new Error("Incomplete API key payload from server");
+      if (!encryptedApiKey || !iv || !authTag) {
+        throw new Error("Incomplete API key payload from server");
+      }
+
+      const decryptedKey = await decryptApiKey(encryptedApiKey, iv, authTag);
+      setApiKey(decryptedKey); // only keep it in memory
+      console.log("✅ API key decrypted and stored in memory");
+      return decryptedKey;
+    } catch (error) {
+      console.error("❌ Error fetching or decrypting API key:", error);
+      toast.error("Failed to retrieve secure API key. Please contact support.");
+      return null;
     }
+  };
+  useEffect(() => {
+    if (isProcessingAssessment) {
+      const handleBeforeUnload = (e) => {
+        e.preventDefault();
+        e.returnValue = 'An assessment is being processed. Are you sure you want to leave?';
+      };
 
-    const decryptedKey = await decryptApiKey(encryptedApiKey, iv, authTag);
-    setApiKey(decryptedKey); // only keep it in memory
-    console.log("✅ API key decrypted and stored in memory");
-    return decryptedKey;
-  } catch (error) {
-    console.error("❌ Error fetching or decrypting API key:", error);
-    toast.error("Failed to retrieve secure API key. Please contact support.");
-    return null;
-  }
-};
-useEffect(() => {
-  if (isProcessingAssessment) {
-    const handleBeforeUnload = (e) => {
-      e.preventDefault();
-      e.returnValue = 'An assessment is being processed. Are you sure you want to leave?';
-    };
-
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }
-}, [isProcessingAssessment]);
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [isProcessingAssessment]);
   // Handle outside click to close dropdowns
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -278,36 +278,36 @@ useEffect(() => {
   };
 
   const fetchConcepts = async () => {
-  if (!username || conceptsLoading) return;
+    if (!username || conceptsLoading) return;
 
-  setConceptsLoading(true);
-  try {
-    const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
+    setConceptsLoading(true);
+    try {
+      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
 
-    if (response.data && response.data.success && response.data.data) {
-      const data = response.data.data;
-      const conceptsData = data.batch?.concepts || [];
+      if (response.data && response.data.success && response.data.data) {
+        const data = response.data.data;
+        const conceptsData = data.batch?.concepts || [];
 
-      console.log("✅ Concepts loaded:", conceptsData.length);
-      setConcepts(conceptsData);
+        console.log("✅ Concepts loaded:", conceptsData.length);
+        setConcepts(conceptsData);
 
-      // ✅ Store org and batch ID safely in sessionStorage
-      const batch =  response.data.data.batch;
-      if (batch?.batch_id && batch?.organization_id) {
-        sessionStorage.setItem("batchId", batch.batch_id);
-        sessionStorage.setItem("organizationId", batch.organization_id);
-        console.log("✅ Stored batchId and orgId in sessionStorage", {
-          batchId: batch.batch_id,
-          orgId: batch.organization_id,
-        });
-      } else {
-        console.warn("⚠️ Could not find batchId or orgId in pod-user response.");
-      }
+        // ✅ Store org and batch ID safely in sessionStorage
+        const batch = response.data.data.batch;
+        if (batch?.batch_id && batch?.organization_id) {
+          sessionStorage.setItem("batchId", batch.batch_id);
+          sessionStorage.setItem("organizationId", batch.organization_id);
+          console.log("✅ Stored batchId and orgId in sessionStorage", {
+            batchId: batch.batch_id,
+            orgId: batch.organization_id,
+          });
+        } else {
+          console.warn("⚠️ Could not find batchId or orgId in pod-user response.");
+        }
 
-      // Auto-select first concept
-      const firstActiveConcept = conceptsData.find(c => c.is_active) || conceptsData[0];
-      if (firstActiveConcept && !selectedConcept) {
-        setSelectedConcept(firstActiveConcept);
+        // Auto-select first concept
+        const firstActiveConcept = conceptsData.find(c => c.is_active) || conceptsData[0];
+        if (firstActiveConcept && !selectedConcept) {
+          setSelectedConcept(firstActiveConcept);
 
           if (apiKey && chatHistory.length === 0 && !isInitializing) {
             console.log("🚀 Auto-starting conversation after concept selection");
@@ -316,31 +316,31 @@ useEffect(() => {
             }, 500);
           }
         }
-    } else {
-      console.warn("⚠️ No concepts data in response");
+      } else {
+        console.warn("⚠️ No concepts data in response");
+        setConcepts([]);
+      }
+    } catch (error) {
+      console.error("❌ Error fetching concepts:", error);
       setConcepts([]);
-    }
-  } catch (error) {
-    console.error("❌ Error fetching concepts:", error);
-    setConcepts([]);
-    if (error.response?.status !== 404) {
+      if (error.response?.status !== 404) {
         toast.error("Failed to load concepts. Please try again.");
       }
-  } finally {
-    setConceptsLoading(false);
-  }
-};
+    } finally {
+      setConceptsLoading(false);
+    }
+  };
 
 
 
   // Initiate first mentor message with specific concept
   const initiateFirstMentorMessageWithConcept = async (concept) => {
-     if (!apiKey || !concept) {
+    if (!apiKey || !concept) {
       setIsInitializing(false);
       return;
     }
     const organizationId = sessionStorage.getItem("organizationId");
-const batchId = sessionStorage.getItem("batchId");
+    const batchId = sessionStorage.getItem("batchId");
     console.log("🚀 Initiating first mentor message with concept:", concept.concept_name);
     setIsLoading(true);
     try {
@@ -461,56 +461,56 @@ const batchId = sessionStorage.getItem("batchId");
     setShowRestartDialog(true);
   };
   const handleEndSession = async () => {
-  setShowEndSessionDialog(false);
-  setIsLoading(true);
-  setIsProcessingAssessment(true);
-  
-  try {
-    const organizationId = sessionStorage.getItem("organizationId");
-    const batchId = sessionStorage.getItem("batchId");
+    setShowEndSessionDialog(false);
+    setIsLoading(true);
+    setIsProcessingAssessment(true);
 
-    const assessmentResponse = await processPromptAndCallLLM({
-      username,
-      selectedPrompt: "assessmentPrompt",
-      selectedModel: "gpt-4o",
-      sessionHistory,
-      userPrompt: "", // empty for manual trigger
-      selectedConcept,
-      apiKey,
-      organizationId,
-      batchId
-    });
+    try {
+      const organizationId = sessionStorage.getItem("organizationId");
+      const batchId = sessionStorage.getItem("batchId");
 
-    setLlmContent(assessmentResponse.apiResponseText);
+      const assessmentResponse = await processPromptAndCallLLM({
+        username,
+        selectedPrompt: "assessmentPrompt",
+        selectedModel: "gpt-4o",
+        sessionHistory,
+        userPrompt: "", // empty for manual trigger
+        selectedConcept,
+        apiKey,
+        organizationId,
+        batchId
+      });
 
-    const assessmentChatEntry = {
-      user: "",
-      system: assessmentResponse.apiResponseText,
-    };
+      setLlmContent(assessmentResponse.apiResponseText);
 
-    setChatHistory((prev) => {
-      const finalHistory = [...prev, assessmentChatEntry];
-      sessionStorage.setItem("chatHistory", JSON.stringify(finalHistory));
-      return finalHistory;
-    });
+      const assessmentChatEntry = {
+        user: "",
+        system: assessmentResponse.apiResponseText,
+      };
 
-    setSessionHistory((prev) => [
-      ...prev,
-      { Mentee: "", Mentor: assessmentResponse.apiResponseText },
-    ]);
+      setChatHistory((prev) => {
+        const finalHistory = [...prev, assessmentChatEntry];
+        sessionStorage.setItem("chatHistory", JSON.stringify(finalHistory));
+        return finalHistory;
+      });
 
-    setCurrentChatStatus("completed");
-    setIsChatEnded(true);
-    setEndReason("endRequested");
+      setSessionHistory((prev) => [
+        ...prev,
+        { Mentee: "", Mentor: assessmentResponse.apiResponseText },
+      ]);
 
-  } catch (error) {
-    toast.error("❌ Failed to end session and load assessment.");
-    console.error("End session error:", error);
-  } finally {
-    setIsLoading(false);
-    setIsProcessingAssessment(false); // Reset assessment processing state
-  }
-};
+      setCurrentChatStatus("completed");
+      setIsChatEnded(true);
+      setEndReason("endRequested");
+
+    } catch (error) {
+      toast.error("❌ Failed to end session and load assessment.");
+      console.error("End session error:", error);
+    } finally {
+      setIsLoading(false);
+      setIsProcessingAssessment(false); // Reset assessment processing state
+    }
+  };
 
 
   // Function to restart without saving
@@ -611,23 +611,23 @@ const batchId = sessionStorage.getItem("batchId");
       const userPrompt = prompt.trim();
       setPrompt("");
       const organizationId = sessionStorage.getItem("organizationId");
-  const batchId = sessionStorage.getItem("batchId");
+      const batchId = sessionStorage.getItem("batchId");
 
-  const initialResponse = await processPromptAndCallLLM({
-    username,
-    selectedPrompt,
-    selectedModel: "gpt-4o",
-    sessionHistory,
-    userPrompt: userPrompt,
-    selectedConcept: selectedConcept,
-    apiKey,
-    organizationId, // ✅ properly fetched from sessionStorage
-    batchId, 
-  });
+      const initialResponse = await processPromptAndCallLLM({
+        username,
+        selectedPrompt,
+        selectedModel: "gpt-4o",
+        sessionHistory,
+        userPrompt: userPrompt,
+        selectedConcept: selectedConcept,
+        apiKey,
+        organizationId, // ✅ properly fetched from sessionStorage
+        batchId,
+      });
 
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-      
-     
+
+
 
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
@@ -658,11 +658,11 @@ const batchId = sessionStorage.getItem("batchId");
       ]);
 
       // Check for end conditions
-      if ( newEndRequested || newInteractionCompleted) {
+      if (newEndRequested || newInteractionCompleted) {
         console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
         setIsProcessingAssessment(true);
         const organizationId = sessionStorage.getItem("organizationId");
-const batchId = sessionStorage.getItem("batchId");
+        const batchId = sessionStorage.getItem("batchId");
         const assessmentResponse = await processPromptAndCallLLM({
           username,
           selectedPrompt: "assessmentPrompt",
@@ -675,7 +675,7 @@ const batchId = sessionStorage.getItem("batchId");
           selectedConcept: selectedConcept,
           apiKey,
           organizationId,     // ✅ Add this
-  batchId   
+          batchId
         });
 
         setLlmContent(assessmentResponse.apiResponseText);
@@ -697,8 +697,8 @@ const batchId = sessionStorage.getItem("batchId");
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
         console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
-        
-        
+
+
         // setCurrentStage(7);
         setCurrentChatStatus('completed');
 
@@ -721,12 +721,12 @@ const batchId = sessionStorage.getItem("batchId");
     }
   };
   const handleDownloadConcept = (downloadLink, conceptName) => {
-  if (!downloadLink) {
-    toast.warn(`No download available for ${conceptName}`);
-    return;
-  }
-  window.open(downloadLink, '_blank');
-};
+    if (!downloadLink) {
+      toast.warn(`No download available for ${conceptName}`);
+      return;
+    }
+    window.open(downloadLink, '_blank');
+  };
   const getCurrentStageForAPI = (saveStatus) => {
     // If user is manually setting status, use that
     if (saveStatus === "not_started") {
@@ -736,7 +736,7 @@ const batchId = sessionStorage.getItem("batchId");
       if (currentStage === 0) return 0; // Just started, no progress yet
       return Math.min(Math.max(currentStage - 1, 0), 5); // Convert progress stages 1-6 to API stages 0-5
     }
- 
+
 
     // Fallback: determine from current frontend state
     const frontendStatus = getStageStatus();
@@ -944,18 +944,18 @@ const batchId = sessionStorage.getItem("batchId");
       if (!newKey) {
         setIsInitializing(false);
         await fetchConcepts();
-        return; 
+        return;
       }
     }
-    
+
     if (!username || !userId) {
       setIsInitializing(false);
       await fetchConcepts();
       return;
     }
-    
-    
-    
+
+
+
     setIsLoading(true);
     setIsInitializing(true);
 
@@ -1182,9 +1182,9 @@ const batchId = sessionStorage.getItem("batchId");
 
   const handleConceptSelect = async (concept) => {
     if (isProcessingAssessment) {
-    toast.warn("⚠️ Please wait, assessment is being processed.");
-    return;
-  }
+      toast.warn("⚠️ Please wait, assessment is being processed.");
+      return;
+    }
     console.log("🎯 Concept selected:", concept.concept_name);
     setSelectedConcept(concept);
     setShowConceptDropdown(false);
@@ -1229,7 +1229,7 @@ const batchId = sessionStorage.getItem("batchId");
   }, [username, userId]);
 
 
-   useEffect(() => {
+  useEffect(() => {
     if (username && userId && apiKey) {
       const initializeSession = async () => {
         console.log("🚀 Starting session initialization with API key available");
@@ -1302,6 +1302,16 @@ const batchId = sessionStorage.getItem("batchId");
   }, [isInitializing, chatHistory.length]);
 
   useEffect(() => {
+    const disableRightClick = (e) => e.preventDefault();
+    document.addEventListener("contextmenu", disableRightClick);
+    return () => {
+      document.removeEventListener("contextmenu", disableRightClick);
+    };
+  }, []);
+
+  useEffect(() => {
+    // const disableRightClick = (e) => e.preventDefault();
+    // document.addEventListener("contextmenu", disableRightClick);
     if (
       chatHistory.length > 0 &&
       !isInitializing &&
@@ -1324,8 +1334,15 @@ const batchId = sessionStorage.getItem("batchId");
         handleSaveChat('inprogress', false); // Save as inprogress without loader
       }
     }
-  }, [chatHistory, isInitializing, currentChatStatus, isLoading]);
 
+
+  }, [chatHistory, isInitializing, currentChatStatus, isLoading]);
+  const handleKeyDown = (e) => {
+  if (e.ctrlKey) {
+    e.preventDefault(); // block all Ctrl + key actions
+    console.log(`Blocked Ctrl + ${e.key}`);
+  }
+};
   return (
     <div className="learning-dashboard">
       <Sidebar isProcessingAssessment={isProcessingAssessment} />
@@ -1383,34 +1400,34 @@ const batchId = sessionStorage.getItem("batchId");
         </div>
       )}
       {showEndSessionDialog && (
-  <div className="restart-dialog-overlay">
-    <div className="restart-dialog">
-      <div className="restart-dialog-header">
-        <FiAlertCircle className="restart-dialog-icon" />
-        <h3>End Current Session?</h3>
-      </div>
-      <div className="restart-dialog-content">
-        <p>This will end your current learning session and show an assessment. Are you sure?</p>
-      </div>
-      <div className="restart-dialog-actions">
-        <button
-          className="restart-btn save-and-restart"
-          onClick={handleEndSession}
-          disabled={isLoading}
-        >
-          <FiCheckCircle /> Yes, End Session
-        </button>
-        <button
-          className="restart-btn cancel"
-          onClick={() => setShowEndSessionDialog(false)}
-          disabled={isLoading}
-        >
-          Cancel
-        </button>
-      </div>
-    </div>
-  </div>
-)}
+        <div className="restart-dialog-overlay">
+          <div className="restart-dialog">
+            <div className="restart-dialog-header">
+              <FiAlertCircle className="restart-dialog-icon" />
+              <h3>End Current Session?</h3>
+            </div>
+            <div className="restart-dialog-content">
+              <p>This will end your current learning session and show an assessment. Are you sure?</p>
+            </div>
+            <div className="restart-dialog-actions">
+              <button
+                className="restart-btn save-and-restart"
+                onClick={handleEndSession}
+                disabled={isLoading}
+              >
+                <FiCheckCircle /> Yes, End Session
+              </button>
+              <button
+                className="restart-btn cancel"
+                onClick={() => setShowEndSessionDialog(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
       {/* Main Dashboard Layout */}
@@ -1442,45 +1459,45 @@ const batchId = sessionStorage.getItem("batchId");
               </div>
 
               {showConceptDropdown && (
-  <div className="concept-dropdown">
-    {conceptsLoading ? (
-      <div className="concept-option">
-        <div className="concept-name">Loading...</div>
-      </div>
-    ) : concepts.length > 0 ? (
-      concepts.map((concept) => (
-        <div
-          key={concept.concept_id}
-          className="concept-option flex items-center justify-between cursor-pointer"
-          onClick={() => handleConceptSelect(concept)}
-        >
-          <div className="concept-name">{concept.concept_name}</div>
-          {concept.download_link && (
-            <button
-              className="download-btn1 relative group"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDownloadConcept(concept.download_link, concept.concept_name);
-              }}
-              data-tooltip="Download concept material"
-              aria-label={`Download ${concept.concept_name} material`}
-            >
-              <FiDownload className="w-5 h-5" />
-              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-  Download
-</span>
-            </button>
-          )}
-        </div>
-      ))
-    ) : (
-      <div className="concept-option">
-        <div className="concept-name">No concepts available</div>
-        <div className="concept-description">Contact your administrator</div>
-      </div>
-    )}
-  </div>
-)}
+                <div className="concept-dropdown">
+                  {conceptsLoading ? (
+                    <div className="concept-option">
+                      <div className="concept-name">Loading...</div>
+                    </div>
+                  ) : concepts.length > 0 ? (
+                    concepts.map((concept) => (
+                      <div
+                        key={concept.concept_id}
+                        className="concept-option flex items-center justify-between cursor-pointer"
+                        onClick={() => handleConceptSelect(concept)}
+                      >
+                        <div className="concept-name">{concept.concept_name}</div>
+                        {concept.download_link && (
+                          <button
+                            className="download-btn1 relative group"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadConcept(concept.download_link, concept.concept_name);
+                            }}
+                            data-tooltip="Download concept material"
+                            aria-label={`Download ${concept.concept_name} material`}
+                          >
+                            <FiDownload className="w-5 h-5" />
+                            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                              Download
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="concept-option">
+                      <div className="concept-name">No concepts available</div>
+                      <div className="concept-description">Contact your administrator</div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1516,7 +1533,7 @@ const batchId = sessionStorage.getItem("batchId");
                     <div className="stage-progress-content">
                       <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
                         <div className="progress-info">
-      
+
                           <span>
                             {currentStage <= 1 ? "Starting..." :
                               currentStage === 7 ? "Completed" :
@@ -1524,17 +1541,17 @@ const batchId = sessionStorage.getItem("batchId");
                           </span>
                           <span>
                             {(() => {
-                            const completed = Math.max(currentStage - 2, 0);
-                            return `${Math.round((completed / 5) * 100)}%`;
-                          })()}
+                              const completed = Math.max(currentStage - 2, 0);
+                              return `${Math.round((completed / 5) * 100)}%`;
+                            })()}
                           </span>
                         </div>
                         <div className="progress-bar">
                           <div
                             className="progress-fill"
-                           style={{
-                          width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
-                          }}
+                            style={{
+                              width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
+                            }}
                           ></div>
                         </div>
                         <div className="substages">
@@ -1587,9 +1604,9 @@ const batchId = sessionStorage.getItem("batchId");
             <button
               className="top-action-btn top-download-btn"
               onClick={() => !isProcessingAssessment && handleDownloadPDF()}
-  disabled={chatHistory.length === 0 || isProcessingAssessment || currentChatStatus === 'not_started' }
-  data-tooltip="Export Chat"
->
+              disabled={chatHistory.length === 0 || isProcessingAssessment || currentChatStatus === 'not_started'}
+              data-tooltip="Export Chat"
+            >
               <FiDownload />
             </button>
           </div>
@@ -1688,54 +1705,55 @@ const batchId = sessionStorage.getItem("batchId");
               {isLoading && (
                 <div className="loading-indicator">
                   <div className="loading-spinner"></div>
-                 <span>
-        {isProcessingAssessment
-          ? "Please wait. We are calculating your score"
-          : "AI is thinking..."
-        }
-      </span>
+                  <span>
+                    {isProcessingAssessment
+                      ? "Please wait. We are calculating your score"
+                      : "AI is thinking..."
+                    }
+                  </span>
 
                 </div>
               )}
 
               <div className="chat-input-wrapper">
-             <div className="tooltip-container" data-tooltip={
-  currentChatStatus === 'not_started' ? "Start a conversation first" : 
-  isChatEnded ? "Session already ended" : 
-  "End Session"
-}>
-  <button
-    className="end-session-btn"
-    onClick={() => setShowEndSessionDialog(true)}
-    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded}
-    style={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-  >
-    <FiStopCircle />
-  </button>
-</div>
+                <div className="tooltip-container" data-tooltip={
+                  currentChatStatus === 'not_started' ? "Start a conversation first" :
+                    isChatEnded ? "Session already ended" :
+                      "End Session"
+                }>
+                  <button
+                    className="end-session-btn"
+                    onClick={() => setShowEndSessionDialog(true)}
+                    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded}
+                    style={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                  >
+                    <FiStopCircle />
+                  </button>
+                </div>
 
 
                 <textarea
-  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
-  placeholder={
-    isChatEnded
-      ? "This conversation has ended. Please restart to begin a new session."
-      : isInitializing
-        ? "Initializing..."
-        : selectedConcept
-          ? "Ask your mentor anything..."
-          : conceptsLoading
-            ? "Loading concepts..."
-            : "Please select a concept first..."
-  }
-  value={prompt}
-  onChange={(e) => setPrompt(e.target.value)}
-  onKeyPress={handleKeyPress}
-  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
-  rows="1"
-/>
+                  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
+                  onKeyDown={handleKeyDown}
+                  placeholder={
+                    isChatEnded
+                      ? "This conversation has ended. Please restart to begin a new session."
+                      : isInitializing
+                        ? "Initializing..."
+                        : selectedConcept
+                          ? "Ask your mentor anything..."
+                          : conceptsLoading
+                            ? "Loading concepts..."
+                            : "Please select a concept first..."
+                  }
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+                  rows="1"
+                />
 
-{/* 🎤 Mic Button
+                {/* 🎤 Mic Button
 <button
   className={`mic-button ${isListening ? 'listening' : ''}`}
   onClick={isListening ? stopListening : startListening}
@@ -1745,14 +1763,14 @@ const batchId = sessionStorage.getItem("batchId");
   {isListening ? "🛑" : "🎤"}
 </button> */}
 
-{/* Send Button */}
-<button
-  className="send-button"
-  onClick={handleSendClick}
-  disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
->
-  <FiSend />
-</button>
+                {/* Send Button */}
+                <button
+                  className="send-button"
+                  onClick={handleSendClick}
+                  disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
+                >
+                  <FiSend />
+                </button>
 
               </div>
 

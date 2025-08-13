@@ -4,13 +4,13 @@ import Sidebar from "../components/Sidebar.jsx";
 import "../styles/ConversationHistory.css";
 import axios from "axios";
 import PDFDownloader from "../components/PDFDownloader.jsx";
-import AssessmentDisplay, { 
-  hasAssessmentData, 
-  extractScoringData, 
-  calculateOverallScore, 
-  getScoreColor, 
-  getScoreLabel, 
-  formatCriterionName 
+import AssessmentDisplay, {
+  hasAssessmentData,
+  extractScoringData,
+  calculateOverallScore,
+  getScoreColor,
+  getScoreLabel,
+  formatCriterionName
 } from "../components/AssessmentDisplay.jsx";
 import {
   FiEye,
@@ -69,18 +69,18 @@ const ConversationHistory = () => {
   // Convert conversation to format expected by PDFDownloader
   const convertConversationForPDF = (conversation) => {
     if (!conversation || !conversation.conversation) return [];
-    
+
     return conversation.conversation.map(entry => ({
       user: entry.user || "",
       system: entry.system || ""
     }));
   };
   useEffect(() => {
-  const storedUser = JSON.parse(sessionStorage.getItem("user"));
-  if (storedUser) {
-    setUserData(storedUser);
-  }
-}, []);
+    const storedUser = JSON.parse(sessionStorage.getItem("user"));
+    if (storedUser) {
+      setUserData(storedUser);
+    }
+  }, []);
 
   // Create concept object for PDFDownloader
   const createConceptObject = (conversation) => ({
@@ -92,7 +92,7 @@ const ConversationHistory = () => {
     if (!conversation) return;
 
     setIsDownloadingPDF(true);
-    
+
     try {
       // Create temporary PDF downloader instance for this specific conversation
       const tempPDFDownloader = PDFDownloader({
@@ -275,7 +275,13 @@ const ConversationHistory = () => {
       }
     }
   }, [userId, filterStatus, searchTerm]); // Added searchTerm to dependencies
-
+  useEffect(() => {
+    const disableRightClick = (e) => e.preventDefault();
+    document.addEventListener("contextmenu", disableRightClick);
+    return () => {
+      document.removeEventListener("contextmenu", disableRightClick);
+    };
+  }, []);
   // Refresh data
   const handleRefresh = () => {
     fetchChatHistory();
