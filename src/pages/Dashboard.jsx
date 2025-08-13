@@ -1304,8 +1304,19 @@ function Dashboard() {
   useEffect(() => {
     const disableRightClick = (e) => e.preventDefault();
     document.addEventListener("contextmenu", disableRightClick);
+     
     return () => {
       document.removeEventListener("contextmenu", disableRightClick);
+       
+    };
+  }, []);
+    useEffect(() => {
+    const disableCtrlShortcuts = (e) => e.preventDefault();
+
+      document.addEventListener("keydown", disableCtrlShortcuts);
+    return () => {
+     
+        document.removeEventListener("keydown", disableCtrlShortcuts);
     };
   }, []);
 

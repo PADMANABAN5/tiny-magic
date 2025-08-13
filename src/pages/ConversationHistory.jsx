@@ -282,6 +282,16 @@ const ConversationHistory = () => {
       document.removeEventListener("contextmenu", disableRightClick);
     };
   }, []);
+  useEffect(() => {
+      const disableCtrlShortcuts = (e) => e.preventDefault();
+  
+        document.addEventListener("keydown", disableCtrlShortcuts);
+      return () => {
+       
+          document.removeEventListener("keydown", disableCtrlShortcuts);
+      };
+    }, []);
+  
   // Refresh data
   const handleRefresh = () => {
     fetchChatHistory();
