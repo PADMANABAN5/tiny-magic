@@ -1519,7 +1519,7 @@ function Dashboard() {
               )}
 
               <div className="chat-input-wrapper">
-                <div
+                {/* <div
                   className="tooltip-container"
                   data-tooltip={
                     currentChatStatus === 'not_started' ? "Start a conversation first" :
@@ -1535,7 +1535,7 @@ function Dashboard() {
                   >
                     <FiStopCircle />
                   </button>
-                </div>
+                </div> */}
 
                 <textarea
                   className={`chat-input ${isChatEnded ? 'disabled' : ''}`}

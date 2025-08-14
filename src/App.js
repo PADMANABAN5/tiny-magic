@@ -73,9 +73,9 @@ function App() {
         <Route path="/variables" element={
           <PrivateRoute roles={["orguser"]}><Variables /></PrivateRoute>
         } />
-        <Route path="/prompt" element={
+        {/* <Route path="/prompt" element={
           <PrivateRoute roles={["superadmin"]}><Prompt /></PrivateRoute>
-        } />
+        } /> */}
 
         <Route path="/superadmin" element={
           <PrivateRoute roles={["superadmin"]}><Superadmin /></PrivateRoute>

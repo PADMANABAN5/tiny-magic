@@ -300,18 +300,18 @@ export default function Concepts() {
               className="d-flex justify-content-between"
               style={{ width: "26%" }}
             >
-              <Button
+              {/* <Button
                 variant="secondary"
                 onClick={() => navigate("/archivedconcepts")}
                 style={{ width: "49%" }}
                 aria-label="View archived concepts"
               >
                 <FaHistory />
-              </Button>
+              </Button> */}
               <Button
                 variant="primary"
                 onClick={() => openCreateModal()}
-                style={{ width: "49%" }}
+                style={{ width: "49%",marginLeft:"170px"}}
                 aria-label="Create new concept"
               >
                 <FaPlus />
@@ -366,7 +366,7 @@ export default function Concepts() {
                       <th>Concept Name</th>
                       <th>Concept Content</th>
                       <th>Status</th>
-                      <th>Version</th>
+                      {/* <th>Version</th> */}
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -395,7 +395,7 @@ export default function Concepts() {
                               {concept.is_active ? "Active" : "Inactive"}
                             </span>
                           </td>
-                          <td>{concept.version}</td>
+                          {/* <td>{concept.version}</td> */}
                           <td>
                             <button
                               className="btn btn-warning btn-sm"
