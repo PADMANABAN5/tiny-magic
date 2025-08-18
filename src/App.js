@@ -29,6 +29,7 @@ import Mentorpodusers from './pages/Mentorpodusers.jsx';
 import MentorPodusersprogress from './pages/MentorPodusersprogress.jsx';
 import Archived from './pages/Archived.jsx';
 import ArchivedConcepts from './pages/Archivedconcepts.jsx';
+import MaintenancePage from './pages/MaintainencePage.jsx'; // Import the new MaintenancePage
 
 // ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
@@ -55,8 +56,11 @@ function getRedirectPath() {
 
   return "/login";
 }
-
+const MAINTENANCE_MODE = false; 
 function App() {
+   if (MAINTENANCE_MODE) {
+    return <MaintenancePage />;
+  }
   return (
     
       <Routes>
