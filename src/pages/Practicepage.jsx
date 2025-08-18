@@ -31,9 +31,8 @@ import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
-
-function Dashboard() {
-  const [prompt, setPrompt] = useState("");
+function Practicepage() {
+ const [prompt, setPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const chatEndRef = useRef(null);
   const [selectedPrompt, setSelectedPrompt] = useState("conceptMentor");
@@ -1556,7 +1555,7 @@ function Dashboard() {
                       : isInitializing
                         ? "Initializing..."
                         : selectedConcept
-                          ? "Ask your mentor anything..."
+                          ? "Ask your mentor anything let's practice!"
                           : conceptsLoading
                             ? "Loading concepts..."
                             : "Please select a concept first..."
@@ -1600,4 +1599,4 @@ function Dashboard() {
   );
 }
 
-export default Dashboard;
+export default Practicepage

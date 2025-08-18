@@ -89,6 +89,22 @@ function Sidebar({ isProcessingAssessment }) {
                     <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
                     Dashboard
                   </Link>
+                  {/* <Link
+                    to="/practice"
+                    className={`dropdown-item d-flex align-items-center ${
+                      location.pathname === "/practice" ? "active" : ""
+                    } ${isProcessingAssessment ? "disabled" : ""}`}
+                    onClick={(e) => {
+                      if (isProcessingAssessment) {
+                        e.preventDefault();
+                      } else {
+                        setShowDropdown(false);
+                      }
+                    }}
+                  >
+                    <FaBook className="me-2" style={{ fontSize: "16px" }} />
+                     Practice
+                  </Link> */}
                   <Link
                     to="/conversationhistory"
                     className={`dropdown-item d-flex align-items-center ${
