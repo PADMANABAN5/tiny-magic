@@ -1358,6 +1358,7 @@ function Dashboard() {
     <div className="learning-dashboard">
       <Sidebar isProcessingAssessment={isProcessingAssessment} />
 
+
       {/* Toast Container for Notifications */}
       <ToastContainer
         position="top-right"
