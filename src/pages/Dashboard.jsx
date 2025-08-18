@@ -670,9 +670,20 @@ function Dashboard() {
       return;
     }
 
+     if (!selectedConcept || !selectedConcept.concept_name) {
+  const concepts = await fetchAndReturnConcepts();
+  if (concepts.length > 0) {
+    setSelectedConcept(concepts[0]);
+    // Proceed with save
+  } else {
+    toast.warn("No concepts available. Cannot save.");
+    return;
+  }
+}
+
     const statusToSave = requestedStatus || getFrontendStatusForSave();
     const stageToSave = getCurrentStageForAPI(statusToSave);
-    const conceptNameToSave = selectedConcept?.concept_name || null;
+    const conceptNameToSave = selectedConcept?.concept_name;
 
     let scoring_data = null;
     if (statusToSave === 'completed' && llmContent) {

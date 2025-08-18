@@ -44,10 +44,25 @@ export const processPromptAndCallLLM = async ({
     // Return the parsed response from backend
     return response.data.data;
   } catch (error) {
+    // ✅ Handle token expiration (401 Unauthorized)
+    if (error.response && error.response.status === 401) {
+      sessionStorage.removeItem("token"); // Clear token
+      setTimeout(() => {
+        window.location.href = "/login"; // Redirect to login page
+      }, 1500);
+      return {
+        apiResponseText: "Unauthorized. Please log in again.",
+        interactionCompleted: false,
+        endRequested: false,
+        readyForNextStage: false,
+        currentStage: 0,
+        pauseRequested: false,
+      };
+    }
+
     console.error("Error in processPromptAndCallLLM:", error);
     return {
-      apiResponseText:
-        "An error occurred while processing your request. Please try again.",
+      apiResponseText: "An error occurred while processing your request. Please try again.",
       interactionCompleted: false,
       endRequested: false,
       readyForNextStage: false,
@@ -56,3 +71,4 @@ export const processPromptAndCallLLM = async ({
     };
   }
 };
+
