@@ -16,6 +16,7 @@ function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(true);
 
   // New state variables for password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -223,6 +224,12 @@ function Login() {
         <div className="sphere sphere5"></div>
 
         <div className="login-card">
+           {isMaintenanceMode && (
+    <div className="maintenance-msg">
+      🚧 The platform is under maintenance from **8:00 AM - 3:00 PM**. We'll be back shortly!
+    </div>
+    
+  )}
           <h2 className="login-title">Login</h2>
 
           {isLoggedIn ? (
