@@ -77,7 +77,7 @@ function Supersidebar() {
                     <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
                     Dashboard
                   </Link>
-                   <Link
+                   {/* <Link
                       to="/prompt"
                       className={`dropdown-item d-flex align-items-center ${
                       location.pathname === "/prompt" ? "active" : ""
@@ -86,7 +86,7 @@ function Supersidebar() {
                       >
                       <FaSlidersH  className="me-2" style={{ fontSize: "16px" }} />
                       Prompt
-                      </Link>
+                      </Link> */}
                 </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>

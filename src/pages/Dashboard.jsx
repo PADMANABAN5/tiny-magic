@@ -110,7 +110,9 @@ function Dashboard() {
   const [showConceptDropdown, setShowConceptDropdown] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isCalculatingScore, setIsCalculatingScore] = useState(false);
-  
+  // Lock for initialization to prevent race conditions
+  const isInitializingRef = useRef(false);
+
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
@@ -188,6 +190,7 @@ function Dashboard() {
   const fetchAndReturnConcepts = async () => {
     if (!username || conceptsLoading) return [];
 
+    setConceptsLoading(true);
     try {
       console.log("🎯 Fetching concepts for fresh session:", username);
       const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
@@ -204,6 +207,8 @@ function Dashboard() {
     } catch (error) {
       console.error("❌ Error fetching concepts for fresh session:", error);
       return [];
+    } finally {
+      setConceptsLoading(false);
     }
   };
 
@@ -231,17 +236,6 @@ function Dashboard() {
           });
         } else {
           console.warn("⚠️ Could not find batchId or orgId in pod-user response.");
-        }
-
-        const firstActiveConcept = conceptsData.find(c => c.is_active) || conceptsData[0];
-        if (firstActiveConcept && !selectedConcept) {
-          setSelectedConcept(firstActiveConcept);
-          if (chatHistory.length === 0 && !isInitializing) {
-            console.log("🚀 Auto-starting conversation after concept selection");
-            setTimeout(async () => {
-              await initiateFirstMentorMessageWithConcept(firstActiveConcept);
-            }, 500);
-          }
         }
       } else {
         console.warn("⚠️ No concepts data in response");
@@ -670,16 +664,16 @@ function Dashboard() {
       return;
     }
 
-     if (!selectedConcept || !selectedConcept.concept_name) {
-  const concepts = await fetchAndReturnConcepts();
-  if (concepts.length > 0) {
-    setSelectedConcept(concepts[0]);
-    // Proceed with save
-  } else {
-    toast.warn("No concepts available. Cannot save.");
-    return;
-  }
-}
+    if (!selectedConcept || !selectedConcept.concept_name) {
+      const concepts = await fetchAndReturnConcepts();
+      if (concepts.length > 0) {
+        setSelectedConcept(concepts[0]);
+        // Proceed with save
+      } else {
+        toast.warn("No concepts available. Cannot save.");
+        return;
+      }
+    }
 
     const statusToSave = requestedStatus || getFrontendStatusForSave();
     const stageToSave = getCurrentStageForAPI(statusToSave);
@@ -839,13 +833,10 @@ function Dashboard() {
   const checkSessionStatus = async (conceptName = null) => {
     if (!username || !userId) {
       setIsInitializing(false);
-      await fetchConcepts();
       return;
     }
-    
-    setIsLoading(true);
-    setIsInitializing(true);
 
+    setIsLoading(true);
     try {
       let apiUrl = `${BASE_URL}/chat/session-status/${userId}`;
       if (conceptName) {
@@ -862,17 +853,12 @@ function Dashboard() {
           clearSessionData();
           setCurrentChatStatus('not_started');
 
-          await fetchConcepts();
-
-          setTimeout(async () => {
-            const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
-            if (currentConcepts.length > 0) {
-              const conceptToUse = selectedConcept || currentConcepts[0];
-              console.log("🚀 Starting fresh conversation for completed session:", conceptToUse.concept_name);
-              setSelectedConcept(conceptToUse);
-              await initiateFirstMentorMessageWithConcept(conceptToUse);
-            }
-          }, 1000);
+          const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+          if (currentConcepts.length > 0) {
+            const conceptToUse = currentConcepts.find(c => c.concept_name === chat.concept_name) || currentConcepts[0];
+            setSelectedConcept(conceptToUse);
+            await initiateFirstMentorMessageWithConcept(conceptToUse);
+          }
           return;
         }
 
@@ -909,23 +895,16 @@ function Dashboard() {
           sessionStorage.setItem("currentChatId", chat.id.toString());
           sessionStorage.setItem("sessionType", "resume");
 
-          if (concepts.length === 0) {
-            await fetchConcepts();
-          }
-
           if (chat.concept_name && concepts.length > 0) {
             const matchingConcept = concepts.find(c => c.concept_name === chat.concept_name);
             if (matchingConcept) {
               setSelectedConcept(matchingConcept);
               console.log("✅ Concept restored from session:", matchingConcept.concept_name);
-            } else {
-              console.warn("⚠️ Concept from session not found in available concepts:", chat.concept_name);
-              if (conceptName) {
-                const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
-                if (providedConcept) {
-                  setSelectedConcept(providedConcept);
-                  console.log("🔄 Using provided concept:", providedConcept.concept_name);
-                }
+            } else if (conceptName) {
+              const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+              if (providedConcept) {
+                setSelectedConcept(providedConcept);
+                console.log("🔄 Using provided concept:", providedConcept.concept_name);
               }
             }
           } else if (conceptName && concepts.length > 0) {
@@ -935,46 +914,11 @@ function Dashboard() {
               console.log("🔄 Using provided concept for fresh session:", providedConcept.concept_name);
             }
           }
-        } else if (sessionType === "fresh") {
+        } else {
           console.log("🆕 Starting fresh session");
           clearSessionData();
           setCurrentChatStatus('not_started');
 
-          if (concepts.length === 0) {
-            await fetchConcepts();
-          }
-
-          setTimeout(async () => {
-            const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
-            if (currentConcepts.length > 0) {
-              let conceptToUse;
-
-              if (conceptName) {
-                conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
-              }
-
-              if (!conceptToUse) {
-                conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
-              }
-
-              if (conceptToUse) {
-                console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
-                setSelectedConcept(conceptToUse);
-                await initiateFirstMentorMessageWithConcept(conceptToUse);
-              }
-            }
-          }, 1000);
-        }
-      } else {
-        console.log("⚠️ No session data, starting fresh");
-        clearSessionData();
-        setCurrentChatStatus('not_started');
-
-        if (concepts.length === 0) {
-          await fetchConcepts();
-        }
-
-        setTimeout(async () => {
           const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             let conceptToUse;
@@ -987,26 +931,18 @@ function Dashboard() {
               conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
             }
 
-            console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
-            setSelectedConcept(conceptToUse);
-            await initiateFirstMentorMessageWithConcept(conceptToUse);
-          } else {
-            console.error("❌ No concepts available for fresh conversation");
+            if (conceptToUse) {
+              console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
+              setSelectedConcept(conceptToUse);
+              await initiateFirstMentorMessageWithConcept(conceptToUse);
+            }
           }
-        }, 1000);
-      }
+        }
+      } else {
+        console.log("⚠️ No session data, starting fresh");
+        clearSessionData();
+        setCurrentChatStatus('not_started');
 
-      await fetchChatCounts();
-    } catch (error) {
-      console.error("❌ Error checking session status:", error);
-      clearSessionData();
-      setCurrentChatStatus('not_started');
-
-      if (concepts.length === 0) {
-        await fetchConcepts();
-      }
-
-      setTimeout(async () => {
         const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
         if (currentConcepts.length > 0) {
           let conceptToUse;
@@ -1019,16 +955,42 @@ function Dashboard() {
             conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
           }
 
-          console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
+          console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
           setSelectedConcept(conceptToUse);
           await initiateFirstMentorMessageWithConcept(conceptToUse);
         } else {
-          console.error("❌ No concepts available for error recovery");
+          console.error("❌ No concepts available for fresh conversation");
         }
-      }, 1000);
+      }
+
+      await fetchChatCounts();
+    } catch (error) {
+      console.error("❌ Error checking session status:", error);
+      clearSessionData();
+      setCurrentChatStatus('not_started');
+
+      const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+      if (currentConcepts.length > 0) {
+        let conceptToUse;
+
+        if (conceptName) {
+          conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+        }
+
+        if (!conceptToUse) {
+          conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
+        }
+
+        console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
+        setSelectedConcept(conceptToUse);
+        await initiateFirstMentorMessageWithConcept(conceptToUse);
+      } else {
+        console.error("❌ No concepts available for error recovery");
+      }
     } finally {
       setIsLoading(false);
       setIsInitializing(false);
+      isInitializingRef.current = false;
     }
   };
 
@@ -1068,21 +1030,31 @@ function Dashboard() {
   };
 
   useEffect(() => {
-    if (username && userId) {
+    if (username && userId && !isInitializingRef.current) {
+      isInitializingRef.current = true; // Set lock to prevent concurrent initializations
+      setIsInitializing(true);
       const initializeSession = async () => {
         console.log("🚀 Starting session initialization");
-        if (concepts.length === 0) {
-          await fetchConcepts();
-        }
+        try {
+          // Fetch concepts first
+          if (concepts.length === 0) {
+            await fetchConcepts();
+          }
 
-        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
-        if (currentConcepts.length > 0) {
-          const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
-          console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
-          await checkSessionStatus(initialConcept.concept_name);
-        } else {
-          console.log("⚠️ No concepts available, checking session without concept_name");
-          await checkSessionStatus();
+          const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+          if (currentConcepts.length > 0) {
+            const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
+            console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
+            setSelectedConcept(initialConcept); // Set initial concept before checking session
+            await checkSessionStatus(initialConcept.concept_name);
+          } else {
+            console.log("⚠️ No concepts available, checking session without concept_name");
+            await checkSessionStatus();
+          }
+        } catch (error) {
+          console.error("❌ Error during session initialization:", error);
+          setIsInitializing(false);
+          isInitializingRef.current = false;
         }
       };
 
@@ -1246,7 +1218,7 @@ function Dashboard() {
             </div>
             <div className="concept-selector" ref={conceptDropdownRef}>
               <div
-                className={`concept-dropdown-trigger ${isProcessingAssessment ? 'disabled' : ''}`}
+                className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
                 onClick={() => !isProcessingAssessment && setShowConceptDropdown(!showConceptDropdown)}
               >
                 <span className="concept-text">
@@ -1435,6 +1407,7 @@ function Dashboard() {
                           <div className="message-text">{item.user}</div>
                         </div>
                       </div>
+
                     )}
                     <div className="message mentor-message">
                       <div className="message-avatar mentor">
@@ -1494,7 +1467,7 @@ function Dashboard() {
                 </div>
               )}
               <div className="chat-input-wrapper">
-                <div className="tooltip-container" data-tooltip={
+                {/* <div className="tooltip-container" data-tooltip={
                   currentChatStatus === 'not_started' ? "Start a conversation first" : 
                   isChatEnded ? "Session already ended" : 
                   "End Session"
@@ -1507,7 +1480,7 @@ function Dashboard() {
                   >
                     <FiStopCircle />
                   </button>
-                </div>
+                </div> */}
                 <textarea
                   className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
                   placeholder={
