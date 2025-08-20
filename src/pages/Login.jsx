@@ -143,7 +143,6 @@ function Login() {
       return;
     }
 
-
     if (!/[0-9]/.test(newPassword)) {
       setError("🔑 Password must contain at least one number.");
       return;
@@ -186,10 +185,13 @@ function Login() {
       setNewPassword("");
       setConfirmPassword("");
       setIsSubmitting(false);
-      alert("✅ Password updated successfully! Please login with your new password.");
+      alert(
+        "✅ Password updated successfully! Please login with your new password."
+      );
     } catch (err) {
       const status = err.response?.status;
-      const apiMessage = err.response?.data?.error || err.response?.data?.message;
+      const apiMessage =
+        err.response?.data?.error || err.response?.data?.message;
 
       if (status === 400) {
         setError("⚠️ Invalid request. Please check your inputs.");
@@ -200,7 +202,9 @@ function Login() {
       } else if (status === 404) {
         setError("⚠️ Change password route not found. Contact support.");
       } else {
-        setError(apiMessage || "⚠️ Failed to change password. Please try again.");
+        setError(
+          apiMessage || "⚠️ Failed to change password. Please try again."
+        );
       }
     }
   };
@@ -224,12 +228,12 @@ function Login() {
         <div className="sphere sphere5"></div>
 
         <div className="login-card">
-           {isMaintenanceMode && (
-    <div className="maintenance-msg">
-      🚧 The platform is under maintenance from **8:00 AM - 3:00 PM**. We'll be back shortly!
-    </div>
-    
-  )}
+          {isMaintenanceMode && (
+            <div className="maintenance-msg">
+              🚧 The platform is under maintenance right now. It will be live
+              shortly!
+            </div>
+          )}
           <h2 className="login-title">Login</h2>
 
           {isLoggedIn ? (

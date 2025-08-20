@@ -16,7 +16,7 @@ export const processPromptAndCallLLM = async (
     batchId,
   },
   retries = 3,
-  retryDelay = 1000
+  retryDelay = 2000
 ) => {
   try {
     // Validate inputs
@@ -61,9 +61,13 @@ export const processPromptAndCallLLM = async (
     };
 
     // Log request for debugging
-    console.log("Sending request to /api/prompts/process:", requestData);
+    console.log(
+      `Sending request to /api/prompts/process (Prompt: ${selectedPrompt}):`,
+      requestData
+    );
 
     // Attempt request with retries
+    let lastError;
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
         const response = await axios.post(
@@ -73,8 +77,9 @@ export const processPromptAndCallLLM = async (
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
+              "Cache-Control": "no-cache",
             },
-            timeout: 180000, // 180-second timeout
+            timeout: 150000, // 150-second timeout for long-running requests
           }
         );
 
@@ -82,18 +87,26 @@ export const processPromptAndCallLLM = async (
           throw new Error(response.data.message || "Backend processing failed");
         }
 
-        console.log("Received response:", response.data.data);
+        console.log(
+          `Received response for ${selectedPrompt}:`,
+          response.data.data
+        );
         return response.data.data;
       } catch (error) {
-        console.error(`Attempt ${attempt} failed:`, error);
+        console.error(
+          `Attempt ${attempt} failed for ${selectedPrompt}:`,
+          error
+        );
+        lastError = error;
         if (attempt === retries) {
-          throw error; // Throw on final attempt
+          throw error;
         }
         await new Promise((resolve) =>
           setTimeout(resolve, retryDelay * attempt)
         );
       }
     }
+    throw lastError;
   } catch (error) {
     // Handle token expiration (401 Unauthorized)
     if (error.response?.status === 401) {
@@ -112,12 +125,14 @@ export const processPromptAndCallLLM = async (
       };
     }
 
-    // Handle CORS or network errors
-    if (error.code === "ERR_NETWORK") {
-      console.error("Network error:", error.message);
+    // Handle timeout or network errors
+    if (error.code === "ECONNABORTED" || error.code === "ERR_NETWORK") {
+      console.error(
+        `Network/Timeout error for ${selectedPrompt}:`,
+        error.message
+      );
       return {
-        apiResponseText:
-          "Network error: Unable to reach the server. Please check your connection or try again later.",
+        apiResponseText: `Network error: Request timed out or failed to reach the server. Please try again later.`,
         interactionCompleted: false,
         endRequested: false,
         readyForNextStage: false,
@@ -127,7 +142,10 @@ export const processPromptAndCallLLM = async (
     }
 
     // Handle other errors
-    console.error("Error in processPromptAndCallLLM:", error);
+    console.error(
+      `Error in processPromptAndCallLLM for ${selectedPrompt}:`,
+      error
+    );
     return {
       apiResponseText:
         error.response?.data?.message ||
