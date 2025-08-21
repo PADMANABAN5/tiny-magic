@@ -29,6 +29,7 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
+import * as Sentry from "@sentry/react";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -58,6 +59,7 @@ function Dashboard() {
 
     if (!SpeechRecognition) {
       toast.error("Speech recognition not supported in this browser.");
+    
       return;
     }
 
@@ -193,6 +195,7 @@ function Dashboard() {
     setConceptsLoading(true);
     try {
       console.log("🎯 Fetching concepts for fresh session:", username);
+      Sentry.captureMessage(`Fetching concepts for fresh session: ${username}`, "info");
       const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
 
       if (response.data && response.data.success && response.data.data) {
@@ -202,10 +205,12 @@ function Dashboard() {
         return conceptsData;
       } else {
         console.warn("⚠️ No concepts data in response for fresh session");
+        Sentry.captureMessage("No concepts data found in response", "warning");
         return [];
       }
     } catch (error) {
       console.error("❌ Error fetching concepts for fresh session:", error);
+      Sentry.captureException(error);
       return [];
     } finally {
       setConceptsLoading(false);
@@ -224,6 +229,7 @@ function Dashboard() {
         const conceptsData = data.batch?.concepts || [];
 
         console.log("✅ Concepts loaded:", conceptsData.length);
+        Sentry.captureMessage(`Concepts loaded: ${conceptsData.length}`, "info");
         setConcepts(conceptsData);
 
         const batch = response.data.data.batch;
@@ -234,6 +240,7 @@ function Dashboard() {
             batchId: batch.batch_id,
             orgId: batch.organization_id,
           });
+          Sentry.captureMessage(`Stored batchId and orgId in sessionStorage`, "info");
         } else {
           console.warn("⚠️ Could not find batchId or orgId in pod-user response.");
         }
@@ -242,6 +249,7 @@ function Dashboard() {
         setConcepts([]);
       }
     } catch (error) {
+      Sentry.captureException(error);
       console.error("❌ Error fetching concepts:", error);
       setConcepts([]);
       if (error.response?.status !== 404) {
@@ -291,6 +299,7 @@ function Dashboard() {
 
       console.log("✅ First mentor message initiated successfully");
     } catch (err) {
+      Sentry.captureException(err);
       console.error("❌ Failed to load initial mentor message:", err);
       toast.error("Failed to start conversation. Please try again.");
     } finally {
@@ -366,6 +375,7 @@ function Dashboard() {
       sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
       sessionStorage.setItem("sessionType", "fresh");
     } catch (err) {
+      Sentry.captureException(err);
       console.error("❌ Failed to load initial mentor message:", err);
       toast.error("Failed to start conversation. Please try again.");
     } finally {
@@ -422,6 +432,7 @@ function Dashboard() {
     } catch (error) {
       toast.error("❌ Failed to end session and load assessment.");
       console.error("End session error:", error);
+      Sentry.captureException(error);
     } finally {
       setIsLoading(false);
       setIsProcessingAssessment(false);
@@ -448,6 +459,7 @@ function Dashboard() {
 
       await fetchChatCounts();
     } catch (error) {
+      Sentry.captureException(error);
       console.error("❌ Error restarting chat:", error);
       toast.error("Failed to restart conversation. Please try again.");
     } finally {
@@ -458,6 +470,7 @@ function Dashboard() {
   const restartWithSaving = async () => {
     setShowRestartDialog(false);
     console.log("💾 Saving session before restart");
+    Sentry.captureMessage("Saving session before restart", "info");
 
     setIsLoading(true);
 
@@ -480,6 +493,7 @@ function Dashboard() {
 
       await fetchChatCounts();
     } catch (error) {
+      Sentry.captureException(error);
       console.error("❌ Error saving and restarting chat:", error);
       toast.error("Failed to save and restart conversation. Please try again.");
     } finally {
@@ -530,7 +544,7 @@ function Dashboard() {
       });
 
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-      
+      Sentry.captureMessage("Received initial LLM response", "info");
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
       let newEndRequested = initialResponse.endRequested || false;
@@ -561,6 +575,7 @@ function Dashboard() {
 
       if (newEndRequested || newInteractionCompleted) {
         console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
+        setEndReason(newInteractionCompleted ? 'interactionCompleted' : 'endRequested');
         setIsProcessingAssessment(true);
         const organizationId = sessionStorage.getItem("organizationId");
         const batchId = sessionStorage.getItem("batchId");
@@ -610,9 +625,11 @@ function Dashboard() {
         console.log("🔒 handleSendClick: Chat ended, input restricted");
       }
     } catch (error) {
+      Sentry.captureException(error);
       console.error("❌ handleSendClick: Error in API request:", error);
       toast.error("Failed to process request. Please try again.");
     } finally {
+      Sentry.captureMessage("Finished processing request", "info");
       console.log("🏁 handleSendClick: Setting isLoading to false");
       setIsLoading(false);
       setIsProcessingAssessment(false);
@@ -682,6 +699,7 @@ function Dashboard() {
     let scoring_data = null;
     if (statusToSave === 'completed' && llmContent) {
       scoring_data = extractScoringData(llmContent);
+      Sentry.captureMessage("Extracted scoring data for save", "info");
       console.log("📊 Extracted scoring data for save:", scoring_data);
     }
 
@@ -778,6 +796,7 @@ function Dashboard() {
       await fetchChatCounts();
 
     } catch (error) {
+      Sentry.captureException(error);
       console.error("❌ Error saving chat:", error);
       if (error.response) {
         toast.error(`Failed to save chat: ${error.response.data.message || "Server error"}`, {
@@ -823,6 +842,7 @@ function Dashboard() {
         setChatCounts({ not_started: 0, inprogress: 0, completed: 0, archived: 0 });
       }
     } catch (error) {
+      Sentry.captureException(error);
       console.error("❌ Error loading chat counts:", error);
       setChatCounts({ not_started: 0, inprogress: 0, completed: 0, archived: 0 });
     } finally {
@@ -965,6 +985,7 @@ function Dashboard() {
 
       await fetchChatCounts();
     } catch (error) {
+      Sentry.captureException(error);
       console.error("❌ Error checking session status:", error);
       clearSessionData();
       setCurrentChatStatus('not_started');
@@ -1052,6 +1073,7 @@ function Dashboard() {
             await checkSessionStatus();
           }
         } catch (error) {
+          Sentry.captureException(error);
           console.error("❌ Error during session initialization:", error);
           setIsInitializing(false);
           isInitializingRef.current = false;
@@ -1098,6 +1120,7 @@ function Dashboard() {
             }
           }
         } catch (error) {
+          Sentry.captureException(error);
           console.error("❌ Error parsing saved chat history:", error);
           clearSessionData();
         }

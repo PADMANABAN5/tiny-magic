@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../components/AuthContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa"; // Import the icons
+import * as Sentry from "@sentry/react";
 
 function Login() {
   const [identifier, setIdentifier] = useState("");
@@ -52,6 +53,11 @@ function Login() {
       }
 
       login(user); // Store token and user data in AuthContext
+      Sentry.setUser({
+  id: user.id,
+  email: user.email,
+  username: user.username,
+});
       if (user.is_default_password) {
         setUserDetails(user);
         setShowPasswordChangeModal(true);
@@ -63,6 +69,7 @@ function Login() {
         setIsSubmitting(false);
       }, 2000);
     } catch (err) {
+      Sentry.captureException(err);
       const status = err.response?.status;
       if (status === 401) {
         setError("❌ Invalid credentials. Please try again.");
@@ -189,6 +196,7 @@ function Login() {
         "✅ Password updated successfully! Please login with your new password."
       );
     } catch (err) {
+      Sentry.captureException(err);
       const status = err.response?.status;
       const apiMessage =
         err.response?.data?.error || err.response?.data?.message;

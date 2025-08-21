@@ -1,4 +1,5 @@
 import axios from "axios";
+import * as Sentry from "@sentry/react";
 
 const BASE_URL =
   process.env.REACT_APP_API_LINK ||
@@ -19,6 +20,21 @@ export const processPromptAndCallLLM = async (
   retryDelay = 2000
 ) => {
   try {
+    Sentry.captureMessage("Starting LLM processPromptAndCallLLM", "info");
+    Sentry.captureEvent({
+      message: "LLM Request Inputs",
+      level: "info",
+      extra: {
+        username,
+        selectedPrompt,
+        selectedModel,
+        sessionHistoryLength: sessionHistory?.length,
+        userPrompt,
+        selectedConcept,
+        organizationId,
+        batchId,
+      },
+    });
     // Validate inputs
     if (
       !username ||
@@ -28,6 +44,7 @@ export const processPromptAndCallLLM = async (
       !organizationId ||
       !batchId
     ) {
+      Sentry.captureMessage("Missing required fields for LLM request", "error");
       console.error("Missing required fields:", {
         username,
         selectedPrompt,
@@ -38,12 +55,14 @@ export const processPromptAndCallLLM = async (
         organizationId,
         batchId,
       });
+      Sentry.captureException(new Error("Missing required fields for LLM request"));
       throw new Error("Missing required fields for LLM request");
     }
 
     // Get token
     const token = sessionStorage.getItem("token");
     if (!token) {
+      Sentry.captureMessage("No authentication token found in sessionStorage", "error");
       console.error("No authentication token found in sessionStorage");
       throw new Error("Authentication token missing");
     }
@@ -59,12 +78,14 @@ export const processPromptAndCallLLM = async (
       organizationId,
       batchId,
     };
-
+    
     // Log request for debugging
+    
     console.log(
       `Sending request to /api/prompts/process (Prompt: ${selectedPrompt}):`,
       requestData
     );
+
 
     // Attempt request with retries
     let lastError;
@@ -77,13 +98,17 @@ export const processPromptAndCallLLM = async (
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              "Cache-Control": "no-cache",
+              // "Cache-Control": "no-cache",
             },
             timeout: 150000, // 150-second timeout for long-running requests
           }
         );
 
         if (!response.data.success) {
+          Sentry.captureMessage(
+            `Backend processing failed for ${selectedPrompt}: ${response.data.message}`,
+            "error"
+          );
           throw new Error(response.data.message || "Backend processing failed");
         }
 
@@ -97,6 +122,7 @@ export const processPromptAndCallLLM = async (
           `Attempt ${attempt} failed for ${selectedPrompt}:`,
           error
         );
+        Sentry.captureException(error);
         lastError = error;
         if (attempt === retries) {
           throw error;
@@ -108,7 +134,9 @@ export const processPromptAndCallLLM = async (
     }
     throw lastError;
   } catch (error) {
-    // Handle token expiration (401 Unauthorized)
+    // Handle token expiration 
+    // (401 Unauthorized)
+    Sentry.captureException(error);
     if (error.response?.status === 401) {
       console.warn("Unauthorized request, redirecting to login");
       sessionStorage.removeItem("token");
@@ -146,6 +174,7 @@ export const processPromptAndCallLLM = async (
       `Error in processPromptAndCallLLM for ${selectedPrompt}:`,
       error
     );
+    Sentry.captureException(error);
     return {
       apiResponseText:
         error.response?.data?.message ||
