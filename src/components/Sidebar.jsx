@@ -53,6 +53,21 @@ function Sidebar({ isProcessingAssessment }) {
             <img src="/logo.png" alt="Logo" className="logo-image" /> 
           </div>
         </Link>
+
+        <div className="page-title mx-auto">
+  {(() => {
+    switch (location.pathname) {
+      case "/dashboard":
+        return "Dashboard";
+      case "/practice":
+        return "Practice Mode";
+      case "/conversationhistory":
+        return "History";
+      default:
+        return "";
+    }
+  })()}
+</div>
  
         <div className="ms-auto">
           <div className="dropdown">
@@ -89,6 +104,22 @@ function Sidebar({ isProcessingAssessment }) {
                     <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
                     Dashboard
                   </Link>
+                   <Link
+                    to="/practice"
+                    className={`dropdown-item d-flex align-items-center ${
+                      location.pathname === "/practice" ? "active" : ""
+                    } ${isProcessingAssessment ? "disabled" : ""}`}
+                    onClick={(e) => {
+                      if (isProcessingAssessment) {
+                        e.preventDefault();
+                      } else {
+                        setShowDropdown(false);
+                      }
+                    }}
+                  >
+                    <FaBook className="me-2" style={{ fontSize: "16px" }} />
+                     Practice
+                  </Link> 
                   <Link
                     to="/conversationhistory"
                     className={`dropdown-item d-flex align-items-center ${

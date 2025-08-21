@@ -77,7 +77,7 @@ export const processPromptAndCallLLM = async (
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              "Cache-Control": "no-cache",
+              // "Cache-Control": "no-cache",
             },
             timeout: 150000, // 150-second timeout for long-running requests
           }

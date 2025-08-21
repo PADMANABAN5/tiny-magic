@@ -241,3 +241,13 @@ a.nav-link.link-dark.active {
         min-width: 180px;
     }
 }
+.page-title {
+  font-weight: bold;
+  color: #1e293b;          /* black */
+  font-size: 24px;
+  text-align: center;
+  margin: 0;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+}
