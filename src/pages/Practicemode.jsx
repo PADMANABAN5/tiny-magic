@@ -28,32 +28,80 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
+import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 
 const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000"; // Fallback URL
 
 function Practicemode() {
-  const [prompt, setPrompt] = useState("");
-  const [practicemodeHistory, setPracticemodeHistory] = useState([]);
-  const practiceEndRef = useRef(null);
-  const [selectedPrompt] = useState("conceptMentor");
-  const username = sessionStorage.getItem("username") || "";
-  const userId = sessionStorage.getItem("userId") || "";
+const [prompt, setPrompt] = useState("");
+  const [practiceChatHistory, setPracticeChatHistory] = useState([]);
+  const chatEndRef = useRef(null);
+  const [selectedPrompt, setSelectedPrompt] = useState("practicePrompt");
+  const username = sessionStorage.getItem("username");
+  const userId = sessionStorage.getItem("userId");
   const [llmContent, setLlmContent] = useState("");
   const [sessionHistory, setSessionHistory] = useState([]);
+  const [isChecked, setIsChecked] = useState(false);
+  const navigate = useNavigate();
   const [currentStage, setCurrentStage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isCountsLoading, setIsCountsLoading] = useState(false);
   const [showSaveOptions, setShowSaveOptions] = useState(false);
   const location = useLocation();
   const prevPathRef = useRef(location.pathname);
-  const [currentPracticeId, setCurrentPracticeId] = useState(null);
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  const startListening = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      toast.error("Speech recognition not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false; // only final results
+    recognition.continuous = true;
+
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + " ";
+        }
+      }
+      setPrompt(prev => (prev ? prev + " " : "") + finalTranscript.trim());
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.start();
+    recognitionRef.current = recognition;
+    setIsListening(true);
+  };
+
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      recognitionRef.current = null;
+    }
+    setIsListening(false);
+  };
+
+  // Enhanced state for proper session management
+  const [currentPracticeChatId, setCurrentPracticeChatId] = useState(null);
   const [sessionType, setSessionType] = useState(null);
   const [resumedFromStatus, setResumedFromStatus] = useState(null);
-  const [currentPracticeStatus, setCurrentPracticeStatus] = useState("not_started");
+  const [currentChatStatus, setCurrentChatStatus] = useState('not_started');
   const [isInitializing, setIsInitializing] = useState(true);
   const [showEndSessionDialog, setShowEndSessionDialog] = useState(false);
   const [isProcessingAssessment, setIsProcessingAssessment] = useState(false);
-  const [isPracticeEnded, setIsPracticeEnded] = useState(false);
+  const [isChatEnded, setIsChatEnded] = useState(false);
   const [showRestartDialog, setShowRestartDialog] = useState(false);
   const [endReason, setEndReason] = useState(null);
   const [concepts, setConcepts] = useState([]);
@@ -61,30 +109,40 @@ function Practicemode() {
   const [selectedConcept, setSelectedConcept] = useState(null);
   const [showConceptDropdown, setShowConceptDropdown] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [isCalculatingScore, setIsCalculatingScore] = useState(false);
+  // Lock for initialization to prevent race conditions
   const isInitializingRef = useRef(false);
-  const navigate = useNavigate();
 
+  // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
   const topSaveOptionsRef = useRef(null);
-  const storedToken = sessionStorage.getItem("token") || "";
+  const storedToken = sessionStorage.getItem("token");
   const config = {
     headers: {
       Authorization: `Bearer ${storedToken}`,
     },
   };
 
-  const [practiceCounts, setPracticeCounts] = useState({
-    not_started: 0,
-    inprogress: 0,
-    completed: 0,
-    archived: 0,
-  });
+//   const parseApiResponseText = (apiResponseText) => {
+//   if (!apiResponseText) return "";
 
-  const { handleDownloadPDF } = PDFDownloader({
-    practicemodeHistory,
-    selectedConcept,
-  });
+//   // remove markdown code fences if present
+//   const cleanedText = apiResponseText
+//     .replace(/```json\s*/i, "")
+//     .replace(/```$/, "")
+//     .trim();
+
+//   try {
+//     const parsed = JSON.parse(cleanedText);
+//     console.log("📝 Parsed API Response Text:", parsed.display_text || cleanedText);
+//     return parsed.display_text || cleanedText;
+//   } catch (err) {
+//     console.log("⚠️ Could not parse API Response Text, returning raw:", apiResponseText);
+//     return apiResponseText; // fallback if not JSON
+//   }
+// };
+
 
   useEffect(() => {
     const unlisten = () => {
@@ -97,17 +155,30 @@ function Practicemode() {
     };
 
     unlisten();
-  }, [location.pathname, isProcessingAssessment, navigate]);
+  }, [location.pathname, isProcessingAssessment]);
+
+  const [chatCounts, setChatCounts] = useState({
+    not_started: 0,
+    inprogress: 0,
+    completed: 0,
+    archived: 0,
+  });
+
+  // Initialize PDF downloader
+  const { handleDownloadPDF } = PDFDownloader({ 
+    chatHistory: practiceChatHistory,
+    selectedConcept 
+  });
 
   useEffect(() => {
     if (isProcessingAssessment) {
       const handleBeforeUnload = (e) => {
         e.preventDefault();
-        e.returnValue = "An assessment is being processed. Are you sure you want to leave?";
+        e.returnValue = 'An assessment is being processed. Are you sure you want to leave?';
       };
 
-      window.addEventListener("beforeunload", handleBeforeUnload);
-      return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }
   }, [isProcessingAssessment]);
 
@@ -139,33 +210,15 @@ function Practicemode() {
   const fetchAndReturnConcepts = async () => {
     if (!username || conceptsLoading) return [];
 
-    const cachedConcepts = localStorage.getItem("cachedConcepts");
-    if (cachedConcepts) {
-      try {
-        const parsedConcepts = JSON.parse(cachedConcepts);
-        if (Array.isArray(parsedConcepts) && parsedConcepts.length > 0) {
-          console.log("✅ Using cached concepts:", parsedConcepts.length);
-          setConcepts(parsedConcepts);
-          return parsedConcepts;
-        }
-      } catch (error) {
-        console.error("❌ Error parsing cached concepts:", error);
-      }
-    }
-
     setConceptsLoading(true);
     try {
       console.log("🎯 Fetching concepts for fresh session:", username);
-      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, {
-        ...config,
-        timeout: 10000,
-      });
+      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
 
-      if (response.data?.success && response.data?.data?.batch?.concepts) {
-        const conceptsData = response.data.data.batch.concepts || [];
+      if (response.data && response.data.success && response.data.data) {
+        const conceptsData = response.data.data.batch?.concepts || [];
         console.log("✅ Concepts fetched for fresh session:", conceptsData.length);
         setConcepts(conceptsData);
-        localStorage.setItem("cachedConcepts", JSON.stringify(conceptsData));
         return conceptsData;
       } else {
         console.warn("⚠️ No concepts data in response for fresh session");
@@ -173,7 +226,6 @@ function Practicemode() {
       }
     } catch (error) {
       console.error("❌ Error fetching concepts for fresh session:", error);
-      toast.error("Failed to load concepts. Please try again.");
       return [];
     } finally {
       setConceptsLoading(false);
@@ -183,44 +235,16 @@ function Practicemode() {
   const fetchConcepts = async () => {
     if (!username || conceptsLoading) return;
 
-    const cachedConcepts = localStorage.getItem("cachedConcepts");
-    if (cachedConcepts) {
-      try {
-        const parsedConcepts = JSON.parse(cachedConcepts);
-        if (Array.isArray(parsedConcepts) && parsedConcepts.length > 0) {
-          console.log("✅ Using cached concepts for fetchConcepts:", parsedConcepts.length);
-          setConcepts(parsedConcepts);
-          const batch = {
-            batch_id: sessionStorage.getItem("batchId"),
-            organization_id: sessionStorage.getItem("organizationId"),
-          };
-          if (batch?.batch_id && batch?.organization_id) {
-            sessionStorage.setItem("batchId", batch.batch_id);
-            sessionStorage.setItem("organizationId", batch.organization_id);
-            console.log("✅ Stored batchId and orgId in sessionStorage", {
-              batchId: batch.batch_id,
-              orgId: batch.organization_id,
-            });
-          }
-          return;
-        }
-      } catch (error) {
-        console.error("❌ Error parsing cached concepts:", error);
-      }
-    }
-
     setConceptsLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, {
-        ...config,
-        timeout: 10000,
-      });
+      const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
 
-      if (response.data?.success && response.data?.data?.batch?.concepts) {
-        const conceptsData = response.data.data.batch.concepts || [];
+      if (response.data && response.data.success && response.data.data) {
+        const data = response.data.data;
+        const conceptsData = data.batch?.concepts || [];
+
         console.log("✅ Concepts loaded:", conceptsData.length);
         setConcepts(conceptsData);
-        localStorage.setItem("cachedConcepts", JSON.stringify(conceptsData));
 
         const batch = response.data.data.batch;
         if (batch?.batch_id && batch?.organization_id) {
@@ -253,37 +277,38 @@ function Practicemode() {
       setIsInitializing(false);
       return;
     }
-    const organizationId = sessionStorage.getItem("organizationId") || "";
-    const batchId = sessionStorage.getItem("batchId") || "";
+    const organizationId = sessionStorage.getItem("organizationId");
+    const batchId = sessionStorage.getItem("batchId");
     console.log("🚀 Initiating first mentor message with concept:", concept.concept_name);
     setIsLoading(true);
     try {
       clearSessionData();
       const response = await processPromptAndCallLLM({
         username,
-        selectedPrompt: "conceptMentor",
+        selectedPrompt: "practicePrompt",
         selectedModel: "gpt-4o",
         sessionHistory: [],
         userPrompt: "",
         selectedConcept: concept,
         organizationId,
-        batchId,
+        batchId
       });
 
-      const mentorMessage = response.apiResponseText;
+      const mentorMessage = parseApiResponseText(response.apiResponseText);
+
       const updatedHistory = [{ user: "", system: mentorMessage }];
 
-      setPracticemodeHistory(updatedHistory);
+      setPracticeChatHistory(updatedHistory);
       setSessionHistory([{ Mentee: "", Mentor: mentorMessage }]);
       setCurrentStage(0);
-      setCurrentPracticeStatus("not_started");
+      setCurrentChatStatus('not_started');
       setSessionType("fresh");
-      setCurrentPracticeId(null);
+      setCurrentPracticeChatId(null);
       setResumedFromStatus(null);
-      setIsPracticeEnded(false);
+      setIsChatEnded(false);
       setEndReason(null);
-      sessionStorage.setItem("practicemodeHistory", JSON.stringify(updatedHistory));
-      sessionStorage.setItem("practicesessionType", "fresh");
+      sessionStorage.setItem("practiceChatHistory", JSON.stringify(updatedHistory));
+      sessionStorage.setItem("sessionType", "fresh");
 
       console.log("✅ First mentor message initiated successfully");
     } catch (err) {
@@ -296,39 +321,32 @@ function Practicemode() {
   };
 
   const clearSessionData = () => {
-    setPracticemodeHistory([]);
+    setPracticeChatHistory([]);
     setSessionHistory([]);
-    setCurrentPracticeId(null);
+    setCurrentPracticeChatId(null);
     setCurrentStage(0);
     setSessionType(null);
     setResumedFromStatus(null);
-    setCurrentPracticeStatus("not_started");
-    setIsPracticeEnded(false);
+    setCurrentChatStatus('not_started');
+    setIsChatEnded(false);
     setEndReason(null);
-    sessionStorage.removeItem("practicemodeHistory");
-    sessionStorage.removeItem("currentPracticeId");
-    sessionStorage.removeItem("practicesessionType");
+    sessionStorage.removeItem("practiceChatHistory");
+    sessionStorage.removeItem("currentPracticeChatId");
+    sessionStorage.removeItem("sessionType");
   };
 
   const mapApiStageToProgressbarIndex = (apiCurrentStage, status, interactionCompleted) => {
-    if (interactionCompleted || status === "completed") return 7;
-    if (status === "not_started") return 0;
+    if (interactionCompleted || status === 'completed') return 7;
+    if (status === 'not_started') return 0;
 
     switch (apiCurrentStage) {
-      case 0:
-        return 1;
-      case 1:
-        return 2;
-      case 2:
-        return 3;
-      case 3:
-        return 4;
-      case 4:
-        return 5;
-      case 5:
-        return 6;
-      default:
-        return 1;
+      case 0: return 1;
+      case 1: return 2;
+      case 2: return 3;
+      case 3: return 4;
+      case 4: return 5;
+      case 5: return 6;
+      default: return 1;
     }
   };
 
@@ -341,33 +359,34 @@ function Practicemode() {
     console.log("🚀 Initiating first mentor message");
     setIsLoading(true);
     try {
-      const organizationId = sessionStorage.getItem("organizationId") || "";
-      const batchId = sessionStorage.getItem("batchId") || "";
+      const organizationId = sessionStorage.getItem("organizationId");
+      const batchId = sessionStorage.getItem("batchId");
       const response = await processPromptAndCallLLM({
         username,
-        selectedPrompt: "conceptMentor",
+        selectedPrompt: "practicePrompt",
         selectedModel: "gpt-4o",
         sessionHistory: [],
         userPrompt: "",
         selectedConcept,
         organizationId,
-        batchId,
+        batchId
       });
 
-      const mentorMessage = response.apiResponseText;
+      const mentorMessage = parseApiResponseText(response.apiResponseText);
+
       const updatedHistory = [{ user: "", system: mentorMessage }];
 
-      setPracticemodeHistory(updatedHistory);
+      setPracticeChatHistory(updatedHistory);
       setSessionHistory([{ Mentee: "", Mentor: mentorMessage }]);
       setCurrentStage(0);
-      setCurrentPracticeStatus("not_started");
+      setCurrentChatStatus('not_started');
       setSessionType("fresh");
-      setCurrentPracticeId(null);
+      setCurrentPracticeChatId(null);
       setResumedFromStatus(null);
-      setIsPracticeEnded(false);
+      setIsChatEnded(false);
       setEndReason(null);
-      sessionStorage.setItem("practicemodeHistory", JSON.stringify(updatedHistory));
-      sessionStorage.setItem("practicesessionType", "fresh");
+      sessionStorage.setItem("practiceChatHistory", JSON.stringify(updatedHistory));
+      sessionStorage.setItem("sessionType", "fresh");
     } catch (err) {
       console.error("❌ Failed to load initial mentor message:", err);
       toast.error("Failed to start conversation. Please try again.");
@@ -377,50 +396,51 @@ function Practicemode() {
     }
   };
 
-  const handleRestartPractice = () => {
-  setShowRestartDialog(true);
-};
+  const handleRestartChat = () => {
+    setShowRestartDialog(true);
+  };
 
   const handleEndSession = async () => {
     setShowEndSessionDialog(false);
     setIsLoading(true);
     setIsProcessingAssessment(true);
-
+  
     try {
-      const organizationId = sessionStorage.getItem("organizationId") || "";
-      const batchId = sessionStorage.getItem("batchId") || "";
+      const organizationId = sessionStorage.getItem("organizationId");
+      const batchId = sessionStorage.getItem("batchId");
       const assessmentResponse = await processPromptAndCallLLM({
         username,
-        selectedPrompt: "assessmentPrompt",
+        selectedPrompt: "practicePrompt",
         selectedModel: "gpt-4o",
         sessionHistory,
         userPrompt: "",
         selectedConcept,
         organizationId,
-        batchId,
+        batchId
       });
 
       setLlmContent(assessmentResponse.apiResponseText);
 
-      const assessmentPracticeEntry = {
+      const assessmentChatEntry = {
         user: "",
-        system: assessmentResponse.apiResponseText,
+        system: parseApiResponseText(assessmentResponse.apiResponseText),
       };
 
-      setPracticemodeHistory((prev) => {
-        const finalHistory = [...prev, assessmentPracticeEntry];
-        sessionStorage.setItem("practicemodeHistory", JSON.stringify(finalHistory));
+      setPracticeChatHistory((prev) => {
+        const finalHistory = [...prev, assessmentChatEntry];
+        sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
         return finalHistory;
       });
 
       setSessionHistory((prev) => [
         ...prev,
-        { Mentee: "", Mentor: assessmentResponse.apiResponseText },
+        { Mentee: "", Mentor: parseApiResponseText(assessmentResponse.apiResponseText) },
       ]);
 
-      setCurrentPracticeStatus("completed");
-      setIsPracticeEnded(true);
+      setCurrentChatStatus("completed");
+      setIsChatEnded(true);
       setEndReason("endRequested");
+
     } catch (error) {
       toast.error("❌ Failed to end session and load assessment.");
       console.error("End session error:", error);
@@ -432,7 +452,7 @@ function Practicemode() {
 
   const restartWithoutSaving = async () => {
     setShowRestartDialog(false);
-    console.log("🔄 Restarting practice without saving");
+    console.log("🔄 Restarting chat without saving");
 
     setIsLoading(true);
 
@@ -448,9 +468,9 @@ function Practicemode() {
         }
       }
 
-      await fetchPracticeCounts();
+      await fetchChatCounts();
     } catch (error) {
-      console.error("❌ Error restarting practice:", error);
+      console.error("❌ Error restarting chat:", error);
       toast.error("Failed to restart conversation. Please try again.");
     } finally {
       setIsLoading(false);
@@ -464,8 +484,8 @@ function Practicemode() {
     setIsLoading(true);
 
     try {
-      const statusToSave = "completed";
-      await handleSavePractice(statusToSave);
+      const statusToSave = 'completed';
+      await handleSaveChat(statusToSave);
 
       clearSessionData();
 
@@ -480,9 +500,9 @@ function Practicemode() {
         }
       }
 
-      await fetchPracticeCounts();
+      await fetchChatCounts();
     } catch (error) {
-      console.error("❌ Error saving and restarting practice:", error);
+      console.error("❌ Error saving and restarting chat:", error);
       toast.error("Failed to save and restart conversation. Please try again.");
     } finally {
       setIsLoading(false);
@@ -494,8 +514,8 @@ function Practicemode() {
   };
 
   const handleSendClick = async () => {
-    if (!prompt.trim() || !selectedConcept || isPracticeEnded) {
-      if (isPracticeEnded) {
+    if (!prompt.trim() || !selectedConcept || isChatEnded) {
+      if (isChatEnded) {
         toast.warn("This conversation has ended. Please restart to begin a new session.");
         return;
       }
@@ -517,8 +537,8 @@ function Practicemode() {
     try {
       const userPrompt = prompt.trim();
       setPrompt("");
-      const organizationId = sessionStorage.getItem("organizationId") || "";
-      const batchId = sessionStorage.getItem("batchId") || "";
+      const organizationId = sessionStorage.getItem("organizationId");
+      const batchId = sessionStorage.getItem("batchId");
 
       const initialResponse = await processPromptAndCallLLM({
         username,
@@ -528,88 +548,88 @@ function Practicemode() {
         userPrompt: userPrompt,
         selectedConcept,
         organizationId,
-        batchId,
+        batchId
       });
 
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-
+      
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
       let newEndRequested = initialResponse.endRequested || false;
 
-      const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, "inprogress", newInteractionCompleted);
+      const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
 
       if (isFirstUserMessage || newProgressStage >= currentStage) {
         setCurrentStage(newProgressStage);
-        setCurrentPracticeStatus("inprogress");
+        setCurrentChatStatus('inprogress');
       }
 
-      const newPracticeEntry = {
+      const newChatEntry = {
         user: userPrompt,
-        system: initialResponse.apiResponseText,
+        system: parseApiResponseText(initialResponse.apiResponseText),
       };
 
-      let currentPracticeModeHistory = [];
-      setPracticemodeHistory((prev) => {
-        currentPracticeModeHistory = [...prev, newPracticeEntry];
-        sessionStorage.setItem("practicemodeHistory", JSON.stringify(currentPracticeModeHistory));
-        return currentPracticeModeHistory;
+      let currentChatHistory = [];
+      setPracticeChatHistory((prev) => {
+        currentChatHistory = [...prev, newChatEntry];
+        sessionStorage.setItem("practiceChatHistory", JSON.stringify(currentChatHistory));
+        return currentChatHistory;
       });
 
       setSessionHistory((prev) => [
         ...prev,
-        { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
+        { Mentee: userPrompt, Mentor: parseApiResponseText(initialResponse.apiResponseText) },
       ]);
 
       if (newEndRequested || newInteractionCompleted) {
         console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
         setIsProcessingAssessment(true);
-        const organizationId = sessionStorage.getItem("organizationId") || "";
-        const batchId = sessionStorage.getItem("batchId") || "";
+        const organizationId = sessionStorage.getItem("organizationId");
+        const batchId = sessionStorage.getItem("batchId");
         const assessmentResponse = await processPromptAndCallLLM({
           username,
-          selectedPrompt: "assessmentPrompt",
+          selectedPrompt: "practicePrompt",
           selectedModel: "gpt-4o",
           sessionHistory: [
             ...sessionHistory,
-            { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
+            { Mentee: userPrompt, Mentor: parseApiResponseText(initialResponse.apiResponseText) },
           ],
           userPrompt: userPrompt,
           selectedConcept,
           organizationId,
-          batchId,
+          batchId
         });
 
         setLlmContent(assessmentResponse.apiResponseText);
 
-        const assessmentPracticeEntry = {
+        const assessmentChatEntry = {
           user: "",
-          system: assessmentResponse.apiResponseText,
+          system: parseApiResponseText(assessmentResponse.apiResponseText),
         };
 
-        let finalPracticeModeHistory = [];
-        setPracticemodeHistory((prev) => {
-          finalPracticeModeHistory = [...prev, assessmentPracticeEntry];
-          sessionStorage.setItem("practicemodeHistory", JSON.stringify(finalPracticeModeHistory));
-          return finalPracticeModeHistory;
+        let finalChatHistory = [];
+        setPracticeChatHistory((prev) => {
+          finalChatHistory = [...prev, assessmentChatEntry];
+          sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
+          return finalChatHistory;
         });
 
         setSessionHistory((prev) => [
           ...prev,
-          { Mentee: "", Mentor: assessmentResponse.apiResponseText },
+          { Mentee: "", Mentor: parseApiResponseText(assessmentResponse.apiResponseText) },
         ]);
         console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
-
-        setCurrentPracticeStatus("completed");
+        
+        setCurrentChatStatus('completed');
 
         if (newInteractionCompleted) {
-          setEndReason("interactionCompleted");
+          setEndReason('interactionCompleted');
         } else {
-          setEndReason("endRequested");
+          setEndReason('endRequested');
         }
 
-        setIsPracticeEnded(true);
-        console.log("🔒 handleSendClick: Practice ended, input restricted");
+        setIsChatEnded(true);
+        console.log("🔒 handleSendClick: Chat ended, input restricted");
       }
     } catch (error) {
       console.error("❌ handleSendClick: Error in API request:", error);
@@ -626,7 +646,7 @@ function Practicemode() {
       toast.warn(`No download available for ${conceptName}`);
       return;
     }
-    window.open(downloadLink, "_blank");
+    window.open(downloadLink, '_blank');
   };
 
   const getCurrentStageForAPI = (saveStatus) => {
@@ -638,32 +658,31 @@ function Practicemode() {
     }
 
     const frontendStatus = getStageStatus();
-    if (frontendStatus === "not-started") return 0;
+    if (frontendStatus === 'not-started') return 0;
     if (currentStage === 7) return 5;
     return Math.min(Math.max(currentStage - 1, 0), 5);
   };
 
   const getFrontendStatusForSave = () => {
-    if (isPracticeEnded) {
-      return "completed";
+    if (isChatEnded) {
+      return 'completed';
     }
 
-    if (currentStage === 0 && practicemodeHistory.length <= 1) {
-      return "not_started";
+    if (currentStage === 0 && practiceChatHistory.length <= 1) {
+      return 'not_started';
     } else {
-      return "inprogress";
+      return 'inprogress';
     }
   };
 
-  const handleSavePractice = async (requestedStatus = null, showLoader = true) => {
+  const handleSaveChat = async (requestedStatus = null, showLoader = true) => {
     if (!username) {
-      toast.error("Cannot save practice: User not identified.");
-      navigate("/login");
+      toast.error("Cannot save chat: User not identified.");
       return;
     }
 
-    if (practicemodeHistory.length === 0) {
-      toast.warn("No practice history to save.");
+    if (practiceChatHistory.length === 0) {
+      toast.warn("No chat history to save.");
       return;
     }
 
@@ -671,6 +690,7 @@ function Practicemode() {
       const concepts = await fetchAndReturnConcepts();
       if (concepts.length > 0) {
         setSelectedConcept(concepts[0]);
+        // Proceed with save
       } else {
         toast.warn("No concepts available. Cannot save.");
         return;
@@ -679,24 +699,24 @@ function Practicemode() {
 
     const statusToSave = requestedStatus || getFrontendStatusForSave();
     const stageToSave = getCurrentStageForAPI(statusToSave);
-    const conceptNameToSave = selectedConcept?.concept_name || "";
+    const conceptNameToSave = selectedConcept?.concept_name;
 
     let scoring_data = null;
-    if (statusToSave === "completed" && llmContent) {
+    if (statusToSave === 'completed' && llmContent) {
       scoring_data = extractScoringData(llmContent);
       console.log("📊 Extracted scoring data for save:", scoring_data);
     }
 
-    console.log("💾 Saving practice with:", {
+    console.log("💾 Saving chat with:", {
       requestedStatus,
       statusToSave,
       stageToSave,
       currentStage,
       frontendStatus: getStageStatus(),
-      currentPracticeStatus,
-      practicemodeHistoryLength: practicemodeHistory.length,
+      currentChatStatus,
+      chatHistoryLength: practiceChatHistory.length,
       conceptName: conceptNameToSave,
-      hasScoring: !!scoring_data,
+      hasScoring: !!scoring_data
     });
 
     if (showLoader) setIsLoading(true);
@@ -706,54 +726,46 @@ function Practicemode() {
       let actionMessage = "";
 
       const requestData = {
-        conversation: practicemodeHistory,
+        conversation: practiceChatHistory,
         status: statusToSave,
         current_stage: stageToSave,
-        concept_name: conceptNameToSave,
+        concept_name: conceptNameToSave
       };
 
-      if (statusToSave === "completed" && scoring_data) {
+      if (statusToSave === 'completed' && scoring_data) {
         requestData.scoring_data = scoring_data;
       }
 
-      if (currentPracticeId && sessionType === "resume") {
-        response = await axios.put(
-          `${BASE_URL}/practicemode/conversation/${currentPracticeId}`,
-          requestData,
-          { ...config, timeout: 10000 }
-        );
-        actionMessage = `Updated existing practice (ID: ${currentPracticeId})`;
+      if (currentPracticeChatId && sessionType === "resume") {
+        response = await axios.put(`${BASE_URL}/practicemode/conversation/${currentPracticeChatId}`, requestData);
+        actionMessage = `Updated existing chat (ID: ${currentPracticeChatId})`;
       } else {
-        response = await axios.post(
-          `${BASE_URL}/practicemode`,
-          {
-            user_id: userId,
-            ...requestData,
-          },
-          { ...config, timeout: 10000 }
-        );
-        actionMessage = "Created new practice";
+        response = await axios.post(`${BASE_URL}/practicemode`, {
+          user_id: userId,
+          ...requestData
+        });
+        actionMessage = "Created new chat";
       }
 
       setShowSaveOptions(false);
 
-      console.log("✅ Practice saved successfully:", {
+      console.log("✅ Chat saved successfully:", {
         status: statusToSave,
         stage: stageToSave,
         conceptName: conceptNameToSave,
-        practiceId: response.data.data.id,
-        hasScoring: !!response.data.data.scoring,
+        chatId: response.data.data.id,
+        hasScoring: !!response.data.data.scoring
       });
 
       if (response.data.data.scoring) {
         console.log("📊 Scoring data saved:", {
           sixFacetsAverage: response.data.data.scoring.six_facets.average,
           skillsAverage: response.data.data.scoring.understanding_skills.average,
-          finalScore: response.data.data.scoring.final_score,
+          finalScore: response.data.data.scoring.final_score
         });
       }
 
-      toast.success(`Practice saved as ${statusToSave}!`, {
+      toast.success(`Chat saved as ${statusToSave}!`, {
         position: "top-right",
         autoClose: 3000,
         hideProgressBar: false,
@@ -772,24 +784,26 @@ function Practicemode() {
         }
 
         setSessionType(statusToSave === "completed" ? "completed" : "fresh");
-        setCurrentPracticeId(null);
+        setCurrentPracticeChatId(null);
         setResumedFromStatus(null);
         setCurrentStage(0);
-        setCurrentPracticeStatus(statusToSave);
+        setCurrentChatStatus(statusToSave);
       } else {
-        const newPracticeId = response.data.data.id || currentPracticeId;
-        setCurrentPracticeId(newPracticeId);
+        const newChatId = response.data.data.id || currentPracticeChatId;
+        setCurrentPracticeChatId(newChatId);
+       // sessionStorage.setItem("currentPracticeChatId", newChatId.toString());
         setSessionType("resume");
         setResumedFromStatus(statusToSave);
-        setCurrentPracticeStatus(statusToSave);
+        setCurrentChatStatus(statusToSave);
       }
 
-      sessionStorage.setItem("practicemodeHistory", JSON.stringify(practicemodeHistory));
-      await fetchPracticeCounts();
+      sessionStorage.setItem("practiceChatHistory", JSON.stringify(practiceChatHistory));
+      await fetchChatCounts();
+
     } catch (error) {
-      console.error("❌ Error saving practice:", error);
+      console.error("❌ Error saving chat:", error);
       if (error.response) {
-        toast.error(`Failed to save practice: ${error.response.data.message || "Server error"}`, {
+        toast.error(`Failed to save chat: ${error.response.data.message || "Server error"}`, {
           position: "top-right",
           autoClose: 5000,
           hideProgressBar: false,
@@ -798,7 +812,7 @@ function Practicemode() {
           draggable: true,
         });
       } else {
-        toast.error("Failed to save practice. Please check your connection and try again.", {
+        toast.error("Failed to save chat. Please check your connection and try again.", {
           position: "top-right",
           autoClose: 5000,
           hideProgressBar: false,
@@ -812,26 +826,28 @@ function Practicemode() {
     }
   };
 
-  const fetchPracticeCounts = async () => {
+  const fetchChatCounts = async () => {
     if (!userId) {
       return;
     }
 
     setIsCountsLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/practicemode/counts/${userId}`, {
-        ...config,
-        timeout: 10000,
-      });
+      const response = await axios.get(`${BASE_URL}/practicemode/counts/${userId}`);
 
-      if (response.data?.success && response.data?.data?.counts) {
-        setPracticeCounts(response.data.data.counts);
+      if (
+        response.data &&
+        response.data.success &&
+        response.data.data &&
+        response.data.data.counts
+      ) {
+        setChatCounts(response.data.data.counts);
       } else {
-        setPracticeCounts({ not_started: 0, inprogress: 0, completed: 0, archived: 0 });
+        setChatCounts({ not_started: 0, inprogress: 0, completed: 0, archived: 0 });
       }
     } catch (error) {
-      console.error("❌ Error loading practice counts:", error);
-      setPracticeCounts({ not_started: 0, inprogress: 0, completed: 0, archived: 0 });
+      console.error("❌ Error loading chat counts:", error);
+      setChatCounts({ not_started: 0, inprogress: 0, completed: 0, archived: 0 });
     } finally {
       setIsCountsLoading(false);
     }
@@ -840,7 +856,6 @@ function Practicemode() {
   const checkSessionStatus = async (conceptName = null) => {
     if (!username || !userId) {
       setIsInitializing(false);
-      navigate("/login");
       return;
     }
 
@@ -851,68 +866,72 @@ function Practicemode() {
         apiUrl += `?concept_name=${encodeURIComponent(conceptName)}`;
       }
 
-      const response = await axios.get(apiUrl, { ...config, timeout: 10000 });
+      const response = await axios.get(apiUrl);
 
-      if (response.data?.success) {
-        const { sessionType, hasActiveSession, shouldStartFresh, practice } = response.data.data;
-
-        if (practice && practice.status === "completed") {
+      if (response.data && response.data.success) {
+        const { sessionType, hasActiveSession, shouldStartFresh, practicemode: chat } = response.data.data;
+        if (chat && chat.status === 'completed') {
           console.log("🎯 Resumed session is completed, starting fresh conversation instead");
           clearSessionData();
-          setCurrentPracticeStatus("not_started");
+          setCurrentChatStatus('not_started');
 
           const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
-            const conceptToUse = currentConcepts.find((c) => c.concept_name === practice.concept_name) || currentConcepts[0];
+            const conceptToUse = currentConcepts.find(c => c.concept_name === chat.concept_name) || currentConcepts[0];
             setSelectedConcept(conceptToUse);
             await initiateFirstMentorMessageWithConcept(conceptToUse);
           }
           return;
         }
 
-        if (sessionType === "resume" && hasActiveSession && practice && !shouldStartFresh) {
-          console.log("🔄 Resuming existing session:", practice);
+        if (sessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
+          console.log("🔄 Resuming existing session:", chat);
 
-          setPracticemodeHistory(practice.conversation);
+          setPracticeChatHistory(chat.conversation);
 
-          const loadedSessionHistory = practice.conversation
+          const loadedSessionHistory = chat.conversation
             .filter((item) => item.user !== undefined && item.system !== undefined)
             .map((item) => ({ Mentee: item.user, Mentor: item.system }));
           setSessionHistory(loadedSessionHistory);
 
-          setCurrentPracticeId(practice.id);
+          setCurrentPracticeChatId(chat.id);
           setSessionType("resume");
-          setResumedFromStatus(practice.status);
-          setCurrentPracticeStatus(practice.status);
+          setResumedFromStatus(chat.status);
+          setCurrentChatStatus(chat.status);
 
-          const progressStage = mapApiStageToProgressbarIndex(practice.current_stage, practice.status, false);
+          const progressStage = mapApiStageToProgressbarIndex(
+            chat.current_stage,
+            chat.status,
+            false
+          );
           setCurrentStage(progressStage);
 
           console.log("✅ Session resumed with stage:", {
-            apiStage: practice.current_stage,
-            status: practice.status,
+            apiStage: chat.current_stage,
+            status: chat.status,
             progressStage: progressStage,
-            conceptName: practice.concept_name,
+            conceptName: chat.concept_name
           });
 
-          sessionStorage.setItem("practicemodeHistory", JSON.stringify(practice.conversation));
-          sessionStorage.setItem("currentPracticeId", practice.id.toString());
-          sessionStorage.setItem("practicesessionType", "resume");
+          sessionStorage.setItem("practiceChatHistory", JSON.stringify(chat.conversation));
+          console.log("💾 Setting currentPracticeChatId:", chat.id);
+          sessionStorage.setItem("currentPracticeChatId", chat.id.toString());
+          sessionStorage.setItem("sessionType", "resume");
 
-          if (practice.concept_name && concepts.length > 0) {
-            const matchingConcept = concepts.find((c) => c.concept_name === practice.concept_name);
+          if (chat.concept_name && concepts.length > 0) {
+            const matchingConcept = concepts.find(c => c.concept_name === chat.concept_name);
             if (matchingConcept) {
               setSelectedConcept(matchingConcept);
               console.log("✅ Concept restored from session:", matchingConcept.concept_name);
             } else if (conceptName) {
-              const providedConcept = concepts.find((c) => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+              const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
               if (providedConcept) {
                 setSelectedConcept(providedConcept);
                 console.log("🔄 Using provided concept:", providedConcept.concept_name);
               }
             }
           } else if (conceptName && concepts.length > 0) {
-            const providedConcept = concepts.find((c) => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+            const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
             if (providedConcept) {
               setSelectedConcept(providedConcept);
               console.log("🔄 Using provided concept for fresh session:", providedConcept.concept_name);
@@ -921,40 +940,42 @@ function Practicemode() {
         } else {
           console.log("🆕 Starting fresh session");
           clearSessionData();
-          setCurrentPracticeStatus("not_started");
+          setCurrentChatStatus('not_started');
 
           const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             let conceptToUse;
 
             if (conceptName) {
-              conceptToUse = currentConcepts.find((c) => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+              conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
             }
 
             if (!conceptToUse) {
-              conceptToUse = selectedConcept || currentConcepts.find((concept) => concept.is_active) || currentConcepts[0];
+              conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
             }
 
-            console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
-            setSelectedConcept(conceptToUse);
-            await initiateFirstMentorMessageWithConcept(conceptToUse);
+            if (conceptToUse) {
+              console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
+              setSelectedConcept(conceptToUse);
+              await initiateFirstMentorMessageWithConcept(conceptToUse);
+            }
           }
         }
       } else {
         console.log("⚠️ No session data, starting fresh");
         clearSessionData();
-        setCurrentPracticeStatus("not_started");
+        setCurrentChatStatus('not_started');
 
         const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
         if (currentConcepts.length > 0) {
           let conceptToUse;
 
           if (conceptName) {
-            conceptToUse = currentConcepts.find((c) => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+            conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
           }
 
           if (!conceptToUse) {
-            conceptToUse = selectedConcept || currentConcepts.find((concept) => concept.is_active) || currentConcepts[0];
+            conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
           }
 
           console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
@@ -965,22 +986,22 @@ function Practicemode() {
         }
       }
 
-      await fetchPracticeCounts();
+      await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error checking session status:", error);
       clearSessionData();
-      setCurrentPracticeStatus("not_started");
+      setCurrentChatStatus('not_started');
 
       const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
       if (currentConcepts.length > 0) {
         let conceptToUse;
 
         if (conceptName) {
-          conceptToUse = currentConcepts.find((c) => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+          conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
         }
 
         if (!conceptToUse) {
-          conceptToUse = selectedConcept || currentConcepts.find((concept) => concept.is_active) || currentConcepts[0];
+          conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
         }
 
         console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
@@ -999,17 +1020,13 @@ function Practicemode() {
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
-      if (!isPracticeEnded) {
+      if (!isChatEnded) {
         handleSendClick();
       }
     }
   };
 
   const handleConceptSelect = async (concept) => {
-    if (!concept) {
-      toast.warn("No concept selected.");
-      return;
-    }
     if (isProcessingAssessment) {
       toast.warn("⚠️ Please wait, assessment is being processed.");
       return;
@@ -1019,34 +1036,39 @@ function Practicemode() {
     setShowConceptDropdown(false);
 
     clearSessionData();
-    setCurrentPracticeStatus("not_started");
+    setCurrentChatStatus('not_started');
 
     console.log("🔍 Checking session status for concept:", concept.concept_name);
     await checkSessionStatus(concept.concept_name);
   };
 
   const getStageStatus = () => {
-    if (currentPracticeStatus === "completed") return "completed";
-    if (currentPracticeStatus === "not_started") return "not-started";
-    if (currentPracticeStatus === "inprogress") return "in-progress";
+    if (currentChatStatus === 'completed') return 'completed';
+    if (currentChatStatus === 'not_started') return 'not-started';
+    if (currentChatStatus === 'inprogress') return 'in-progress';
 
-    if (currentStage === 0) return "not-started";
-    if (currentStage === 7) return "completed";
-    return "in-progress";
+    if (currentStage === 0) return 'not-started';
+    if (currentStage === 7) return 'completed';
+    return 'in-progress';
   };
 
   useEffect(() => {
     if (username && userId && !isInitializingRef.current) {
-      isInitializingRef.current = true;
+      isInitializingRef.current = true; // Set lock to prevent concurrent initializations
       setIsInitializing(true);
       const initializeSession = async () => {
         console.log("🚀 Starting session initialization");
         try {
-          const currentConcepts = await fetchAndReturnConcepts();
+          // Fetch concepts first
+          if (concepts.length === 0) {
+            await fetchConcepts();
+          }
+
+          const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
-            const initialConcept = currentConcepts.find((concept) => concept.is_active) || currentConcepts[0];
+            const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
             console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
-            setSelectedConcept(initialConcept);
+            setSelectedConcept(initialConcept); // Set initial concept before checking session
             await checkSessionStatus(initialConcept.concept_name);
           } else {
             console.log("⚠️ No concepts available, checking session without concept_name");
@@ -1054,45 +1076,41 @@ function Practicemode() {
           }
         } catch (error) {
           console.error("❌ Error during session initialization:", error);
-          toast.error("Failed to initialize session. Please try again.");
-        } finally {
           setIsInitializing(false);
           isInitializingRef.current = false;
         }
       };
 
       initializeSession();
-    } else if (!username || !userId) {
-      navigate("/login");
     }
-  }, [username, userId, navigate]);
+  }, [username, userId]);
 
   useEffect(() => {
-    if (practiceEndRef.current) {
-      practiceEndRef.current.scrollIntoView({ behavior: "smooth" });
+    if (chatEndRef.current) {
+      chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [practicemodeHistory]);
+  }, [practiceChatHistory]);
 
   useEffect(() => {
-    if (!isInitializing && !practicemodeHistory.length) {
-      const savedSessionType = sessionStorage.getItem("practicesessionType");
+    if (!isInitializing && !practiceChatHistory.length) {
+      const savedSessionType = sessionStorage.getItem("sessionType");
 
       if (savedSessionType === "completed") {
         clearSessionData();
         return;
       }
 
-      const savedHistory = sessionStorage.getItem("practicemodeHistory");
-      const savedPracticeId = sessionStorage.getItem("currentPracticeId");
+      const savedHistory = sessionStorage.getItem("practiceChatHistory");
+      const savedChatId = sessionStorage.getItem("currentPracticeChatId");
 
       if (savedHistory && savedSessionType === "resume") {
         try {
           const parsedHistory = JSON.parse(savedHistory);
           if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
-            setPracticemodeHistory(parsedHistory);
+            setPracticeChatHistory(parsedHistory);
 
-            if (savedPracticeId) {
-              setCurrentPracticeId(parseInt(savedPracticeId));
+            if (savedChatId) {
+              setCurrentPracticeChatId(parseInt(savedChatId));
               setSessionType("resume");
 
               if (parsedHistory.length > 1) {
@@ -1103,83 +1121,35 @@ function Practicemode() {
             }
           }
         } catch (error) {
-          console.error("❌ Error parsing saved practice history:", error);
+          console.error("❌ Error parsing saved chat history:", error);
           clearSessionData();
         }
       }
     }
-  }, [isInitializing, practicemodeHistory.length]);
-
-  const debouncedSavePractice = useCallback(
-    debounce(async () => {
-      if (!isLoading && !isInitializing && practicemodeHistory.length > 0 && selectedConcept) {
-        setIsLoading(true);
-        try {
-          const statusToSave = getFrontendStatusForSave();
-          const stageToSave = getCurrentStageForAPI(statusToSave);
-          const conceptNameToSave = selectedConcept?.concept_name || "";
-
-          const requestData = {
-            conversation: practicemodeHistory,
-            status: statusToSave,
-            current_stage: stageToSave,
-            concept_name: conceptNameToSave,
-          };
-
-          if (statusToSave === "completed" && llmContent) {
-            const scoring_data = extractScoringData(llmContent);
-            if (scoring_data) {
-              requestData.scoring_data = scoring_data;
-              console.log("📊 Auto-save: Extracted scoring data:", scoring_data);
-            }
-          }
-
-          let response;
-          if (currentPracticeId) {
-            response = await axios.put(
-              `${BASE_URL}/practicemode/conversation/${currentPracticeId}`,
-              requestData,
-              { ...config, timeout: 10000 }
-            );
-            console.log(`✅ Auto-saved updated practice (ID: ${currentPracticeId})`);
-          } else {
-            response = await axios.post(
-              `${BASE_URL}/practicemode`,
-              {
-                user_id: userId,
-                ...requestData,
-              },
-              { ...config, timeout: 10000 }
-            );
-            const newPracticeId = response.data.data.id;
-            setCurrentPracticeId(newPracticeId);
-            sessionStorage.setItem("currentPracticeId", newPracticeId);
-            console.log(`✅ Auto-saved new practice (ID: ${newPracticeId})`);
-          }
-        } catch (error) {
-          console.error("❌ Auto-save failed:", error);
-          toast.error("Auto-save failed. Please check your connection and try again.", {
-            position: "top-right",
-            autoClose: 5000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      }
-    }, 2000),
-    [isLoading, isInitializing, practicemodeHistory, selectedConcept, userId, llmContent]
-  );
+  }, [isInitializing, practiceChatHistory.length]);
 
   useEffect(() => {
-    debouncedSavePractice();
-    return () => {
-      debouncedSavePractice.cancel();
-    };
-  }, [debouncedSavePractice]);
+    if (
+      practiceChatHistory.length > 0 &&
+      !isInitializing &&
+      !isLoading
+    ) {
+      const lastEntry = practiceChatHistory[practiceChatHistory.length - 1];
+      const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
+
+      if (isAssessmentEntry && currentChatStatus === 'completed') {
+        console.log("💾 Detected assessment response, auto-saving as completed...");
+        handleSaveChat('completed', false);
+      } else if (
+        lastEntry?.system &&
+        lastEntry?.user !== undefined &&
+        currentChatStatus === 'inprogress'
+      ) {
+        console.log("💾 Detected regular LLM response, auto-saving as inprogress...");
+        handleSaveChat('inprogress', false);
+      }
+    }
+  }, [practiceChatHistory, isInitializing, currentChatStatus, isLoading]);
 
   return (
     <div className="learning-dashboard">
@@ -1203,16 +1173,30 @@ function Practicemode() {
               <h3>Save Current Session?</h3>
             </div>
             <div className="restart-dialog-content">
-              <p>You're about to start a new conversation. Would you like to save your current session before restarting?</p>
+              <p>
+                You're about to start a new conversation. Would you like to save your current session before restarting?
+              </p>
             </div>
             <div className="restart-dialog-actions">
-              <button className="restart-btn save-and-restart" onClick={restartWithSaving} disabled={isLoading}>
+              <button
+                className="restart-btn save-and-restart"
+                onClick={restartWithSaving}
+                disabled={isLoading}
+              >
                 <FiSave /> Save & Restart
               </button>
-              <button className="restart-btn restart-only" onClick={restartWithoutSaving} disabled={isLoading}>
+              <button
+                className="restart-btn restart-only"
+                onClick={restartWithoutSaving}
+                disabled={isLoading}
+              >
                 <FiRefreshCw /> Just Restart
               </button>
-              <button className="restart-btn cancel" onClick={() => setShowRestartDialog(false)} disabled={isLoading}>
+              <button
+                className="restart-btn cancel"
+                onClick={() => setShowRestartDialog(false)}
+                disabled={isLoading}
+              >
                 Cancel
               </button>
             </div>
@@ -1230,10 +1214,18 @@ function Practicemode() {
               <p>This will end your current learning session and show an assessment. Are you sure?</p>
             </div>
             <div className="restart-dialog-actions">
-              <button className="restart-btn save-and-restart" onClick={handleEndSession} disabled={isLoading}>
+              <button
+                className="restart-btn save-and-restart"
+                onClick={handleEndSession}
+                disabled={isLoading}
+              >
                 <FiCheckCircle /> Yes, End Session
               </button>
-              <button className="restart-btn cancel" onClick={() => setShowEndSessionDialog(false)} disabled={isLoading}>
+              <button
+                className="restart-btn cancel"
+                onClick={() => setShowEndSessionDialog(false)}
+                disabled={isLoading}
+              >
                 Cancel
               </button>
             </div>
@@ -1249,19 +1241,20 @@ function Practicemode() {
             </div>
             <div className="concept-selector" ref={conceptDropdownRef}>
               <div
-                className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? "disabled" : ""}`}
+                className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
                 onClick={() => !isProcessingAssessment && setShowConceptDropdown(!showConceptDropdown)}
               >
                 <span className="concept-text">
                   {conceptsLoading
                     ? "Loading concepts..."
-                    : selectedConcept?.concept_name
-                    ? selectedConcept.concept_name
-                    : concepts.length > 0
-                    ? "Choose a concept to learn"
-                    : "No concepts available"}
+                    : selectedConcept
+                      ? selectedConcept.concept_name
+                      : concepts.length > 0
+                        ? "Choose a concept to learn"
+                        : "No concepts available"
+                  }
                 </span>
-                <FiChevronDown className={`dropdown-arrow ${showConceptDropdown ? "open" : ""}`} />
+                <FiChevronDown className={`dropdown-arrow ${showConceptDropdown ? 'open' : ''}`} />
               </div>
               {showConceptDropdown && (
                 <div className="concept-dropdown">
@@ -1305,13 +1298,13 @@ function Practicemode() {
               )}
             </div>
           </div>
-          <div className="control-section">
+          {/* <div className="control-section">
             <div className="section-header">
               <FiTrendingUp className="section-icon" />
               <h3>Learning Progress</h3>
             </div>
             <div className="stage-cards">
-              <div className={`stage-card ${getStageStatus() === "not-started" ? "active" : ""}`}>
+              <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
                 <div className="stage-icon not-started">
                   <FiClock />
                 </div>
@@ -1319,7 +1312,7 @@ function Practicemode() {
                   <h4>Not Started</h4>
                 </div>
               </div>
-              <div className={`stage-card ${getStageStatus() === "in-progress" ? "active" : ""} ${isTransitioning ? "transitioning" : ""}`}>
+              <div className={`stage-card ${getStageStatus() === 'in-progress' ? 'active' : ''} ${isTransitioning ? 'transitioning' : ''}`}>
                 <div className="stage-icon in-progress">
                   <FiPlay />
                 </div>
@@ -1327,16 +1320,14 @@ function Practicemode() {
                   <div className="stage-header">
                     <h4>In Progress</h4>
                   </div>
-                  {getStageStatus() === "in-progress" && (
+                  {getStageStatus() === 'in-progress' && (
                     <div className="stage-progress-content">
-                      <div className={`substage-progress ${isTransitioning ? "fade-in" : ""}`}>
+                      <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
                         <div className="progress-info">
                           <span>
-                            {currentStage <= 1
-                              ? "Starting..."
-                              : currentStage === 7
-                              ? "Completed"
-                              : `Stage ${currentStage - 1}/5`}
+                            {currentStage <= 1 ? "Starting..." :
+                              currentStage === 7 ? "Completed" :
+                                `Stage ${currentStage - 1}/5`}
                           </span>
                           <span>
                             {(() => {
@@ -1349,7 +1340,7 @@ function Practicemode() {
                           <div
                             className="progress-fill"
                             style={{
-                              width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`,
+                              width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
                             }}
                           ></div>
                         </div>
@@ -1361,7 +1352,7 @@ function Practicemode() {
                   )}
                 </div>
               </div>
-              <div className={`stage-card ${getStageStatus() === "completed" ? "active" : ""}`}>
+              <div className={`stage-card ${getStageStatus() === 'completed' ? 'active' : ''}`}>
                 <div className="stage-icon completed">
                   <FiCheckCircle />
                 </div>
@@ -1370,7 +1361,7 @@ function Practicemode() {
                 </div>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
         <div className="chat-panel">
           <div className="top-right-actions">
@@ -1379,18 +1370,15 @@ function Practicemode() {
                 ref={topSaveButtonRef}
                 className="top-action-btn top-save-btn"
                 onClick={() => !isProcessingAssessment && setShowSaveOptions(!showSaveOptions)}
-                disabled={practicemodeHistory.length === 0 || isProcessingAssessment || currentPracticeStatus === "not_started"}
+                disabled={practiceChatHistory.length === 0 || isProcessingAssessment || currentChatStatus === 'not_started'}
                 data-tooltip="Save Progress"
               >
                 <FiSave />
               </button>
               {showSaveOptions && (
                 <div ref={topSaveOptionsRef} className="top-save-dropdown">
-                  <button
-                    className="top-save-option current"
-                    onClick={() => !isProcessingAssessment && handleSavePractice()}
-                    disabled={isProcessingAssessment || currentPracticeStatus === "not_started"}
-                  >
+                  <button className="top-save-option current" onClick={() => !isProcessingAssessment && handleSaveChat()}
+                    disabled={isProcessingAssessment || currentChatStatus === 'not_started'}>
                     <FiSave /> Save Current Progress
                   </button>
                 </div>
@@ -1399,15 +1387,15 @@ function Practicemode() {
             <button
               className="top-action-btn top-download-btn"
               onClick={() => !isProcessingAssessment && handleDownloadPDF()}
-              disabled={practicemodeHistory.length === 0 || isProcessingAssessment || currentPracticeStatus === "not_started"}
-              data-tooltip="Export practice"
+              disabled={practiceChatHistory.length === 0 || isProcessingAssessment || currentChatStatus === 'not_started'}
+              data-tooltip="Export Chat"
             >
               <FiDownload />
             </button>
           </div>
           <div className="chat-container">
             <div className="chat-messages" id="chat-history">
-              {practicemodeHistory.length === 0 ? (
+              {practiceChatHistory.length === 0 ? (
                 <div className="chat-empty">
                   <div className="empty-icon">
                     <FiMessageCircle />
@@ -1416,11 +1404,12 @@ function Practicemode() {
                   <p>
                     {conceptsLoading
                       ? "Loading your concepts..."
-                      : selectedConcept?.concept_name
-                      ? "Your AI mentor is ready! Type a message to begin."
-                      : concepts.length > 0
-                      ? "Select a concept from the left panel and begin your AI-mentored journey!"
-                      : "No concepts available. Please contact your administrator."}
+                      : selectedConcept
+                        ? "Your AI mentor is ready! Type a message to begin."
+                        : concepts.length > 0
+                          ? "Select a concept from the left panel and begin your AI-mentored journey!"
+                          : "No concepts available. Please contact your administrator."
+                    }
                   </p>
                   {isInitializing && (
                     <div className="loading-indicator">
@@ -1430,7 +1419,7 @@ function Practicemode() {
                   )}
                 </div>
               ) : (
-                practicemodeHistory.map((item, index) => (
+                practiceChatHistory.map((item, index) => (
                   <div key={index} className="message-group">
                     {item.user && (
                       <div className="message user-message">
@@ -1441,6 +1430,7 @@ function Practicemode() {
                           <div className="message-text">{item.user}</div>
                         </div>
                       </div>
+
                     )}
                     <div className="message mentor-message">
                       <div className="message-avatar mentor">
@@ -1458,60 +1448,90 @@ function Practicemode() {
                   </div>
                 ))
               )}
-              {isPracticeEnded && (
+              {isChatEnded && (
                 <div className="chat-end-section">
                   <div className="chat-end-message">
                     <div className="end-content">
-                      <h4>{endReason === "interactionCompleted" ? "🎉 Learning Session Complete!" : "⏸️ Session Ended with Assessment"}</h4>
-                      <p className="end-action-hint">Ready to start a new learning session? Click the button below to begin fresh!</p>
+                      <h4>
+                        {endReason === 'interactionCompleted'
+                          ? '🎉 Learning Session Complete!'
+                          : '⏸️ Session Ended with Assessment'
+                        }
+                      </h4>
+                      <p className="end-action-hint">
+                        Ready to start a new learning session? Click the button below to begin fresh!
+                      </p>
                     </div>
                   </div>
                   <div className="restart-button-container">
-                    <button className="restart-session-btn" onClick={handleRestartPractice} disabled={isLoading}>
+                    <button
+                      className="restart-session-btn"
+                      onClick={handleRestartChat}
+                      disabled={isLoading}
+                    >
                       <FiRefreshCw />
                       Start New Session
                     </button>
                   </div>
                 </div>
               )}
-              <div ref={practiceEndRef} />
+              <div ref={chatEndRef} />
             </div>
             <div className="chat-input-container">
               {isLoading && (
                 <div className="loading-indicator">
                   <div className="loading-spinner"></div>
-                  <span>{isProcessingAssessment ? "Please wait. We are calculating your score" : "AI is thinking..."}</span>
+                  <span>
+                    {isProcessingAssessment
+                      ? "Please wait. We are calculating your score"
+                      : "AI is thinking..."
+                    }
+                  </span>
                 </div>
               )}
               <div className="chat-input-wrapper">
+                {/* <div className="tooltip-container" data-tooltip={
+                  currentChatStatus === 'not_started' ? "Start a conversation first" : 
+                  isChatEnded ? "Session already ended" : 
+                  "End Session"
+                }>
+                  <button
+                    className="end-session-btn"
+                    onClick={() => setShowEndSessionDialog(true)}
+                    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded}
+                    style={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
+                  >
+                    <FiStopCircle />
+                  </button>
+                </div> */}
                 <textarea
-                  className={`chat-input ${isPracticeEnded ? "disabled" : ""}`}
+                  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
                   placeholder={
-                    isPracticeEnded
+                    isChatEnded
                       ? "This conversation has ended. Please restart to begin a new session."
                       : isInitializing
-                      ? "Initializing..."
-                      : selectedConcept?.concept_name
-                      ? "Ask your mentor anything..."
-                      : conceptsLoading
-                      ? "Loading concepts..."
-                      : "Please select a concept first..."
+                        ? "Initializing..."
+                        : selectedConcept
+                          ? "Ask your mentor anything..."
+                          : conceptsLoading
+                            ? "Loading concepts..."
+                            : "Please select a concept first..."
                   }
                   value={prompt}
-                  onChange={handleInputChange}
+                  onChange={(e) => setPrompt(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  disabled={isLoading || !selectedConcept?.concept_name || isInitializing || isPracticeEnded}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
                   rows="1"
                 />
                 <button
                   className="send-button"
                   onClick={handleSendClick}
-                  disabled={!prompt.trim() || isLoading || !selectedConcept?.concept_name || isInitializing || isPracticeEnded}
+                  disabled={!prompt.trim() || isLoading || !selectedConcept || isInitializing || isChatEnded}
                 >
                   <FiSend />
                 </button>
               </div>
-              {isPracticeEnded && (
+              {isChatEnded && (
                 <div className="chat-ended-notice">
                   <FiAlertCircle />
                   <span>Conversation ended. Use "Start New Session" to continue learning.</span>
@@ -1524,4 +1544,5 @@ function Practicemode() {
     </div>
   );
 }
+
 export default Practicemode;
