@@ -508,13 +508,23 @@ function Dashboard() {
       setCurrentStage(1);
       setTimeout(() => setIsTransitioning(false), 800);
     }
-
+    
+    
     setIsLoading(true);
+     const userPrompt = prompt.trim();
+  setPrompt("");
+
+  // Step 1: Add only user message first
+  setChatHistory((prev) => {
+    const updated = [...prev, { user: userPrompt, system: "" }];
+    sessionStorage.setItem("chatHistory", JSON.stringify(updated));
+    return updated;
+  });
     console.log("🚀 handleSendClick: Setting isLoading to true");
 
     try {
-      const userPrompt = prompt.trim();
-      setPrompt("");
+      // const userPrompt = prompt.trim();
+      // setPrompt("");
       const organizationId = sessionStorage.getItem("organizationId");
       const batchId = sessionStorage.getItem("batchId");
 
@@ -542,17 +552,13 @@ function Dashboard() {
         setCurrentChatStatus('inprogress');
       }
 
-      const newChatEntry = {
-        user: userPrompt,
-        system: initialResponse.apiResponseText,
-      };
+       setChatHistory((prev) => {
+      const updated = [...prev];
+      updated[updated.length - 1].system = initialResponse.apiResponseText;
+      sessionStorage.setItem("chatHistory", JSON.stringify(updated));
+      return updated;
+    });
 
-      let currentChatHistory = [];
-      setChatHistory((prev) => {
-        currentChatHistory = [...prev, newChatEntry];
-        sessionStorage.setItem("chatHistory", JSON.stringify(currentChatHistory));
-        return currentChatHistory;
-      });
 
       setSessionHistory((prev) => [
         ...prev,
@@ -1130,7 +1136,7 @@ function Dashboard() {
 
   return (
     <div className="learning-dashboard">
-      <Sidebar isProcessingAssessment={isProcessingAssessment} />
+      <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} />
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -1409,11 +1415,12 @@ function Dashboard() {
                       </div>
 
                     )}
-                    <div className="message mentor-message">
-                      <div className="message-avatar mentor">
-                        <FiMessageCircle />
-                      </div>
-                      <div className="message-content">
+                    {item.system && (
+                      <div className="message mentor-message">
+                        <div className="message-avatar mentor">
+                          <FiMessageCircle />
+                        </div>
+                        <div className="message-content">
                         <div className="message-header">
                           <span className="message-author">AI Mentor</span>
                         </div>
@@ -1422,6 +1429,7 @@ function Dashboard() {
                         </div>
                       </div>
                     </div>
+                    )}
                   </div>
                 ))
               )}

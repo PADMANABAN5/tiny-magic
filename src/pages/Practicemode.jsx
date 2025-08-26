@@ -29,7 +29,7 @@ import "react-toastify/dist/ReactToastify.css";
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
 import { parseApiResponseText } from "../utils/parseApiResponseText.js";
-
+import ReactMarkdown from "react-markdown";
 const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000"; // Fallback URL
 
 function Practicemode() {
@@ -436,6 +436,7 @@ const [prompt, setPrompt] = useState("");
         ...prev,
         { Mentee: "", Mentor: parseApiResponseText(assessmentResponse.apiResponseText) },
       ]);
+      
 
       setCurrentChatStatus("completed");
       setIsChatEnded(true);
@@ -532,11 +533,20 @@ const [prompt, setPrompt] = useState("");
     }
 
     setIsLoading(true);
+    const userPrompt = prompt.trim();
+  setPrompt("");
+
+  // Step 1: Add only user message first
+  setPracticeChatHistory((prev) => {
+    const updated = [...prev, { user: userPrompt, system: "" }];
+    sessionStorage.setItem("practiceChatHistory", JSON.stringify(updated));
+    return updated;
+  });
     console.log("🚀 handleSendClick: Setting isLoading to true");
 
     try {
-      const userPrompt = prompt.trim();
-      setPrompt("");
+      // const userPrompt = prompt.trim();
+      // setPrompt("");
       const organizationId = sessionStorage.getItem("organizationId");
       const batchId = sessionStorage.getItem("batchId");
 
@@ -556,6 +566,28 @@ const [prompt, setPrompt] = useState("");
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
       let newEndRequested = initialResponse.endRequested || false;
+      console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
+
+// 🔽 ADD THIS
+const parsedResponse = (() => {
+  try {
+    const cleanedText = initialResponse.apiResponseText
+      .replace(/```json\s*/i, "")
+      .replace(/```$/, "")
+      .trim();
+    return JSON.parse(cleanedText);
+  } catch (e) {
+    return {};
+  }
+})();
+
+const newStatus = parsedResponse.status || "";
+if (newStatus === "complete") {
+  setIsChatEnded(true);
+  setEndReason("interactionCompleted"); // you can also set "complete"
+  setCurrentChatStatus("completed");
+  console.log("🎯 handleSendClick: Chat ended because status=complete");
+}
 
       const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
 
@@ -564,16 +596,14 @@ const [prompt, setPrompt] = useState("");
         setCurrentChatStatus('inprogress');
       }
 
-      const newChatEntry = {
-        user: userPrompt,
-        system: parseApiResponseText(initialResponse.apiResponseText),
-      };
+     
 
       let currentChatHistory = [];
       setPracticeChatHistory((prev) => {
-        currentChatHistory = [...prev, newChatEntry];
-        sessionStorage.setItem("practiceChatHistory", JSON.stringify(currentChatHistory));
-        return currentChatHistory;
+        const updated = [...prev];
+      updated[updated.length - 1].system = parseApiResponseText(initialResponse.apiResponseText);
+      sessionStorage.setItem("practiceChatHistory", JSON.stringify(updated));
+      return updated;
       });
 
       setSessionHistory((prev) => [
@@ -1153,7 +1183,7 @@ const [prompt, setPrompt] = useState("");
 
   return (
     <div className="learning-dashboard">
-      <Sidebar isProcessingAssessment={isProcessingAssessment} />
+      <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} />
       <ToastContainer
         position="top-right"
         autoClose={3000}
@@ -1432,11 +1462,12 @@ const [prompt, setPrompt] = useState("");
                       </div>
 
                     )}
-                    <div className="message mentor-message">
-                      <div className="message-avatar mentor">
-                        <FiMessageCircle />
-                      </div>
-                      <div className="message-content">
+                    {item.system && (
+                      <div className="message mentor-message">
+                        <div className="message-avatar mentor">
+                          <FiMessageCircle />
+                        </div>
+                        <div className="message-content">
                         <div className="message-header">
                           <span className="message-author">AI Mentor</span>
                         </div>
@@ -1445,6 +1476,7 @@ const [prompt, setPrompt] = useState("");
                         </div>
                       </div>
                     </div>
+                    )}
                   </div>
                 ))
               )}

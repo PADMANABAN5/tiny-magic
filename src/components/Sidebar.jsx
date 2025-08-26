@@ -10,7 +10,7 @@ import {
   FaHistory,
 } from "react-icons/fa";
 
-function Sidebar({ isProcessingAssessment }) {
+function Sidebar({ isProcessingAssessment , isLoading }) {
   const location = useLocation();
   const username = sessionStorage.getItem("email");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
@@ -44,9 +44,7 @@ function Sidebar({ isProcessingAssessment }) {
   return (
     <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
       <div className="container-fluid"> 
-        <Link to="/dashboard" className={`navbar-brand d-flex align-items-center ${
-            isProcessingAssessment ? "disabled" : ""
-          }`}
+        <Link to="/dashboard" className={`navbar-brand d-flex align-items-center`}
           onClick={(e) => isProcessingAssessment && e.preventDefault()}
         >
           <div className="logo-container">
@@ -73,12 +71,12 @@ function Sidebar({ isProcessingAssessment }) {
           <div className="dropdown">
             <button
               className={`btn btn-outline-secondary d-flex align-items-center login-btn ${
-                isProcessingAssessment ? "disabled" : ""
+                isProcessingAssessment || isLoading ? "disabled" : ""
               }`}
               type="button"
-              onClick={() => !isProcessingAssessment && setShowDropdown(!showDropdown)}
+              onClick={() => !isProcessingAssessment && !isLoading && setShowDropdown(!showDropdown)}
               aria-expanded={showDropdown}
-              disabled={isProcessingAssessment}
+              disabled={isProcessingAssessment || isLoading}
             >
               <FaUser className="me-2 text-white" />
               <span className="text-white">{getShortenedUsername(username)}</span>
@@ -92,9 +90,9 @@ function Sidebar({ isProcessingAssessment }) {
                     to="/dashboard"
                     className={`dropdown-item d-flex align-items-center ${
                       location.pathname === "/dashboard" ? "active" : ""
-                    } ${isProcessingAssessment ? "disabled" : ""}`}
+                    } ${isProcessingAssessment || isLoading ? "disabled" : ""}`}
                     onClick={(e) => {
-                      if (isProcessingAssessment) {
+                      if (isProcessingAssessment || isLoading) {
                         e.preventDefault();
                       } else {
                         setShowDropdown(false);
@@ -108,9 +106,9 @@ function Sidebar({ isProcessingAssessment }) {
                     to="/practice"
                     className={`dropdown-item d-flex align-items-center ${
                       location.pathname === "/practice" ? "active" : ""
-                    } ${isProcessingAssessment ? "disabled" : ""}`}
+                    } ${isProcessingAssessment || isLoading ? "disabled" : ""}`}
                     onClick={(e) => {
-                      if (isProcessingAssessment) {
+                      if (isProcessingAssessment || isLoading) {
                         e.preventDefault();
                       } else {
                         setShowDropdown(false);
@@ -124,9 +122,9 @@ function Sidebar({ isProcessingAssessment }) {
                     to="/conversationhistory"
                     className={`dropdown-item d-flex align-items-center ${
                       location.pathname === "/conversationhistory" ? "active" : ""
-                    } ${isProcessingAssessment ? "disabled" : ""}`}
+                    } ${isProcessingAssessment || isLoading ? "disabled" : ""}`}
                     onClick={(e) => {
-                      if (isProcessingAssessment) {
+                      if (isProcessingAssessment || isLoading) {
                         e.preventDefault();
                       } else {
                         setShowDropdown(false);
@@ -142,10 +140,10 @@ function Sidebar({ isProcessingAssessment }) {
                   <Link
                     to="/login"
                    className={`dropdown-item d-flex align-items-center text-danger ${
-                      isProcessingAssessment ? "disabled" : ""
+                      isProcessingAssessment || isLoading ? "disabled" : ""
                     }`}
                     onClick={(e) => {
-                      if (isProcessingAssessment) {
+                      if (isProcessingAssessment || isLoading) {
                         e.preventDefault();
                       } else {
                         sessionStorage.removeItem("chatHistory");

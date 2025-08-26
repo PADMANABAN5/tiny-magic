@@ -1,3 +1,5 @@
+// utils/parseApiResponseText.js
+
 export const parseApiResponseText = (apiResponseText, context = "") => {
   console.log("📡 [parseApiResponseText] Raw response:", apiResponseText);
 
@@ -11,33 +13,33 @@ export const parseApiResponseText = (apiResponseText, context = "") => {
       input = JSON.stringify(input);
     }
 
-    // Sanitize LaTeX escape sequences (e.g., \( to \\(), \) to \\))
-    const sanitizedInput = input.replace(/\\([()])/g, '\\\\$1');
-
-    // Try to parse the sanitized input as JSON
-    const parsed = JSON.parse(sanitizedInput);
-
-    // Extract display_text if it exists
-    if (parsed && typeof parsed === "object" && "display_text" in parsed) {
-      return parsed.display_text ?? "";
+    // ✅ First try: parse as-is
+    try {
+      const parsed = JSON.parse(input);
+      if (parsed && typeof parsed === "object" && "display_text" in parsed) {
+        return parsed.display_text ?? "";
+      }
+    } catch (err) {
+      // Only try sanitization if JSON.parse fails
+      const sanitizedInput = input.replace(/\\([()])/g, "\\\\$1");
+      const parsed = JSON.parse(sanitizedInput);
+      if (parsed && typeof parsed === "object" && "display_text" in parsed) {
+        return parsed.display_text ?? "";
+      }
     }
 
-    // If display_text is not found, return empty string
     return "";
   } catch (err) {
-    console.warn(
-      `⚠️ [parseApiResponseText] Failed to parse (${context}):`,
-      err
-    );
+    console.warn(`⚠️ [parseApiResponseText] Failed to parse (${context}):`, err);
 
     // Fallback: Extract display_text using regex
-    const displayTextMatch = apiResponseText.match(/"display_text"\s*:\s*"([^"]*(?:""[^"]*)*)"/);
+    const displayTextMatch = apiResponseText.match(
+      /"display_text"\s*:\s*"([^"]*(?:""[^"]*)*)"/
+    );
     if (displayTextMatch && displayTextMatch[1]) {
-      // Unescape double quotes and return the display_text content
       return displayTextMatch[1].replace(/""/g, '"');
     }
 
-    // Return empty string if extraction fails
     return "";
   }
 };
