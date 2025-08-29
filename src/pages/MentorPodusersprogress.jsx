@@ -20,7 +20,7 @@ import {
 } from "react-icons/fi";
 import axios from 'axios';
 import { Spinner, Alert, Card, Row, Col, Badge, Button } from 'react-bootstrap';
-import Orgadminsidebar from '../components/Orgadminsidebar';
+import Mentorsidebar from '../components/Mentorsidebar';
 import PDFDownloader from '../components/PDFDownloader.jsx';
 import AssessmentDisplay, { 
   hasAssessmentData, 
@@ -641,7 +641,7 @@ function MentorPodusersprogress() {
 
   return (
     <div className="conversation-history-page">
-      <Orgadminsidebar />
+      <Mentorsidebar />
       <div className="main-content">
         <div className="container mt-4">
           {loading ? (

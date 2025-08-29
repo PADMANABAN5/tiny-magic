@@ -42,7 +42,7 @@ function Mentorsidebar() {
    return (
      <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
        <div className="container-fluid"> 
-         <Link to="/superadmin" className="navbar-brand d-flex align-items-center">
+         <Link to="/mentorpods" className="navbar-brand d-flex align-items-center">
            <div className="logo-container">
              <img src="/logo.png" alt="Logo" className="logo-image" /> 
            </div>
@@ -65,9 +65,9 @@ function Mentorsidebar() {
                <ul className="dropdown-menu dropdown-menu-end show">
                  <li>
                    <Link
-                     to="/superadmin"
+                     to="/mentorpods"
                      className={`dropdown-item d-flex align-items-center ${
-                       location.pathname === "/superadmin" ? "active" : ""
+                       location.pathname === "/mentorpods" ? "active" : ""
                      }`}
                      onClick={() => setShowDropdown(false)}
                    >

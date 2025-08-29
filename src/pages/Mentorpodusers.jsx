@@ -6,7 +6,7 @@ import {
 import axios from 'axios';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useParams, useNavigate } from 'react-router-dom';
-import Orgadminsidebar from '../components/Orgadminsidebar';
+import Mentorsidebar from '../components/Mentorsidebar';
 import '../styles/orgadminusers.css';
 
 function Mentorpodusers() {
@@ -60,7 +60,7 @@ function Mentorpodusers() {
 
   return (
     <div className="main-layout-container">
-      <Orgadminsidebar />
+      <Mentorsidebar />
       <div className="content-area">
         <div className="container mt-4">
           {/* Heading + Back Button Row */}
