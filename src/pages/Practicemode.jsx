@@ -568,7 +568,7 @@ const [prompt, setPrompt] = useState("");
       let newEndRequested = initialResponse.endRequested || false;
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
 
-// 🔽 ADD THIS
+// ---- Replace the existing parsedResponse / stage logic with this ----
 const parsedResponse = (() => {
   try {
     const cleanedText = initialResponse.apiResponseText
@@ -581,22 +581,44 @@ const parsedResponse = (() => {
   }
 })();
 
+const apiCurrentLevel = parsedResponse.current_level || 0;
 const newStatus = parsedResponse.status || "";
+
+// compute once so it's available later (fixes "not defined" error)
+const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
+
 if (newStatus === "complete") {
+  // final/completed path -> force Completed card (stage 7)
   setIsChatEnded(true);
-  setEndReason("interactionCompleted"); // you can also set "complete"
+  setEndReason("interactionCompleted");
   setCurrentChatStatus("completed");
-  console.log("🎯 handleSendClick: Chat ended because status=complete");
+  setCurrentStage(7);
+  console.log("🎯 Session completed, moved to Completed card");
+} else {
+  // not complete -> normal progression
+  const allScenariosDone =
+    parsedResponse.scenarios_completed &&
+    parsedResponse.session_progress?.total_scenarios &&
+    parsedResponse.scenarios_completed === parsedResponse.session_progress.total_scenarios;
+
+  if (allScenariosDone) {
+    // If the LLM says all scenarios finished, mark Completed
+    setCurrentStage(7);
+    setIsChatEnded(true);
+    setEndReason("interactionCompleted");
+    setCurrentChatStatus("completed");
+    console.log("🎯 All scenarios reported complete -> Completed card");
+  } else {
+    // update stage only if it's the first user message or we're progressing forward
+    if (isFirstUserMessage || newProgressStage >= currentStage) {
+      setCurrentStage(newProgressStage);
+      setCurrentChatStatus("inprogress");
+      console.log("➡️ Progressing to stage:", newProgressStage);
+    }
+  }
 }
+// ---- end replacement ----
 
-      const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
-
-      if (isFirstUserMessage || newProgressStage >= currentStage) {
-        setCurrentStage(newProgressStage);
-        setCurrentChatStatus('inprogress');
-      }
-
-     
 
       let currentChatHistory = [];
       setPracticeChatHistory((prev) => {
@@ -1328,7 +1350,7 @@ if (newStatus === "complete") {
               )}
             </div>
           </div>
-          {/* <div className="control-section">
+           <div className="control-section">
             <div className="section-header">
               <FiTrendingUp className="section-icon" />
               <h3>Learning Progress</h3>
@@ -1391,7 +1413,7 @@ if (newStatus === "complete") {
                 </div>
               </div>
             </div>
-          </div> */}
+          </div> 
         </div>
         <div className="chat-panel">
           <div className="top-right-actions">

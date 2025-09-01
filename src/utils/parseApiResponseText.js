@@ -1,5 +1,3 @@
-// utils/parseApiResponseText.js
-
 export const parseApiResponseText = (apiResponseText, context = "") => {
   console.log("📡 [parseApiResponseText] Raw response:", apiResponseText);
 
@@ -13,14 +11,20 @@ export const parseApiResponseText = (apiResponseText, context = "") => {
       input = JSON.stringify(input);
     }
 
-    // ✅ First try: parse as-is
+    // 🛠 Remove Markdown code fences like ```json ... ```
+    input = input
+      .replace(/```json\s*/i, "")
+      .replace(/```/g, "")
+      .trim();
+
+    // ✅ First try: parse as JSON
     try {
       const parsed = JSON.parse(input);
       if (parsed && typeof parsed === "object" && "display_text" in parsed) {
         return parsed.display_text ?? "";
       }
     } catch (err) {
-      // Only try sanitization if JSON.parse fails
+      // Try sanitization if JSON.parse fails
       const sanitizedInput = input.replace(/\\([()])/g, "\\\\$1");
       const parsed = JSON.parse(sanitizedInput);
       if (parsed && typeof parsed === "object" && "display_text" in parsed) {
