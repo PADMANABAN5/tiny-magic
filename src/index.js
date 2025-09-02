@@ -14,7 +14,7 @@ import { replayIntegration } from "@sentry/react";
 
 // ✅ Initialize Sentry
 Sentry.init({
-  dsn: "https://b6faf51da557084e7a638be85600c3dc@o4509842666749952.ingest.us.sentry.io/4509880547278848", // copy from Sentry project settings
+  dsn: "https://cc1f53ab98b5d1e2ceab745579002c4d@o4509944771051520.ingest.us.sentry.io/4509944774524928", // copy from Sentry project settings
   sendDefaultPii: true,
   integrations: [
     browserTracingIntegration(),

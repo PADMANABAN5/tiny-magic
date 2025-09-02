@@ -69,7 +69,15 @@ function Login() {
         setIsSubmitting(false);
       }, 2000);
     } catch (err) {
-      Sentry.captureException(err);
+      Sentry.captureException(err, {
+  extra: {
+    status: err.response?.status,
+    url: err.config?.url,
+    method: err.config?.method,
+    responseMessage: err.response?.data?.message,
+    responseError: err.response?.data?.error,
+  },
+});
       const status = err.response?.status;
       if (status === 401) {
         setError("❌ Invalid credentials. Please try again.");
@@ -196,7 +204,15 @@ function Login() {
         "✅ Password updated successfully! Please login with your new password."
       );
     } catch (err) {
-      Sentry.captureException(err);
+     Sentry.captureException(err, {
+  extra: {
+    status: err.response?.status,
+    url: err.config?.url,
+    method: err.config?.method,
+    responseMessage: err.response?.data?.message,
+    responseError: err.response?.data?.error,
+  },
+});
       const status = err.response?.status;
       const apiMessage =
         err.response?.data?.error || err.response?.data?.message;
