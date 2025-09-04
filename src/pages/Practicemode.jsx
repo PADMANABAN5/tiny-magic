@@ -634,7 +634,7 @@ if (selectedConcept?.concept_name) {
   );
 }
 
-const apiCurrentLevel = parsedResponse.current_level || 0;
+const apiCurrentLevel = Number(parsedResponse.current_level) || 0;
 const newStatus = parsedResponse.status || "";
 
 // compute once so it's available later (fixes "not defined" error)
