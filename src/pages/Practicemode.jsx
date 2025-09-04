@@ -645,7 +645,11 @@ if (newStatus === "complete") {
   setIsChatEnded(true);
   setEndReason("interactionCompleted");
   setCurrentChatStatus("completed");
-  await handleSaveChat('completed');
+  await handleSaveChat('completed', true, [...practiceChatHistory, {
+    user: userPrompt,
+    system: parseApiResponseText(initialResponse.apiResponseText)
+  }]);
+
   setCurrentStage(7);
   console.log("🎯 Session completed, moved to Completed card");
 } else {
