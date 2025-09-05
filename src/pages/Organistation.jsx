@@ -132,6 +132,10 @@ export default function OrgList() {
   }
 };
 
+const isValidOrgName = (name) => {
+  const regex = /^[a-zA-Z0-9\s]+$/; // only letters, numbers, spaces
+  return regex.test(name);
+};
 
   const handleCreateOrganization = async (e) => {
   e.preventDefault();
@@ -141,6 +145,13 @@ export default function OrgList() {
     setShowToast(true);
     return;
   }
+    if (!isValidOrgName(newOrgName)) {
+    setToastMessage('⚠️ Special characters are not allowed in the organization name!');
+    setToastBg('warning');
+    setShowToast(true);
+    return;
+  }
+
 
   try {
     await axios.post(`${process.env.REACT_APP_API_LINK}/organizations`, {

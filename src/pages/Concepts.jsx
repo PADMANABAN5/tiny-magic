@@ -29,6 +29,9 @@ export default function Concepts() {
   const storedToken = sessionStorage.getItem("token");
   const [isLoading, setIsLoading] = useState(false);
   const [activeAccordionKey, setActiveAccordionKey] = useState("0");
+  const cleanTextRegex = /^(?!.*\s{2,})(?!^\s)(?!.*\s$)[A-Za-z0-9().,/* ]*$/;
+// Allowed: A–Z, 0–9, spaces, (), /, ., ,, *
+
 
   const [originalConcept, setOriginalConcept] = useState({
     concept_title: "",
@@ -134,6 +137,18 @@ export default function Concepts() {
       setLoading(false);
     }
   };
+ const validateCleanText = (e, key) => {
+  const { value } = e.target;
+  if (["concept_name", "concept_content"].includes(key) && !cleanTextRegex.test(value)) {
+    e.target.setCustomValidity(
+      "Only letters, numbers, spaces, and () / . , * are allowed (no leading, trailing, or multiple spaces)."
+    );
+  } else {
+    e.target.setCustomValidity("");
+  }
+  e.target.reportValidity();
+};
+
 
   const handleAccordionSelect = (selectedKey) => {
     setActiveAccordionKey(selectedKey);
@@ -535,29 +550,26 @@ export default function Concepts() {
                           {label}
                         </label> */}
                         <textarea
-                          className="form-control"
-                          id={key}
-                          name={key}
-                          rows={4}
-                          value={conceptForm[key] || ""}
-                          onChange={(e) =>
-                            setConceptForm((prev) => ({
-                              ...prev,
-                              [key]: e.target.value,
-                            }))
-                          }
-                          required={[
-                            "concept_name",
-                            "concept_content",
-                          ].includes(key)}
-                          aria-required={[
-                            "concept_name",
-                            "concept_content",
-                          ].includes(key)}
-                          maxlength={[
-                            "concept_name"
-                          ].includes(key) ? 30 : 20000}
-                        />
+  className="form-control"
+  id={key}
+  name={key}
+  rows={4}
+  value={conceptForm[key] || ""}
+  onChange={(e) => {
+    setConceptForm((prev) => ({
+      ...prev,
+      [key]: e.target.value,
+    }));
+    // ✅ apply only to concept_name & concept_content
+    if (["concept_name", "concept_content"].includes(key)) {
+      validateCleanText(e, key);
+    }
+  }}
+  required={["concept_name", "concept_content"].includes(key)}
+  aria-required={["concept_name", "concept_content"].includes(key)}
+  maxLength={["concept_name"].includes(key) ? 30 : 20000}
+/>
+
                       </div>
                     </Accordion.Body>
                   </Accordion.Item>

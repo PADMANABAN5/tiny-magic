@@ -17,7 +17,7 @@ export default function Pods() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPodId, setSelectedPodId] = useState(null);
-
+  
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastBg, setToastBg] = useState("primary");
@@ -36,6 +36,7 @@ export default function Pods() {
       Authorization: `Bearer ${storedToken}`,
     },
   };
+  const podNameRegex = /^(?!.*\s{2,})(?!^\s)(?!.*\s$)[A-Za-z0-9 ]*$/;
 
   const [podForm, setPodForm] = useState({
     organization_id: "",
@@ -86,6 +87,18 @@ export default function Pods() {
   const currentPods = filteredPods.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredPods.length / itemsPerPage);
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+  
+  const validatePodName = (e) => {
+  const { value } = e.target;
+  if (!podNameRegex.test(value)) {
+    e.target.setCustomValidity(
+      "Please enter a valid pod name."
+    );
+  } else {
+    e.target.setCustomValidity("");
+  }
+  e.target.reportValidity();
+};
 
   const fetchPods = async () => {
     setLoading(true);
@@ -642,17 +655,18 @@ export default function Pods() {
                   Pod Name <span style={{ color: "red" }}>*</span>
                 </label>
                 <input
-                  type="text"
-                  className="form-control"
-                  value={podForm.pod_name}
-                  onChange={(e) =>
-                    setPodForm((prev) => ({
-                      ...prev,
-                      pod_name: e.target.value,
-                    }))
-                  }
-                  required
-                />
+                type="text"
+                className="form-control"
+                value={podForm.pod_name}
+                onChange={(e) => {
+                  setPodForm((prev) => ({
+                    ...prev,
+                    pod_name: e.target.value,
+                  }));
+                  validatePodName(e); 
+                }}
+                required
+              />
               </div>
 
               <div className="d-flex gap-2">

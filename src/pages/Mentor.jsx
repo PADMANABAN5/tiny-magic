@@ -446,11 +446,17 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={newMentor.first_name}
-                  onChange={(e) =>
-                    setNewMentor({ ...newMentor, first_name: e.target.value })
-                  }
-                  required
-                />
+                   onChange={(e) => {
+                  const value = e.target.value;
+                  const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                  e.target.setCustomValidity(
+                    isValid ? "" : "Please Enter a valid First Name"
+                  );
+                  setNewMentor({ ...newMentor, first_name: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+                required
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -460,11 +466,17 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={newMentor.last_name}
-                  onChange={(e) =>
-                    setNewMentor({ ...newMentor, last_name: e.target.value })
-                  }
-                  required
-                />
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                    e.target.setCustomValidity(
+                      isValid ? "" : "Please Enter a valid Last Name"
+                                  );
+                  setNewMentor({ ...newMentor, last_name: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+                required
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -533,10 +545,16 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={editMentor.username}
-                  onChange={(e) =>
-                    setEditMentor({ ...editMentor, username: e.target.value })
-                  }
-                />
+                   onChange={(e) => {
+                  const value = e.target.value;
+                  const isValid = /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(value) || value === "";
+                  e.target.setCustomValidity(
+                    isValid ? "" : "Please Enter a valid Username"
+                  );
+                  setEditMentor({ ...editMentor, username: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -546,11 +564,17 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={editMentor.first_name}
-                  onChange={(e) =>
-                    setEditMentor({ ...editMentor, first_name: e.target.value })
-                  }
-                  required
-                />
+                   onChange={(e) => {
+                  const value = e.target.value;
+                  const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                  e.target.setCustomValidity(
+                    isValid ? "" : "Please Enter a valid First Name"
+                  );
+                  setEditMentor({ ...editMentor, first_name: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+                required
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -560,9 +584,15 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={editMentor.last_name}
-                  onChange={(e) =>
-                    setEditMentor({ ...editMentor, last_name: e.target.value })
-                  }
+                    onChange={(e) => {
+                    const value = e.target.value;
+                    const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                    e.target.setCustomValidity(
+                      isValid ? "" : "Please Enter a valid Last Name"
+                    );
+                    setEditMentor({ ...editMentor, last_name: value });
+                  }}
+                  onInput={(e) => e.target.setCustomValidity("")}
                   required
                 />
               </div>

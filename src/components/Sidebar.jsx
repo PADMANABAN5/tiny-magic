@@ -56,7 +56,7 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
   {(() => {
     switch (location.pathname) {
       case "/dashboard":
-        return "Dashboard";
+        return "Training Mode";
       case "/practice":
         return "Practice Mode";
       case "/conversationhistory":

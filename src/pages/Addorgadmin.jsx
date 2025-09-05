@@ -27,17 +27,25 @@ export default function Addorgadmin() {
   const [showToast, setShowToast] = useState(false);
   const passwordRef = useRef(null);
   const editPasswordRef = useRef(null);
+  const firstNameRef = useRef(null);
+  const lastNameRef = useRef(null);
+  const usernameRef = useRef(null);
+  const editFirstNameRef = useRef(null);
+  const editLastNameRef = useRef(null);
+  const editUsernameRef = useRef(null);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrganization, setSelectedOrganization] = useState("");
-
+  const nameRegex = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/;
+  const usernameRegex = /^[A-Za-z0-9_]+$/;
   const storedToken = sessionStorage.getItem("token");
   const config = {
     headers: {
       Authorization: `Bearer ${storedToken}`,
     },
   };
+
   // Fetch admins & orgs
   const fetchOrgAdmins = async () => {
     setLoading(true);
@@ -122,16 +130,49 @@ export default function Addorgadmin() {
     }
   };
 
-  // Password validation handler
+  // Validation handlers
   const validatePassword = (e, ref) => {
     const pwd = e.target.value;
     ref.current.setCustomValidity(
       pwd.length < 8 ? "Password must be at least 8 characters" : ""
     );
   };
+
+  const validateName = (e, ref, field) => {
+    const value = e.target.value;
+    ref.current.setCustomValidity(
+      !nameRegex.test(value)
+        ? `${field} should only contain letters and single spaces between words`
+        : ""
+    );
+  };
+
+  const validateUsername = (e, ref) => {
+    const value = e.target.value;
+    ref.current.setCustomValidity(
+      !usernameRegex.test(value)
+        ? "Please Enter a valid Username"
+        : ""
+    );
+  };
+
   // Create admin
   const handleCreateAdmin = async (e) => {
     e.preventDefault();
+    if (!nameRegex.test(newAdmin.first_name)) {
+      firstNameRef.current.setCustomValidity(
+        "Please Enter a valid First Name"
+      );
+      firstNameRef.current.reportValidity();
+      return;
+    }
+    if (!nameRegex.test(newAdmin.last_name)) {
+      lastNameRef.current.setCustomValidity(
+        "Please Enter a valid Last Name"
+      );
+      lastNameRef.current.reportValidity();
+      return;
+    }
     if (newAdmin.password.length < 8) {
       passwordRef.current.setCustomValidity(
         "Password must be at least 8 characters"
@@ -139,7 +180,9 @@ export default function Addorgadmin() {
       passwordRef.current.reportValidity();
       return;
     }
-    passwordRef.current.setCustomValidity(""); // Clear error before submit
+    firstNameRef.current.setCustomValidity("");
+    lastNameRef.current.setCustomValidity("");
+    passwordRef.current.setCustomValidity("");
     try {
       await axios.post(
         `${process.env.REACT_APP_API_LINK}/users/orgadmin`,
@@ -164,7 +207,6 @@ export default function Addorgadmin() {
 
       switch (err.response?.status) {
         case 400:
-          // Handle specific backend error messages
           if (err.response.data?.message) {
             toastMessage = `⚠️ ${err.response.data.message}`;
           } else if (err.response.data?.error === "Bad request") {
@@ -190,11 +232,9 @@ export default function Addorgadmin() {
             (err.response.data?.message ||
               "Admin with this email or username already exists");
           break;
-
         case 500:
           toastMessage = "⚠️ Server error. Please try again later.";
           break;
-
         default:
           toastMessage = "⚠️ Failed to create admin. Please try again.";
       }
@@ -208,6 +248,27 @@ export default function Addorgadmin() {
   // Edit admin
   const handleEditSubmit = async (e) => {
     e.preventDefault();
+    if (!nameRegex.test(editingAdmin.first_name)) {
+      editFirstNameRef.current.setCustomValidity(
+        "Please Enter a valid First Name"
+      );
+      editFirstNameRef.current.reportValidity();
+      return;
+    }
+    if (!nameRegex.test(editingAdmin.last_name)) {
+      editLastNameRef.current.setCustomValidity(
+        "Please Enter a valid Last Name"
+      );
+      editLastNameRef.current.reportValidity();
+      return;
+    }
+    if (editingAdmin.username && !usernameRegex.test(editingAdmin.username)) {
+      editUsernameRef.current.setCustomValidity(
+        "Please Enter a valid Username"
+      );
+      editUsernameRef.current.reportValidity();
+      return;
+    }
     if (editingAdmin.password && editingAdmin.password.length < 8) {
       editPasswordRef.current.setCustomValidity(
         "Password must be at least 8 characters"
@@ -215,7 +276,10 @@ export default function Addorgadmin() {
       editPasswordRef.current.reportValidity();
       return;
     }
-    editPasswordRef.current.setCustomValidity(""); // Clear error
+    editFirstNameRef.current.setCustomValidity("");
+    editLastNameRef.current.setCustomValidity("");
+    editUsernameRef.current.setCustomValidity("");
+    editPasswordRef.current.setCustomValidity("");
     try {
       await axios.put(
         `${process.env.REACT_APP_API_LINK}/users/${editingAdmin.user_id}`,
@@ -268,6 +332,7 @@ export default function Addorgadmin() {
     fetchOrgAdmins();
     fetchOrganizations();
   }, []);
+
   const filteredAdmins = orgAdmins.filter((admin) => {
     const fullName = `${admin.first_name} ${admin.last_name}`.toLowerCase();
     const matchesFullName = fullName.includes(searchTerm.toLowerCase());
@@ -325,7 +390,6 @@ export default function Addorgadmin() {
             </div>
 
             <div className="d-flex gap-3 mb-3">
-              {/* Full Name Filter */}
               <input
                 type="text"
                 className="form-control"
@@ -334,18 +398,16 @@ export default function Addorgadmin() {
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
-                  setCurrentPage(1); // reset pagination
+                  setCurrentPage(1);
                 }}
               />
-
-              {/* Organization Filter */}
               <select
                 className="form-select"
                 style={{ maxWidth: "200px" }}
                 value={selectedOrganization}
                 onChange={(e) => {
                   setSelectedOrganization(e.target.value);
-                  setCurrentPage(1); // reset pagination
+                  setCurrentPage(1);
                 }}
               >
                 <option value="">All Organizations</option>
@@ -420,7 +482,6 @@ export default function Addorgadmin() {
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
                     />
-
                     {(() => {
                       const pageNumbers = [];
                       const visiblePages = 5;
@@ -449,7 +510,6 @@ export default function Addorgadmin() {
 
                       return pageNumbers;
                     })()}
-
                     <Pagination.Next
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
@@ -466,7 +526,6 @@ export default function Addorgadmin() {
         </div>
       </div>
 
-      {/* Toast Container */}
       <ToastContainer position="top-end" className="p-3">
         <Toast
           bg={toastBg}
@@ -515,29 +574,54 @@ export default function Addorgadmin() {
                 </select>
               </div>
 
-              {["email", "first_name", "last_name"].map((field) => (
-                <div className="mb-3" key={field}>
-                  <label className="form-label">
-                    {field
-                      .replace("_", " ")
-                      .replace(/\b\w/g, (c) => c.toUpperCase())}
-                    {(field === "email" ||
-                      field === "first_name" ||
-                      field === "last_name") && (
-                      <span style={{ color: "red" }}>*</span>
-                    )}
-                  </label>
-                  <input
-                    type={field === "email" ? "email" : "text"}
-                    className="form-control"
-                    value={newAdmin[field]}
-                    onChange={(e) =>
-                      setNewAdmin({ ...newAdmin, [field]: e.target.value })
-                    }
-                    required
-                  />
-                </div>
-              ))}
+              <div className="mb-3">
+                <label className="form-label">
+                  Email<span style={{ color: "red" }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={newAdmin.email}
+                  onChange={(e) =>
+                    setNewAdmin({ ...newAdmin, email: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
+                  First Name<span style={{ color: "red" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  ref={firstNameRef}
+                  value={newAdmin.first_name}
+                  onChange={(e) => {
+                    setNewAdmin({ ...newAdmin, first_name: e.target.value });
+                    validateName(e, firstNameRef, "First Name");
+                  }}
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
+                  Last Name<span style={{ color: "red" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  ref={lastNameRef}
+                  value={newAdmin.last_name}
+                  onChange={(e) => {
+                    setNewAdmin({ ...newAdmin, last_name: e.target.value });
+                    validateName(e, lastNameRef, "Last Name");
+                  }}
+                  required
+                />
+              </div>
 
               <div className="mb-3">
                 <label className="form-label">
@@ -577,32 +661,80 @@ export default function Addorgadmin() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>Update Admin</h4>
             <form onSubmit={handleEditSubmit}>
-              {["username", "email", "first_name", "last_name"].map((field) => (
-                <div className="mb-3" key={field}>
-                  <label className="form-label">
-                    {field
-                      .replace("_", " ")
-                      .replace(/\b\w/g, (c) => c.toUpperCase())}
-                    {(field === "email" ||
-                      field === "first_name" ||
-                      field === "last_name") && (
-                      <span style={{ color: "red" }}>*</span>
-                    )}
-                  </label>
-                  <input
-                    type={field === "email" ? "email" : "text"}
-                    className="form-control"
-                    value={editingAdmin[field] || ""}
-                    onChange={(e) =>
-                      setEditingAdmin({
-                        ...editingAdmin,
-                        [field]: e.target.value,
-                      })
-                    }
-                    required
-                  />
-                </div>
-              ))}
+              <div className="mb-3">
+                <label className="form-label">Username</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  ref={editUsernameRef}
+                  value={editingAdmin.username || ""}
+                  onChange={(e) => {
+                    setEditingAdmin({
+                      ...editingAdmin,
+                      username: e.target.value,
+                    });
+                    validateUsername(e, editUsernameRef);
+                  }}
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
+                  Email<span style={{ color: "red" }}>*</span>
+                </label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={editingAdmin.email || ""}
+                  onChange={(e) =>
+                    setEditingAdmin({
+                      ...editingAdmin,
+                      email: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
+                  First Name<span style={{ color: "red" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  ref={editFirstNameRef}
+                  value={editingAdmin.first_name || ""}
+                  onChange={(e) => {
+                    setEditingAdmin({
+                      ...editingAdmin,
+                      first_name: e.target.value,
+                    });
+                    validateName(e, editFirstNameRef, "First Name");
+                  }}
+                  required
+                />
+              </div>
+
+              <div className="mb-3">
+                <label className="form-label">
+                  Last Name<span style={{ color: "red" }}>*</span>
+                </label>
+                <input
+                  type="text"
+                  className="form-control"
+                  ref={editLastNameRef}
+                  value={editingAdmin.last_name || ""}
+                  onChange={(e) => {
+                    setEditingAdmin({
+                      ...editingAdmin,
+                      last_name: e.target.value,
+                    });
+                    validateName(e, editLastNameRef, "Last Name");
+                  }}
+                  required
+                />
+              </div>
 
               <div className="mb-3">
                 <label className="form-label">Password</label>

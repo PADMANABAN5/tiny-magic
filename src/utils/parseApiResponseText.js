@@ -3,48 +3,49 @@ export const parseApiResponseText = (apiResponseText, context = "") => {
 
   if (!apiResponseText) return "";
 
-  let input = apiResponseText;
+  let input = typeof apiResponseText === "string"
+    ? apiResponseText.trim()
+    : JSON.stringify(apiResponseText);
 
-  if (typeof input !== "string") {
-    input = JSON.stringify(input);
-  }
+  // 🔹 Step 1: Remove markdown fences
+  input = input.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
 
-  // Remove Markdown fences
-  input = input.replace(/```json\s*/i, "").replace(/```/g, "").trim();
-
-  // Try strict JSON first
-  try {
-    const parsed = JSON.parse(input);
-    if (parsed && typeof parsed === "object" && "display_text" in parsed) {
-      return parsed.display_text ?? "";
-    }
-  } catch (err1) {
-    console.warn("⚠️ JSON.parse failed, attempting cleanup:", err1.message);
-
-    // Attempt repairs
-    let repaired = input
-      .replace(/,\s*([}\]])/g, "$1")     // remove trailing commas
-      .replace(/[“”]/g, '"')             // replace smart quotes
-      .replace(/\n/g, "\\n")             // escape raw newlines
-      .replace(/:\s*undefined/g, ': null') // replace undefined with null
-      .replace(/:\s*NaN/g, ': 0');        // replace NaN with 0
-
+  const tryParse = (str) => {
     try {
-      const parsed = JSON.parse(repaired);
-      if (parsed && typeof parsed === "object" && "display_text" in parsed) {
-        return parsed.display_text ?? "";
-      }
-    } catch (err2) {
-      console.error("❌ Repair parse failed:", err2.message);
+      return JSON.parse(str);
+    } catch {
+      return null;
     }
-  }
+  };
 
-  // Fallback regex to extract display_text manually
-  const displayTextMatch = input.match(/"display_text"\s*:\s*"([^"]*)"/);
-  if (displayTextMatch && displayTextMatch[1]) {
-    return displayTextMatch[1];
-  }
+  // 🔹 Step 2: Strict parse first
+  let parsed = tryParse(input);
+  if (parsed && parsed.display_text) return parsed.display_text;
 
-  // As last fallback, just return raw text
+  console.warn("⚠️ JSON.parse failed, trying cleanup...");
+
+  // 🔹 Step 3: Extract JSON-looking block
+  const jsonMatch = input.match(/\{[\s\S]*\}/);
+  if (jsonMatch) input = jsonMatch[0];
+
+  // 🔹 Step 4: Repair common issues
+  let repaired = input
+    .replace(/,\s*([}\]])/g, "$1")      // remove trailing commas
+    .replace(/[“”‘’]/g, '"')            // smart quotes → normal
+    .replace(/:\s*undefined/g, ": null") // undefined → null
+    .replace(/:\s*NaN/g, ": 0")          // NaN → 0
+    .replace(/:\s*Infinity/g, ": 0")     // Infinity → 0
+    .replace(/\n+/g, " ");               // collapse raw newlines
+
+  parsed = tryParse(repaired);
+  if (parsed && parsed.display_text) return parsed.display_text;
+
+  console.error("❌ Still not valid JSON, using regex fallback...");
+
+  // 🔹 Step 5: Regex extract display_text
+  const displayTextMatch = repaired.match(/"display_text"\s*:\s*"([^"]+)"/);
+  if (displayTextMatch) return displayTextMatch[1];
+
+  // 🔹 Step 6: Last resort → return plain string
   return input;
 };

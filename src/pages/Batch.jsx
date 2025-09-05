@@ -25,6 +25,8 @@ export default function Batch() {
   const [searchBatchName, setSearchBatchName] = useState("");
   const [selectedOrganization, setSelectedOrganization] = useState("");
   const storedToken = sessionStorage.getItem("token");
+  const batchNameRegex = /^(?!.*\s{2,})(?!^\s)(?!.*\s$)[A-Za-z0-9 ]*$/;
+
   const config = {
     headers: {
       Authorization: `Bearer ${storedToken}`,
@@ -95,13 +97,24 @@ export default function Batch() {
         setToastMessage("⚠️ Network error. Please check your connection.");
         setToastBg("danger");
       }
-
+   
       setShowToast(true);
       setBatches([]);
     } finally {
       setLoading(false);
     }
   };
+  const validateBatchName = (e) => {
+  const { value } = e.target;
+  if (!batchNameRegex.test(value)) {
+    e.target.setCustomValidity(
+      "Please enter a valid batch name."
+    );
+  } else {
+    e.target.setCustomValidity("");
+  }
+  e.target.reportValidity();
+};
 
   const fetchConcepts = async () => {
     try {
@@ -519,14 +532,15 @@ export default function Batch() {
                   type="text"
                   className="form-control"
                   value={batchForm.batch_name}
-                  onChange={(e) =>
-                    setBatchForm((prev) => ({
-                      ...prev,
-                      batch_name: e.target.value,
-                    }))
-                  }
-                  required
-                />
+                 onChange={(e) => {
+    setBatchForm((prev) => ({
+      ...prev,
+      batch_name: e.target.value,
+    }));
+    validateBatchName(e); // ✅ enforce rule
+  }}
+  required
+/>
               </div>
 
               <div className="mb-3">
@@ -563,7 +577,7 @@ export default function Batch() {
                 />
               </div>
 
-              <div className="mb-3">
+              {/* <div className="mb-3">
                 <label className="form-label d-block" htmlFor="is_active">
                   Active Status
                 </label>
@@ -584,7 +598,7 @@ export default function Batch() {
                     {batchForm.is_active ? "Active" : "Inactive"}
                   </label>
                 </div>
-              </div>
+              </div> */}
 
               <div className="d-flex justify-content-between">
                 <button type="submit" className="btn btn-success">

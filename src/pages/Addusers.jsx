@@ -559,11 +559,17 @@ export default function Addusers() {
                   type="text"
                   className="form-control"
                   value={newUser.first_name}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, first_name: e.target.value })
-                  }
-                  required
-                />
+                   onChange={(e) => {
+                  const value = e.target.value;
+                  const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                  e.target.setCustomValidity(
+                    isValid ? "" : "Please Enter a valid First Name"
+                  );
+                  setNewUser({ ...newUser, first_name: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+                required
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -573,11 +579,17 @@ export default function Addusers() {
                   type="text"
                   className="form-control"
                   value={newUser.last_name}
-                  onChange={(e) =>
-                    setNewUser({ ...newUser, last_name: e.target.value })
-                  }
-                  required
-                />
+                   onChange={(e) => {
+                  const value = e.target.value;
+                  const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                  e.target.setCustomValidity(
+                    isValid ? "" : "Please Enter a valid Last Name"
+                  );
+                  setNewUser({ ...newUser, last_name: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+                required
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">Password</label>
@@ -623,11 +635,17 @@ export default function Addusers() {
                   type="text"
                   className="form-control"
                   value={editingUser.username || ""}
-                  onChange={(e) =>
-                    setEditingUser({ ...editingUser, username: e.target.value })
-                  }
-                  required
-                />
+                   onChange={(e) => {
+                  const value = e.target.value;
+                  const isValid = /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(value) || value === "";
+                  e.target.setCustomValidity(
+                    isValid ? "" : "Please Enter a valid Username"
+                  );
+                  setEditingUser({ ...editingUser, username: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+                required
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">Email</label>
@@ -648,14 +666,17 @@ export default function Addusers() {
                   type="text"
                   className="form-control"
                   value={editingUser.first_name || ""}
-                  onChange={(e) =>
-                    setEditingUser({
-                      ...editingUser,
-                      first_name: e.target.value,
-                    })
-                  }
-                  required
-                />
+                  onChange={(e) => {
+                  const value = e.target.value;
+                  const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                  e.target.setCustomValidity(
+                    isValid ? "" : "Please Enter a valid First Name"
+                  );
+                  setEditingUser({ ...editingUser, first_name: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+                required
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -665,14 +686,17 @@ export default function Addusers() {
                   type="text"
                   className="form-control"
                   value={editingUser.last_name || ""}
-                  onChange={(e) =>
-                    setEditingUser({
-                      ...editingUser,
-                      last_name: e.target.value,
-                    })
-                  }
-                  required
-                />
+                  onChange={(e) => {
+                  const value = e.target.value;
+                  const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                  e.target.setCustomValidity(
+                    isValid ? "" : "Please Enter a valid Last Name"
+                  );
+                  setEditingUser({ ...editingUser, last_name: value });
+                }}
+                onInput={(e) => e.target.setCustomValidity("")}
+                required
+              />
               </div>
               <div className="mb-3">
                 <label className="form-label">Password</label>
