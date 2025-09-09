@@ -97,6 +97,7 @@ function Login() {
       switch (user.role) {
         case "orguser":
           navigate("/dashboard", {
+            replace: true,
             state: {
               selectedModel: "gpt4o",
               username: user.username,
@@ -104,13 +105,13 @@ function Login() {
           });
           break;
         case "superadmin":
-          navigate("/superadmin", { state: { username: user.username } });
+          navigate("/superadmin", { replace: true, state: { username: user.username } });
           break;
         case "orgadmin":
-          navigate("/orgadmin");
+          navigate("/orgadmin", { replace: true });
           break;
         case "mentor":
-          navigate("/mentorpods");
+          navigate("/mentorpods", { replace: true });
           break;
         default:
           setError("Unknown role");

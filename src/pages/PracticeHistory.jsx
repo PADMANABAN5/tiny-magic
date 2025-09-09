@@ -328,13 +328,16 @@ const ConversationHistory = () => {
   };
 
   const getStageProgress = (currentStage, status) => {
-    if (status === 'not_started') return 0;
-    if (status === 'completed') return 100;
-
-    // Convert stage (0-5) to percentage
+    console.log(`Calculating progress: stage=${currentStage}, status=${status}`);
     const maxStage = 5;
-    return Math.round((currentStage / maxStage) * 100);
-  };
+    const progressPerStage = 100 / maxStage; // 20% per stage
+
+    if (status === 'not_started') return 0;
+    if (status === 'completed') {
+      return Math.min(currentStage, maxStage) * progressPerStage;
+    }
+    return Math.max(currentStage - 1, 0) * progressPerStage;
+};
 
   // Filter and sort conversations
   const filteredAndSortedConversations = () => {
@@ -758,7 +761,7 @@ const goToPage = (page) => {
               <div className="loading-spinner"></div>
               <span>Loading conversations...</span>
             </div>
-          ) : filteredAndSortedConversations().length === 0 ? (
+          ) : conversationsData.length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">
                 <FiMessageCircle />
@@ -793,7 +796,7 @@ const goToPage = (page) => {
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredAndSortedConversations().map((conversation) => {
+                  {currentConversations.map((conversation) => {
                     const { date: createdDate, time: createdTime } = formatDate(conversation.created_at);
                     const { date: updatedDate, time: updatedTime } = formatDate(conversation.updated_at);
                     const progress = getStageProgress(conversation.current_stage, conversation.status);

@@ -330,13 +330,16 @@ const itemsPerPage = 10;
   };
 
   const getStageProgress = (currentStage, status) => {
-    if (status === 'not_started') return 0;
-    if (status === 'completed') return 100;
-
-    // Convert stage (0-5) to percentage
+    console.log(`Calculating progress: stage=${currentStage}, status=${status}`);
     const maxStage = 5;
-    return Math.round((currentStage / maxStage) * 100);
-  };
+    const progressPerStage = 100 / maxStage; // 20% per stage
+
+    if (status === 'not_started') return 0;
+    if (status === 'completed') {
+      return Math.min(currentStage, maxStage) * progressPerStage;
+    }
+    return Math.max(currentStage - 1, 0) * progressPerStage;
+};
 
   // Filter and sort conversations
   const filteredAndSortedConversations = () => {
