@@ -16,7 +16,7 @@ function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(true);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
 
   // New state variables for password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -64,8 +64,9 @@ function Login() {
       }, 2000);
     } catch (err) {
       const status = err.response?.status;
+      const message = err.response?.data?.message;
       if (status === 401) {
-        setError("❌ Invalid credentials. Please try again.");
+        setError(`❌ ${message}`);
       } else if (status === 403) {
         const message = err.response?.data?.message || "Access denied.";
         if (message.includes("Account is inactive")) {
@@ -75,7 +76,10 @@ function Login() {
         } else {
           setError("❌ Access denied.");
         }
-      } else if (status === 400) {
+      } else if (status ===429){
+        setError(`🔒 ${message}`);
+      }
+      else if (status === 400) {
         setError("❗ Missing credentials. Fill in all fields.");
       } else {
         setError(err.response?.data?.error || "⚠️ Login failed. Try again.");

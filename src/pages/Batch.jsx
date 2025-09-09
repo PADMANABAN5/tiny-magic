@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Select from "react-select";
-import { Pagination, Toast, ToastContainer } from "react-bootstrap";
+import { Pagination, Toast, ToastContainer, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
 import Supersidebar from "../components/Supersidebar";
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
@@ -383,7 +383,7 @@ export default function Batch() {
                       <th>Batch Name</th>
                       <th>Size</th>
                       <th>Status</th>
-                      <th>Concept IDs</th>
+                      <th>Concepts</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -404,12 +404,29 @@ export default function Batch() {
                             </span>
                           </td>
                           <td>
-                            {Array.isArray(batch.concepts)
-                              ? batch.concepts
-                                  .map((c) => c.concept_id)
-                                  .join(", ")
-                              : "—"}
-                          </td>
+  {Array.isArray(batch.concepts) && batch.concepts.length > 0 ? (
+    <OverlayTrigger
+      placement="top"
+      overlay={
+        <Tooltip id={`tooltip-${batch.batch_id}`}>
+          <ul style={{ paddingLeft: "1.2rem", margin: 0 }}>
+            {batch.concepts.map((c, idx) => (
+              <li key={idx}>{c.concept_name}</li>
+            ))}
+          </ul>
+        </Tooltip>
+      }
+    >
+      <Badge bg="secondary" style={{ cursor: "pointer" }}>
+        Concepts ({batch.concepts.length})
+      </Badge>
+    </OverlayTrigger>
+  ) : (
+    "—"
+  )}
+</td>
+
+
                           <td>
                             <button
                               className="btn btn-warning btn-sm"

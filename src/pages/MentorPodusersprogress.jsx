@@ -16,7 +16,9 @@ import {
   FiRefreshCw,
   FiDownload,
   FiChevronDown,
-  FiChevronUp
+  FiChevronUp,
+  FiBarChart,
+  FiBarChart2,
 } from "react-icons/fi";
 import axios from 'axios';
 import { Spinner, Alert, Card, Row, Col, Badge, Button } from 'react-bootstrap';
@@ -31,6 +33,7 @@ import AssessmentDisplay, {
   formatCriterionName 
 } from '../components/AssessmentDisplay.jsx';
 import '../styles/orgadminusers.css';
+import { Accordion } from 'react-bootstrap';
 function MentorPodusersprogress() {
   const navigate = useNavigate();
   const { userId } = useParams();
@@ -50,6 +53,16 @@ function MentorPodusersprogress() {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
+  // Practice history states
+const [practiceHistory, setPracticeHistory] = useState([]);
+const [isPracticeLoading, setIsPracticeLoading] = useState(false);
+const [practiceError, setPracticeError] = useState(null);
+const [practiceFilterStatus, setPracticeFilterStatus] = useState("all");
+const [practiceSearchTerm, setPracticeSearchTerm] = useState("");
+const [practiceSortBy, setPracticeSortBy] = useState("date_desc");
+const [practicePage, setPracticePage] = useState(1);
+const itemsPerPage = 10;
+
    const storedToken = sessionStorage.getItem("token");
   const config = {
     headers: {
@@ -132,6 +145,7 @@ function MentorPodusersprogress() {
     if (userId) {
       fetchUserProgress();
       fetchChatHistory();
+      fetchPracticeHistory();
     }
   }, [userId]);
 
@@ -184,6 +198,41 @@ function MentorPodusersprogress() {
       setIsConversationsLoading(false);
     }
   };
+  const fetchPracticeHistory = async () => {
+  if (!userId) {
+    setPracticeError("User not identified");
+    return;
+  }
+
+  setIsPracticeLoading(true);
+  try {
+    const params = {
+      status: practiceFilterStatus === "all" ? "all" : practiceFilterStatus,
+      limit: 50,
+      offset: 0,
+    };
+
+    if (practiceSearchTerm && practiceSearchTerm.trim()) {
+      params.concept = practiceSearchTerm.trim();
+    }
+
+    const response = await axios.get(`${BASE_URL}/practicemode/history/${userId}`, { params, ...config });
+
+    if (response.data?.success) {
+      setPracticeHistory(response.data.data.practicemodes || []);
+    } else {
+      setPracticeHistory([]);
+    }
+  } catch (error) {
+    console.error("❌ Error fetching practice history:", error);
+    setPracticeError("Failed to load practice history");
+    setPracticeHistory([]);
+  } finally {
+    setIsPracticeLoading(false);
+  }
+};
+
+
 
   // Extract concept name from conversation
   const extractConceptFromConversation = (conversation, apiConceptName) => {
@@ -318,6 +367,28 @@ function MentorPodusersprogress() {
 
     return filtered;
   };
+
+  const filteredAndSortedPractice = () => {
+  let filtered = practiceHistory.filter(conv => {
+    const matchesStatus = practiceFilterStatus === "all" || conv.status === practiceFilterStatus;
+    const matchesSearch = conv.concept_name?.toLowerCase().includes(practiceSearchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
+  filtered.sort((a, b) => {
+    switch (practiceSortBy) {
+      case "date_desc": return new Date(b.updated_at) - new Date(a.updated_at);
+      case "date_asc": return new Date(a.updated_at) - new Date(b.updated_at);
+      case "concept_asc": return a.concept_name.localeCompare(b.concept_name);
+      case "concept_desc": return b.concept_name.localeCompare(a.concept_name);
+      case "status": return a.status.localeCompare(b.status);
+      case "stage": return b.current_stage - a.current_stage;
+      default: return 0;
+    }
+  });
+
+  return filtered;
+};
 
   const handleViewConversation = (conversation) => {
     setSelectedConversation(conversation);
@@ -704,14 +775,14 @@ function MentorPodusersprogress() {
                   
                 </div>
                 <div className="header-actions">
-                  <button
+                  {/* <button
                     className="filter-toggle"
                     onClick={() => setShowFilters(!showFilters)}
                   >
                     <FiFilter />
                     Filters
                     {showFilters ? <FiChevronUp /> : <FiChevronDown />}
-                  </button>
+                  </button> */}
                   <button className="refresh-btn" onClick={handleRefresh}>
                     <FiRefreshCw />
                     Refresh
@@ -719,8 +790,38 @@ function MentorPodusersprogress() {
                 </div>
               </div>
 
-              {/* Filters Section */}
-              {showFilters && (
+              
+
+              {/* Conversations Table */}
+              <div className="conversations-section">
+                {isConversationsLoading ? (
+                  <div className="loading-container">
+                    <div className="loading-spinner"></div>
+                    <span>Loading conversations...</span>
+                  </div>
+                ) : filteredAndSortedConversations().length === 0 ? (
+                  <div className="empty-state">
+                    <div className="empty-icon">
+                      <FiMessageCircle />
+                    </div>
+                    <h3>No conversations found</h3>
+                    <p>
+                      {searchTerm || filterStatus !== 'all'
+                        ? "Try adjusting your search or filter criteria."
+                        : "This user hasn't started any learning sessions yet."
+                      }
+                    </p>
+                  </div>
+                ) : (
+                   <Accordion defaultActiveKey="0">
+      <Accordion.Item eventKey="0">
+        <Accordion.Header>
+          <FiBarChart style={{fontWeight:'bold', fontSize:'20px', marginRight:'8px'}} />
+          Training History
+        </Accordion.Header>
+        <Accordion.Body>
+          {/* Filters Section */}
+             
                 <div className="filters-section">
                   <div className="filter-group">
                     <label>Search Concepts:</label>
@@ -761,29 +862,7 @@ function MentorPodusersprogress() {
                     </select>
                   </div>
                 </div>
-              )}
-
-              {/* Conversations Table */}
-              <div className="conversations-section">
-                {isConversationsLoading ? (
-                  <div className="loading-container">
-                    <div className="loading-spinner"></div>
-                    <span>Loading conversations...</span>
-                  </div>
-                ) : filteredAndSortedConversations().length === 0 ? (
-                  <div className="empty-state">
-                    <div className="empty-icon">
-                      <FiMessageCircle />
-                    </div>
-                    <h3>No conversations found</h3>
-                    <p>
-                      {searchTerm || filterStatus !== 'all'
-                        ? "Try adjusting your search or filter criteria."
-                        : "This user hasn't started any learning sessions yet."
-                      }
-                    </p>
-                  </div>
-                ) : (
+              
                   <div className="table-responsive">
                   <div className="conversations-table-container">
                     <table className="conversations-table">
@@ -873,6 +952,114 @@ function MentorPodusersprogress() {
                     </table>
                   </div>
                   </div>
+                    </Accordion.Body>
+      </Accordion.Item>
+    <Accordion.Item eventKey="1">
+    <Accordion.Header style={{fontWeight:'bolder', fontSize:'20px', marginRight:'8px'}}><FiBarChart2 style={{fontWeight:'bold', fontSize:'20px', marginRight:'8px'}}/> Practice History</Accordion.Header>
+    <Accordion.Body>
+      {/* Practice Filters */}
+<div className="filters-section mb-3">
+  <div className="filter-group">
+    <label>Search Concepts:</label>
+    <div className="search-input">
+      <FiSearch />
+      <input
+        type="text"
+        placeholder="Search by concept name..."
+        value={practiceSearchTerm}
+        onChange={(e) => setPracticeSearchTerm(e.target.value)}
+      />
+    </div>
+  </div>
+
+  <div className="filter-group">
+    <label>Status:</label>
+    <select
+      value={practiceFilterStatus}
+      onChange={(e) => setPracticeFilterStatus(e.target.value)}
+    >
+      <option value="all">All Statuses</option>
+      <option value="not_started">Not Started</option>
+      <option value="inprogress">In Progress</option>
+      <option value="completed">Completed</option>
+    </select>
+  </div>
+
+  <div className="filter-group">
+    <label>Sort By:</label>
+    <select
+      value={practiceSortBy}
+      onChange={(e) => setPracticeSortBy(e.target.value)}
+    >
+      <option value="date_desc">Latest First</option>
+      <option value="date_asc">Oldest First</option>
+      <option value="concept_asc">Concept A-Z</option>
+      <option value="concept_desc">Concept Z-A</option>
+      <option value="status">Status</option>
+      <option value="stage">Stage Progress</option>
+    </select>
+  </div>
+</div>
+
+      {isPracticeLoading ? (
+        <div className="loading-container">
+          <div className="loading-spinner"></div>
+          <span>Loading practice history...</span>
+        </div>
+      ) : practiceHistory.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-icon"><FiMessageCircle /></div>
+          <h3>No practice history found</h3>
+          <p>{practiceError || "This user hasn't done any practice sessions yet."}</p>
+        </div>
+      ) : (
+        <div className="table-responsive">
+          <table className="conversations-table">
+            <thead>
+              <tr>
+                <th>Concept</th>
+                <th>Status</th>
+                <th>Progress</th>
+                <th>Level</th>
+                <th>Created</th>
+                <th>Last Updated</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+           <tbody>
+  {filteredAndSortedPractice().map((conversation) => {
+    const { date: createdDate } = formatDate(conversation.created_at);
+    const { date: updatedDate } = formatDate(conversation.updated_at);
+    const progress = getStageProgress(conversation.current_stage, conversation.status);
+
+    return (
+      <tr key={conversation.id}>
+        <td>{conversation.concept_name}</td>
+        <td>
+          <span className="status-badge" style={{ backgroundColor: getStatusColor(conversation.status), color: 'white' }}>
+            {getStatusIcon(conversation.status)} {getStatusLabel(conversation.status)}
+          </span>
+        </td>
+        <td>{progress}%</td>
+        <td>{conversation.current_stage}/5</td>
+        <td>{createdDate}</td>
+        <td>{updatedDate}</td>
+        <td>
+          <button className="view-btn" onClick={() => handleViewConversation(conversation)}>
+            <FiEye /> View
+          </button>
+        </td>
+      </tr>
+    );
+  })}
+</tbody>
+
+          </table>
+        </div>
+      )}
+    </Accordion.Body>
+  </Accordion.Item>
+</Accordion>
                 )}
               </div>
             </>

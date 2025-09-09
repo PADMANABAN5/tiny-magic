@@ -30,13 +30,12 @@ import {
   FiChevronDown,
   FiChevronUp
 } from "react-icons/fi";
-import { Pagination } from "react-bootstrap";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
 const ConversationHistory = () => {
   const [conversations, setConversations] = useState([]);
-  const [chatCounts, setChatCounts] = useState({
+  const [practicemodeCounts, setpracticemodeCounts] = useState({
     not_started: 0,
     inprogress: 0,
     completed: 0,
@@ -55,10 +54,9 @@ const ConversationHistory = () => {
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
   const [expandedScores, setExpandedScores] = useState(new Set());
   const modalRef = useRef(null);
-  const chatEndRef = useRef(null);
+  const practicemodeEndRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
-const itemsPerPage = 10;
-
+  const itemsPerPage = 10;
 
   // Get user data from session storage
   const userId = sessionStorage.getItem("userId");
@@ -117,8 +115,8 @@ const itemsPerPage = 10;
     }
   };
 
-  // Fetch chat history from API with concept search support
-  const fetchChatHistory = async () => {
+  // Fetch practicemode history from API with concept search support
+  const fetchpracticemodeHistory = async () => {
     if (!userId) {
       setError("User not identified");
       return;
@@ -128,7 +126,7 @@ const itemsPerPage = 10;
     setError(null);
 
     try {
-      console.log("🔍 Fetching chat history for user:", userId);
+      console.log("🔍 Fetching practicemode history for user:", userId);
 
       const params = {
         status: filterStatus === 'all' ? 'all' : filterStatus,
@@ -141,25 +139,25 @@ const itemsPerPage = 10;
         params.concept = searchTerm.trim();
       }
 
-      const response = await axios.get(`${BASE_URL}/chat/history/${userId}`, { params });
+      const response = await axios.get(`${BASE_URL}/practicemode/history/${userId}`, { params });
 
       if (response.data && response.data.success) {
-        const chats = response.data.data.chats || [];
-        console.log("✅ Chat history loaded:", chats.length, "conversations");
+        const practicemodes = response.data.data.practicemodes || [];
+        console.log("✅ practicemode history loaded:", practicemodes.length, "conversations");
 
         // Use concept_name from API directly, with fallback extraction
-        const enhancedChats = chats.map(chat => ({
-          ...chat,
-          concept_name: extractConceptFromConversation(chat.conversation, chat.concept_name)
+        const enhancedpracticemodes = practicemodes.map(practicemode => ({
+          ...practicemode,
+          concept_name: extractConceptFromConversation(practicemode.conversation, practicemode.concept_name)
         }));
 
-        setConversations(enhancedChats);
+        setConversations(enhancedpracticemodes);
       } else {
-        console.warn("⚠️ No chat history data in response");
+        console.warn("⚠️ No practicemode history data in response");
         setConversations([]);
       }
     } catch (error) {
-      console.error("❌ Error fetching chat history:", error);
+      console.error("❌ Error fetching practicemode history:", error);
       setError("Failed to load conversation history");
       setConversations([]);
 
@@ -171,22 +169,22 @@ const itemsPerPage = 10;
     }
   };
 
-  // Fetch chat counts from API
-  const fetchChatCounts = async () => {
+  // Fetch practicemode counts from API
+  const fetchpracticemodeCounts = async () => {
     if (!userId) return;
 
     setIsCountsLoading(true);
     try {
-      console.log("📊 Fetching chat counts for user:", userId);
+      console.log("📊 Fetching practicemode counts for user:", userId);
 
-      const response = await axios.get(`${BASE_URL}/chat/counts/${userId}`);
+      const response = await axios.get(`${BASE_URL}/practicemode/counts/${userId}`);
 
       if (response.data && response.data.success && response.data.data.counts) {
-        setChatCounts(response.data.data.counts);
-        console.log("✅ Chat counts loaded:", response.data.data.counts);
+        setpracticemodeCounts(response.data.data.counts);
+        console.log("✅ practicemode counts loaded:", response.data.data.counts);
       } else {
-        console.warn("⚠️ No chat counts data in response");
-        setChatCounts({
+        console.warn("⚠️ No practicemode counts data in response");
+        setpracticemodeCounts({
           not_started: 0,
           inprogress: 0,
           completed: 0,
@@ -195,8 +193,8 @@ const itemsPerPage = 10;
         });
       }
     } catch (error) {
-      console.error("❌ Error fetching chat counts:", error);
-      setChatCounts({
+      console.error("❌ Error fetching practicemode counts:", error);
+      setpracticemodeCounts({
         not_started: 0,
         inprogress: 0,
         completed: 0,
@@ -273,17 +271,17 @@ const itemsPerPage = 10;
   // Load data on component mount and when filters change
   useEffect(() => {
     if (userId) {
-      fetchChatHistory();
+      fetchpracticemodeHistory();
       if (!searchTerm) { // Only fetch counts when not searching
-        fetchChatCounts();
+        fetchpracticemodeCounts();
       }
     }
   }, [userId, filterStatus, searchTerm]); // Added searchTerm to dependencies
 
   // Refresh data
   const handleRefresh = () => {
-    fetchChatHistory();
-    fetchChatCounts();
+    fetchpracticemodeHistory();
+    fetchpracticemodeCounts();
   };
 
   // Utility functions
@@ -374,12 +372,13 @@ const indexOfFirstItem = indexOfLastItem - itemsPerPage;
 const currentConversations = conversationsData.slice(indexOfFirstItem, indexOfLastItem);
 const totalPages = Math.ceil(conversationsData.length / itemsPerPage);
 
-// Handlers
+// Navigation
 const goToPage = (page) => {
   if (page >= 1 && page <= totalPages) {
     setCurrentPage(page);
   }
 };
+
 
   const handleViewConversation = (conversation) => {
     setSelectedConversation(conversation);
@@ -393,9 +392,9 @@ const goToPage = (page) => {
 
   // Auto-scroll to bottom when modal opens
   useEffect(() => {
-    if (showConversationModal && chatEndRef.current) {
+    if (showConversationModal && practicemodeEndRef.current) {
       setTimeout(() => {
-        chatEndRef.current.scrollIntoView({ behavior: "smooth" });
+        practicemodeEndRef.current.scrollIntoView({ behavior: "smooth" });
       }, 100);
     }
   }, [showConversationModal]);
@@ -479,7 +478,7 @@ const goToPage = (page) => {
                   </div>
                 </div>
               ))}
-              <div ref={chatEndRef} />
+              <div ref={practicemodeEndRef} />
             </div>
           </div>
         </div>
@@ -645,7 +644,7 @@ const goToPage = (page) => {
                 </div>
                 <div className="stat-content">
                   <div className="stat-number">
-                    {isCountsLoading ? "..." : chatCounts.not_started}
+                    {isCountsLoading ? "..." : practicemodeCounts.not_started}
                   </div>
                   <div className="stat-label">Not Started</div>
                 </div>
@@ -657,7 +656,7 @@ const goToPage = (page) => {
                 </div>
                 <div className="stat-content">
                   <div className="stat-number">
-                    {isCountsLoading ? "..." : chatCounts.inprogress}
+                    {isCountsLoading ? "..." : practicemodeCounts.inprogress}
                   </div>
                   <div className="stat-label">In Progress</div>
                 </div>
@@ -669,7 +668,7 @@ const goToPage = (page) => {
                 </div>
                 <div className="stat-content">
                   <div className="stat-number">
-                    {isCountsLoading ? "..." : chatCounts.completed}
+                    {isCountsLoading ? "..." : practicemodeCounts.completed}
                   </div>
                   <div className="stat-label">Completed</div>
                 </div>
@@ -681,7 +680,7 @@ const goToPage = (page) => {
                 </div>
                 <div className="stat-content">
                   <div className="stat-number">
-                    {isCountsLoading ? "..." : chatCounts.total}
+                    {isCountsLoading ? "..." : practicemodeCounts.total}
                   </div>
                   <div className="stat-label">Total Sessions</div>
                 </div>
@@ -786,15 +785,15 @@ const goToPage = (page) => {
                     <th>Concept</th>
                     <th>Status</th>
                     <th>Progress</th>
-                    <th>Stage</th>
-                    <th>Overall Score</th>
+                    <th>Level</th>
+                    {/* <th>Overall Score</th> */}
                     <th>Created</th>
                     <th>Last Updated</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {currentConversations.map((conversation) => {
+                  {filteredAndSortedConversations().map((conversation) => {
                     const { date: createdDate, time: createdTime } = formatDate(conversation.created_at);
                     const { date: updatedDate, time: updatedTime } = formatDate(conversation.updated_at);
                     const progress = getStageProgress(conversation.current_stage, conversation.status);
@@ -840,9 +839,9 @@ const goToPage = (page) => {
                           </span>
                         </td>
 
-                        <td className="score-cell">
+                        {/* <td className="score-cell">
                           {renderScoreCell(conversation)}
-                        </td>
+                        </td> */}
 
                         <td className="date-cell">
                           <div className="date-info">
@@ -872,8 +871,7 @@ const goToPage = (page) => {
                   })}
                 </tbody>
               </table>
-              </div>
-              
+            </div>
           )}
         </div>
         {/* Pagination controls */}

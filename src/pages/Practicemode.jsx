@@ -759,19 +759,22 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
     window.open(downloadLink, '_blank');
   };
 
- const getCurrentStageForAPI = (saveStatus) => {
+ const getCurrentStageForAPI = (saveStatus, apiStage=null) => {
   if (saveStatus === "not_started") return 0;
   if (saveStatus === "inprogress") {
     if (currentStage === 0) return 0;
     return Math.min(Math.max(currentStage - 1, 0), 5);
   }
   if (saveStatus === "completed") {
-    return 5; // <-- force completed stage
+    // Use passed apiStage if available (preserves the level where completion happened)
+    if (apiStage !== null) return Math.min(Math.max(apiStage, 0), 5);
+    // Fallback: calculate from frontend stage (but cap at 5 for completed)
+    return currentStage === 7 ? 5 : Math.min(Math.max(currentStage - 1, 0), 5);
   }
 
   // fallback
   if (currentStage === 0) return 0;
-  if (currentStage === 7) return 7;
+  if (currentStage === 7) return 5;
   return Math.min(Math.max(currentStage - 1, 0), 5);
 };
 

@@ -8,6 +8,8 @@ import {
   FaUser,
   FaCaretDown,
   FaHistory,
+  FaChartLine,
+  FaChartBar
 } from "react-icons/fa";
 
 function Sidebar({ isProcessingAssessment , isLoading }) {
@@ -15,6 +17,7 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
   const username = sessionStorage.getItem("email");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
 
   // Function to shorten username
   const getShortenedUsername = (email) => {
@@ -60,7 +63,9 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
       case "/practice":
         return "Practice Mode";
       case "/conversationhistory":
-        return "History";
+        return "Training History";
+      case "/practicehistory":
+        return "Practice History";
       default:
         return "";
     }
@@ -102,6 +107,8 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
                     <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
                     Dashboard
                   </Link>
+                  </li>
+                  <li>
                    <Link
                     to="/practice"
                     className={`dropdown-item d-flex align-items-center ${
@@ -118,23 +125,37 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
                     <FaBook className="me-2" style={{ fontSize: "16px" }} />
                      Practice
                   </Link> 
-                  <Link
-                    to="/conversationhistory"
-                    className={`dropdown-item d-flex align-items-center ${
-                      location.pathname === "/conversationhistory" ? "active" : ""
-                    } ${isProcessingAssessment || isLoading ? "disabled" : ""}`}
-                    onClick={(e) => {
-                      if (isProcessingAssessment || isLoading) {
-                        e.preventDefault();
-                      } else {
-                        setShowDropdown(false);
-                      }
-                    }}
-                  >
-                    <FaHistory className="me-2" style={{ fontSize: "16px" }} />
-                    History
-                  </Link>
-                </li>
+                  </li>
+                  <li>
+                 <button
+  className="dropdown-item history-toggle d-flex align-items-center"
+  onClick={() => setShowHistorySubmenu(!showHistorySubmenu)}
+  disabled={isProcessingAssessment || isLoading}
+  
+>
+  <FaHistory className="me-2" style={{ fontSize: "16px" }} />
+  History
+  <FaCaretDown className="ms-auto" />
+</button>
+
+{showHistorySubmenu && (
+  <ul className="list-unstyled history-submenu">
+    <li>
+      <Link to="/conversationhistory" className="dropdown-item">
+        <FaChartBar className="me-2" /> Training History
+      </Link>
+    </li>
+    <li>
+      <Link to="/practicehistory" className="dropdown-item">
+        <FaChartLine className="me-2" /> Practice History
+      </Link>
+    </li>
+  </ul>
+)}
+</li>
+
+
+                
                 <li><hr className="dropdown-divider" /></li>
                 <li>
                   <Link

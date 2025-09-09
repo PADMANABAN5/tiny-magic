@@ -252,3 +252,53 @@ a.nav-link.link-dark.active {
   left: 50%;
   transform: translateX(-50%);
 }
+/* 🔹 History Dropdown Styling */
+
+
+.dropdown-item.history-toggle:hover {
+  background-color: var(--hover-background);
+  color: var(--primary-color);
+  border-radius: 0.375rem;
+}
+
+/* 🔹 Submenu container */
+.history-submenu {
+  background-color: #f8faff;
+  border-left: 3px solid var(--primary-color);
+  margin-top: 4px;
+  padding: 6px 0;
+  border-radius: 0 0 6px 6px;
+  animation: slideDown 0.2s ease-in-out;
+}
+
+/* 🔹 Submenu items */
+.history-submenu .dropdown-item {
+  font-size: 14px;
+  padding: 0.5rem 1.25rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.history-submenu .dropdown-item:hover {
+  background-color: var(--hover-background);
+  color: var(--primary-color);
+  font-weight: 500;
+  border-radius: 0.375rem;
+}
+
+.history-submenu .dropdown-item.active {
+  background-color: var(--primary-color);
+  color: var(--active-color);
+  font-weight: 600;
+}
+
+/* 🔹 Smooth dropdown animation */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

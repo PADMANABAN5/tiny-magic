@@ -76,8 +76,8 @@ export default function Pods() {
       ? `${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()
       : "";
     const mentorMatch =
-      searchMentorName === "" ||
-      mentorFullName.toLowerCase().includes(searchMentorName.toLowerCase());
+  searchMentorName === "" || pod.mentor_id?.toString() === searchMentorName;
+
 
     return podNameMatch && orgMatch && batchMatch && mentorMatch;
   });
@@ -428,18 +428,23 @@ export default function Pods() {
                 ))}
               </select>
 
-              {/* Changed Mentor filter to input */}
-              <input
-                type="text"
-                className="form-control"
-                style={{ maxWidth: "200px" }}
-                placeholder="Search Mentor Name"
-                value={searchMentorName}
-                onChange={(e) => {
-                  setSearchMentorName(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
+              <select
+  className="form-select"
+  style={{ maxWidth: "250px" }}
+  value={searchMentorName}
+  onChange={(e) => {
+    setSearchMentorName(e.target.value);
+    setCurrentPage(1);
+  }}
+>
+  <option value="">All Mentors</option>
+  {mentors.map((mentor) => (
+    <option key={mentor.user_id} value={mentor.user_id}>
+      {mentor.email} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
+    </option>
+  ))}
+</select>
+
             </div>
           </div>
 
@@ -644,7 +649,7 @@ export default function Pods() {
                   <option value="">-- Select Mentor --</option>
                   {mentors.map((mentor) => (
                     <option key={mentor.user_id} value={mentor.user_id}>
-                      {mentor.full_name || mentor.email}
+                      {mentor.email} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
                     </option>
                   ))}
                 </select>

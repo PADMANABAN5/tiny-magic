@@ -30,6 +30,7 @@ import MentorPodusersprogress from './pages/MentorPodusersprogress.jsx';
 import Archived from './pages/Archived.jsx';
 import ArchivedConcepts from './pages/Archivedconcepts.jsx';
 import Practicemode from './pages/Practicemode.jsx'; // Import Practicemode
+import PracticeHistory from './pages/PracticeHistory.jsx'; // Import PracticeHistory
 
 // ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
@@ -70,6 +71,9 @@ function App() {
         } />
         <Route path="/conversationhistory" element={
           <PrivateRoute roles={["orguser"]}><ConversationHistory /></PrivateRoute>
+        } />
+        <Route path="/practicehistory" element={
+          <PrivateRoute roles={["orguser"]}><PracticeHistory /></PrivateRoute>
         } />
         <Route path="/variables" element={
           <PrivateRoute roles={["orguser"]}><Variables /></PrivateRoute>

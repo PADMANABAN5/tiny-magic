@@ -5,7 +5,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 // Set up pdfMake fonts
 pdfMake.vfs = pdfFonts.vfs;
 
-const PDFDownloader = ({ chatHistory, selectedConcept, first_name, last_name, updated_at }) => {
+const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, first_name, last_name, updated_at }) => {
   // Helper function to remove emojis
   const removeEmojis = (text) =>
     text.replace(
