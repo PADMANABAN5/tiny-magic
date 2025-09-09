@@ -7,7 +7,9 @@ import {
 import Supersidebar from '../components/Supersidebar'; // Import the sidebar component
 import { Container, Row, Col, Card, Button, Nav, Navbar } from 'react-bootstrap'; // React-Bootstrap components
 import '../styles/superadmin.css';
+import usePreventBack from '../utils/usePreventBack.js';
 function Superadmin() {
+  usePreventBack("/superadmin");
   const username = sessionStorage.getItem("username");
   const firstname = sessionStorage.getItem("firstname");
   const lastname = sessionStorage.getItem("lastname");

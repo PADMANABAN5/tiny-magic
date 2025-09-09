@@ -29,10 +29,11 @@ import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
-
+import usePreventBack from "../utils/usePreventBack.js";
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
 function Dashboard() {
+  usePreventBack("/dashboard");
   const [prompt, setPrompt] = useState("");
   const [chatHistory, setChatHistory] = useState([]);
   const chatEndRef = useRef(null);
@@ -51,7 +52,7 @@ function Dashboard() {
   const prevPathRef = useRef(location.pathname);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
-
+  
   const startListening = () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -60,7 +61,7 @@ function Dashboard() {
       toast.error("Speech recognition not supported in this browser.");
       return;
     }
-
+    
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false; // only final results

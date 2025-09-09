@@ -336,7 +336,7 @@ const itemsPerPage = 10;
 
     if (status === 'not_started') return 0;
     if (status === 'completed') {
-      return Math.min(currentStage, maxStage) * progressPerStage;
+      return 100;
     }
     return Math.max(currentStage - 1, 0) * progressPerStage;
 };

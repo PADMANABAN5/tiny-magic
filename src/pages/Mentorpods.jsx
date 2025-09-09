@@ -26,7 +26,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
 import Mentorsidebar from '../components/Mentorsidebar';
-
+import usePreventBack from '../utils/usePreventBack.js';
 // Import react-datepicker and its styles
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css'; // This is the default stylesheet
@@ -38,6 +38,7 @@ import 'react-datepicker/dist/react-datepicker.css'; // This is the default styl
   };
 
 function Mentorpods() {
+  usePreventBack("/mentorpods");
   const navigate = useNavigate();
 
   /* -----------------------------------------------------------

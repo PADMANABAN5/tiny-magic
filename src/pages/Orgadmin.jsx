@@ -31,7 +31,7 @@ import autoTable from 'jspdf-autotable'; // Import autoTable for PDF table gener
 // Import react-datepicker and its styles
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
-
+import usePreventBack from '../utils/usePreventBack';
 // Define common table cell styles for consistency
 const baseCell = {
   padding: '8px',
@@ -45,6 +45,7 @@ const thStyle = { ...baseCell, fontWeight: '600', backgroundColor: '#f2f2f2' };
 const tdStyle = { ...baseCell };
 
 function Orgadmin() {
+  usePreventBack("/orgadmin");
   const navigate = useNavigate();
   const firstname = sessionStorage.getItem('firstname');
   const lastname = sessionStorage.getItem('lastname');
