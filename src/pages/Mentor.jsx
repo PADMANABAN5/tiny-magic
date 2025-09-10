@@ -41,6 +41,36 @@ export default function Mentor() {
 
   const navigate = useNavigate();
 
+  // ---- Password validation helper (same as Org Users page) ----
+  const validatePassword = (password) => {
+    const minLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*?]/.test(password);
+
+    if (!minLength) {
+      return { isValid: false, message: "Password must be at least 8 characters long." };
+    }
+    if (!hasUppercase) {
+      return { isValid: false, message: "Password must contain at least one uppercase letter." };
+    }
+    if (!hasLowercase) {
+      return { isValid: false, message: "Password must contain at least one lowercase letter." };
+    }
+    if (!hasNumber) {
+      return { isValid: false, message: "Password must contain at least one number." };
+    }
+    if (!hasSpecialChar) {
+      return {
+        isValid: false,
+        message: "Password must contain at least one special character (!@#$%^&*?).",
+      };
+    }
+    return { isValid: true, message: "" };
+  };
+  // -------------------------------------------------------------
+
   const fetchMentors = async () => {
     setLoading(true);
     setError(null);
@@ -446,17 +476,19 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={newMentor.first_name}
-                   onChange={(e) => {
-                  const value = e.target.value;
-                  const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
-                  e.target.setCustomValidity(
-                    isValid ? "" : "Please Enter a valid First Name"
-                  );
-                  setNewMentor({ ...newMentor, first_name: value });
-                }}
-                onInput={(e) => e.target.setCustomValidity("")}
-                required
-              />
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const isValid =
+                      /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) ||
+                      value === "";
+                    e.target.setCustomValidity(
+                      isValid ? "" : "Please Enter a valid First Name"
+                    );
+                    setNewMentor({ ...newMentor, first_name: value });
+                  }}
+                  onInput={(e) => e.target.setCustomValidity("")}
+                  required
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -468,15 +500,17 @@ export default function Mentor() {
                   value={newMentor.last_name}
                   onChange={(e) => {
                     const value = e.target.value;
-                    const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                    const isValid =
+                      /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) ||
+                      value === "";
                     e.target.setCustomValidity(
                       isValid ? "" : "Please Enter a valid Last Name"
-                                  );
-                  setNewMentor({ ...newMentor, last_name: value });
-                }}
-                onInput={(e) => e.target.setCustomValidity("")}
-                required
-              />
+                    );
+                    setNewMentor({ ...newMentor, last_name: value });
+                  }}
+                  onInput={(e) => e.target.setCustomValidity("")}
+                  required
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -489,20 +523,10 @@ export default function Mentor() {
                   required
                   onChange={(e) => {
                     const value = e.target.value;
-                    e.target.setCustomValidity(
-                      value.length < 8
-                        ? "Password must be at least 8 characters long"
-                        : ""
-                    );
                     setNewMentor({ ...newMentor, password: value });
+                    const check = validatePassword(value);
+                    e.target.setCustomValidity(check.isValid ? "" : check.message);
                   }}
-                  onInvalid={(e) =>
-                    e.target.setCustomValidity(
-                      e.target.value.length < 8
-                        ? "Password must be at least 8 characters long"
-                        : ""
-                    )
-                  }
                   onInput={(e) => e.target.setCustomValidity("")}
                 />
               </div>
@@ -545,16 +569,18 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={editMentor.username}
-                   onChange={(e) => {
-                  const value = e.target.value;
-                  const isValid = /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(value) || value === "";
-                  e.target.setCustomValidity(
-                    isValid ? "" : "Please Enter a valid Username"
-                  );
-                  setEditMentor({ ...editMentor, username: value });
-                }}
-                onInput={(e) => e.target.setCustomValidity("")}
-              />
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const isValid =
+                      /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(value) ||
+                      value === "";
+                    e.target.setCustomValidity(
+                      isValid ? "" : "Please Enter a valid Username"
+                    );
+                    setEditMentor({ ...editMentor, username: value });
+                  }}
+                  onInput={(e) => e.target.setCustomValidity("")}
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -564,17 +590,19 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={editMentor.first_name}
-                   onChange={(e) => {
-                  const value = e.target.value;
-                  const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
-                  e.target.setCustomValidity(
-                    isValid ? "" : "Please Enter a valid First Name"
-                  );
-                  setEditMentor({ ...editMentor, first_name: value });
-                }}
-                onInput={(e) => e.target.setCustomValidity("")}
-                required
-              />
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const isValid =
+                      /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) ||
+                      value === "";
+                    e.target.setCustomValidity(
+                      isValid ? "" : "Please Enter a valid First Name"
+                    );
+                    setEditMentor({ ...editMentor, first_name: value });
+                  }}
+                  onInput={(e) => e.target.setCustomValidity("")}
+                  required
+                />
               </div>
               <div className="mb-3">
                 <label className="form-label">
@@ -584,9 +612,11 @@ export default function Mentor() {
                   type="text"
                   className="form-control"
                   value={editMentor.last_name}
-                    onChange={(e) => {
+                  onChange={(e) => {
                     const value = e.target.value;
-                    const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
+                    const isValid =
+                      /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) ||
+                      value === "";
                     e.target.setCustomValidity(
                       isValid ? "" : "Please Enter a valid Last Name"
                     );
@@ -604,20 +634,15 @@ export default function Mentor() {
                   value={editMentor.password}
                   onChange={(e) => {
                     const value = e.target.value;
-                    e.target.setCustomValidity(
-                      value.length > 0 && value.length < 8
-                        ? "Password must be at least 8 characters long"
-                        : ""
-                    );
                     setEditMentor({ ...editMentor, password: value });
+                    // Optional: only validate when present
+                    if (value) {
+                      const check = validatePassword(value);
+                      e.target.setCustomValidity(check.isValid ? "" : check.message);
+                    } else {
+                      e.target.setCustomValidity("");
+                    }
                   }}
-                  onInvalid={(e) =>
-                    e.target.setCustomValidity(
-                      e.target.value.length > 0 && e.target.value.length < 8
-                        ? "Password must be at least 8 characters long"
-                        : ""
-                    )
-                  }
                   onInput={(e) => e.target.setCustomValidity("")}
                 />
               </div>

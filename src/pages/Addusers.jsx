@@ -124,6 +124,49 @@ export default function Addusers() {
     }
   };
 
+  // ---- Password validation helper (added) ----
+  const validatePassword = (password) => {
+    const minLength = password.length >= 8;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasLowercase = /[a-z]/.test(password);
+    const hasNumber = /[0-9]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*?]/.test(password);
+
+    if (!minLength) {
+      return {
+        isValid: false,
+        message: "Password must be at least 8 characters long.",
+      };
+    }
+    if (!hasUppercase) {
+      return {
+        isValid: false,
+        message: "Password must contain at least one uppercase letter.",
+      };
+    }
+    if (!hasLowercase) {
+      return {
+        isValid: false,
+        message: "Password must contain at least one lowercase letter.",
+      };
+    }
+    if (!hasNumber) {
+      return {
+        isValid: false,
+        message: "Password must contain at least one number.",
+      };
+    }
+    if (!hasSpecialChar) {
+      return {
+        isValid: false,
+        message:
+          "Password must contain at least one special character (!@#$%^&*?).",
+      };
+    }
+    return { isValid: true, message: "" };
+  };
+  // -------------------------------------------
+
   const handleCreateUser = async (e) => {
     e.preventDefault();
 
@@ -600,11 +643,13 @@ export default function Addusers() {
                   onChange={(e) => {
                     const value = e.target.value;
                     setNewUser({ ...newUser, password: value });
-                    e.target.setCustomValidity(
-                      value && value.length < 8
-                        ? "Password must be at least 8 characters long."
-                        : ""
-                    );
+                    // Password is optional; only validate when present
+                    if (value) {
+                      const check = validatePassword(value);
+                      e.target.setCustomValidity(check.isValid ? "" : check.message);
+                    } else {
+                      e.target.setCustomValidity("");
+                    }
                   }}
                 />
               </div>
@@ -707,11 +752,13 @@ export default function Addusers() {
                   onChange={(e) => {
                     const value = e.target.value;
                     setEditingUser({ ...editingUser, password: value });
-                    e.target.setCustomValidity(
-                      value && value.length < 8
-                        ? "Password must be at least 8 characters long."
-                        : ""
-                    );
+                    // Optional: only validate when present
+                    if (value) {
+                      const check = validatePassword(value);
+                      e.target.setCustomValidity(check.isValid ? "" : check.message);
+                    } else {
+                      e.target.setCustomValidity("");
+                    }
                   }}
                 />
               </div>

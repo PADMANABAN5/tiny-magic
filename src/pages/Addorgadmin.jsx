@@ -131,11 +131,39 @@ export default function Addorgadmin() {
   };
 
   // Validation handlers
+  // ✅ Strong password validator (create = required, edit = optional)
+  //    Keeps the same signature you are already using: (e, ref)
   const validatePassword = (e, ref) => {
-    const pwd = e.target.value;
-    ref.current.setCustomValidity(
-      pwd.length < 8 ? "Password must be at least 8 characters" : ""
-    );
+    const pwd = e.target.value || "";
+
+    // If field is optional (e.g., Edit modal with no 'required' attr) and empty -> allow
+    const isOptional = ref?.current && !ref.current.required;
+    if (isOptional && pwd.length === 0) {
+      ref.current.setCustomValidity("");
+      return;
+    }
+
+    const minLength = pwd.length >= 8;
+    const hasUppercase = /[A-Z]/.test(pwd);
+    const hasLowercase = /[a-z]/.test(pwd);
+    const hasNumber = /[0-9]/.test(pwd);
+    const hasSpecialChar = /[!@#$%^&*?]/.test(pwd);
+
+    let message = "";
+    if (!minLength) {
+      message = "Password must be at least 8 characters long";
+    } else if (!hasUppercase) {
+      message = "Password must contain at least one uppercase letter";
+    } else if (!hasLowercase) {
+      message = "Password must contain at least one lowercase letter";
+    } else if (!hasNumber) {
+      message = "Password must contain at least one number";
+    } else if (!hasSpecialChar) {
+      message =
+        "Password must contain at least one special character (!@#$%^&*?)";
+    }
+
+    ref.current.setCustomValidity(message);
   };
 
   const validateName = (e, ref, field) => {
@@ -150,9 +178,7 @@ export default function Addorgadmin() {
   const validateUsername = (e, ref) => {
     const value = e.target.value;
     ref.current.setCustomValidity(
-      !usernameRegex.test(value)
-        ? "Please Enter a valid Username"
-        : ""
+      !usernameRegex.test(value) ? "Please Enter a valid Username" : ""
     );
   };
 
