@@ -748,3 +748,59 @@ input:-moz-autofill {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border-left: 5px solid #ff9800; /* An accent border on the left */
 }
+/* Positioning for the eye inside the input */
+.password-input-container {
+  position: relative;
+}
+.password-input-container input {
+  padding-right: 40px; /* room for the icon */
+}
+
+/* Eye toggle button — remove border/background */
+.password-toggle-icon {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  line-height: 0;
+  box-shadow: none;
+  cursor: pointer;
+
+  /* remove default OS/browser styles */
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+/* Optional: accessible focus ring (no black border) */
+.password-toggle-icon:focus { outline: none; }
+.password-toggle-icon:focus-visible {
+  outline: 2px solid #58CFFB;   /* or your brand color */
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Remove Edge/IE default password reveal + clear buttons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* (Optional) also hide clear buttons on text inputs in Edge */
+input[type="text"]::-ms-clear {
+  display: none;
+}
+
+/* Safari/Chrome autofill decoration (rarely shows as a button) */
+input::-webkit-credentials-auto-fill-button,
+input::-webkit-contacts-auto-fill-button {
+  visibility: hidden;
+  display: none !important;
+  pointer-events: none;
+}
