@@ -127,7 +127,7 @@ thead.bg-primary th {
   }
 }
 .custom-tooltip {
-  background-color: #e0e0e0 !important; /* light gray */
+  background-color: transparent !important; /* light gray */
   color: black !important;
   max-width: 250px;
   padding: 10px 12px;

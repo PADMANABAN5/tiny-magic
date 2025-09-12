@@ -6,6 +6,7 @@ import Supersidebar from "../components/Supersidebar";
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
+import { useAuth } from '../components/AuthContext.jsx';
 
 export default function Batch() {
   const navigate = useNavigate();
@@ -26,10 +27,11 @@ export default function Batch() {
   const [selectedOrganization, setSelectedOrganization] = useState("");
   const storedToken = sessionStorage.getItem("token");
   const batchNameRegex = /^(?!.*\s{2,})(?!^\s)(?!.*\s$)[A-Za-z0-9 ]*$/;
+  const { token } = useAuth();
 
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 
@@ -418,7 +420,7 @@ export default function Batch() {
       }
     >
       <Badge bg="secondary" style={{ cursor: "pointer" }}>
-        Concepts ({batch.concepts.length})
+        Concepts {batch.concepts.length}
       </Badge>
     </OverlayTrigger>
   ) : (

@@ -31,7 +31,9 @@ import Archived from './pages/Archived.jsx';
 import ArchivedConcepts from './pages/Archivedconcepts.jsx';
 import Practicemode from './pages/Practicemode.jsx'; // Import Practicemode
 import PracticeHistory from './pages/PracticeHistory.jsx'; // Import PracticeHistory
-
+import { ToastContainer } from "react-toastify";
+import { AuthProvider } from "./components/AuthContext.jsx";
+import AutoLogout from "./components/Autologout.jsx";
 // ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
 
@@ -60,7 +62,8 @@ function getRedirectPath() {
 
 function App() {
   return (
-    
+    <>
+     <AutoLogout timeout={15 * 60 * 1000} />
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
@@ -157,7 +160,18 @@ function App() {
 
         {/* Redirect to login if no route matches */}
       </Routes>
-  
+    <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss={false}
+        draggable={false}
+        pauseOnHover={false}
+      />
+    </>
   );
 }
 

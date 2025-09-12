@@ -8,7 +8,7 @@ import { FaArrowLeft } from 'react-icons/fa';
 import { useParams, useNavigate } from 'react-router-dom';
 import Orgadminsidebar from '../components/Orgadminsidebar';
 import '../styles/orgadminusers.css';
-
+import { useAuth } from '../components/AuthContext.jsx';
 function OrgadminUsers() {
   const { podId } = useParams();
   const navigate = useNavigate();
@@ -20,9 +20,10 @@ function OrgadminUsers() {
   const usersPerPage = 6;
   const email = sessionStorage.getItem("email");
    const storedToken = sessionStorage.getItem("token");
+   const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 

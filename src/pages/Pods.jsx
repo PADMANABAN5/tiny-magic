@@ -5,6 +5,7 @@ import { Pagination, Toast, ToastContainer } from "react-bootstrap";
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
+import { useAuth } from "../components/AuthContext";
 
 export default function Pods() {
   const navigate = useNavigate();
@@ -31,9 +32,10 @@ export default function Pods() {
   // Changed from selectedMentor to searchMentorName for input field
   const [searchMentorName, setSearchMentorName] = useState("");
   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
   const podNameRegex = /^(?!.*\s{2,})(?!^\s)(?!.*\s$)[A-Za-z0-9 ]*$/;

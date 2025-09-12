@@ -5,6 +5,7 @@ import Supersidebar from "../components/Supersidebar";
 import { Pagination, Toast, ToastContainer, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import "../styles/OrgList.css";
+import { useAuth } from "../components/AuthContext";
 
 export default function Mentor() {
   const [mentors, setMentors] = useState([]);
@@ -33,9 +34,10 @@ export default function Mentor() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 

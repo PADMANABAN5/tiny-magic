@@ -11,14 +11,47 @@ import {
   FaChartLine,
   FaChartBar
 } from "react-icons/fa";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 function Sidebar({ isProcessingAssessment , isLoading }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const username = sessionStorage.getItem("email");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
+  
+  const handleLogout = async () => {
+    try {
+      const token = sessionStorage.getItem("token"); // store your login token here
+      await axios.post(
+        "http://localhost:5000/api/users/logout",
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
 
+      console.log("✅ Logged out from server");
+
+      // Clear session storage
+      sessionStorage.clear();
+
+      // Redirect to login page
+      navigate("/login");
+    } catch (error) {
+      console.error("❌ Logout failed:", error.response?.data || error.message);
+      toast.error("Logout failed, please try again.", { autoClose: 3000 });
+      // Even if API fails, clear storage & redirect
+      sessionStorage.clear();
+      navigate("/login");
+    }
+  };
   // Function to shorten username
   const getShortenedUsername = (email) => {
     if (!email) return "User";
@@ -158,25 +191,23 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
                 
                 <li><hr className="dropdown-divider" /></li>
                 <li>
-                  <Link
-                    to="/login"
-                   className={`dropdown-item d-flex align-items-center text-danger ${
-                      isProcessingAssessment || isLoading ? "disabled" : ""
-                    }`}
-                    onClick={(e) => {
-                      if (isProcessingAssessment || isLoading) {
-                        e.preventDefault();
-                      } else {
-                        sessionStorage.removeItem("chatHistory");
-                        sessionStorage.clear();
-                        setShowDropdown(false);
-                      }
-                    }}
-                  >
-                    <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
-                    Log Out
-                  </Link>
-                </li>
+  <button
+    className={`dropdown-item d-flex align-items-center text-danger ${
+      isProcessingAssessment || isLoading ? "disabled" : ""
+    }`}
+    onClick={(e) => {
+      e.preventDefault();
+      if (!(isProcessingAssessment || isLoading)) {
+        setShowDropdown(false);
+        handleLogout();  // ✅ Trigger API call
+      }
+    }}
+  >
+    <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
+    Log Out
+  </button>
+</li>
+
               </ul>
             )}
           </div>

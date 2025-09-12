@@ -14,6 +14,7 @@ import {
 import axios from 'axios';
 import { FaArrowLeft } from 'react-icons/fa';
 import Orgadminsidebar from '../components/Orgadminsidebar';
+import { useAuth } from '../components/AuthContext';
 
 function Orgadminpods() {
   const navigate = useNavigate();
@@ -23,9 +24,10 @@ function Orgadminpods() {
   const [error, setError] = useState(null);
   const email = sessionStorage.getItem("email");
    const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 

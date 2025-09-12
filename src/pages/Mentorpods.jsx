@@ -27,17 +27,21 @@ import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
 import Mentorsidebar from '../components/Mentorsidebar';
 import usePreventBack from '../utils/usePreventBack.js';
+import { useAuth } from '../components/AuthContext.jsx';
 // Import react-datepicker and its styles
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css'; // This is the default stylesheet
  const storedToken = sessionStorage.getItem("token");
+ 
+  
+function Mentorpods() {
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 
-function Mentorpods() {
   usePreventBack("/mentorpods");
   const navigate = useNavigate();
 

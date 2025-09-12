@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { use, useEffect, useMemo, useState } from 'react';
 import {
   Container,
   Row,
@@ -27,7 +27,7 @@ import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable'; // Import autoTable for PDF table generation
-
+import { useAuth } from '../components/AuthContext';
 // Import react-datepicker and its styles
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -89,10 +89,10 @@ const [filterPodName, setFilterPodName] = useState('');
    * --------------------------------------------------------- */
   const [filterStartDate, setFilterStartDate] = useState(null); // Will store Date object or null
   const [filterEndDate, setFilterEndDate] = useState(null); // Will store Date object or null
-   const storedToken = sessionStorage.getItem("token");
+   const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
   const getUniqueValues = (data, property) => {

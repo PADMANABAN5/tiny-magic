@@ -11,6 +11,7 @@ import {
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit, FaHistory } from "react-icons/fa";
+import { useAuth } from '../components/AuthContext.jsx';
 
 export default function Concepts() {
   const navigate = useNavigate();
@@ -52,15 +53,34 @@ export default function Concepts() {
     concept_understanding_rubric: "",
     understanding_skills_rubric: "",
     learning_assessment_dimensions: "",
+    learning_objective: "",
+    level_1_name: "",
+    level_1_description: "",
+    level_2_name: "",
+    level_2_description: "",
+    level_3_name: "",
+    level_3_description: "",
+    level_4_name: "",
+    level_4_description: "",
+    level_5_name: "",
+    level_5_description: "",
+    number_of_scenarios: "",
+    facet_focus: "",
+    introduction_context:"",
+    progression_description:"",
+    task_questions:"",
+    reflection_questions:"",
+    strength_checklist:"",
     download_link: "",
     is_active: true,
   });
 
   const API_BASE_URL =
     process.env.REACT_APP_API_LINK || "http://localhost:3000/api";
+    const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 
@@ -169,6 +189,24 @@ export default function Concepts() {
       concept_understanding_rubric: "",
       understanding_skills_rubric: "",
       learning_assessment_dimensions: "",
+      learning_objective: "",
+    level_1_name: "",
+    level_1_description: "",
+    level_2_name: "",
+    level_2_description: "",
+    level_3_name: "",
+    level_3_description: "",
+    level_4_name: "",
+    level_4_description: "",
+    level_5_name: "",
+    level_5_description: "",
+    number_of_scenarios: "",
+    facet_focus: "",
+    introduction_context:"",
+    progression_description:"",
+    task_questions:"",
+    reflection_questions:"",
+    strength_checklist:"",
       download_link: "",
       is_active: true,
     });
@@ -533,6 +571,24 @@ export default function Concepts() {
                   concept_understanding_rubric: "Understanding Rubric",
                   understanding_skills_rubric: "Skills Rubric",
                   learning_assessment_dimensions: "Assessment Dimensions",
+                  learning_objective: "Learning Objective",
+                  level_1_name: "Level 1 Name",
+                  level_1_description: "Level 1 Description",
+                  level_2_name: "Level 2 Name",
+                  level_2_description: "Level 2 Description",
+                  level_3_name: "Level 3 Name",
+                  level_3_description: "Level 3 Description",
+                  level_4_name: "Level 4 Name",
+                  level_4_description: "Level 4 Description",
+                  level_5_name: "Level 5 Name",
+                  level_5_description: "Level 5 Description",
+                  number_of_scenarios: "Number of Scenarios",
+                  facet_focus: "Facet Focus",
+                  introduction_context: "Introduction Context",
+                  progression_description: "Progression Description",
+                  task_questions: "Task Questions",
+                  reflection_questions: "Reflection Questions",
+                  strength_checklist: "Strength Checklist",
                   download_link: "Download Link",
                 }).map(([key, label], index) => (
                   <Accordion.Item eventKey={index.toString()} key={key}>

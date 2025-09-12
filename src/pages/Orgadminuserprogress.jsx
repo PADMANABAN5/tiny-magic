@@ -34,6 +34,7 @@ import AssessmentDisplay, {
 } from '../components/AssessmentDisplay.jsx';
 import '../styles/orgadminusers.css';
 import { Accordion } from 'react-bootstrap';
+import { useAuth } from '../components/AuthContext.jsx';
 
 function Orgadminuserprogress() {
   const navigate = useNavigate();
@@ -62,9 +63,10 @@ function Orgadminuserprogress() {
   const chatEndRef = useRef(null);
  
    const storedToken = sessionStorage.getItem("token");
+   const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
   const BASE_URL = process.env.REACT_APP_API_LINK;

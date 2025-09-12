@@ -244,13 +244,19 @@ a.nav-link.link-dark.active {
 }
 .page-title {
   font-weight: bold;
-  color: #1e293b;          /* black */
+  
+           /* black */
   font-size: 24px;
   text-align: center;
   margin: 0;
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
+   background: linear-gradient(90deg, #1CB5E0 0%, #000851 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text; /* Standard property */
+    color: transparent;
 }
 /* 🔹 History Dropdown Styling */
 

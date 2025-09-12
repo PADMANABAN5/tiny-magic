@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, ListGroup, Badge, Spinner, Alert } from 'react-bootstrap';
 import axios from 'axios'; // You'll need to install axios: npm install axios
 import Orgadminsidebar from '../components/Orgadminsidebar';
+import { useAuth } from '../components/AuthContext';
 function OrgadminBatch() {
     const [batches, setBatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const email = sessionStorage.getItem("email"); 
+    const email = sessionStorage.getItem("email");
+    const { token } = useAuth();
 
     useEffect(() => {
         const fetchBatches = async () => {

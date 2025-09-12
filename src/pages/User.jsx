@@ -12,6 +12,7 @@ import {
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
+import { useAuth } from '../components/AuthContext.jsx';
 
 export default function User() {
   const navigate = useNavigate();
@@ -41,9 +42,10 @@ export default function User() {
   const [toastMessage, setToastMessage] = useState("");
   const [toastBg, setToastBg] = useState("primary");
   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
   // State for filters

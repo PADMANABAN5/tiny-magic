@@ -1,12 +1,16 @@
 export const parseApiResponseText = (apiResponseText, context = "") => {
   console.log("📡 [parseApiResponseText] Raw response:", apiResponseText);
 
-  if (!apiResponseText) return "";
+ if (!apiResponseText) return "";
+
+  // 🔹 If already an object with display_text, return it directly
+  if (typeof apiResponseText === "object" && apiResponseText.display_text) {
+    return apiResponseText.display_text;
+  }
 
   let input = typeof apiResponseText === "string"
     ? apiResponseText.trim()
     : JSON.stringify(apiResponseText);
-
   // 🔹 Step 1: Remove markdown fences
   input = input.replace(/```json\s*/gi, "").replace(/```/g, "").trim();
 

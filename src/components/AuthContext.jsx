@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import {toast} from "react-toastify";
 
 const AuthContext = createContext();
 
@@ -50,7 +51,7 @@ export const AuthProvider = ({ children }) => {
     clearTimeout(logoutTimer.current);
     logoutTimer.current = setTimeout(() => {
       logout();
-    }, 4 * 60 * 60 * 1000); // 4 hours
+    }, 4 * 60 * 60 * 100); // 4 hours
   };
 
   useEffect(() => {
@@ -87,14 +88,55 @@ export const AuthProvider = ({ children }) => {
       resetInactivityTimer();
     } catch (error) {
       console.error("Token verification failed:", error);
+      toast.error("Token expired or invalid, please log in again", { autoClose: 2000 });
       setIsLoading(false);
-      logout();
+       setTimeout(() => {
+    logout();
+  }, 3000);
     }
   };
 
   useEffect(() => {
-    verifyToken();
-  }, []);
+  verifyToken(); // initial check
+
+  const requestInterceptor = axios.interceptors.request.use(
+    async (config) => {
+      const storedToken = sessionStorage.getItem("token");
+
+      // 🚨 Skip verifying if we're already calling /users/verify
+      if (config.url.includes("/users/verify")) {
+        return config;
+      }
+
+      if (storedToken) {
+        try {
+          // Verify token before proceeding
+          await axios.get(`${BASE_URL}/users/verify`, {
+            headers: { Authorization: `Bearer ${storedToken}` },
+          });
+
+          // If valid, attach token
+          config.headers.Authorization = `Bearer ${storedToken}`;
+        } catch (error) {
+          console.error("❌ Token invalid during request:", error);
+          toast.error("Token expired or invalid, please log in again", { autoClose: 2000 });
+           setTimeout(() => {
+    logout();
+  }, 3000);
+          throw error;
+        }
+      }
+      return config;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  return () => {
+    axios.interceptors.request.eject(requestInterceptor);
+  };
+}, []);
+
+
 
   return (
     <AuthContext.Provider

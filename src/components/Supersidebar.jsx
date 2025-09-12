@@ -10,12 +10,46 @@ import {
   FaHistory,
   FaSlidersH 
 } from "react-icons/fa";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 
 function Supersidebar() {
   const location = useLocation();
+  const navigate = useNavigate();
   const username = sessionStorage.getItem("email");
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showDropdown, setShowDropdown] = useState(false);
+
+    const handleLogout = async () => {
+    try {
+      const token = sessionStorage.getItem("token"); // store your login token here
+      await axios.post(
+        "http://localhost:5000/api/users/logout",
+        {},
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.log("✅ Logged out from server");
+
+      // Clear session storage
+      sessionStorage.clear();
+
+      // Redirect to login page
+      navigate("/login");
+    } catch (error) {
+      console.error("❌ Logout failed:", error.response?.data || error.message);
+      toast.error("Logout failed, please try again.", { autoClose: 3000 });
+      // Even if API fails, clear storage & redirect
+      sessionStorage.clear();
+      navigate("/login");
+    }
+  };
 
   // Function to shorten username
   const getShortenedUsername = (email) => {
@@ -90,18 +124,17 @@ function Supersidebar() {
                 </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>
-                  <Link
-                    to="/login"
+                  <button
                     className="dropdown-item d-flex align-items-center text-danger"
                     onClick={() => {
-                      sessionStorage.removeItem("chatHistory");
-                      sessionStorage.clear();
+                      
                       setShowDropdown(false);
+                      handleLogout();
                     }}
                   >
                     <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
                     Log Out
-                  </Link>
+                  </button>
                 </li>
               </ul>
             )}

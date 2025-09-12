@@ -5,6 +5,7 @@ import { Pagination, Toast, ToastContainer, Form } from "react-bootstrap";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "../styles/OrgList.css";
+import { useAuth } from "../components/AuthContext";
 
 export default function Addorgadmin() {
   const [orgAdmins, setOrgAdmins] = useState([]);
@@ -40,9 +41,10 @@ export default function Addorgadmin() {
   const nameRegex = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/;
   const usernameRegex = /^[A-Za-z0-9_]+$/;
   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 

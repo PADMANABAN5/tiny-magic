@@ -34,6 +34,7 @@ import AssessmentDisplay, {
 } from '../components/AssessmentDisplay.jsx';
 import '../styles/orgadminusers.css';
 import { Accordion } from 'react-bootstrap';
+import { useAuth } from '../components/AuthContext.jsx';
 function MentorPodusersprogress() {
   const navigate = useNavigate();
   const { userId } = useParams();
@@ -63,10 +64,11 @@ const [practiceSortBy, setPracticeSortBy] = useState("date_desc");
 const [practicePage, setPracticePage] = useState(1);
 const itemsPerPage = 10;
 
-   const storedToken = sessionStorage.getItem("token");
+   const { token } = useAuth();
+
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
   const BASE_URL = process.env.REACT_APP_API_LINK;

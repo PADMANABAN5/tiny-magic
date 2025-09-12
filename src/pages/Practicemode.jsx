@@ -29,7 +29,7 @@ import "react-toastify/dist/ReactToastify.css";
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
 import { parseApiResponseText } from "../utils/parseApiResponseText.js";
-
+import { useAuth } from "../components/AuthContext.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000"; // Fallback URL
 
 function Practicemode() {
@@ -120,9 +120,10 @@ const [prompt, setPrompt] = useState("");
   const topSaveButtonRef = useRef(null);
   const topSaveOptionsRef = useRef(null);
   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 
@@ -640,7 +641,7 @@ const newStatus = parsedResponse.status || "";
 // compute once so it's available later (fixes "not defined" error)
 const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
 
-if (newStatus === "complete") {
+if (newStatus === "complete" || newStatus ==="exit") {
   // final/completed path -> force Completed card (stage 7)
   setIsChatEnded(true);
   setEndReason("interactionCompleted");
@@ -856,7 +857,7 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
       }
 
       if (currentPracticeChatId && PracSessionType === "resume") {
-        response = await axios.put(`${BASE_URL}/practicemode/conversation/${currentPracticeChatId}`, requestData);
+        response = await axios.put(`${BASE_URL}/practicemode/conversation/${currentPracticeChatId}`, requestData, config);
         actionMessage = `Updated existing chat (ID: ${currentPracticeChatId})`;
       } else {
         response = await axios.post(`${BASE_URL}/practicemode`, {
@@ -953,7 +954,7 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
 
     setIsCountsLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/practicemode/counts/${userId}`);
+      const response = await axios.get(`${BASE_URL}/practicemode/counts/${userId}`, config);
 
       if (
         response.data &&
@@ -986,7 +987,7 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
         apiUrl += `?concept_name=${encodeURIComponent(conceptName)}`;
       }
 
-      const response = await axios.get(apiUrl);
+      const response = await axios.get(apiUrl, config);
 
       if (response.data && response.data.success) {
         const { PracSessionType, hasActiveSession, shouldStartFresh, practicemode: chat } = response.data.data;

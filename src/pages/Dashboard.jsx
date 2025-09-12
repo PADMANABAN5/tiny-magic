@@ -30,6 +30,7 @@ import 'react-toastify/dist/ReactToastify.css';
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
 import usePreventBack from "../utils/usePreventBack.js";
+import { useAuth } from "../components/AuthContext.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
 function Dashboard() {
@@ -119,9 +120,10 @@ function Dashboard() {
   const topSaveButtonRef = useRef(null);
   const topSaveOptionsRef = useRef(null);
   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 
@@ -722,7 +724,7 @@ function Dashboard() {
       }
 
       if (currentChatId && sessionType === "resume") {
-        response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, requestData);
+        response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, requestData, config);
         actionMessage = `Updated existing chat (ID: ${currentChatId})`;
       } else {
         response = await axios.post(`${BASE_URL}/chat`, {
@@ -817,7 +819,7 @@ function Dashboard() {
 
     setIsCountsLoading(true);
     try {
-      const response = await axios.get(`${BASE_URL}/chat/counts/${userId}`);
+      const response = await axios.get(`${BASE_URL}/chat/counts/${userId}`, config);
 
       if (
         response.data &&
@@ -850,7 +852,7 @@ function Dashboard() {
         apiUrl += `?concept_name=${encodeURIComponent(conceptName)}`;
       }
 
-      const response = await axios.get(apiUrl);
+      const response = await axios.get(apiUrl, config);
 
       if (response.data && response.data.success) {
         const { sessionType, hasActiveSession, shouldStartFresh, chat } = response.data.data;

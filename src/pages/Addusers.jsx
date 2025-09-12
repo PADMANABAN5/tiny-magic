@@ -5,6 +5,7 @@ import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import Supersidebar from "../components/Supersidebar";
 import { Pagination, Toast, ToastContainer, Form } from "react-bootstrap";
 import "../styles/OrgList.css";
+import { useAuth } from "../components/AuthContext";
 
 export default function Addusers() {
   const [orgUsers, setOrgUsers] = useState([]);
@@ -30,9 +31,10 @@ export default function Addusers() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrganization, setSelectedOrganization] = useState("");
   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 

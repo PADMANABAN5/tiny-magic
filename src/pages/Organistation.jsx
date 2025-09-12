@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/OrgList.css';
 import { FaArrowLeft, FaPlus } from 'react-icons/fa';
+import { useAuth } from '../components/AuthContext.jsx';
 
 export default function OrgList() {
   const [organizations, setOrganizations] = useState([]);
@@ -21,9 +22,10 @@ export default function OrgList() {
 
   const navigate = useNavigate();
   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
   const fetchOrganizations = async () => {

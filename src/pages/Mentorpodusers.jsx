@@ -8,6 +8,7 @@ import { FaArrowLeft } from 'react-icons/fa';
 import { useParams, useNavigate } from 'react-router-dom';
 import Mentorsidebar from '../components/Mentorsidebar';
 import '../styles/orgadminusers.css';
+import { useAuth } from '../components/AuthContext.jsx';
 
 function Mentorpodusers() {
   const { podId } = useParams();
@@ -19,10 +20,11 @@ function Mentorpodusers() {
   const [podInfo, setPodInfo] = useState(null);
   const usersPerPage = 6;
   const email = sessionStorage.getItem("email");
-   const storedToken = sessionStorage.getItem("token");
+  const { token } = useAuth();
+
   const config = {
     headers: {
-      Authorization: `Bearer ${storedToken}`,
+      Authorization: `Bearer ${token}`,
     },
   };
 
