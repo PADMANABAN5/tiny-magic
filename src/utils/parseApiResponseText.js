@@ -41,15 +41,31 @@ export const parseApiResponseText = (apiResponseText, context = "") => {
     .replace(/:\s*Infinity/g, ": 0")     // Infinity → 0
     .replace(/\n+/g, " ");               // collapse raw newlines
 
-  parsed = tryParse(repaired);
+    parsed = tryParse(repaired);
   if (parsed && parsed.display_text) return parsed.display_text;
 
-  console.error("❌ Still not valid JSON, using regex fallback...");
+  console.error("❌ Still not valid JSON, attempting lenient parse...");
 
-  // 🔹 Step 5: Regex extract display_text
+  // 🔹 Step 5: Lenient parse → wrap unquoted values in strings
+  try {
+    const safeJson = repaired.replace(/:\s*([^,"{}\[\]\s][^,}\]]*)/g, (match, value) => {
+      // If it looks like a number, leave it
+      if (/^-?\d+(\.\d+)?$/.test(value.trim())) return `: ${value.trim()}`;
+      // Otherwise wrap in quotes
+      return `: "${value.trim()}"`;
+    });
+
+    parsed = JSON.parse(safeJson);
+    if (parsed && parsed.display_text) return parsed.display_text;
+  } catch (err) {
+    console.error("❌ Lenient parse failed too", err);
+  }
+
+  // 🔹 Step 6: Last resort → try regex for display_text only
   const displayTextMatch = repaired.match(/"display_text"\s*:\s*"([^"]+)"/);
   if (displayTextMatch) return displayTextMatch[1];
 
-  // 🔹 Step 6: Last resort → return plain string
+  // 🔹 Step 7: Absolute fallback → return raw string
   return input;
+
 };
