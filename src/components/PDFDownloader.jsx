@@ -5,7 +5,7 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 // Set up pdfMake fonts
 pdfMake.vfs = pdfFonts.vfs;
 
-const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, first_name, last_name, updated_at }) => {
+const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, first_name, last_name, updated_at, finalAssessment }) => {
   // Helper function to remove emojis
   const removeEmojis = (text) =>
     text.replace(
@@ -395,6 +395,118 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
             margin: [0, 8, 0, 0],
           });
         }
+      }
+    }
+   if (finalAssessment) {
+      content.push({
+        text: "Final Assessment",
+        style: "header",
+        margin: [0, 30, 0, 15],
+      });
+
+      // Overall Performance
+      if (finalAssessment.overall_performance) {
+        content.push({
+          text: `Overall Performance: ${finalAssessment.overall_performance}`,
+          style: "subHeader",
+          margin: [0, 5, 0, 10],
+        });
+      }
+
+      // Facet Ratings
+if (finalAssessment.facet_ratings) {
+  content.push({
+    text: "Facet Ratings",
+    style: "subHeader",
+    margin: [0, 10, 0, 8],
+  });
+
+  const facets = [
+    { key: "explanation", label: "Explanation" },
+    { key: "interpretation", label: "Interpretation" },
+    { key: "application", label: "Application" },
+    { key: "perspective", label: "Perspective" },
+    { key: "empathy", label: "Empathy" },
+    { key: "self_knowledge", label: "Self-Knowledge" }
+  ];
+
+  facets.forEach(facet => {
+    const value = finalAssessment.facet_ratings[facet.key];
+    if (value) {
+      content.push({
+        text: `${facet.label}: ${value}`,
+        style: "scoreItem",
+        margin: [0, 4, 0, 3],
+      });
+    }
+  });
+}
+
+
+      // Key Patterns
+      if (finalAssessment.key_patterns && finalAssessment.key_patterns.length > 0) {
+        content.push({
+          text: "Key Patterns",
+          style: "subHeader",
+          margin: [0, 15, 0, 8],
+        });
+
+        finalAssessment.key_patterns.forEach(pattern => {
+          content.push({
+            text: `• ${removeEmojis(pattern)}`,
+            style: "summaryText",
+            margin: [10, 2, 0, 2],
+          });
+        });
+      }
+
+      // Recommended Focus Areas
+      if (finalAssessment.recommended_focus_areas && finalAssessment.recommended_focus_areas.length > 0) {
+        content.push({
+          text: "Recommended Focus Areas",
+          style: "subHeader",
+          margin: [0, 15, 0, 8],
+        });
+
+        finalAssessment.recommended_focus_areas.forEach(area => {
+          content.push({
+            text: `• ${removeEmojis(area)}`,
+            style: "summaryText",
+            margin: [10, 2, 0, 2],
+          });
+        });
+      }
+
+      // Personalized Next Steps
+      if (finalAssessment.personalized_next_steps && finalAssessment.personalized_next_steps.length > 0) {
+        content.push({
+          text: "Personalized Next Steps",
+          style: "subHeader",
+          margin: [0, 15, 0, 8],
+        });
+
+        finalAssessment.personalized_next_steps.forEach(step => {
+          content.push({
+            text: `• ${removeEmojis(step)}`,
+            style: "summaryText",
+            margin: [10, 2, 0, 2],
+          });
+        });
+      }
+
+      // Session Summary
+      if (finalAssessment.session_summary) {
+        content.push({
+          text: "Session Summary",
+          style: "subHeader",
+          margin: [0, 15, 0, 8],
+        });
+
+        content.push({
+          text: removeEmojis(finalAssessment.session_summary),
+          style: "summaryText",
+          margin: [0, 0, 0, 15],
+        });
       }
     }
 

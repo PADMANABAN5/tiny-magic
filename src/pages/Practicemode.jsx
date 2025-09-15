@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import debounce from "lodash/debounce";
 import "bootstrap/dist/css/bootstrap.min.css";
@@ -33,7 +32,7 @@ import { useAuth } from "../components/AuthContext.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000"; // Fallback URL
 
 function Practicemode() {
-const [prompt, setPrompt] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [practiceChatHistory, setPracticeChatHistory] = useState([]);
   const chatEndRef = useRef(null);
   const [selectedPrompt, setSelectedPrompt] = useState("practicePrompt");
@@ -52,7 +51,7 @@ const [prompt, setPrompt] = useState("");
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
   const [apiData, setApiData] = useState({});
-
+  const apiDataRef = useRef({});
 
   const startListening = () => {
     const SpeechRecognition =
@@ -127,26 +126,6 @@ const [prompt, setPrompt] = useState("");
     },
   };
 
-//   const parseApiResponseText = (apiResponseText) => {
-//   if (!apiResponseText) return "";
-
-//   // remove markdown code fences if present
-//   const cleanedText = apiResponseText
-//     .replace(/```json\s*/i, "")
-//     .replace(/```$/, "")
-//     .trim();
-
-//   try {
-//     const parsed = JSON.parse(cleanedText);
-//     console.log("📝 Parsed API Response Text:", parsed.display_text || cleanedText);
-//     return parsed.display_text || cleanedText;
-//   } catch (err) {
-//     console.log("⚠️ Could not parse API Response Text, returning raw:", apiResponseText);
-//     return apiResponseText; // fallback if not JSON
-//   }
-// };
-
-
   useEffect(() => {
     const unlisten = () => {
       if (isProcessingAssessment && prevPathRef.current !== location.pathname) {
@@ -167,10 +146,27 @@ const [prompt, setPrompt] = useState("");
     archived: 0,
   });
 
-  // Initialize PDF downloader
-  const { handleDownloadPDF } = PDFDownloader({ 
+  // In Practicemode.jsx
+  // 1. build finalAssessment first
+  let finalAssessment = null;
+  try {
+    let parsed =
+      typeof apiData === "string"
+        ? JSON.parse(apiData)
+        : apiData?.apiResponseText
+        ? JSON.parse(apiData.apiResponseText)
+        : apiData;
+
+    finalAssessment = parsed?.final_assessment || null;
+  } catch (err) {
+    console.error("❌ Failed to parse apiData for PDF:", err);
+  }
+
+  // ✅ Pass this into PDFDownloader
+  const { handleDownloadPDF } = PDFDownloader({
     chatHistory: practiceChatHistory,
-    selectedConcept 
+    selectedConcept,
+    finalAssessment: apiData?.final_assessment
   });
 
   useEffect(() => {
@@ -207,7 +203,7 @@ const [prompt, setPrompt] = useState("");
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.addEventListener("mousedown", handleClickOutside);
   }, [showSaveOptions, showConceptDropdown]);
 
   const fetchAndReturnConcepts = async () => {
@@ -299,27 +295,26 @@ const [prompt, setPrompt] = useState("");
 
       const mentorMessage = parseApiResponseText(response.apiResponseText);
       // Try parsing response for scenario progress
-try {
-  const cleanedText = response.apiResponseText
-    .replace(/```json\s*/i, "")
-    .replace(/```$/, "")
-    .trim();
+      try {
+        const cleanedText = response.apiResponseText
+          .replace(/```json\s*/i, "")
+          .replace(/```$/, "")
+          .trim();
 
-  const parsedResponse = JSON.parse(cleanedText);
+        const parsedResponse = JSON.parse(cleanedText);
 
-  setApiData(parsedResponse);
+        setApiData(parsedResponse);
 
-  if (concept?.concept_name || selectedConcept?.concept_name) {
-    const conceptName = concept?.concept_name || selectedConcept.concept_name;
-    sessionStorage.setItem(
-      `scenarioProgress_${conceptName}`,
-      JSON.stringify(parsedResponse)
-    );
-  }
-} catch (err) {
-  console.warn("⚠️ Could not parse scenario progress from initial mentor message");
-}
-
+        if (concept?.concept_name || selectedConcept?.concept_name) {
+          const conceptName = concept?.concept_name || selectedConcept.concept_name;
+          sessionStorage.setItem(
+            `scenarioProgress_${conceptName}`,
+            JSON.stringify(parsedResponse)
+          );
+        }
+      } catch (err) {
+        console.warn("⚠️ Could not parse scenario progress from initial mentor message");
+      }
 
       const updatedHistory = [{ user: "", system: mentorMessage }];
 
@@ -399,22 +394,21 @@ try {
 
       const mentorMessage = parseApiResponseText(response.apiResponseText);
       // Try parsing response for scenario progress
- try {
-      const cleanedText = response.apiResponseText
-        .replace(/```json\s*/i, "")
-        .replace(/```$/, "")
-        .trim();
-      const parsedResponse = JSON.parse(cleanedText);
+      try {
+        const cleanedText = response.apiResponseText
+          .replace(/```json\s*/i, "")
+          .replace(/```$/, "")
+          .trim();
+        const parsedResponse = JSON.parse(cleanedText);
 
-      setApiData(parsedResponse);
-      sessionStorage.setItem(
-        `scenarioProgress_${selectedConcept.concept_name}`,
-        JSON.stringify(parsedResponse)
-      );
-    } catch (err) {
-      console.warn("⚠️ Could not parse scenario progress from initial mentor message");
-    }
-
+        setApiData(parsedResponse);
+        sessionStorage.setItem(
+          `scenarioProgress_${selectedConcept.concept_name}`,
+          JSON.stringify(parsedResponse)
+        );
+      } catch (err) {
+        console.warn("⚠️ Could not parse scenario progress from initial mentor message");
+      }
 
       const updatedHistory = [{ user: "", system: mentorMessage }];
 
@@ -446,7 +440,7 @@ try {
     setShowEndSessionDialog(false);
     setIsLoading(true);
     setIsProcessingAssessment(true);
-  
+
     try {
       const organizationId = sessionStorage.getItem("organizationId");
       const batchId = sessionStorage.getItem("batchId");
@@ -462,6 +456,29 @@ try {
       });
 
       setLlmContent(assessmentResponse.apiResponseText);
+      let parsedAssessment = null;
+      try {
+        const cleanedAssessmentText = assessmentResponse.apiResponseText
+          .replace(/```json\s*/i, "")
+          .replace(/```$/, "")
+          .trim();
+        parsedAssessment = JSON.parse(cleanedAssessmentText);
+
+        // Update apiData with the latest assessment
+        setApiData(prev => ({
+          ...prev,
+          final_assessment: parsedAssessment.final_assessment || prev.final_assessment
+        }));
+
+        if (selectedConcept?.concept_name) {
+          sessionStorage.setItem(
+            `scenarioProgress_${selectedConcept.concept_name}`,
+            JSON.stringify(parsedAssessment)
+          );
+        }
+      } catch (err) {
+        console.warn("⚠️ Could not parse assessment response", err);
+      }
 
       const assessmentChatEntry = {
         user: "",
@@ -470,24 +487,21 @@ try {
 
       const finalHistory = [...practiceChatHistory, assessmentChatEntry];
 
-// save to sessionStorage & state
-sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
-setPracticeChatHistory(finalHistory);
+      // Update state and sessionStorage
+      setPracticeChatHistory(finalHistory);
+      sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
 
-// ✅ pass finalHistory explicitly
-await handleSaveChat("completed", true, finalHistory);
       setSessionHistory((prev) => [
         ...prev,
         { Mentee: "", Mentor: parseApiResponseText(assessmentResponse.apiResponseText) },
       ]);
-      
 
       setCurrentChatStatus("completed");
       setIsChatEnded(true);
       setEndReason("endRequested");
-      //await handleSaveChat("completed");
 
-      
+      // Pass the parsed assessment to handleSaveChat
+      await handleSaveChat("completed", true, finalHistory, parsedAssessment?.final_assessment);
 
     } catch (error) {
       toast.error("❌ Failed to end session and load assessment.");
@@ -581,19 +595,16 @@ await handleSaveChat("completed", true, finalHistory);
 
     setIsLoading(true);
     const userPrompt = prompt.trim();
-  setPrompt("");
+    setPrompt("");
 
-  // Step 1: Add only user message first
-  setPracticeChatHistory((prev) => {
-    const updated = [...prev, { user: userPrompt, system: "" }];
-    sessionStorage.setItem("practiceChatHistory", JSON.stringify(updated));
-    return updated;
-  });
-    console.log("🚀 handleSendClick: Setting isLoading to true");
+    // Step 1: Add only user message first
+    setPracticeChatHistory((prev) => {
+      const updated = [...prev, { user: userPrompt, system: "" }];
+      sessionStorage.setItem("practiceChatHistory", JSON.stringify(updated));
+      return updated;
+    });
 
     try {
-      // const userPrompt = prompt.trim();
-      // setPrompt("");
       const organizationId = sessionStorage.getItem("organizationId");
       const batchId = sessionStorage.getItem("batchId");
 
@@ -609,82 +620,61 @@ await handleSaveChat("completed", true, finalHistory);
       });
 
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-      
-      let newApiCurrentStage = initialResponse.currentStage || 0;
-      let newInteractionCompleted = initialResponse.interactionCompleted || false;
-      let newEndRequested = initialResponse.endRequested || false;
-      console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
 
-// ---- Replace the existing parsedResponse / stage logic with this ----
-const parsedResponse = (() => {
-  try {
-    const cleanedText = initialResponse.apiResponseText
-      .replace(/```json\s*/i, "")
-      .replace(/```$/, "")
-      .trim();
-    return JSON.parse(cleanedText);
-  } catch (e) {
-    return {};
-  }
-})();
-setApiData(parsedResponse);
-if (selectedConcept?.concept_name) {
-  sessionStorage.setItem(
-    `scenarioProgress_${selectedConcept.concept_name}`,
-    JSON.stringify(parsedResponse)
-  );
-}
+      const parsedResponse = (() => {
+        try {
+          const cleanedText = initialResponse.apiResponseText
+            .replace(/```json\s*/i, "")
+            .replace(/```$/, "")
+            .trim();
+          return JSON.parse(cleanedText);
+        } catch (e) {
+          return {};
+        }
+      })();
 
-const apiCurrentLevel = Number(parsedResponse.current_level) || 0;
-const newStatus = parsedResponse.status || "";
+      // Update apiData with the latest response
+      setApiData(parsedResponse);
+      if (selectedConcept?.concept_name) {
+        sessionStorage.setItem(
+          `scenarioProgress_${selectedConcept.concept_name}`,
+          JSON.stringify(parsedResponse)
+        );
+      }
 
-// compute once so it's available later (fixes "not defined" error)
-const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
+      const apiCurrentLevel = Number(parsedResponse.current_level) || 0;
+      const newStatus = parsedResponse.status || "";
 
-if (newStatus === "complete" || newStatus ==="exit") {
-  // final/completed path -> force Completed card (stage 7)
-  setIsChatEnded(true);
-  setEndReason("interactionCompleted");
-  setCurrentChatStatus("completed");
-  await handleSaveChat('completed', true, [...practiceChatHistory, {
-    user: userPrompt,
-    system: parseApiResponseText(initialResponse.apiResponseText)
-  }]);
+      const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
 
-  setCurrentStage(7);
-  console.log("🎯 Session completed, moved to Completed card");
-} else {
-  // not complete -> normal progression
-  const allScenariosDone =
-    parsedResponse.scenarios_completed &&
-    parsedResponse.session_progress?.total_scenarios &&
-    parsedResponse.scenarios_completed === parsedResponse.session_progress.total_scenarios;
+      if (newStatus === "complete" || newStatus === "exit") {
+        setIsChatEnded(true);
+        setEndReason("interactionCompleted");
+        setCurrentChatStatus("completed");
 
-  if (allScenariosDone) {
-    // If the LLM says all scenarios finished, mark Completed
-    setCurrentStage(7);
-    setIsChatEnded(true);
-    setEndReason("interactionCompleted");
-    setCurrentChatStatus("completed");
-    console.log("🎯 All scenarios reported complete -> Completed card");
-  } else {
-    // update stage only if it's the first user message or we're progressing forward
-    if (isFirstUserMessage || newProgressStage >= currentStage) {
-      setCurrentStage(newProgressStage);
-      setCurrentChatStatus("inprogress");
-      console.log("➡️ Progressing to stage:", newProgressStage);
-    }
-  }
-}
-// ---- end replacement ----
+        const finalHistory = [...practiceChatHistory, {
+          user: userPrompt,
+          system: parseApiResponseText(initialResponse.apiResponseText)
+        }];
 
+        // Pass the parsed final_assessment to handleSaveChat
+        await handleSaveChat('completed', true, finalHistory, parsedResponse.final_assessment);
 
-      let currentChatHistory = [];
+        setCurrentStage(7);
+        console.log("🎯 Session completed, moved to Completed card");
+      } else {
+        if (isFirstUserMessage || newProgressStage >= currentStage) {
+          setCurrentStage(newProgressStage);
+          setCurrentChatStatus("inprogress");
+          console.log("➡️ Progressing to stage:", newProgressStage);
+        }
+      }
+
       setPracticeChatHistory((prev) => {
         const updated = [...prev];
-      updated[updated.length - 1].system = parseApiResponseText(initialResponse.apiResponseText);
-      sessionStorage.setItem("practiceChatHistory", JSON.stringify(updated));
-      return updated;
+        updated[updated.length - 1].system = parseApiResponseText(initialResponse.apiResponseText);
+        sessionStorage.setItem("practiceChatHistory", JSON.stringify(updated));
+        return updated;
       });
 
       setSessionHistory((prev) => [
@@ -692,11 +682,9 @@ if (newStatus === "complete" || newStatus ==="exit") {
         { Mentee: userPrompt, Mentor: parseApiResponseText(initialResponse.apiResponseText) },
       ]);
 
-      if (newEndRequested || newInteractionCompleted) {
-        console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
+      if (parsedResponse.endRequested || parsedResponse.interactionCompleted) {
+        console.log("🎯 handleSendClick: Triggering assessment due to", parsedResponse.interactionCompleted ? "interactionCompleted" : "endRequested");
         setIsProcessingAssessment(true);
-        const organizationId = sessionStorage.getItem("organizationId");
-        const batchId = sessionStorage.getItem("batchId");
         const assessmentResponse = await processPromptAndCallLLM({
           username,
           selectedPrompt: "practicePrompt",
@@ -713,6 +701,30 @@ if (newStatus === "complete" || newStatus ==="exit") {
 
         setLlmContent(assessmentResponse.apiResponseText);
 
+        let parsedAssessment = null;
+        try {
+          const cleanedAssessmentText = assessmentResponse.apiResponseText
+            .replace(/```json\s*/i, "")
+            .replace(/```$/, "")
+            .trim();
+          parsedAssessment = JSON.parse(cleanedAssessmentText);
+
+          // Update apiData with the latest assessment
+          setApiData(prev => ({
+            ...prev,
+            final_assessment: parsedAssessment.final_assessment || prev.final_assessment
+          }));
+
+          if (selectedConcept?.concept_name) {
+            sessionStorage.setItem(
+              `scenarioProgress_${selectedConcept.concept_name}`,
+              JSON.stringify(parsedAssessment)
+            );
+          }
+        } catch (err) {
+          console.warn("⚠️ Could not parse assessment response", err);
+        }
+
         const assessmentChatEntry = {
           user: "",
           system: parseApiResponseText(assessmentResponse.apiResponseText),
@@ -720,25 +732,19 @@ if (newStatus === "complete" || newStatus ==="exit") {
 
         const finalChatHistory = [...practiceChatHistory, assessmentChatEntry];
 
-// update state + sessionStorage
-setPracticeChatHistory(finalChatHistory);
-sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
+        setPracticeChatHistory(finalChatHistory);
+        sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
 
         setSessionHistory((prev) => [
           ...prev,
           { Mentee: "", Mentor: parseApiResponseText(assessmentResponse.apiResponseText) },
         ]);
-        console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
-        
+
         setCurrentChatStatus('completed');
-        await handleSaveChat("completed", true, finalChatHistory);
+        // Pass the parsed assessment to handleSaveChat
+        await handleSaveChat("completed", true, finalChatHistory, parsedAssessment?.final_assessment);
 
-        if (newInteractionCompleted) {
-          setEndReason('interactionCompleted');
-        } else {
-          setEndReason('endRequested');
-        }
-
+        setEndReason(parsedResponse.interactionCompleted ? 'interactionCompleted' : 'endRequested');
         setIsChatEnded(true);
         console.log("🔒 handleSendClick: Chat ended, input restricted");
       }
@@ -746,7 +752,6 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
       console.error("❌ handleSendClick: Error in API request:", error);
       toast.error("Failed to process request. Please try again.");
     } finally {
-      console.log("🏁 handleSendClick: Setting isLoading to false");
       setIsLoading(false);
       setIsProcessingAssessment(false);
     }
@@ -760,24 +765,24 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
     window.open(downloadLink, '_blank');
   };
 
- const getCurrentStageForAPI = (saveStatus, apiStage=null) => {
-  if (saveStatus === "not_started") return 0;
-  if (saveStatus === "inprogress") {
-    if (currentStage === 0) return 0;
-    return Math.min(Math.max(currentStage - 1, 0), 5);
-  }
-  if (saveStatus === "completed") {
-    // Use passed apiStage if available (preserves the level where completion happened)
-    if (apiStage !== null) return Math.min(Math.max(apiStage, 0), 5);
-    // Fallback: calculate from frontend stage (but cap at 5 for completed)
-    return currentStage === 7 ? 5 : Math.min(Math.max(currentStage - 1, 0), 5);
-  }
+  const getCurrentStageForAPI = (saveStatus, apiStage = null) => {
+    if (saveStatus === "not_started") return 0;
+    if (saveStatus === "inprogress") {
+      if (currentStage === 0) return 0;
+      return Math.min(Math.max(currentStage - 1, 0), 5);
+    }
+    if (saveStatus === "completed") {
+      // Use passed apiStage if available (preserves the level where completion happened)
+      if (apiStage !== null) return Math.min(Math.max(apiStage, 0), 5);
+      // Fallback: calculate from frontend stage (but cap at 5 for completed)
+      return currentStage === 7 ? 5 : Math.min(Math.max(currentStage - 1, 0), 5);
+    }
 
-  // fallback
-  if (currentStage === 0) return 0;
-  if (currentStage === 7) return 5;
-  return Math.min(Math.max(currentStage - 1, 0), 5);
-};
+    // fallback
+    if (currentStage === 0) return 0;
+    if (currentStage === 7) return 5;
+    return Math.min(Math.max(currentStage - 1, 0), 5);
+  };
 
   const getFrontendStatusForSave = () => {
     if (isChatEnded) {
@@ -791,7 +796,9 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
     }
   };
 
-  const handleSaveChat = async (requestedStatus = null, showLoader = true,historyOverride = null) => {
+  const handleSaveChat = async (requestedStatus = null, showLoader = true, historyOverride = null, finalAssessmentOverride = null) => {
+    console.log("🐞 handleSaveChat: Starting with apiData:", apiData, "finalAssessmentOverride:", finalAssessmentOverride);
+
     const historyToSave = historyOverride || practiceChatHistory;
     if (!username) {
       toast.error("Cannot save chat: User not identified.");
@@ -807,7 +814,6 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
       const concepts = await fetchAndReturnConcepts();
       if (concepts.length > 0) {
         setSelectedConcept(concepts[0]);
-        // Proceed with save
       } else {
         toast.warn("No concepts available. Cannot save.");
         return;
@@ -831,7 +837,7 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
       currentStage,
       frontendStatus: getStageStatus(),
       currentChatStatus,
-      chatHistoryLength: practiceChatHistory.length,
+      chatHistoryLength: historyToSave.length,
       conceptName: conceptNameToSave,
       hasScoring: !!scoring_data
     });
@@ -842,28 +848,64 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
       let response;
       let actionMessage = "";
 
+      // Prioritize finalAssessmentOverride, then apiData, then llmContent
+      let finalAssessment = finalAssessmentOverride || {};
+      if (!finalAssessmentOverride && statusToSave === "completed") {
+        if (apiData?.final_assessment) {
+          finalAssessment = apiData.final_assessment;
+          console.log("✅ Using final_assessment from apiData:", finalAssessment);
+        } else if (llmContent) {
+          try {
+            const cleaned = llmContent.replace(/```json\s*/i, "").replace(/```$/, "").trim();
+            const parsed = JSON.parse(cleaned);
+            if (parsed.final_assessment) {
+              finalAssessment = parsed.final_assessment;
+              console.log("✅ Parsed final_assessment from llmContent:", finalAssessment);
+            } else {
+              console.warn("⚠️ No final_assessment in llmContent");
+            }
+          } catch (err) {
+            console.warn("⚠️ Could not parse final_assessment from llmContent:", err);
+          }
+        }
+      }
+
+      const facetRatings = finalAssessment.facet_ratings || {};
+
+      // Build requestData with actual values
       const requestData = {
         conversation: historyToSave,
         status: statusToSave,
         current_stage: stageToSave,
         concept_name: conceptNameToSave,
-        // current_scenario_number: apiData?.current_scenario_number,
-        // scenarios_completed: apiData?.scenarios_completed,
-        // total_scenarios: apiData?.session_progress?.total_scenarios
+        overall_performance: finalAssessment.overall_performance || "Not rated",
+        facet_ratings_explanation: facetRatings.explanation || "Not rated",
+        facet_ratings_interpretation: facetRatings.interpretation || "Not rated",
+        facet_ratings_application: facetRatings.application || "Not rated",
+        facet_ratings_perspective: facetRatings.perspective || "Not rated",
+        facet_ratings_empathy: facetRatings.empathy || "Not rated",
+        facet_ratings_self_knowledge: facetRatings.self_knowledge || "Not rated",
+        key_patterns: finalAssessment.key_patterns || [],
+        recommended_focus_areas: finalAssessment.recommended_focus_areas || [],
+        personalized_next_steps: finalAssessment.personalized_next_steps || [],
+        session_summary: finalAssessment.session_summary || "",
+        ...(statusToSave === "completed" && scoring_data ? { scoring_data } : {})
       };
 
-      if (statusToSave === 'completed' && scoring_data) {
-        requestData.scoring_data = scoring_data;
-      }
+      console.log("📤 requestData for save:", requestData);
 
       if (currentPracticeChatId && PracSessionType === "resume") {
-        response = await axios.put(`${BASE_URL}/practicemode/conversation/${currentPracticeChatId}`, requestData, config);
+        response = await axios.put(
+          `${BASE_URL}/practicemode/conversation/${currentPracticeChatId}`,
+          requestData,
+          config
+        );
         actionMessage = `Updated existing chat (ID: ${currentPracticeChatId})`;
       } else {
         response = await axios.post(`${BASE_URL}/practicemode`, {
           user_id: userId,
           ...requestData
-        });
+        }, config);
         actionMessage = "Created new chat";
       }
 
@@ -896,13 +938,11 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
 
       if (response.data.data.shouldStartFresh) {
         clearSessionData();
-
         if (statusToSave === "completed") {
           setTimeout(async () => {
             await initiateFirstMentorMessage();
           }, 1000);
         }
-
         setPracSessionType(statusToSave === "completed" ? "completed" : "fresh");
         setCurrentPracticeChatId(null);
         setResumedFromStatus(null);
@@ -911,37 +951,26 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
       } else {
         const newChatId = response.data.data.id || currentPracticeChatId;
         setCurrentPracticeChatId(newChatId);
-       // sessionStorage.setItem("currentPracticeChatId", newChatId.toString());
         setPracSessionType("resume");
         setResumedFromStatus(statusToSave);
         setCurrentChatStatus(statusToSave);
       }
 
       sessionStorage.setItem("practiceChatHistory", JSON.stringify(historyToSave));
-
       await fetchChatCounts();
-
     } catch (error) {
       console.error("❌ Error saving chat:", error);
-      if (error.response) {
-        toast.error(`Failed to save chat: ${error.response.data.message || "Server error"}`, {
+      toast.error(
+        `Failed to save chat: ${error.response?.data?.message || "Server error"}`,
+        {
           position: "top-right",
           autoClose: 5000,
           hideProgressBar: false,
           closeOnClick: true,
           pauseOnHover: true,
           draggable: true,
-        });
-      } else {
-        toast.error("Failed to save chat. Please check your connection and try again.", {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-        });
-      }
+        }
+      );
     } finally {
       if (showLoader) setIsLoading(false);
     }
@@ -1019,8 +1048,6 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
           setPracSessionType("resume");
           setResumedFromStatus(chat.status);
           setCurrentChatStatus(chat.status);
-       
-
 
           const progressStage = mapApiStageToProgressbarIndex(
             chat.current_stage,
@@ -1029,17 +1056,17 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
           );
           setCurrentStage(progressStage);
 
-             if (chat) {
-  setApiData(prev => ({
-    ...prev,
-    current_scenario_number: chat.current_scenario_number ,
-    scenarios_completed: chat.scenarios_completed ,
-    session_progress: {
-      ...(prev.session_progress || {}),
-      total_scenarios: chat.total_scenarios 
-    }
-  }));
-}
+          if (chat) {
+            setApiData(prev => ({
+              ...prev,
+              current_scenario_number: chat.current_scenario_number,
+              scenarios_completed: chat.scenarios_completed,
+              session_progress: {
+                ...(prev.session_progress || {}),
+                total_scenarios: chat.total_scenarios
+              }
+            }));
+          }
 
           console.log("✅ Session resumed with stage:", {
             apiStage: chat.current_stage,
@@ -1089,11 +1116,9 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
               conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
             }
 
-            if (conceptToUse) {
-              console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
-              setSelectedConcept(conceptToUse);
-              await initiateFirstMentorMessageWithConcept(conceptToUse);
-            }
+            console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
+            setSelectedConcept(conceptToUse);
+            await initiateFirstMentorMessageWithConcept(conceptToUse);
           }
         }
       } else {
@@ -1264,38 +1289,38 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
   }, [isInitializing, practiceChatHistory.length]);
 
   useEffect(() => {
-  if (practiceChatHistory.length > 0 && !isInitializing && !isLoading) {
-    const lastEntry = practiceChatHistory[practiceChatHistory.length - 1];
-    const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
+    if (practiceChatHistory.length > 0 && !isInitializing && !isLoading) {
+      const lastEntry = practiceChatHistory[practiceChatHistory.length - 1];
+      const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
 
-    if (isAssessmentEntry && currentChatStatus === 'completed') {
-      console.log("💾 Detected assessment response, auto-saving as completed...");
-      handleSaveChat('completed', false);
-    } else if (
-      lastEntry?.system &&
-      lastEntry?.user && // Checks for non-empty user message
-      currentChatStatus === 'inprogress'
-    ) {
-      console.log("💾 Detected regular LLM response, auto-saving as inprogress...");
-      handleSaveChat('inprogress', false);
-    }
-  }
-}, [practiceChatHistory, isInitializing, currentChatStatus, isLoading]);
- useEffect(() => {
-  if (selectedConcept?.concept_name) {
-    const savedProgress = sessionStorage.getItem(
-      `scenarioProgress_${selectedConcept.concept_name}`
-    );
-    if (savedProgress) {
-      try {
-        setApiData(JSON.parse(savedProgress));
-      } catch (err) {
-        console.error("❌ Failed to parse saved scenario progress:", err);
+      if (isAssessmentEntry && currentChatStatus === 'completed') {
+        console.log("💾 Detected assessment response, auto-saving as completed...");
+        handleSaveChat('completed', false);
+      } else if (
+        lastEntry?.system &&
+        lastEntry?.user && // Checks for non-empty user message
+        currentChatStatus === 'inprogress'
+      ) {
+        console.log("💾 Detected regular LLM response, auto-saving as inprogress...");
+        handleSaveChat('inprogress', false);
       }
     }
-  }
-}, [selectedConcept]);
+  }, [practiceChatHistory, isInitializing, currentChatStatus, isLoading]);
 
+  useEffect(() => {
+    if (selectedConcept?.concept_name) {
+      const savedProgress = sessionStorage.getItem(
+        `scenarioProgress_${selectedConcept.concept_name}`
+      );
+      if (savedProgress) {
+        try {
+          setApiData(JSON.parse(savedProgress));
+        } catch (err) {
+          console.error("❌ Failed to parse saved scenario progress:", err);
+        }
+      }
+    }
+  }, [selectedConcept]);
 
   return (
     <div className="learning-dashboard">
@@ -1576,7 +1601,6 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
                           <div className="message-text">{item.user}</div>
                         </div>
                       </div>
-
                     )}
                     {item.system && (
                       <div className="message mentor-message">
@@ -1584,14 +1608,14 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
                           <FiMessageCircle />
                         </div>
                         <div className="message-content">
-                        <div className="message-header">
-                          <span className="message-author">AI Mentor</span>
-                        </div>
-                        <div className="message-text">
-                          <AssessmentDisplay content={item.system} />
+                          <div className="message-header">
+                            <span className="message-author">AI Mentor</span>
+                          </div>
+                          <div className="message-text">
+                            <AssessmentDisplay content={item.system} />
+                          </div>
                         </div>
                       </div>
-                    </div>
                     )}
                   </div>
                 ))
@@ -1638,20 +1662,6 @@ sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
                 </div>
               )}
               <div className="chat-input-wrapper">
-                {/* <div className="tooltip-container" data-tooltip={
-                  currentChatStatus === 'not_started' ? "Start a conversation first" : 
-                  isChatEnded ? "Session already ended" : 
-                  "End Session"
-                }>
-                  <button
-                    className="end-session-btn"
-                    onClick={() => setShowEndSessionDialog(true)}
-                    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded}
-                    style={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
-                  >
-                    <FiStopCircle />
-                  </button>
-                </div> */}
                 <textarea
                   className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
                   placeholder={
