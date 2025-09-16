@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
@@ -28,12 +29,13 @@ import {
   FiRefreshCw,
   FiDownload,
   FiChevronDown,
-  FiChevronUp
+  FiChevronUp,
+  FiCheck
 } from "react-icons/fi";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
-const ConversationHistory = () => {
+const PracticeHistory = () => {
   const [conversations, setConversations] = useState([]);
   const [practicemodeCounts, setpracticemodeCounts] = useState({
     not_started: 0,
@@ -57,6 +59,8 @@ const ConversationHistory = () => {
   const practicemodeEndRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [showScoreModal, setShowScoreModal] = useState(false);
+  const [selectedScoreData, setSelectedScoreData] = useState(null);
 
   // Get user data from session storage
   const userId = sessionStorage.getItem("userId");
@@ -68,6 +72,7 @@ const ConversationHistory = () => {
       Authorization: `Bearer ${storedToken}`,
     },
   };
+
   // Convert conversation to format expected by PDFDownloader
   const convertConversationForPDF = (conversation) => {
     if (!conversation || !conversation.conversation) return [];
@@ -77,12 +82,13 @@ const ConversationHistory = () => {
       system: entry.system || ""
     }));
   };
+
   useEffect(() => {
-  const storedUser = JSON.parse(sessionStorage.getItem("user"));
-  if (storedUser) {
-    setUserData(storedUser);
-  }
-}, []);
+    const storedUser = JSON.parse(sessionStorage.getItem("user"));
+    if (storedUser) {
+      setUserData(storedUser);
+    }
+  }, []);
 
   // Create concept object for PDFDownloader
   const createConceptObject = (conversation) => ({
@@ -96,13 +102,18 @@ const ConversationHistory = () => {
     setIsDownloadingPDF(true);
     
     try {
+      // Extract final assessment from scoring, if available
+      const finalAssessment = conversation.status === 'completed' && conversation.scoring ? 
+        conversation.scoring : null;
+
       // Create temporary PDF downloader instance for this specific conversation
       const tempPDFDownloader = PDFDownloader({
         chatHistory: convertConversationForPDF(conversation),
         selectedConcept: createConceptObject(conversation),
         first_name: userData?.first_name || sessionStorage.getItem("firstname"),
         last_name: userData?.last_name || sessionStorage.getItem("lastname"),
-        updated_at: conversation.updated_at
+        updated_at: conversation.updated_at,
+        finalAssessment: finalAssessment
       });
 
       // Call the PDF generation
@@ -276,7 +287,7 @@ const ConversationHistory = () => {
         fetchpracticemodeCounts();
       }
     }
-  }, [userId, filterStatus, searchTerm]); // Added searchTerm to dependencies
+  }, [userId, filterStatus, searchTerm]);
 
   // Refresh data
   const handleRefresh = () => {
@@ -381,7 +392,6 @@ const goToPage = (page) => {
     setCurrentPage(page);
   }
 };
-
 
   const handleViewConversation = (conversation) => {
     setSelectedConversation(conversation);
@@ -499,135 +509,166 @@ const goToPage = (page) => {
     setExpandedScores(newExpanded);
   };
 
+  const handleScoreClick = (conversation) => {
+  if (
+    conversation.status === 'completed' &&
+    conversation.overall_performance &&
+    conversation.overall_performance !== 'Not Available' &&
+    parseFloat(conversation.overall_performance.split(' - ')[0]) > 0 &&
+    (conversation.facet_ratings_explanation ||
+     conversation.facet_ratings_interpretation ||
+     conversation.facet_ratings_application ||
+     conversation.facet_ratings_perspective ||
+     conversation.facet_ratings_empathy ||
+     conversation.facet_ratings_self_knowledge)
+  ) {
+    setSelectedScoreData(conversation);
+    setShowScoreModal(true);
+  }
+};
+
+  const closeScoreModal = () => {
+    setShowScoreModal(false);
+    setSelectedScoreData(null);
+  };
+
+  // Modified to ensure scrollable content and maintain content visibility
+  const renderScoreDetailsModal = () => {
+    if (!selectedScoreData) return null;
+
+    // Safely parse JSON-like fields or treat as strings, ensuring array output for lists
+    const parseField = (field) => {
+      if (!field) return ['Not Available'];
+      try {
+        // Remove outer quotes and parse as JSON
+        const cleanedField = field.replace(/^"|"$/g, '').replace(/\\"/g, '"');
+        const parsed = JSON.parse(cleanedField);
+        // Ensure the output is an array for consistent rendering
+        return Array.isArray(parsed) ? parsed : [String(parsed)];
+      } catch (e) {
+        console.error(`Error parsing field: ${field}`, e);
+        // Fallback to splitting by commas if JSON parsing fails
+        return field.replace(/^"|"$/g, '').split(',').map(item => item.trim());
+      }
+    };
+
+    return (
+      <div className="conversation-modal-overlay" onClick={closeScoreModal}>
+        <div className="conversation-modal score-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-header">
+            <div className="modal-title-section">
+              <h3>Score Details: {selectedScoreData.concept_name}</h3>
+              <div className="modal-meta">
+                <span className="modal-date">
+                  <FiCalendar /> {formatDate(selectedScoreData.updated_at).date} at {formatDate(selectedScoreData.updated_at).time}
+                </span>
+                <span
+                  className="modal-status"
+                  style={{ color: getStatusColor(selectedScoreData.status) }}
+                >
+                  {getStatusIcon(selectedScoreData.status)}
+                  {getStatusLabel(selectedScoreData.status)}
+                </span>
+              </div>
+            </div>
+
+            <div className="modal-actions">
+              <button className="modal-close" onClick={closeScoreModal}>
+                <FiX />
+              </button>
+            </div>
+          </div>
+
+          <div className="modal-content score-details-content">
+            <div className="score-section">
+              <h4>Overall Performance</h4>
+              <p className="score-text">{selectedScoreData.overall_performance || 'Not Available'}</p>
+            </div>
+
+            <div className="score-section">
+              <h4>Facet Ratings</h4>
+              <div className="facet-grid">
+                <div className="facet-item">
+                  <strong>Explanation:</strong> <span>{selectedScoreData.facet_ratings_explanation || 'Not Available'}</span>
+                </div>
+                <div className="facet-item">
+                  <strong>Interpretation:</strong> <span>{selectedScoreData.facet_ratings_interpretation || 'Not Available'}</span>
+                </div>
+                <div className="facet-item">
+                  <strong>Application:</strong> <span>{selectedScoreData.facet_ratings_application || 'Not Available'}</span>
+                </div>
+                <div className="facet-item">
+                  <strong>Perspective:</strong> <span>{selectedScoreData.facet_ratings_perspective || 'Not Available'}</span>
+                </div>
+                <div className="facet-item">
+                  <strong>Empathy:</strong> <span>{selectedScoreData.facet_ratings_empathy || 'Not Available'}</span>
+                </div>
+                <div className="facet-item">
+                  <strong>Self-Knowledge:</strong> <span>{selectedScoreData.facet_ratings_self_knowledge || 'Not Available'}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="score-section">
+              <h4>Key Patterns</h4>
+              <ul className="score-list">
+                {parseField(selectedScoreData.key_patterns).map((item, index) => (
+                  <li key={index} className="score-list-item">{item || 'Not Available'}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="score-section">
+              <h4>Recommended Focus Areas</h4>
+              <ul className="score-list">
+                {parseField(selectedScoreData.recommended_focus_areas).map((item, index) => (
+                  <li key={index} className="score-list-item">{item || 'Not Available'}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="score-section">
+              <h4>Personalized Next Steps</h4>
+              <ul className="score-list">
+                {parseField(selectedScoreData.personalized_next_steps).map((item, index) => (
+                  <li key={index} className="score-list-item">{item || 'Not Available'}</li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="score-section">
+              <h4>Session Summary</h4>
+              <p className="score-text">{selectedScoreData.session_summary || 'Not Available'}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderScoreCell = (conversation) => {
-    const hasScoring = conversation.status === 'completed' && conversation.scoring;
+    const hasScoring = conversation.status === 'completed';
 
     if (!hasScoring) {
       return <div className="score-cell-content"><span className="no-score">-</span></div>;
     }
 
-    const finalScore = parseFloat(conversation.scoring.final_score) || null;
-    const sixFacetsAvg = parseFloat(conversation.scoring.six_facets?.average) || null;
-    const skillsAvg = parseFloat(conversation.scoring.understanding_skills?.average) || null;
-
-    // Dynamic positioning function
-    const handleMouseEnter = (e) => {
-      const tooltip = e.currentTarget.querySelector('.score-tooltip');
-      if (!tooltip) return;
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      const tooltipRect = tooltip.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-
-      // Calculate position
-      let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
-      let top = rect.top - tooltipRect.height - 10;
-
-      // Adjust if tooltip goes off-screen horizontally
-      if (left < 10) {
-        left = 10;
-      } else if (left + tooltipRect.width > viewportWidth - 10) {
-        left = viewportWidth - tooltipRect.width - 10;
-      }
-
-      // Adjust if tooltip goes off-screen vertically (show below instead)
-      if (top < 10) {
-        top = rect.bottom + 10;
-        tooltip.classList.add('tooltip-below');
-      } else {
-        tooltip.classList.remove('tooltip-below');
-      }
-
-      tooltip.style.left = `${left}px`;
-      tooltip.style.top = `${top}px`;
-    };
-
-    const handleMouseLeave = (e) => {
-      const tooltip = e.currentTarget.querySelector('.score-tooltip');
-      if (tooltip) {
-        tooltip.classList.remove('tooltip-below');
-      }
-    };
+    const finalScore = parseFloat(conversation.overall_performance?.split(' - ')[0]) || null;
 
     return (
       <div className="score-cell-content">
         <div
-          className="score-tooltip-container"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
+          className="score-badge-large clickable-score"
+          style={{ 
+            backgroundColor: getScoreColor(finalScore),
+            cursor: 'pointer'
+          }}
+          onClick={() => handleScoreClick(conversation)}
+          title="Click to view detailed score breakdown"
         >
-          <div
-            className="score-badge-large"
-            style={{ backgroundColor: getScoreColor(finalScore) }}
-          >
-            <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
-            <span className="score-max">/5</span>
-          </div>
-
-          <div className="score-tooltip">
-            <div className="tooltip-section">
-              <strong>📊 Six Facets of Understanding: {sixFacetsAvg?.toFixed(1) || 'N/A'}</strong>
-              <div className="mini-breakdown">
-                {Object.entries({
-                  'Explanation': conversation.scoring.six_facets.explanation,
-                  'Interpretation': conversation.scoring.six_facets.interpretation,
-                  'Application': conversation.scoring.six_facets.application,
-                  'Perspective': conversation.scoring.six_facets.perspective,
-                  'Empathy': conversation.scoring.six_facets.empathy,
-                  'Self-Knowledge': conversation.scoring.six_facets.self_knowledge
-                }).map(([key, value]) => (
-                  <div key={key} className="mini-item">
-                    <span>{key}</span>
-                    <span style={{
-                      color: getScoreColor(parseFloat(value)),
-                      fontWeight: 'bold'
-                    }}>
-                      {parseFloat(value)?.toFixed(1) || 'N/A'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="tooltip-section">
-              <strong>🎯 Understanding Skills: {skillsAvg?.toFixed(1) || 'N/A'}</strong>
-              <div className="mini-breakdown">
-                {Object.entries({
-                  'Asking Questions': conversation.scoring.understanding_skills.asking_questions,
-                  'Clarifying Ambiguity': conversation.scoring.understanding_skills.clarifying_ambiguity,
-                  'Summarizing': conversation.scoring.understanding_skills.summarizing_confirming,
-                  'Challenging Ideas': conversation.scoring.understanding_skills.challenging_ideas,
-                  'Comparing Concepts': conversation.scoring.understanding_skills.comparing_concepts,
-                  'Abstract vs Concrete': conversation.scoring.understanding_skills.abstract_concrete
-                }).map(([key, value]) => (
-                  <div key={key} className="mini-item">
-                    <span>{key}</span>
-                    <span style={{
-                      color: getScoreColor(parseFloat(value)),
-                      fontWeight: 'bold'
-                    }}>
-                      {parseFloat(value)?.toFixed(1) || 'N/A'}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="tooltip-footer">
-              <div style={{
-                textAlign: 'center',
-                padding: '8px',
-                backgroundColor: '#f3f4f6',
-                borderRadius: '4px',
-                marginTop: '8px'
-              }}>
-                <strong style={{ color: getScoreColor(finalScore) }}>
-                  Overall Score: {finalScore?.toFixed(1) || 'N/A'}/5
-                </strong>
-              </div>
-            </div>
-          </div>
+          {/* <FiCheck /> */}
+          <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
+          <span className="score-max">/5</span>
         </div>
       </div>
     );
@@ -789,7 +830,7 @@ const goToPage = (page) => {
                     <th>Status</th>
                     <th>Progress</th>
                     <th>Level</th>
-                    {/* <th>Overall Score</th> */}
+                    <th>Overall Score</th>
                     <th>Created</th>
                     <th>Last Updated</th>
                     <th>Actions</th>
@@ -842,9 +883,9 @@ const goToPage = (page) => {
                           </span>
                         </td>
 
-                        {/* <td className="score-cell">
+                        <td className="score-cell">
                           {renderScoreCell(conversation)}
-                        </td> */}
+                        </td> 
 
                         <td className="date-cell">
                           <div className="date-info">
@@ -912,8 +953,10 @@ const goToPage = (page) => {
 
       {/* Conversation Modal */}
       {showConversationModal && renderConversationModal()}
+      {/* Score Details Modal */}
+      {showScoreModal && renderScoreDetailsModal()}
     </div>
   );
 };
 
-export default ConversationHistory;
+export default PracticeHistory;

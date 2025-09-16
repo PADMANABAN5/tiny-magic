@@ -63,7 +63,7 @@ function getRedirectPath() {
 function App() {
   return (
     <>
-     <AutoLogout timeout={15 * 60 * 1000} />
+     <AutoLogout timeout={10 * 60 * 1000} />
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />

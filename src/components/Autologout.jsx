@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
 import { Toast, ToastContainer } from "react-bootstrap";
 
-const AutoLogout = ({ timeout = 15 * 60 * 1000 }) => {
+const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showToast, setShowToast] = useState(false); // For logout toast
@@ -130,7 +130,7 @@ const AutoLogout = ({ timeout = 15 * 60 * 1000 }) => {
         </ToastContainer>
       )}
 
-      {/* Warning toast for impending logout */}
+      {/* Warning toast for impending logout
       {location.pathname !== "/login" && showWarningToast && (
         <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
           <Toast
@@ -148,7 +148,7 @@ const AutoLogout = ({ timeout = 15 * 60 * 1000 }) => {
             </Toast.Body>
           </Toast>
         </ToastContainer>
-      )}
+      )} */}
     </>
   );
 };

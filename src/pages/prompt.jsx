@@ -333,18 +333,18 @@ export default function Prompt() {
               >
                 <FaHistory />
               </Button>
-              <Button
+              {/* <Button
                 variant="primary"
                 onClick={() => setShowAssignModal(true)}
                 style={{ width: '49%' }}
               >
                 <FaPlus />
-              </Button>
+              </Button> */}
             </div>
           </div>
  
           {/* Filter Section */}
-          <div className="d-flex gap-3 my-3">
+          {/* <div className="d-flex gap-3 my-3">
             <Form.Group>
               <Form.Label>Filter by Organization</Form.Label>
               <Form.Select
@@ -361,7 +361,7 @@ export default function Prompt() {
                   </option>
                 ))}
               </Form.Select>
-            </Form.Group>
+            </Form.Group> */}
             {/* You can add a batch filter dropdown here if needed for the main table */}
             {/* {selectedOrgIdFilter && (
                             <Form.Group>
@@ -385,7 +385,7 @@ export default function Prompt() {
                                 </Form.Select>
                             </Form.Group>
                         )} */}
-          </div>
+         {/* </div>*/}
  
           <div className="table-responsive">
             <table className="table table-striped table-bordered table-hover">
@@ -393,8 +393,8 @@ export default function Prompt() {
                 <tr>
                   <th>Prompt Type</th>
                   <th>Prompt Level</th>
-                  <th>Organization Name</th>
-                  <th>Batch Name</th>
+                  {/* <th>Organization Name</th>
+                  <th>Batch Name</th> */}
                   <th>Version</th>
                   <th>Action</th>
                 </tr>
@@ -404,8 +404,8 @@ export default function Prompt() {
                   <tr key={prompt.prompt_id}>
                     <td>{prompt.prompt_type}</td>
                     <td>{prompt.prompt_level}</td>
-                    <td>{prompt.organization_name || '—'}</td>
-                    <td>{prompt.batch_name || '—'}</td>
+                    {/* <td>{prompt.organization_name || '—'}</td>
+                    <td>{prompt.batch_name || '—'}</td> */}
                     <td>{prompt.version}</td>
                     <td>
                       <Button
