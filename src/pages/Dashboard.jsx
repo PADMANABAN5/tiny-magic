@@ -31,6 +31,7 @@ import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
 import usePreventBack from "../utils/usePreventBack.js";
 import { useAuth } from "../components/AuthContext.jsx";
+import StageCompletionToast from "../components/StageCompletionToast.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
 function Dashboard() {
@@ -114,6 +115,7 @@ function Dashboard() {
   const [isCalculatingScore, setIsCalculatingScore] = useState(false);
   // Lock for initialization to prevent race conditions
   const isInitializingRef = useRef(false);
+  const previousStage = currentStage;
 
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
@@ -1218,6 +1220,9 @@ function Dashboard() {
           </div>
         </div>
       )}
+      {(currentStage > 1 && currentStage <= 6) && (
+      <StageCompletionToast stage={currentStage - 1} />
+    )}
       <div className="dashboard-layout">
         <div className="control-panel">
           <div className="control-section">

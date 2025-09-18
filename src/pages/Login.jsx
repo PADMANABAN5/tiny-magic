@@ -46,6 +46,9 @@ function Login() {
     if (!hasSpecialChar) return { isValid: false, message: "🔑 Password must contain at least one special character (!@#$%^&*?)." };
     return { isValid: true, message: "" };
   };
+   const allowCopyPaste = (e) => {
+    e.stopPropagation(); // Prevent global event handlers from blocking
+  };
   // ------------------------------------
 
   const handleSubmit = async (e) => {
@@ -231,6 +234,12 @@ function Login() {
                 <label>Email or Username</label>
                 <input
                   type="text"
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onPaste={allowCopyPaste}
+                  onSelectStart={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                 style={{ userSelect: 'auto' }}
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   autoComplete="username"
@@ -242,6 +251,12 @@ function Login() {
                 <label>Password</label>
                 <div className="password-input-container">
                   <input
+                    onCopy={allowCopyPaste}
+              onCut={allowCopyPaste}
+              onPaste={allowCopyPaste}
+              onSelectStart={allowCopyPaste}
+              onKeyDown={allowCopyPaste}
+              style={{ userSelect: 'auto' }}
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -278,6 +293,12 @@ function Login() {
               <label>Current Password</label>
               <div className="password-input-container">
                 <input
+                onCopy={allowCopyPaste}
+              onCut={allowCopyPaste}
+              onPaste={allowCopyPaste}
+              onSelectStart={allowCopyPaste}
+              onKeyDown={allowCopyPaste}
+              style={{ userSelect: 'auto' }}
                   type={showCurrentPwd ? "text" : "password"}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -300,6 +321,12 @@ function Login() {
               <label>New Password</label>
               <div className="password-input-container">
                 <input
+                onCopy={allowCopyPaste}
+              onCut={allowCopyPaste}
+              onPaste={allowCopyPaste}
+              onSelectStart={allowCopyPaste}
+              onKeyDown={allowCopyPaste}
+              style={{ userSelect: 'auto' }}
                   type={showNewPwd ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -322,6 +349,12 @@ function Login() {
               <label>Confirm Password</label>
               <div className="password-input-container">
                 <input
+                onCopy={allowCopyPaste}
+              onCut={allowCopyPaste}
+              onPaste={allowCopyPaste}
+              onSelectStart={allowCopyPaste}
+              onKeyDown={allowCopyPaste}
+              style={{ userSelect: 'auto' }}
                   type={showConfirmPwd ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
