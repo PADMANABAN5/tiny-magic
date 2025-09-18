@@ -30,7 +30,7 @@ export default function Concepts() {
   const storedToken = sessionStorage.getItem("token");
   const [isLoading, setIsLoading] = useState(false);
   const [activeAccordionKey, setActiveAccordionKey] = useState("0");
-  const cleanTextRegex = /^(?!.*\s{2,})(?!^\s)(?!.*\s$)[A-Za-z0-9().,/* ]*$/;
+  const cleanTextRegex = /^(?!.*\s{2,})(?!^\s)(?!.*\s$)[A-Za-z0-9().,/*'"\\\- ]*$/;
 // Allowed: A–Z, 0–9, spaces, (), /, ., ,, *
 
 
@@ -157,16 +157,11 @@ export default function Concepts() {
       setLoading(false);
     }
   };
- const validateCleanText = (e, key) => {
-  const { value } = e.target;
-  if (["concept_name", "concept_content"].includes(key) && !cleanTextRegex.test(value)) {
-    e.target.setCustomValidity(
-      "Only letters, numbers, spaces, and () / . , * are allowed (no leading, trailing, or multiple spaces)."
-    );
-  } else {
-    e.target.setCustomValidity("");
+const validateCleanText = (value, key) => {
+  if (["concept_name", "concept_content"].includes(key)) {
+    return cleanTextRegex.test(value);
   }
-  e.target.reportValidity();
+  return true;
 };
 
 
@@ -229,6 +224,7 @@ export default function Concepts() {
     e.preventDefault();
     setIsLoading(true);
 
+
     // Client-side validation
     if (!conceptForm.concept_name || !conceptForm.concept_content) {
       setToastBg("warning");
@@ -237,6 +233,23 @@ export default function Concepts() {
       setIsLoading(false);
       return;
     }
+    if (!validateCleanText(conceptForm.concept_name, "concept_name") ||
+    !validateCleanText(conceptForm.concept_content, "concept_content")) {
+  setToastBg("warning");
+  setToastMessage("⚠️ Please remove invalid characters (only letters, numbers, spaces, and . , / * ' \" - \\ are allowed).");
+  setShowToast(true);
+  setIsLoading(false);
+  return;
+}
+ const sanitizedForm = {
+  ...conceptForm,
+  number_of_scenarios:
+    conceptForm.number_of_scenarios === "" ||
+    conceptForm.number_of_scenarios === null ||
+    conceptForm.number_of_scenarios === undefined
+      ? 5
+      : parseInt(conceptForm.number_of_scenarios, 10),
+};
 
     try {
       if (isEditMode && selectedConceptId) {
@@ -250,16 +263,16 @@ export default function Concepts() {
           setIsLoading(false);
           return;
         }
-
+       
         await axios.put(
           `${API_BASE_URL}/concepts/${selectedConceptId}`,
-          conceptForm,
+          sanitizedForm,
           config
         );
         setToastBg("primary");
         setToastMessage("✅ Concept updated successfully!");
       } else {
-        await axios.post(`${API_BASE_URL}/concepts`, conceptForm, config);
+        await axios.post(`${API_BASE_URL}/concepts`, sanitizedForm, config);
         setToastBg("primary");
         setToastMessage("✅ Concept created successfully!");
       }
@@ -612,18 +625,18 @@ export default function Concepts() {
   rows={4}
   value={conceptForm[key] || ""}
   onChange={(e) => {
+    
     setConceptForm((prev) => ({
       ...prev,
       [key]: e.target.value,
     }));
     // ✅ apply only to concept_name & concept_content
-    if (["concept_name", "concept_content"].includes(key)) {
+   if (key !== "download_link") {
       validateCleanText(e, key);
     }
   }}
-  required={["concept_name", "concept_content"].includes(key)}
-  aria-required={["concept_name", "concept_content"].includes(key)}
-  maxLength={["concept_name"].includes(key) ? 30 : 20000}
+   
+  maxLength={["concept_name"].includes(key) ? 50 : 20000}
 />
 
                       </div>

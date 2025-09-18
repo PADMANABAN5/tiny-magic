@@ -666,6 +666,12 @@ export default function Pods() {
                 className="form-control"
                 value={podForm.pod_name}
                 onChange={(e) => {
+                  if (e.target.value.length > 50) {
+                    setToastMessage("⚠️ Pod name cannot exceed 50 characters!");
+                    setToastBg("warning");
+                    setShowToast(true);
+                    return;
+                  }
                   setPodForm((prev) => ({
                     ...prev,
                     pod_name: e.target.value,

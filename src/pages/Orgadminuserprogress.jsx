@@ -61,6 +61,9 @@ function Orgadminuserprogress() {
   const [practiceSortBy, setPracticeSortBy] = useState("date_desc");
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
+  const [showPracticeScoreModal, setShowPracticeScoreModal] = useState(false);
+const [selectedPracticeScoreData, setSelectedPracticeScoreData] = useState(null);
+
  
    const storedToken = sessionStorage.getItem("token");
    const { token } = useAuth();
@@ -372,6 +375,50 @@ function Orgadminuserprogress() {
 
     return filtered;
   };
+   const handlePracticeScoreClick = (conversation) => {
+  if (
+    conversation.status === 'completed' &&
+    conversation.overall_performance &&
+    conversation.overall_performance !== 'Not Available' &&
+    parseFloat(conversation.overall_performance.split(' - ')[0]) > 0
+  ) {
+    setSelectedPracticeScoreData(conversation);
+    setShowPracticeScoreModal(true);
+  }
+};
+
+const closePracticeScoreModal = () => {
+  setShowPracticeScoreModal(false);
+  setSelectedPracticeScoreData(null);
+};
+
+const renderPracticeScoreCell = (conversation) => {
+  const hasScoring = conversation.status === 'completed' && conversation.overall_performance;
+
+  if (!hasScoring) {
+    return <div className="score-cell-content"><span className="no-score">-</span></div>;
+  }
+
+  const finalScore = parseFloat(conversation.overall_performance?.split(' - ')[0]) || null;
+
+  return (
+    <div className="score-cell-content">
+      <div
+        className="score-badge-large clickable-score"
+        style={{ 
+          backgroundColor: getScoreColor(finalScore),
+          cursor: 'pointer'
+        }}
+        onClick={() => handlePracticeScoreClick(conversation)}
+        title="Click to view detailed score breakdown"
+      >
+        <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
+        <span className="score-max">/5</span>
+      </div>
+    </div>
+  );
+};
+
 
   const filteredAndSortedPractice = () => {
   let filtered = practiceHistory.filter(conv => {
@@ -425,6 +472,7 @@ function Orgadminuserprogress() {
     const finalScore = parseFloat(conversation.scoring.final_score) || null;
     const sixFacetsAvg = parseFloat(conversation.scoring.six_facets?.average) || null;
     const skillsAvg = parseFloat(conversation.scoring.understanding_skills?.average) || null;
+    
 
     // Dynamic positioning function
     const handleMouseEnter = (e) => {
@@ -458,6 +506,7 @@ function Orgadminuserprogress() {
       tooltip.style.left = `${left}px`;
       tooltip.style.top = `${top}px`;
     };
+   
 
     const handleMouseLeave = (e) => {
       const tooltip = e.currentTarget.querySelector('.score-tooltip');
@@ -1027,6 +1076,7 @@ function Orgadminuserprogress() {
                 <th>Status</th>
                 <th>Progress</th>
                 <th>Level</th>
+                <th>Overall Score</th>
                 <th>Created</th>
                 <th>Last Updated</th>
                 <th>Actions</th>
@@ -1048,6 +1098,8 @@ function Orgadminuserprogress() {
         </td>
         <td>{progress}%</td>
         <td>{conversation.current_stage}/5</td>
+        <td className="score-cell">{renderPracticeScoreCell(conversation)}</td>
+
         <td>{createdDate}</td>
         <td>{updatedDate}</td>
         <td>
@@ -1075,6 +1127,74 @@ function Orgadminuserprogress() {
 
       {/* Conversation Modal */}
       {showConversationModal && renderConversationModal()}
+      {showPracticeScoreModal && selectedPracticeScoreData && (
+  <div className="conversation-modal-overlay" onClick={closePracticeScoreModal}>
+    <div className="conversation-modal score-modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-header">
+        <div className="modal-title-section">
+          <h3>Score Details: {selectedPracticeScoreData.concept_name}</h3>
+          <div className="modal-meta">
+            <span className="modal-date">
+              <FiCalendar /> {formatDate(selectedPracticeScoreData.updated_at).date} at {formatDate(selectedPracticeScoreData.updated_at).time}
+            </span>
+            <span
+              className="modal-status"
+              style={{ color: getStatusColor(selectedPracticeScoreData.status) }}
+            >
+              {getStatusIcon(selectedPracticeScoreData.status)}
+              {getStatusLabel(selectedPracticeScoreData.status)}
+            </span>
+          </div>
+        </div>
+        <div className="modal-actions">
+          <button className="modal-close" onClick={closePracticeScoreModal}>
+            <FiX />
+          </button>
+        </div>
+      </div>
+
+      <div className="modal-content score-details-content">
+        <div className="score-section">
+          <h4>Overall Performance</h4>
+          <p className="score-text">{selectedPracticeScoreData.overall_performance || 'Not Available'}</p>
+        </div>
+
+        <div className="score-section">
+          <h4>Facet Ratings</h4>
+          <div className="facet-grid">
+            <div className="facet-item"><strong>Explanation:</strong> <span>{selectedPracticeScoreData.facet_ratings_explanation || 'Not Available'}</span></div>
+            <div className="facet-item"><strong>Interpretation:</strong> <span>{selectedPracticeScoreData.facet_ratings_interpretation || 'Not Available'}</span></div>
+            <div className="facet-item"><strong>Application:</strong> <span>{selectedPracticeScoreData.facet_ratings_application || 'Not Available'}</span></div>
+            <div className="facet-item"><strong>Perspective:</strong> <span>{selectedPracticeScoreData.facet_ratings_perspective || 'Not Available'}</span></div>
+            <div className="facet-item"><strong>Empathy:</strong> <span>{selectedPracticeScoreData.facet_ratings_empathy || 'Not Available'}</span></div>
+            <div className="facet-item"><strong>Self-Knowledge:</strong> <span>{selectedPracticeScoreData.facet_ratings_self_knowledge || 'Not Available'}</span></div>
+          </div>
+        </div>
+
+        <div className="score-section">
+          <h4>Key Patterns</h4>
+          <p className="score-text">{selectedPracticeScoreData.key_patterns || 'Not Available'}</p>
+        </div>
+
+        <div className="score-section">
+          <h4>Recommended Focus Areas</h4>
+          <p className="score-text">{selectedPracticeScoreData.recommended_focus_areas || 'Not Available'}</p>
+        </div>
+
+        <div className="score-section">
+          <h4>Personalized Next Steps</h4>
+          <p className="score-text">{selectedPracticeScoreData.personalized_next_steps || 'Not Available'}</p>
+        </div>
+
+        <div className="score-section">
+          <h4>Session Summary</h4>
+          <p className="score-text">{selectedPracticeScoreData.session_summary || 'Not Available'}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

@@ -552,6 +552,12 @@ export default function Batch() {
                   className="form-control"
                   value={batchForm.batch_name}
                  onChange={(e) => {
+    if (e.target.value.length > 50) {
+      setToastMessage("⚠️ Batch name cannot exceed 50 characters!");
+      setToastBg("warning");
+      setShowToast(true);
+      return;
+    }
     setBatchForm((prev) => ({
       ...prev,
       batch_name: e.target.value,

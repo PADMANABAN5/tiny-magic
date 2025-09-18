@@ -153,6 +153,7 @@ const isValidOrgName = (name) => {
     setShowToast(true);
     return;
   }
+ 
 
 
   try {
@@ -357,8 +358,17 @@ const isValidOrgName = (name) => {
                   className="form-control"
                   id="orgName"
                   value={newOrgName}
-                  onChange={(e) => setNewOrgName(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    if (e.target.value.length > 50) {
+                      setToastMessage("⚠️ Organization name cannot exceed 50 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+      return; // don’t update state
+    }
+    setNewOrgName(e.target.value);
+  }}
+  required
+
                 />
               </div>
               <button type="submit" className="btn btn-success me-2 ">Create</button>
