@@ -37,7 +37,9 @@ export default function Addusers() {
       Authorization: `Bearer ${token}`,
     },
   };
-
+   const allowCopyPaste = (e) => {
+    e.stopPropagation(); // Prevent global event handlers from blocking
+  };
   const capitalize = (str) =>
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
@@ -589,6 +591,9 @@ export default function Addusers() {
                 <label className="form-label">Email</label>
                 <input
                   type="email"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newUser.email}
                   onChange={(e) =>
@@ -602,10 +607,19 @@ export default function Addusers() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newUser.first_name}
                    onChange={(e) => {
                   const value = e.target.value;
+                  if (value.length > 30) {
+                    setToastMessage("⚠️ First name cannot exceed 30 characters!");
+                    setToastBg("warning");
+                    setShowToast(true);
+                    return;
+                  }
                   const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
                   e.target.setCustomValidity(
                     isValid ? "" : "Please Enter a valid First Name"
@@ -622,10 +636,19 @@ export default function Addusers() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newUser.last_name}
                    onChange={(e) => {
                   const value = e.target.value;
+                  if (value.length > 30) {
+                    setToastMessage("⚠️ Last name cannot exceed 30 characters!");
+                    setToastBg("warning");
+                    setShowToast(true);
+                    return;
+                  }
                   const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
                   e.target.setCustomValidity(
                     isValid ? "" : "Please Enter a valid Last Name"
@@ -644,6 +667,12 @@ export default function Addusers() {
                   value={newUser.password}
                   onChange={(e) => {
                     const value = e.target.value;
+                    if (value.length > 30) {
+                      setToastMessage("⚠️ Password cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setNewUser({ ...newUser, password: value });
                     // Password is optional; only validate when present
                     if (value) {
@@ -653,6 +682,7 @@ export default function Addusers() {
                       e.target.setCustomValidity("");
                     }
                   }}
+                  
                 />
               </div>
               <button type="submit" className="btn btn-success me-2">
@@ -680,10 +710,19 @@ export default function Addusers() {
                 <label className="form-label">Username</label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editingUser.username || ""}
                    onChange={(e) => {
                   const value = e.target.value;
+                  if (value.length > 30) {
+                    setToastMessage("⚠️ Username cannot exceed 30 characters!");
+                    setToastBg("warning");
+                    setShowToast(true);
+                    return;
+                  }
                   const isValid = /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(value) || value === "";
                   e.target.setCustomValidity(
                     isValid ? "" : "Please Enter a valid Username"
@@ -692,12 +731,16 @@ export default function Addusers() {
                 }}
                 onInput={(e) => e.target.setCustomValidity("")}
                 required
+                
               />
               </div>
               <div className="mb-3">
                 <label className="form-label">Email</label>
                 <input
                   type="email"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editingUser.email || ""}
                   onChange={(e) =>
@@ -711,10 +754,19 @@ export default function Addusers() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editingUser.first_name || ""}
                   onChange={(e) => {
                   const value = e.target.value;
+                  if (value.length > 30) {
+                    setToastMessage("⚠️ First name cannot exceed 30 characters!");
+                    setToastBg("warning");
+                    setShowToast(true);
+                    return;
+                  }
                   const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
                   e.target.setCustomValidity(
                     isValid ? "" : "Please Enter a valid First Name"
@@ -723,6 +775,7 @@ export default function Addusers() {
                 }}
                 onInput={(e) => e.target.setCustomValidity("")}
                 required
+                
               />
               </div>
               <div className="mb-3">
@@ -731,10 +784,19 @@ export default function Addusers() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editingUser.last_name || ""}
                   onChange={(e) => {
                   const value = e.target.value;
+                  if (value.length > 30) {
+                    setToastMessage("⚠️ Last name cannot exceed 30 characters!");
+                    setToastBg("warning");
+                    setShowToast(true);
+                    return;
+                  }
                   const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
                   e.target.setCustomValidity(
                     isValid ? "" : "Please Enter a valid Last Name"
@@ -743,6 +805,7 @@ export default function Addusers() {
                 }}
                 onInput={(e) => e.target.setCustomValidity("")}
                 required
+               
               />
               </div>
               <div className="mb-3">
@@ -753,6 +816,12 @@ export default function Addusers() {
                   value={editingUser.password || ""}
                   onChange={(e) => {
                     const value = e.target.value;
+                    if (value.length > 30) {
+                      setToastMessage("⚠️ Password cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setEditingUser({ ...editingUser, password: value });
                     // Optional: only validate when present
                     if (value) {
@@ -761,7 +830,8 @@ export default function Addusers() {
                     } else {
                       e.target.setCustomValidity("");
                     }
-                  }}
+                  }} 
+                 
                 />
               </div>
               <button type="submit" className="btn btn-success me-2">

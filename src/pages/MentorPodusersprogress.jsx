@@ -420,7 +420,31 @@ const renderPracticeScoreCell = (conversation) => {
 
     return filtered;
   };
-
+// Simple parser for malformed JSON arrays like {"item1","item2"}
+const parseField = (field) => {
+  if (!field || field === 'Not Available') return ['Not Available'];
+  
+  // Handle the specific malformed format: {"item1","item2","item3"}
+  if (field.trim().startsWith('{') && field.trim().endsWith('}')) {
+    // Remove outer braces
+    let content = field.slice(1, -1);
+    
+    // If there are comma-separated items with quotes, split them
+    if (content.includes('","')) {
+      return content
+        .split('","')  // Split by "," 
+        .map(item => item.trim()) // Clean up whitespace
+        .filter(item => item.length > 0); // Remove empty items
+    }
+    
+    // If it's a single item, just return it (remove outer quotes if present)
+    const singleItem = content.replace(/^"/, '').replace(/"$/, '').trim();
+    return [singleItem];
+  }
+  
+  // Fallback for other formats - just return as single item
+  return [field.replace(/^"|"$/g, '').trim()];
+};
   const filteredAndSortedPractice = () => {
   let filtered = practiceHistory.filter(conv => {
     const matchesStatus = practiceFilterStatus === "all" || conv.status === practiceFilterStatus;
@@ -1171,17 +1195,44 @@ const renderPracticeScoreCell = (conversation) => {
 
         <div className="score-section">
           <h4>Key Patterns</h4>
-          <p className="score-text">{selectedPracticeScoreData.key_patterns || 'Not Available'}</p>
+          <ul className="score-list">
+            {(() => {
+              const patterns = parseField(selectedPracticeScoreData.key_patterns);
+              return patterns.length > 0 && patterns[0] !== 'Not Available' 
+                ? patterns.map((item, index) => (
+                    <li key={index} className="score-list-item">{item}</li>
+                  ))
+                : <li className="score-list-item">No patterns identified</li>;
+            })()}
+          </ul>
         </div>
 
         <div className="score-section">
           <h4>Recommended Focus Areas</h4>
-          <p className="score-text">{selectedPracticeScoreData.recommended_focus_areas || 'Not Available'}</p>
+          <ul className="score-list">
+            {(() => {
+              const focusAreas = parseField(selectedPracticeScoreData.recommended_focus_areas);
+              return focusAreas.length > 0 && focusAreas[0] !== 'Not Available' 
+                ? focusAreas.map((item, index) => (
+                    <li key={index} className="score-list-item">{item}</li>
+                  ))
+                : <li className="score-list-item">No focus areas identified</li>;
+            })()}
+          </ul>
         </div>
 
         <div className="score-section">
           <h4>Personalized Next Steps</h4>
-          <p className="score-text">{selectedPracticeScoreData.personalized_next_steps || 'Not Available'}</p>
+          <ul className="score-list">
+            {(() => {
+              const nextSteps = parseField(selectedPracticeScoreData.personalized_next_steps);
+              return nextSteps.length > 0 && nextSteps[0] !== 'Not Available' 
+                ? nextSteps.map((item, index) => (
+                    <li key={index} className="score-list-item">{item}</li>
+                  ))
+                : <li className="score-list-item">No next steps available</li>;
+            })()}
+          </ul>
         </div>
 
         <div className="score-section">

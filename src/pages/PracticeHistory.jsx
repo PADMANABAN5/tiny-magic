@@ -349,6 +349,7 @@ const PracticeHistory = () => {
     }
     return Math.max(currentStage - 1, 0) * progressPerStage;
 };
+ 
 
   // Filter and sort conversations
   const filteredAndSortedConversations = () => {
@@ -411,12 +412,15 @@ const goToPage = (page) => {
       }, 100);
     }
   }, [showConversationModal]);
+ 
 
   const renderConversationModal = () => {
     if (!selectedConversation) return null;
 
     const { date, time } = formatDate(selectedConversation.updated_at);
-
+    // Safely parse JSON-like fields or treat as strings, ensuring array output for lists
+// Simple parser for malformed JSON arrays like {"item1","item2"}
+  
     return (
       <div className="conversation-modal-overlay" onClick={closeModal}>
         <div className="conversation-modal" ref={modalRef} onClick={(e) => e.stopPropagation()}>
@@ -538,20 +542,29 @@ const goToPage = (page) => {
 
     // Safely parse JSON-like fields or treat as strings, ensuring array output for lists
     const parseField = (field) => {
-      if (!field) return ['Not Available'];
-      try {
-        // Remove outer quotes and parse as JSON
-        const cleanedField = field.replace(/^"|"$/g, '').replace(/\\"/g, '"');
-        const parsed = JSON.parse(cleanedField);
-        // Ensure the output is an array for consistent rendering
-        return Array.isArray(parsed) ? parsed : [String(parsed)];
-      } catch (e) {
-        console.error(`Error parsing field: ${field}`, e);
-        // Fallback to splitting by commas if JSON parsing fails
-        return field.replace(/^"|"$/g, '').split(',').map(item => item.trim());
-      }
-    };
-
+  if (!field || field === 'Not Available') return ['Not Available'];
+  
+  // Handle the specific malformed format: {"item1","item2","item3"}
+  if (field.trim().startsWith('{') && field.trim().endsWith('}')) {
+    // Remove outer braces
+    let content = field.slice(1, -1);
+    
+    // If there are comma-separated items with quotes, split them
+    if (content.includes('","')) {
+      return content
+        .split('","')  // Split by "," 
+        .map(item => item.trim()) // Clean up whitespace
+        .filter(item => item.length > 0); // Remove empty items
+    }
+    
+    // If it's a single item, just return it (remove outer quotes if present)
+    const singleItem = content.replace(/^"/, '').replace(/"$/, '').trim();
+    return [singleItem];
+  }
+  
+  // Fallback for other formats - just return as single item
+  return [field.replace(/^"|"$/g, '').trim()];
+};
     return (
       <div className="conversation-modal-overlay" onClick={closeScoreModal}>
         <div className="conversation-modal score-modal" onClick={(e) => e.stopPropagation()}>
@@ -610,32 +623,46 @@ const goToPage = (page) => {
             </div>
 
             <div className="score-section">
-              <h4>Key Patterns</h4>
-              <ul className="score-list">
-                {parseField(selectedScoreData.key_patterns).map((item, index) => (
-                  <li key={index} className="score-list-item">{item || 'Not Available'}</li>
-                ))}
-              </ul>
-            </div>
+  <h4>Key Patterns</h4>
+  <ul className="score-list">
+    {(() => {
+      const patterns = parseField(selectedScoreData.key_patterns);
+      return patterns.length > 0 && patterns[0] !== 'Not Available' 
+        ? patterns.map((item, index) => (
+            <li key={index} className="score-list-item">{item}</li>
+          ))
+        : <li className="score-list-item">No patterns identified</li>;
+    })()}
+  </ul>
+</div>
 
-            <div className="score-section">
-              <h4>Recommended Focus Areas</h4>
-              <ul className="score-list">
-                {parseField(selectedScoreData.recommended_focus_areas).map((item, index) => (
-                  <li key={index} className="score-list-item">{item || 'Not Available'}</li>
-                ))}
-              </ul>
-            </div>
+<div className="score-section">
+  <h4>Recommended Focus Areas</h4>
+  <ul className="score-list">
+    {(() => {
+      const focusAreas = parseField(selectedScoreData.recommended_focus_areas);
+      return focusAreas.length > 0 && focusAreas[0] !== 'Not Available' 
+        ? focusAreas.map((item, index) => (
+            <li key={index} className="score-list-item">{item}</li>
+          ))
+        : <li className="score-list-item">No focus areas identified</li>;
+    })()}
+  </ul>
+</div>
 
-            <div className="score-section">
-              <h4>Personalized Next Steps</h4>
-              <ul className="score-list">
-                {parseField(selectedScoreData.personalized_next_steps).map((item, index) => (
-                  <li key={index} className="score-list-item">{item || 'Not Available'}</li>
-                ))}
-              </ul>
-            </div>
-
+<div className="score-section">
+  <h4>Personalized Next Steps</h4>
+  <ul className="score-list">
+    {(() => {
+      const nextSteps = parseField(selectedScoreData.personalized_next_steps);
+      return nextSteps.length > 0 && nextSteps[0] !== 'Not Available' 
+        ? nextSteps.map((item, index) => (
+            <li key={index} className="score-list-item">{item}</li>
+          ))
+        : <li className="score-list-item">No next steps available</li>;
+    })()}
+  </ul>
+</div>
             <div className="score-section">
               <h4>Session Summary</h4>
               <p className="score-text">{selectedScoreData.session_summary || 'Not Available'}</p>

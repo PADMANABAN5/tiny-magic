@@ -47,6 +47,9 @@ export default function Pods() {
     pod_name: "",
     is_active: true,
   });
+  const alowCopyPaste = (e) => {
+    e.stopPropagation(); // Prevent global event handlers from blocking
+  };
 
   // Filters state is no longer directly used for batch/mentor search inputs
   // The individual state variables (searchBatchName, searchMentorName) are used instead.
@@ -663,9 +666,18 @@ export default function Pods() {
                 </label>
                 <input
                 type="text"
+                onClick={alowCopyPaste}
+                onKeyDown={alowCopyPaste}
+                onPaste={alowCopyPaste}
                 className="form-control"
                 value={podForm.pod_name}
                 onChange={(e) => {
+                  if (e.target.value.length > 50) {
+                    setToastMessage("⚠️ Pod name cannot exceed 50 characters!");
+                    setToastBg("warning");
+                    setShowToast(true);
+                    return;
+                  }
                   setPodForm((prev) => ({
                     ...prev,
                     pod_name: e.target.value,

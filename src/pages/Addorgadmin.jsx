@@ -47,7 +47,9 @@ export default function Addorgadmin() {
       Authorization: `Bearer ${token}`,
     },
   };
-
+   const allowCopyPaste = (e) => {
+    e.stopPropagation(); // Prevent global event handlers from blocking
+  };
   // Fetch admins & orgs
   const fetchOrgAdmins = async () => {
     setLoading(true);
@@ -608,6 +610,9 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="email"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newAdmin.email}
                   onChange={(e) =>
@@ -623,10 +628,21 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   ref={firstNameRef}
                   value={newAdmin.first_name}
                   onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      setToastMessage(
+                        "⚠️ First name cannot exceed 30 characters!"
+                      );
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setNewAdmin({ ...newAdmin, first_name: e.target.value });
                     validateName(e, firstNameRef, "First Name");
                   }}
@@ -640,10 +656,21 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   ref={lastNameRef}
                   value={newAdmin.last_name}
                   onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      setToastMessage(
+                        "⚠️ Last name cannot exceed 30 characters!"
+                      );
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setNewAdmin({ ...newAdmin, last_name: e.target.value });
                     validateName(e, lastNameRef, "Last Name");
                   }}
@@ -661,6 +688,14 @@ export default function Addorgadmin() {
                   ref={passwordRef}
                   value={newAdmin.password}
                   onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      setToastMessage(
+                        "⚠️ Password cannot exceed 30 characters!"
+                      );
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setNewAdmin({ ...newAdmin, password: e.target.value });
                     validatePassword(e, passwordRef);
                   }}
@@ -693,10 +728,21 @@ export default function Addorgadmin() {
                 <label className="form-label">Username</label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   ref={editUsernameRef}
                   value={editingAdmin.username || ""}
                   onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      setToastMessage(
+                        "⚠️ Username cannot exceed 30 characters!"
+                      );
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setEditingAdmin({
                       ...editingAdmin,
                       username: e.target.value,
@@ -712,6 +758,9 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="email"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editingAdmin.email || ""}
                   onChange={(e) =>
@@ -730,10 +779,21 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   ref={editFirstNameRef}
                   value={editingAdmin.first_name || ""}
                   onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      setToastMessage(
+                        "⚠️ First name cannot exceed 30 characters!"
+                      );
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setEditingAdmin({
                       ...editingAdmin,
                       first_name: e.target.value,
@@ -750,10 +810,21 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   ref={editLastNameRef}
                   value={editingAdmin.last_name || ""}
                   onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      setToastMessage(
+                        "⚠️ Last name cannot exceed 30 characters!"
+                      );
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setEditingAdmin({
                       ...editingAdmin,
                       last_name: e.target.value,
@@ -772,6 +843,14 @@ export default function Addorgadmin() {
                   ref={editPasswordRef}
                   value={editingAdmin.password || ""}
                   onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      setToastMessage(
+                        "⚠️ Password cannot exceed 30 characters!"
+                      );
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setEditingAdmin({
                       ...editingAdmin,
                       password: e.target.value,

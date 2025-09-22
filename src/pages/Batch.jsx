@@ -34,6 +34,9 @@ export default function Batch() {
       Authorization: `Bearer ${token}`,
     },
   };
+   const allowCopyPaste = (e) => {
+    e.stopPropagation(); // Prevent global event handlers from blocking
+  };
 
   const [batchForm, setBatchForm] = useState({
     organization_name: "",
@@ -549,9 +552,18 @@ export default function Batch() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={batchForm.batch_name}
                  onChange={(e) => {
+    if (e.target.value.length > 50) {
+      setToastMessage("⚠️ Batch name cannot exceed 50 characters!");
+      setToastBg("warning");
+      setShowToast(true);
+      return;
+    }
     setBatchForm((prev) => ({
       ...prev,
       batch_name: e.target.value,

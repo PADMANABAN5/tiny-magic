@@ -130,8 +130,8 @@ function Archived() {
                 <tr>
                   <th scope="col">Prompt Type</th>
                   <th scope="col">Prompt Level</th>
-                  {/* <th scope="col">Organization Name</th>
-                  <th scope="col">Batch Name</th> */}
+                  <th scope="col">Organization Name</th>
+                  <th scope="col">Batch Name</th> 
                   <th scope="col">Version</th>
                   <th scope="col">Action</th>
                 </tr>
@@ -141,8 +141,8 @@ function Archived() {
                   <tr key={prompt.prompt_id} aria-label={`Prompt ${prompt.prompt_type}`}>
                     <td>{prompt.prompt_type}</td>
                     <td>{prompt.prompt_level}</td>
-                    {/* <td>{prompt.organization_name || '—'}</td>
-                    <td>{prompt.batch_name || '—'}</td> */}
+                     <td>{prompt.organization_name || '—'}</td>
+                    <td>{prompt.batch_name || '—'}</td> 
                     <td>{prompt.version}</td>
                     <td>
                       <Button

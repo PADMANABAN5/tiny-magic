@@ -28,6 +28,9 @@ export default function OrgList() {
       Authorization: `Bearer ${token}`,
     },
   };
+   const allowCopyPaste = (e) => {
+    e.stopPropagation(); // Prevent global event handlers from blocking
+  };
   const fetchOrganizations = async () => {
   setLoading(true);
   setError(null);
@@ -153,6 +156,7 @@ const isValidOrgName = (name) => {
     setShowToast(true);
     return;
   }
+ 
 
 
   try {
@@ -356,9 +360,22 @@ const isValidOrgName = (name) => {
                   type="text"
                   className="form-control"
                   id="orgName"
+                  placeholder="Enter organization name"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   value={newOrgName}
-                  onChange={(e) => setNewOrgName(e.target.value)}
-                  required
+                  onChange={(e) => {
+                    if (e.target.value.length > 50) {
+                      setToastMessage("⚠️ Organization name cannot exceed 50 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+      return; // don’t update state
+    }
+    setNewOrgName(e.target.value);
+  }}
+  required
+
                 />
               </div>
               <button type="submit" className="btn btn-success me-2 ">Create</button>

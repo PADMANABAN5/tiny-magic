@@ -29,6 +29,7 @@ import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
 import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 import { useAuth } from "../components/AuthContext.jsx";
+import LevelCompletionToast from "../components/LevelCompletionToast.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000"; // Fallback URL
 
 function Practicemode() {
@@ -93,6 +94,26 @@ function Practicemode() {
     }
     setIsListening(false);
   };
+
+ const getLevelName = (level) => {
+    if (!selectedConcept) return null;
+    switch (level) {
+      case 1:
+        return selectedConcept.level_1_name || null;
+      case 2:
+        return selectedConcept.level_2_name || null;
+      case 3:
+        return selectedConcept.level_3_name || null;
+      case 4:
+        return selectedConcept.level_4_name || null;
+      case 5:
+        return selectedConcept.level_5_name || null;
+      default:
+        return null;
+    }
+  };
+
+
 
   // Enhanced state for proper session management
   const [currentPracticeChatId, setCurrentPracticeChatId] = useState(null);
@@ -1402,6 +1423,12 @@ function Practicemode() {
             </div>
           </div>
         </div>
+      )}
+      {(currentStage > 1 && currentStage <= 6) && (
+        <LevelCompletionToast
+          level={currentStage - 1}
+          levelName={getLevelName(currentStage - 1)}
+        />
       )}
       <div className="dashboard-layout">
         <div className="control-panel">

@@ -20,7 +20,9 @@ export default function EditablePromptEditor({ initialContent, onSave }) {
     });
     return clone.innerText;
   };
-
+  const allowCopyPaste = (e) => {
+      e.stopPropagation(); // Prevent global event handlers from blocking
+  };
   useEffect(() => {
     const editor = editorRef.current;
     if (editor) {
@@ -91,23 +93,37 @@ export default function EditablePromptEditor({ initialContent, onSave }) {
     onSave(newText);
   };
 
-  return (
-    <div
-      ref={editorRef}
-      contentEditable
-      suppressContentEditableWarning
-      className="p-3 bg-light border rounded"
-      onInput={handleInput}
-      onBlur={handleInput}
-      style={{
-        minHeight: '200px',
-        maxHeight: '400px',
-        overflowY: 'auto',
-        fontFamily: 'monospace',
-        whiteSpace: 'pre-wrap',
-        outline: 'none',
-        resize: 'vertical',
-      }}
-    />
-  );
+  const allowEvent = (e) => {
+  e.stopPropagation();         // stop bubbling
+  e.nativeEvent.stopImmediatePropagation(); // ✅ also stop native listeners (App.js)
+};
+
+return (
+  <div
+    ref={editorRef}
+    contentEditable
+    suppressContentEditableWarning
+    className="p-3 bg-light border rounded"
+    onInput={handleInput}
+    onBlur={handleInput}
+
+    // ✅ Allow inside editor
+    onCopy={allowEvent}
+    onCut={allowEvent}
+    onPaste={allowEvent}
+    onKeyDown={allowEvent}
+   
+
+    style={{
+      minHeight: '200px',
+      maxHeight: '400px',
+      overflowY: 'auto',
+      fontFamily: 'monospace',
+      whiteSpace: 'pre-wrap',
+      outline: 'none',
+      resize: 'vertical',
+      userSelect: 'text',   // override global 'none'
+    }}
+  />
+);
 }

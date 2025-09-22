@@ -40,7 +40,9 @@ export default function Mentor() {
       Authorization: `Bearer ${token}`,
     },
   };
-
+  const allowCopyPaste = (e) => {
+    e.stopPropagation(); // Prevent global event handlers from blocking
+  };
   const navigate = useNavigate();
 
   // ---- Password validation helper (same as Org Users page) ----
@@ -462,6 +464,9 @@ export default function Mentor() {
                 </label>
                 <input
                   type="email"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newMentor.email}
                   onChange={(e) =>
@@ -476,10 +481,19 @@ export default function Mentor() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newMentor.first_name}
                   onChange={(e) => {
                     const value = e.target.value;
+                    if (value.length > 30) {
+                      setToastMessage("⚠️ First name cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     const isValid =
                       /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) ||
                       value === "";
@@ -490,6 +504,7 @@ export default function Mentor() {
                   }}
                   onInput={(e) => e.target.setCustomValidity("")}
                   required
+                  
                 />
               </div>
               <div className="mb-3">
@@ -498,10 +513,19 @@ export default function Mentor() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newMentor.last_name}
                   onChange={(e) => {
                     const value = e.target.value;
+                    if (value.length > 30) {
+                      setToastMessage("⚠️ Last name cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     const isValid =
                       /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) ||
                       value === "";
@@ -512,6 +536,7 @@ export default function Mentor() {
                   }}
                   onInput={(e) => e.target.setCustomValidity("")}
                   required
+                  
                 />
               </div>
               <div className="mb-3">
@@ -520,10 +545,17 @@ export default function Mentor() {
                 </label>
                 <input
                   type="password"
+
                   className="form-control"
                   value={newMentor.password}
                   required
                   onChange={(e) => {
+                    if (e.target.value.length > 30) {
+                      setToastMessage("⚠️ Password cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     const value = e.target.value;
                     setNewMentor({ ...newMentor, password: value });
                     const check = validatePassword(value);
@@ -557,6 +589,9 @@ export default function Mentor() {
                 <label className="form-label">Email</label>
                 <input
                   type="email"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editMentor.email}
                   onChange={(e) =>
@@ -569,10 +604,19 @@ export default function Mentor() {
                 <label className="form-label">Username</label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editMentor.username}
                   onChange={(e) => {
                     const value = e.target.value;
+                    if (value.length > 30) {
+                      setToastMessage("⚠️ Username cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     const isValid =
                       /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(value) ||
                       value === "";
@@ -590,10 +634,19 @@ export default function Mentor() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editMentor.first_name}
                   onChange={(e) => {
                     const value = e.target.value;
+                    if (value.length > 30) {
+                      setToastMessage("⚠️ First name cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     const isValid =
                       /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) ||
                       value === "";
@@ -604,6 +657,7 @@ export default function Mentor() {
                   }}
                   onInput={(e) => e.target.setCustomValidity("")}
                   required
+                  maxLength={50}
                 />
               </div>
               <div className="mb-3">
@@ -612,10 +666,19 @@ export default function Mentor() {
                 </label>
                 <input
                   type="text"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editMentor.last_name}
                   onChange={(e) => {
                     const value = e.target.value;
+                    if (value.length > 30) {
+                      setToastMessage("⚠️ Last name cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     const isValid =
                       /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) ||
                       value === "";
@@ -626,6 +689,7 @@ export default function Mentor() {
                   }}
                   onInput={(e) => e.target.setCustomValidity("")}
                   required
+                  maxLength={50}
                 />
               </div>
               <div className="mb-3">
@@ -636,6 +700,12 @@ export default function Mentor() {
                   value={editMentor.password}
                   onChange={(e) => {
                     const value = e.target.value;
+                    if (value.length > 30) {
+                      setToastMessage("⚠️ Password cannot exceed 30 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
                     setEditMentor({ ...editMentor, password: value });
                     // Optional: only validate when present
                     if (value) {

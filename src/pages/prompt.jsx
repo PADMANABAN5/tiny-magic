@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios  from 'axios';
 import { FaPlus, FaHistory, FaEdit } from 'react-icons/fa';
 import { Button, Table, Spinner, Alert, Modal, Form, Pagination, Toast, ToastContainer } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
@@ -71,7 +71,9 @@ export default function Prompt() {
     }
     return items;
   };
- 
+  const allowCopyPaste = (e) => {
+     e.stopPropagation(); // Prevent global event handlers from blocking
+  };
   // Effect for filtering prompts based on filter dropdowns
   useEffect(() => {
     const filtered = allPrompts.filter(prompt => {
@@ -333,18 +335,18 @@ export default function Prompt() {
               >
                 <FaHistory />
               </Button>
-              {/* <Button
+               <Button
                 variant="primary"
                 onClick={() => setShowAssignModal(true)}
                 style={{ width: '49%' }}
               >
                 <FaPlus />
-              </Button> */}
+              </Button> 
             </div>
           </div>
  
           {/* Filter Section */}
-          {/* <div className="d-flex gap-3 my-3">
+           <div className="d-flex gap-3 my-3">
             <Form.Group>
               <Form.Label>Filter by Organization</Form.Label>
               <Form.Select
@@ -361,9 +363,9 @@ export default function Prompt() {
                   </option>
                 ))}
               </Form.Select>
-            </Form.Group> */}
+            </Form.Group> 
             {/* You can add a batch filter dropdown here if needed for the main table */}
-            {/* {selectedOrgIdFilter && (
+             {selectedOrgIdFilter && (
                             <Form.Group>
                                 <Form.Label>Filter by Batch</Form.Label>
                                 <Form.Select
@@ -375,7 +377,7 @@ export default function Prompt() {
             {/* For now, assuming batchList is global or you'll fetch it here */}
             {/* You need to add a fetch for filter batches here, similar to modal's batch fetch */}
             {/* Example: */}
-            {/* {batchListForModal // Re-using for simplicity, but ideally a separate state/fetch
+             {batchListForModal // Re-using for simplicity, but ideally a separate state/fetch
                                         .filter(batch => batch.organization_id?.toString() === selectedOrgIdFilter?.toString())
                                         .map(batch => (
                                             <option key={batch.batch_id} value={batch.batch_id}>
@@ -384,8 +386,8 @@ export default function Prompt() {
                                         ))}
                                 </Form.Select>
                             </Form.Group>
-                        )} */}
-         {/* </div>*/}
+                        )} 
+         </div>
  
           <div className="table-responsive">
             <table className="table table-striped table-bordered table-hover">
@@ -393,8 +395,8 @@ export default function Prompt() {
                 <tr>
                   <th>Prompt Type</th>
                   <th>Prompt Level</th>
-                  {/* <th>Organization Name</th>
-                  <th>Batch Name</th> */}
+                   <th>Organization Name</th>
+                  <th>Batch Name</th>
                   <th>Version</th>
                   <th>Action</th>
                 </tr>
@@ -404,8 +406,8 @@ export default function Prompt() {
                   <tr key={prompt.prompt_id}>
                     <td>{prompt.prompt_type}</td>
                     <td>{prompt.prompt_level}</td>
-                    {/* <td>{prompt.organization_name || '—'}</td>
-                    <td>{prompt.batch_name || '—'}</td> */}
+                     <td>{prompt.organization_name || '—'}</td>
+                    <td>{prompt.batch_name || '—'}</td> 
                     <td>{prompt.version}</td>
                     <td>
                       <Button
@@ -448,6 +450,9 @@ export default function Prompt() {
               <EditablePromptEditor
                 initialContent={editPrompt?.user_content || ''}
                 onSave={(updatedText) => setUpdatedUserContent(updatedText)}
+                onClick={allowCopyPaste}
+                onCut={allowCopyPaste}
+                onPaste={allowCopyPaste}
               />
             </Modal.Body>
             <Modal.Footer>
