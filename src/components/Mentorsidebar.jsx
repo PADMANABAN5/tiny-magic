@@ -11,6 +11,7 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
+const BASE_URL = process.env.REACT_APP_API_LINK;
 function Mentorsidebar() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ function Mentorsidebar() {
     try {
       const token = sessionStorage.getItem("token"); // store your login token here
       await axios.post(
-        "http://localhost:5000/api/users/logout",
+        `${BASE_URL}/users/logout`,
         {},
         {
           headers: {
