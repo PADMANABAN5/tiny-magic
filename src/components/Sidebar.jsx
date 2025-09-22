@@ -14,6 +14,7 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+const BASE_URL = process.env.REACT_APP_API_LINK;
 
 function Sidebar({ isProcessingAssessment , isLoading }) {
   const location = useLocation();
@@ -22,12 +23,13 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
+
   
   const handleLogout = async () => {
     try {
       const token = sessionStorage.getItem("token"); // store your login token here
       await axios.post(
-        "http://localhost:5000/api/users/logout",
+        `${BASE_URL}/users/logout`,
         {},
         {
           headers: {
