@@ -36,6 +36,7 @@ import { AuthProvider } from "./components/AuthContext.jsx";
 import AutoLogout from "./components/Autologout.jsx";
 // ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
+import ForgotPassword from './components/Forgotpassword.jsx';
 
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
@@ -113,6 +114,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* ✅ Protected Routes by Role */}
         <Route path="/dashboard" element={

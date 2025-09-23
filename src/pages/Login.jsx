@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../styles/login.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../components/AuthContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -273,6 +273,14 @@ function Login() {
                   </button>
                 </div>
               </div>
+              <div className="forgot-password-link" style={{ textAlign: 'right', marginBottom: '10px' }}>
+  <Link
+    to="/forgot-password"
+    style={{ textDecoration: 'none', color: '#085a5cff', cursor: 'pointer'}}
+  >
+    Forgot Password?
+  </Link>
+</div>
 
               <button className="login-btn" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Please Wait..." : "Login"}
