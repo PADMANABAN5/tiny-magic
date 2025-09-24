@@ -107,7 +107,7 @@ function App() {
           onCopy={handleCopyCutPaste}
           onCut={handleCopyCutPaste}
           onPaste={handleCopyCutPaste}
-          onSelectStart={handleSelectStart}
+          // onSelectStart={handleSelectStart}
           onKeyDown={handleKeyDown}
           style={{ userSelect: isProtectionEnabled ? 'none' : 'auto', minHeight: '100vh' }}
         >

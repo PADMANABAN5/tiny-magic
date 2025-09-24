@@ -124,7 +124,7 @@ export default function ForgotPassword() {
                   onCopy={allowCopyPaste}
                   onCut={allowCopyPaste}
                   onPaste={allowCopyPaste}
-                  onSelectStart={allowCopyPaste}
+                  //onSelectStart={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   style={{ userSelect: "auto" }}
                 />
@@ -147,7 +147,7 @@ export default function ForgotPassword() {
                   onCopy={allowCopyPaste}
                   onCut={allowCopyPaste}
                   onPaste={allowCopyPaste}
-                  onSelectStart={allowCopyPaste}
+                 // onSelectStart={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   style={{ userSelect: "auto" }}
                 />
@@ -172,7 +172,7 @@ export default function ForgotPassword() {
                     onCopy={allowCopyPaste}
                     onCut={allowCopyPaste}
                     onPaste={allowCopyPaste}
-                    onSelectStart={allowCopyPaste}
+                   // onSelectStart={allowCopyPaste}
                     onKeyDown={allowCopyPaste}
                     style={{ userSelect: "auto" }}
                   />
@@ -198,7 +198,7 @@ export default function ForgotPassword() {
                     onCopy={allowCopyPaste}
                     onCut={allowCopyPaste}
                     onPaste={allowCopyPaste}
-                    onSelectStart={allowCopyPaste}
+                    //onSelectStart={allowCopyPaste}
                     onKeyDown={allowCopyPaste}
                     style={{ userSelect: "auto" }}
                   />

@@ -237,7 +237,7 @@ function Login() {
                   onCopy={allowCopyPaste}
                   onCut={allowCopyPaste}
                   onPaste={allowCopyPaste}
-                  onSelectStart={allowCopyPaste}
+                  //onSelectStart={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                  style={{ userSelect: 'auto' }}
                   value={identifier}
@@ -254,7 +254,7 @@ function Login() {
                     onCopy={allowCopyPaste}
               onCut={allowCopyPaste}
               onPaste={allowCopyPaste}
-              onSelectStart={allowCopyPaste}
+             // onSelectStart={allowCopyPaste}
               onKeyDown={allowCopyPaste}
               style={{ userSelect: 'auto' }}
                     type={showPassword ? "text" : "password"}
