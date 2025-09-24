@@ -1007,10 +1007,10 @@ const renderPracticeScoreCell = (conversation) => {
                   </div>
                     </Accordion.Body>
       </Accordion.Item>
-    <Accordion.Item eventKey="1">
+    {/* <Accordion.Item eventKey="1">
     <Accordion.Header style={{fontWeight:'bolder', fontSize:'20px', marginRight:'8px'}}><FiBarChart2 style={{fontWeight:'bold', fontSize:'20px', marginRight:'8px'}}/> Practice History</Accordion.Header>
     <Accordion.Body>
-      {/* Practice Filters */}
+      
 <div className="filters-section mb-3">
   <div className="filter-group">
     <label>Search Concepts:</label>
@@ -1114,7 +1114,7 @@ const renderPracticeScoreCell = (conversation) => {
         </div>
       )}
     </Accordion.Body>
-  </Accordion.Item>
+  </Accordion.Item> */}
 </Accordion>
                 )}
               </div>

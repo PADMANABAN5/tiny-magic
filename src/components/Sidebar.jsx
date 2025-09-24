@@ -89,7 +89,7 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
           </div>
         </Link>
 
-        <div className="page-title mx-auto">
+        {/* <div className="page-title mx-auto">
   {(() => {
     switch (location.pathname) {
       case "/dashboard":
@@ -105,7 +105,7 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
     }
   })()}
 </div>
- 
+  */}
         <div className="ms-auto">
           <div className="dropdown">
             <button
@@ -142,7 +142,7 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
                     Dashboard
                   </Link>
                   </li>
-                  <li>
+                  {/* <li>
                    <Link
                     to="/practice"
                     className={`dropdown-item d-flex align-items-center ${
@@ -159,7 +159,7 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
                     <FaBook className="me-2" style={{ fontSize: "16px" }} />
                      Practice
                   </Link> 
-                  </li>
+                  </li> */}
                   <li>
                  <button
   className="dropdown-item history-toggle d-flex align-items-center"
@@ -179,11 +179,11 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
         <FaChartBar className="me-2" /> Training History
       </Link>
     </li>
-    <li>
+    {/* <li>
       <Link to="/practicehistory" className="dropdown-item">
         <FaChartLine className="me-2" /> Practice History
       </Link>
-    </li>
+    </li> */}
   </ul>
 )}
 </li>

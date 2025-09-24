@@ -11,6 +11,7 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
   const [timeLeft, setTimeLeft] = useState(timeout / 1000); // Time in seconds
   const timerRef = useRef(null);
   const intervalRef = useRef(null);
+  const BaseUrl = process.env.REACT_APP_API_LINK;
 
   const logout = async () => {
     try {
@@ -18,7 +19,7 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
      // console.log("Token found:", token);
       if (token) {
         await axios.post(
-          "http://localhost:5000/api/users/logout",
+          `${BaseUrl}/users/logout`,
           {},
           {
             headers: {
