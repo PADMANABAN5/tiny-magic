@@ -32,6 +32,7 @@ import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../com
 import usePreventBack from "../utils/usePreventBack.js";
 import { useAuth } from "../components/AuthContext.jsx";
 import StageCompletionToast from "../components/StageCompletionToast.jsx";
+import VoiceRecorder from "../components/VoiceRecorder.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
 function Dashboard() {
@@ -1515,6 +1516,12 @@ function Dashboard() {
                   onKeyPress={handleKeyPress}
                   disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
                   rows="1"
+                />
+                  <VoiceRecorder
+                  onTranscription={(text) => {
+                    setPrompt((prev) => (prev ? prev + " " : "") + text);
+                  }}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
                 />
                 <button
                   className="send-button"

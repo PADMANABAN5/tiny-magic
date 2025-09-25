@@ -29,6 +29,7 @@ import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
 import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 import { useAuth } from "../components/AuthContext.jsx";
+import VoiceRecorder from "../components/VoiceRecorder.jsx";
 import LevelCompletionToast from "../components/LevelCompletionToast.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000"; // Fallback URL
 
@@ -1708,6 +1709,12 @@ function Practicemode() {
                   disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
                   rows="1"
                 />
+                 <VoiceRecorder
+                                  onTranscription={(text) => {
+                                    setPrompt((prev) => (prev ? prev + " " : "") + text);
+                                  }}
+                                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+                                />
                 <button
                   className="send-button"
                   onClick={handleSendClick}
