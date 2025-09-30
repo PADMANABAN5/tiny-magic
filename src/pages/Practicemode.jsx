@@ -135,6 +135,7 @@ function Practicemode() {
   const [isCalculatingScore, setIsCalculatingScore] = useState(false);
   // Lock for initialization to prevent race conditions
   const isInitializingRef = useRef(false);
+  const voiceRecorderRef = useRef(null);
 
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
@@ -598,6 +599,9 @@ function Practicemode() {
   };
 
   const handleSendClick = async () => {
+    if (voiceRecorderRef.current) {
+      await voiceRecorderRef.current.stopRecording(); // 🔴 auto-stop recording
+    }
     if (!prompt.trim() || !selectedConcept || isChatEnded) {
       if (isChatEnded) {
         toast.warn("This conversation has ended. Please restart to begin a new session.");
@@ -1710,11 +1714,12 @@ function Practicemode() {
                   rows="1"
                 />
                  <VoiceRecorder
-                                  onTranscription={(text) => {
-                                    setPrompt((prev) => (prev ? prev + " " : "") + text);
-                                  }}
-                                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
-                                />
+                      ref={voiceRecorderRef}
+                      onTranscription={(text) => {
+                        setPrompt((prev) => (prev ? prev + " " : "") + text);
+                      }}
+                      disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
+                    />
                 <button
                   className="send-button"
                   onClick={handleSendClick}

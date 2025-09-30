@@ -55,6 +55,7 @@ function Dashboard() {
   const prevPathRef = useRef(location.pathname);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
+  const voiceRecorderRef = useRef(null);
   
   const startListening = () => {
     const SpeechRecognition =
@@ -386,6 +387,9 @@ function Dashboard() {
 
   const handleEndSession = async () => {
     setShowEndSessionDialog(false);
+     if (voiceRecorderRef.current) {
+    await voiceRecorderRef.current.stopRecording();
+  }
     setIsLoading(true);
     setIsProcessingAssessment(true);
   
@@ -498,6 +502,9 @@ function Dashboard() {
   };
 
   const handleSendClick = async () => {
+    if (voiceRecorderRef.current) {
+      await voiceRecorderRef.current.stopRecording(); // 🔴 auto-stop recording
+  }
     if (!prompt.trim() || !selectedConcept || isChatEnded) {
       if (isChatEnded) {
         toast.warn("This conversation has ended. Please restart to begin a new session.");
@@ -1492,7 +1499,7 @@ function Dashboard() {
                   <button
                     className="end-session-btn"
                     onClick={() => setShowEndSessionDialog(true)}
-                    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded}
+                    disabled={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded || isLoading}
                     style={isProcessingAssessment || currentChatStatus === 'not_started' || isChatEnded ? { opacity: 0.5, cursor: 'not-allowed' } : {}}
                   >
                     <FiStopCircle />
@@ -1518,11 +1525,12 @@ function Dashboard() {
                   rows="1"
                 />
                   <VoiceRecorder
-                  onTranscription={(text) => {
-                    setPrompt((prev) => (prev ? prev + " " : "") + text);
-                  }}
-                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
-                />
+  ref={voiceRecorderRef} 
+  onTranscription={(text) => {
+    setPrompt((prev) => (prev ? prev + " " : "") + text);
+  }}
+  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
+/>
                 <button
                   className="send-button"
                   onClick={handleSendClick}
