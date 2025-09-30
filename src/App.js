@@ -37,7 +37,7 @@ import AutoLogout from "./components/Autologout.jsx";
 // ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
 import ForgotPassword from './components/Forgotpassword.jsx';
-
+import Models from './pages/Models_management.jsx'
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
   const role = sessionStorage.getItem("role_name");
@@ -167,6 +167,9 @@ function App() {
         <Route path="/addorgadmin" element={
           <PrivateRoute roles={["superadmin"]}><Addorgadmin /></PrivateRoute>
         } />
+        <Route path="/models" element={
+          <PrivateRoute roles={["superadmin"]}><Models/></PrivateRoute>
+        }/>
         <Route path="/orgadminbatch" element={
           <PrivateRoute roles={["orgadmin"]}><OrgadminBatch /></PrivateRoute>
         } />

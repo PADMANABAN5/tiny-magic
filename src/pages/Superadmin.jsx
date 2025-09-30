@@ -4,6 +4,7 @@ import {
   Building2, User, Users, LineChart, Settings, LayoutGrid, Key, Database, ShieldCheck,
   Monitor, BookOpen, Clock
 } from 'lucide-react'; 
+import { SiOpenai } from "react-icons/si";
 import Supersidebar from '../components/Supersidebar'; // Import the sidebar component
 import { Container, Row, Col, Card, Button, Nav, Navbar } from 'react-bootstrap'; // React-Bootstrap components
 import '../styles/superadmin.css';
@@ -223,6 +224,26 @@ function Superadmin() {
                     className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
                   >
                     <Users className="me-2" size={18} /> Assign Users
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col>
+              <Card className="shadow-sm h-100 border-0 rounded-3">
+                <Card.Body className="p-4">
+                  <div className="p-3 bg-gradient-orange rounded-circle d-inline-flex mb-3">
+                    <SiOpenai className="text-white" size={32} />
+                  </div>
+                  <Card.Title className="fs-5 fw-semibold text-dark mb-2">Openai Managements</Card.Title>
+                  <Card.Text className="text-secondary mb-4 fs-6">
+                    Add, Update and Assign models over Global, Organization and Batch
+                  </Card.Text>
+                  <Button
+                    onClick={() => navigate('/models')}
+                    variant="info"
+                    className="w-100 d-flex align-items-center justify-content-center py-2 rounded-2 text-white superadmin-button"
+                  >
+                    <Database className="me-2" size={18} /> Manage Models
                   </Button>
                 </Card.Body>
               </Card>

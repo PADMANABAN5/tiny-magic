@@ -439,3 +439,7 @@ body {
   background-color: #0d6efd; /* Keep same on hover */
   color: white;
 }
+.bg-gradient-orange {
+  background: linear-gradient(135deg, #2f2d2d 0%, #35343480 100%);
+  color: white; /* ensures text/icons are visible */
+}
