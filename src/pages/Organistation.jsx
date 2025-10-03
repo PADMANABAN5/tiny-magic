@@ -138,7 +138,7 @@ export default function OrgList() {
 };
 
 const isValidOrgName = (name) => {
-  const regex = /^[a-zA-Z0-9\s]+$/; // only letters, numbers, spaces
+  const regex = /^[a-zA-Z0-9\s]+$/; 
   return regex.test(name);
 };
 
