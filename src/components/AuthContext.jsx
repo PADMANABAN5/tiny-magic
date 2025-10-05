@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
     setRole(user.role);
     setUsername(user.username);
 
-    resetInactivityTimer();
+    //resetInactivityTimer();
   };
   
   const logout = () => {
@@ -47,22 +47,22 @@ export const AuthProvider = ({ children }) => {
     navigate("/login", { replace: true });
   };
 
-  const resetInactivityTimer = () => {
-    clearTimeout(logoutTimer.current);
-    logoutTimer.current = setTimeout(() => {
-      logout();
-    }, 4 * 60 * 60 * 100); // 4 hours
-  };
+  //const resetInactivityTimer = () => {
+  //   clearTimeout(logoutTimer.current);
+  //   logoutTimer.current = setTimeout(() => {
+  //     logout();
+  //   }, 4 * 60 * 60 * 100); // 4 hours
+  // };
 
-  useEffect(() => {
-    const events = ["mousemove", "keydown", "mousedown", "touchstart"];
-    events.forEach((event) => window.addEventListener(event, resetInactivityTimer));
+  // useEffect(() => {
+  //   const events = ["mousemove", "keydown", "mousedown", "touchstart"];
+  //   events.forEach((event) => window.addEventListener(event, resetInactivityTimer));
 
-    return () => {
-      events.forEach((event) => window.removeEventListener(event, resetInactivityTimer));
-      clearTimeout(logoutTimer.current);
-    };
-  }, []);
+  //   return () => {
+  //     events.forEach((event) => window.removeEventListener(event, resetInactivityTimer));
+  //     clearTimeout(logoutTimer.current);
+  //   };
+  // }, []);
 
   const verifyToken = async () => {
     const storedToken = sessionStorage.getItem("token");
@@ -85,7 +85,7 @@ export const AuthProvider = ({ children }) => {
       setRole(storedRole);
       setUsername(storedUsername);
       setIsLoading(false);
-      resetInactivityTimer();
+      //resetInactivityTimer();
     } catch (error) {
       console.error("Token verification failed:", error);
       toast.error("Token expired or invalid, please log in again", { autoClose: 2000 });
