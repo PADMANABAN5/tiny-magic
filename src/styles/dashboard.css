@@ -700,16 +700,17 @@ html, body {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .stage-cards {
-    flex-direction: row;
+    flex-direction: column;
     overflow-x: auto;
-    gap: 0.75rem;
-    height: auto;
+    gap: 1rem;         /* space between cards */
+    align-items: stretch;
+    width: 100%;
   }
   
   .stage-card {
-    min-width: 200px;
-    flex: none;
-    min-height: 120px;
+    min-width: auto;
+    width: 100%;
+    margin: 0 auto;
   }
   
   .stage-card.active {
@@ -1331,7 +1332,7 @@ html, body {
   }
   
   .stage-cards {
-    flex-direction: row;
+    flex-direction: column;
     overflow-x: auto;
     gap: 0.75rem;
   }
@@ -3052,5 +3053,26 @@ html, body {
     margin-top: 0 !important;
     z-index: 1;
   }
+  .stage-content, .stage-header {
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+  }
+  .section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0rem;
+}
+.message-group {
+  margin-bottom: 0rem !important;
+  animation: messageSlideIn 0.4s ease-out;
+}
+.chat-input-container {
+  margin-bottom: 20px;
+}
+.chat-messages {
+  padding: 4rem 2.5rem 0rem 2.5rem;
+}
 }
 
