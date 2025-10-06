@@ -308,3 +308,21 @@ a.nav-link.link-dark.active {
     transform: translateY(0);
   }
 }
+
+/* Username visibility for desktop/mobile */
+.username-desktop {
+  display: inline;
+}
+
+.userlogo-desktop{
+    margin-right: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  .username-desktop {
+    display: none !important;
+  }
+  .userlogo-desktop{
+    margin-right: 0px !important;
+  }
+}
