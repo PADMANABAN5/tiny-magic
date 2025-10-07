@@ -19,7 +19,7 @@ function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(true);
 
   // visibility toggles
   const [showPassword, setShowPassword] = useState(false);     // login
@@ -216,7 +216,7 @@ function Login() {
         <div className="login-card">
           {isMaintenanceMode && (
             <div className="maintenance-msg">
-              🚧 The platform is under maintenance right now. It will be live shortly!
+              🚧 Our Site is currently offline for scheduled maintenance. We expect to be back shortly! Thank you for your patience.
             </div>
           )}
           <h2 className="login-title">Login</h2>

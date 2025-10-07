@@ -179,7 +179,7 @@ const itemsPerPage = 10;
     try {
       console.log("📊 Fetching chat counts for user:", userId);
 
-      const response = await axios.get(`${BASE_URL}/chat/counts/${userId}`);
+      const response = await axios.get(`${BASE_URL}/chat/counts/${userId}`, config);
 
       if (response.data && response.data.success && response.data.data.counts) {
         setChatCounts(response.data.data.counts);
