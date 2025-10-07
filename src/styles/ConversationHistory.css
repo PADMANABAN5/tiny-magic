@@ -9,7 +9,7 @@
 .main-content {
   flex: 1;
   padding: 2rem;
-  overflow-x: hidden;
+  overflow-x: auto;
   margin-top: 60px;
 }
 
@@ -217,10 +217,11 @@
 
 /* Conversations Section */
 .conversations-section {
-  background: white; 
+  background: white;
   border: 1px solid #e2e8f0;
-  overflow: hidden;
+  overflow: visible !important;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  padding: 0;
 }
 
 .loading-container {
@@ -278,13 +279,20 @@
 
 /* Table Styles */
 .conversations-table-container {
-  overflow-x: auto;
+  width: 100%;
+  min-width: 0;
+  background: white;             
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+  box-sizing: border-box;
 }
 
 .conversations-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
+  min-width: 600px;
+  background-color: white;
 }
 
 .conversations-table thead {
@@ -1366,3 +1374,20 @@ td {
   margin-bottom: 0;
 }
 
+
+@media (max-width: 640px) {
+  .stats-section {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.75rem !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+  .stat-card {
+    min-width: unset !important;
+    max-width: unset !important;
+    width: 100% !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+}
