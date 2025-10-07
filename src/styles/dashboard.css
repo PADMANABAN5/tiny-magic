@@ -4,6 +4,7 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+  background-color: white;
 }
 
 /* Root and container width fixes */
@@ -11,6 +12,7 @@ html, body {
   width: 100%;
   min-width: 100%;
   overflow-x: hidden;
+  background-color: white;
 }
 
 #root {
@@ -3011,6 +3013,7 @@ html, body {
     min-height: 100% !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
+    background-color: white;
   }
   .learning-dashboard, .dashboard-layout {
     position: relative !important;
