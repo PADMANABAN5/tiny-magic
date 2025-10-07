@@ -47,12 +47,28 @@ export const processPromptAndCallLLM = async (
       console.error("No authentication token found in sessionStorage");
       throw new Error("Authentication token missing");
     }
+    
+    let modelName = selectedModel;
+    try {
+      const fallbackRes = await axios.get(
+        `${BASE_URL}/llm/fallback?organization_id=${organizationId}&batch_id=${batchId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
+      if (fallbackRes.data?.success && fallbackRes.data?.data?.model_name) {
+        modelName = fallbackRes.data.data.model_name;
+        console.log("✅ Resolved model_name from fallback API:", modelName);
+      } else {
+        console.warn("⚠️ Fallback API returned no model_name, using provided selectedModel");
+      }
+    } catch (err) {
+      console.error("❌ Error fetching model_name from fallback API:", err);
+    }
     // Prepare request data
     const requestData = {
       username,
       selectedPrompt,
-      selectedModel,
+      selectedModel: modelName,
       sessionHistory,
       userPrompt,
       selectedConcept,
