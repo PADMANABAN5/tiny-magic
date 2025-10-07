@@ -228,7 +228,7 @@ function Superadmin() {
                 </Card.Body>
               </Card>
             </Col>
-            {/* <Col>
+           <Col>
               <Card className="shadow-sm h-100 border-0 rounded-3">
                 <Card.Body className="p-4">
                   <div className="p-3 bg-gradient-orange rounded-circle d-inline-flex mb-3">
@@ -247,7 +247,7 @@ function Superadmin() {
                   </Button>
                 </Card.Body>
               </Card>
-            </Col> */}
+            </Col> 
           </Row>
         </div>
       </Container>

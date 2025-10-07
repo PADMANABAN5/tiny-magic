@@ -145,9 +145,33 @@ function Orgadminpods() {
                     <Card.Title className="text-center mb-3">Pod Overview</Card.Title>
 
                     <div className="d-flex flex-column gap-2 align-items-center">
-                      <Badge bg="info" className="p-2 text-wrap text-center">
-                        Mentor: {pod.mentor.first_name} {pod.mentor.last_name}
-                      </Badge>
+                      <OverlayTrigger
+  placement="top"
+  overlay={
+    <Tooltip id={`tooltip-mentors-${pod.pod_id}`}>
+      <ul className="mb-0 ps-3">
+        {pod.mentors && pod.mentors.length > 0 ? (
+          pod.mentors.map((m) => (
+            <li key={m.user_id}>
+              {m.first_name} {m.last_name} ({m.email})
+            </li>
+          ))
+        ) : (
+          <li>No Mentors</li>
+        )}
+      </ul>
+    </Tooltip>
+  }
+>
+  <Badge
+    bg="success"
+    className="p-2 text-wrap text-center"
+    style={{ cursor: 'pointer' }}
+  >
+    Mentors ({pod.mentors?.length || 0})
+  </Badge>
+</OverlayTrigger>
+
 
                       <div className="d-flex flex-row gap-2 justify-content-center">
                         <Badge bg="secondary" className="p-2 text-wrap text-center">

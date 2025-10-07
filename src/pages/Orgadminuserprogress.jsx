@@ -21,7 +21,7 @@ import {
   FiBarChart2
 } from "react-icons/fi";
 import axios from 'axios';
-import { Spinner, Alert, Card, Row, Col, Badge, Button } from 'react-bootstrap';
+import { Spinner, Alert, Card, Row, Col, Badge, Button, OverlayTrigger, Popover } from 'react-bootstrap';
 import Orgadminsidebar from '../components/Orgadminsidebar';
 import PDFDownloader from '../components/PDFDownloader.jsx';
 import AssessmentDisplay, { 
@@ -838,7 +838,32 @@ const parseField = (field) => {
                   <p><strong>Email:</strong> {userData.user.email}</p>
                   <p><strong>Pod:</strong> <Badge bg="info">{userData.pod?.pod_name || 'N/A'}</Badge></p>
                   <p><strong>Batch:</strong> <Badge bg="secondary">{userData.batch?.batch_name || 'N/A'}</Badge></p>
-                  <p><strong>Mentor:</strong> {userData.pod?.mentor?.first_name} {userData.pod?.mentor?.last_name} ({userData.pod?.mentor?.email})</p>
+                  <p>
+  <strong>Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}:</strong>{' '}
+  <OverlayTrigger
+    trigger="click"
+    placement="bottom"
+    overlay={
+      <Popover id="popover-mentors">
+        <Popover.Header as="h3">Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}</Popover.Header>
+        <Popover.Body>
+          <ul className="mb-0 ps-3">
+            {userData.pod?.mentors?.map((m) => (
+              <li key={m.user_id}>
+                {m.first_name} {m.last_name} ({m.email})
+              </li>
+            ))}
+          </ul>
+        </Popover.Body>
+      </Popover>
+    }
+    rootClose
+  >
+    <Badge bg="success" style={{ cursor: 'pointer' }}>
+      {userData.pod?.mentors?.length || 0} Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}
+    </Badge>
+  </OverlayTrigger>
+</p>
                 </Card.Body>
               </Card>
 

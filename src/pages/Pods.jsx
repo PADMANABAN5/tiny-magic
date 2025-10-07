@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+import Select from "react-select";  // New import for multi-select
 import Supersidebar from "../components/Supersidebar";
-import { Pagination, Toast, ToastContainer } from "react-bootstrap";
+import { Pagination, Toast, ToastContainer, Badge, OverlayTrigger, Popover } from "react-bootstrap";  // Changed Tooltip to Popover
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
@@ -43,7 +44,7 @@ export default function Pods() {
   const [podForm, setPodForm] = useState({
     organization_id: "",
     batch_id: "",
-    mentor_id: "",
+    mentors: [],  // Array of selected mentor emails (for react-select values)
     pod_name: "",
     is_active: true,
   });
@@ -60,6 +61,9 @@ export default function Pods() {
     setCurrentPage(1);
   };
 
+  // Helper to clean mentors array (remove empties, though not needed for react-select)
+  const cleanMentors = () => podForm.mentors.filter(m => m && m.trim() !== "");
+
   const filteredPods = pods.filter((pod) => {
     const podNameMatch = pod.pod_name
       ?.toLowerCase()
@@ -75,14 +79,12 @@ export default function Pods() {
       searchBatchName === "" ||
       batchName.toLowerCase().includes(searchBatchName.toLowerCase());
 
-    // Filter by mentor name (text input)
-    const mentor = mentors.find((m) => m.user_id === pod.mentor_id);
-    const mentorFullName = mentor
-      ? `${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()
-      : "";
-    const mentorMatch =
-  searchMentorName === "" || pod.mentor_id?.toString() === searchMentorName;
-
+    // Filter by mentor (check if any in pod.mentors array matches searchMentorName by ID or full name)
+    const mentorMatch = searchMentorName === "" || 
+      pod.mentors?.some(m => 
+        m.user_id?.toString() === searchMentorName || 
+        `${m.first_name || ""} ${m.last_name || ""}`.toLowerCase().includes(searchMentorName.toLowerCase())
+      );
 
     return podNameMatch && orgMatch && batchMatch && mentorMatch;
   });
@@ -209,7 +211,7 @@ export default function Pods() {
     setPodForm({
       organization_id: "",
       batch_id: "",
-      mentor_id: "",
+      mentors: [],  // Empty for create
       pod_name: "",
       is_active: true,
     });
@@ -222,7 +224,7 @@ export default function Pods() {
     setPodForm({
       organization_id: pod.organization_id || "",
       batch_id: pod.batch_id || "",
-      mentor_id: pod.mentor_id || "",
+      mentors: pod.mentors ? pod.mentors.map(m => m.email) : [],  // Load existing as array of emails
       pod_name: pod.pod_name || "",
       is_active: pod.is_active || false,
     });
@@ -234,20 +236,24 @@ export default function Pods() {
   const handleFormSubmit = async (e) => {
     e.preventDefault();
 
+    if (cleanMentors().length === 0) {
+      setToastMessage("⚠️ At least one mentor is required.");
+      setToastBg("warning");
+      setShowToast(true);
+      return;
+    }
+
     const selectedOrg = organizations.find(
       (org) => org.organization_id === parseInt(podForm.organization_id)
     );
     const selectedBatch = batches.find(
       (batch) => batch.batch_id === parseInt(podForm.batch_id)
     );
-    const selectedMentor = mentors.find(
-      (mentor) => mentor.user_id === parseInt(podForm.mentor_id)
-    );
 
     const payload = {
       organization_name: selectedOrg ? selectedOrg.organization_name : "",
       batch_name: selectedBatch ? selectedBatch.batch_name : "",
-      mentor_email: selectedMentor ? selectedMentor.email : "",
+      mentors: cleanMentors(),  // Array of emails for backend
       pod_name: podForm.pod_name,
       is_active: podForm.is_active,
     };
@@ -260,7 +266,7 @@ export default function Pods() {
           config
         );
         setToastMessage("✅ Pod updated successfully!");
-        setToastBg("primary"); // Changed to primary for consistency
+        setToastBg("primary");
       } else {
         await axios.post(
           `${process.env.REACT_APP_API_LINK}/pods`,
@@ -268,7 +274,7 @@ export default function Pods() {
           config
         );
         setToastMessage("✅ Pod created successfully!");
-        setToastBg("primary"); // Changed to primary for consistency
+        setToastBg("primary");
       }
       setShowToast(true);
       setShowModal(false);
@@ -340,6 +346,24 @@ export default function Pods() {
     fetchBatches();
     fetchMentors();
   }, []);
+
+  // Helper for popover content: List of mentor names
+  const getMentorPopover = (podMentors) => {
+    if (!podMentors || podMentors.length === 0) return <div>No mentors assigned</div>;
+    return (
+      <ul style={{ margin: 0, paddingLeft: '15px' }}>
+        {podMentors.map((m, index) => (
+          <li key={index}>{`${m.first_name || ""} ${m.last_name || ""}`.trim() || m.email}</li>
+        ))}
+      </ul>
+    );
+  };
+
+  // react-select options for mentors
+  const mentorOptions = mentors.map(mentor => ({
+    value: mentor.email,
+    label: `${mentor.email} (${`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})`
+  }));
 
   return (
     <div className="main-layout-container">
@@ -434,21 +458,21 @@ export default function Pods() {
               </select>
 
               <select
-  className="form-select"
-  style={{ maxWidth: "250px" }}
-  value={searchMentorName}
-  onChange={(e) => {
-    setSearchMentorName(e.target.value);
-    setCurrentPage(1);
-  }}
->
-  <option value="">All Mentors</option>
-  {mentors.map((mentor) => (
-    <option key={mentor.user_id} value={mentor.user_id}>
-      {mentor.email} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
-    </option>
-  ))}
-</select>
+                className="form-select"
+                style={{ maxWidth: "250px" }}
+                value={searchMentorName}
+                onChange={(e) => {
+                  setSearchMentorName(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="">All Mentors</option>
+                {mentors.map((mentor) => (
+                  <option key={mentor.user_id} value={mentor.user_id}>
+                    {mentor.email} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
+                  </option>
+                ))}
+              </select>
 
             </div>
           </div>
@@ -483,17 +507,25 @@ export default function Pods() {
                             )?.batch_name || "—"}
                           </td>
                           <td>
-                            {(() => {
-                              const mentor = mentors.find(
-                                (mentor) => mentor.user_id === pod.mentor_id
-                              );
-                              return mentor
-                                ? `${mentor.first_name || ""} ${
-                                    mentor.last_name || ""
-                                  }`.trim()
-                                : "—";
-                            })()}
-                          </td>
+  <OverlayTrigger
+    trigger="click"
+    rootClose={true}  // Explicitly enable outside-click closing
+    rootCloseEvent="mousedown"
+    placement="top"
+    overlay={
+      <Popover id={`mentors-popover-${pod.pod_id}`}>
+        <Popover.Header as="h3">Mentors ({pod.mentors?.length || 0})</Popover.Header>
+        <Popover.Body>
+          {getMentorPopover(pod.mentors)}
+        </Popover.Body>
+      </Popover>
+    }
+  >
+    <Badge bg="primary" className="cursor-pointer user-select-none">
+      {pod.mentors?.length || 0} Mentors
+    </Badge>
+  </OverlayTrigger>
+</td>
                           <td>
                             <span
                               className={`badge ${
@@ -638,26 +670,20 @@ export default function Pods() {
 
               <div className="mb-3">
                 <label className="form-label">
-                  Mentor <span style={{ color: "red" }}>*</span>
+                  Mentors <span style={{ color: "red" }}>*</span>
                 </label>
-                <select
-                  className="form-control"
-                  value={podForm.mentor_id}
-                  onChange={(e) =>
-                    setPodForm((prev) => ({
-                      ...prev,
-                      mentor_id: e.target.value,
-                    }))
-                  }
-                  required
-                >
-                  <option value="">-- Select Mentor --</option>
-                  {mentors.map((mentor) => (
-                    <option key={mentor.user_id} value={mentor.user_id}>
-                      {mentor.email} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
-                    </option>
-                  ))}
-                </select>
+                <Select
+                  isMulti
+                  options={mentorOptions}
+                  value={mentorOptions.filter(option => podForm.mentors.includes(option.value))}
+                  onChange={(selected) => setPodForm(prev => ({ ...prev, mentors: selected ? selected.map(s => s.value) : [] }))}
+                  placeholder="Select mentors (hold Ctrl/Cmd for multiple)..."
+                  isClearable
+                  classNamePrefix="react-select"
+                  styles={{
+                    control: (base) => ({ ...base, minHeight: '38px' }),
+                  }}
+                />
               </div>
 
               <div className="mb-3">
@@ -665,27 +691,27 @@ export default function Pods() {
                   Pod Name <span style={{ color: "red" }}>*</span>
                 </label>
                 <input
-                type="text"
-                onClick={alowCopyPaste}
-                onKeyDown={alowCopyPaste}
-                onPaste={alowCopyPaste}
-                className="form-control"
-                value={podForm.pod_name}
-                onChange={(e) => {
-                  if (e.target.value.length > 50) {
-                    setToastMessage("⚠️ Pod name cannot exceed 50 characters!");
-                    setToastBg("warning");
-                    setShowToast(true);
-                    return;
-                  }
-                  setPodForm((prev) => ({
-                    ...prev,
-                    pod_name: e.target.value,
-                  }));
-                  validatePodName(e); 
-                }}
-                required
-              />
+                  type="text"
+                  onClick={alowCopyPaste}
+                  onKeyDown={alowCopyPaste}
+                  onPaste={alowCopyPaste}
+                  className="form-control"
+                  value={podForm.pod_name}
+                  onChange={(e) => {
+                    if (e.target.value.length > 50) {
+                      setToastMessage("⚠️ Pod name cannot exceed 50 characters!");
+                      setToastBg("warning");
+                      setShowToast(true);
+                      return;
+                    }
+                    setPodForm((prev) => ({
+                      ...prev,
+                      pod_name: e.target.value,
+                    }));
+                    validatePodName(e); 
+                  }}
+                  required
+                />
               </div>
 
               <div className="d-flex gap-2">

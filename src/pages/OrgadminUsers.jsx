@@ -37,7 +37,7 @@ function OrgadminUsers() {
           setPodInfo({
             batchName: podData.batch?.batch_name || 'N/A',
             podName: podData.pod_name || 'N/A',
-            mentor: `${podData.mentor?.first_name || ''} ${podData.mentor?.last_name || ''}`,
+            mentors: podData.mentors || [],
             concepts: podData.batch?.concepts || []
           });
         } else {
@@ -102,11 +102,36 @@ function OrgadminUsers() {
                     </div>
 
                     <div className="d-flex align-items-center mb-3">
-                      <strong className="me-2">Mentor:</strong>
-                      <Badge bg="success" className="px-3 py-2 rounded-pill">
-                        {podInfo?.mentor}
-                      </Badge>
+                      <strong className="me-2">Mentor{podInfo?.mentors?.length > 1 ? 's' : ''}:</strong>
+                      <OverlayTrigger
+                        trigger="click"
+                        placement="bottom"
+                        overlay={
+                          <Popover id="popover-mentors">
+                            <Popover.Header as="h3">Mentor {podInfo?.mentors?.length || 0} Mentor{podInfo?.mentors?.length > 1 ? 's' : ''}
+                    </Popover.Header>
+                            <Popover.Body>
+                              <ul className="mb-0 ps-3">
+                                {podInfo?.mentors?.map((mentor, idx) => (
+                      <li key={idx}>{mentor.first_name} {mentor.last_name} ({mentor.email})</li>
+                    ))}
+                    
+                              </ul>
+                            </Popover.Body>
+                          </Popover>
+                        }
+                        rootClose
+                      >
+                        <Badge
+                          bg="success"
+                          className="px-3 py-2 rounded-pill"
+                          style={{ cursor: 'pointer' }}
+                        >
+                          {podInfo?.mentors?.length || 0} Mentor{podInfo?.mentors?.length > 1 ? 's' : ''}
+                        </Badge>
+                      </OverlayTrigger>
                     </div>
+                    
 
                     {podInfo?.concepts?.length > 0 ? (
                       <div className="d-flex align-items-center mb-2">
