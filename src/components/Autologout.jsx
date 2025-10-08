@@ -1,16 +1,32 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import { Toast, ToastContainer } from "react-bootstrap";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [showToast, setShowToast] = useState(false); // For logout toast
-  const [showWarningToast, setShowWarningToast] = useState(false); // For warning toast
   const [timeLeft, setTimeLeft] = useState(timeout / 1000); // Time in seconds
   const timerRef = useRef(null);
   const intervalRef = useRef(null);
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
 
   const logout = async () => {
     try {
@@ -32,7 +48,7 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
     } catch (error) {
       console.error("Logout API failed:", error.response?.data || error.message);
     } finally {
-      setShowToast(true);
+      showToastMsg("You have been logged out due to inactivity.", "warning");
       setTimeout(() => {
         sessionStorage.clear();
         localStorage.clear();
@@ -48,12 +64,11 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
     if (intervalRef.current) clearInterval(intervalRef.current);
     timerRef.current = setTimeout(logout, timeout);
     setTimeLeft(timeout / 1000);
-    setShowWarningToast(false); // Hide warning toast on reset
     intervalRef.current = setInterval(() => {
       setTimeLeft((prev) => {
        // console.log(`Time left: ${prev - 1} seconds`);
         if (prev <= 30) {
-          setShowWarningToast(true); // Show warning toast at 30 seconds
+          showToastMsg(`Your session will expire in ${prev} seconds. Stay active to continue.`, "warning");
         }
         if (prev <= 1) {
           clearInterval(intervalRef.current);
@@ -111,44 +126,6 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
           Session Timeout in: {formatTime(timeLeft)}
         </div>
       )}
-
-      {/* Toast for logout on protected routes */}
-      {showToast && (
-        <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
-          <Toast
-            bg="warning"
-            onClose={() => setShowToast(false)}
-            show={showToast}
-            delay={2000}
-            autohide
-          >
-            <Toast.Header>
-              <strong className="me-auto">Session Timeout</strong>
-            </Toast.Header>
-            <Toast.Body>You have been logged out due to inactivity.</Toast.Body>
-          </Toast>
-        </ToastContainer>
-      )}
-
-      {/* Warning toast for impending logout
-      {location.pathname !== "/login" && showWarningToast && (
-        <ToastContainer position="top-end" className="p-3" style={{ zIndex: 9999 }}>
-          <Toast
-            bg="warning"
-            onClose={() => setShowWarningToast(false)}
-            show={showWarningToast}
-            delay={5000} // Longer delay for user to react
-            autohide
-          >
-            <Toast.Header>
-              <strong className="me-auto">Session Timeout Warning</strong>
-            </Toast.Header>
-            <Toast.Body>
-              Your session will expire in {formatTime(timeLeft)}. Stay active to continue.
-            </Toast.Body>
-          </Toast>
-        </ToastContainer>
-      )} */}
     </>
   );
 };

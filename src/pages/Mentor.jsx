@@ -2,10 +2,12 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import Supersidebar from "../components/Supersidebar";
-import { Pagination, Toast, ToastContainer, Form } from "react-bootstrap";
+import { Pagination, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import "../styles/OrgList.css";
 import { useAuth } from "../components/AuthContext";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Mentor() {
   const [mentors, setMentors] = useState([]);
@@ -28,9 +30,6 @@ export default function Mentor() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const storedToken = sessionStorage.getItem("token");
@@ -44,6 +43,23 @@ export default function Mentor() {
     e.stopPropagation(); // Prevent global event handlers from blocking
   };
   const navigate = useNavigate();
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
 
   // ---- Password validation helper (same as Org Users page) ----
   const validatePassword = (password) => {
@@ -89,9 +105,7 @@ export default function Mentor() {
         setMentors(res.data.data);
       } else {
         setMentors([]);
-        setToastMessage("⚠️ Unexpected data format received from server.");
-        setToastBg("warning");
-        setShowToast(true);
+        showToastMsg("Unexpected data format received from server.", "warning");
       }
     } catch (err) {
       console.error("Error fetching mentors:", err);
@@ -103,41 +117,30 @@ export default function Mentor() {
 
         switch (errorType) {
           case 400:
-            setToastMessage(`⚠️ ${errorMessage}`);
-            setToastBg("warning");
+            showToastMsg(`${errorMessage}`, "warning");
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("warning");
+            showToastMsg("Unauthorized. Please log in.", "warning");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: You do not have permission.");
-            setToastBg("warning");
+            showToastMsg("Forbidden: You do not have permission.", "warning");
             break;
           case 404:
-            setToastMessage("⚠️ Mentor data not found.");
-            setToastBg("warning");
+            showToastMsg("Mentor data not found.", "warning");
             break;
           case 409:
-            setToastMessage("⚠️ Conflict: Data inconsistency.");
-            setToastBg("warning");
+            showToastMsg("Conflict: Data inconsistency.", "warning");
             break;
           case 500:
-            setToastMessage("⚠️ Server error. Please try again later.");
-            setToastBg("warning");
+            showToastMsg("Server error. Please try again later.", "warning");
             break;
           default:
-            setToastMessage(
-              "⚠️ Failed to fetch mentor. Please try again later."
+            showToastMsg(
+              "Failed to fetch mentor. Please try again later."
             );
-            setToastBg("warning");
         }
-
-        setShowToast(true);
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("danger");
-        setShowToast(true);
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
 
       setMentors([]);
@@ -162,9 +165,7 @@ export default function Mentor() {
       setNewMentor({ email: "", first_name: "", last_name: "", password: "" });
       fetchMentors();
 
-      setToastMessage("✅ Mentor created successfully!");
-      setToastBg("primary");
-      setShowToast(true);
+      showToastMsg("Mentor created successfully!", "primary");
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const errorMessage =
@@ -173,30 +174,23 @@ export default function Mentor() {
 
         switch (errorType) {
           case 400:
-            setToastMessage(`⚠️ ${errorMessage}`);
-            setToastBg("warning");
+            showToastMsg(`${errorMessage}`, "warning");
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("warning");
+            showToastMsg("Unauthorized. Please log in.", "warning");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: You do not have permission.");
-            setToastBg("warning");
+            showToastMsg("Forbidden: You do not have permission.", "warning");
             break;
           case 409:
-            setToastMessage("⚠️ Mentor with this email already exists.");
-            setToastBg("warning");
+            showToastMsg("Mentor with this email already exists.", "warning");
             break;
           case 500:
-            setToastMessage("⚠️ Server error. Please try later.");
-            setToastBg("warning");
+            showToastMsg("Server error. Please try later.", "warning");
             break;
           default:
-            setToastMessage("⚠️ Unexpected error occurred.");
-            setToastBg("warning");
+            showToastMsg("Unexpected error occurred.", "warning");
         }
-        setShowToast(true);
       } else {
         console.error("Non-Axios error:", err);
         alert("An unexpected error occurred.");
@@ -228,9 +222,7 @@ export default function Mentor() {
       // Success case
       setShowUpdateModal(false);
       fetchMentors();
-      setToastMessage("✅ Mentor updated successfully!");
-      setToastBg("primary");
-      setShowToast(true);
+      showToastMsg("Mentor updated successfully!", "primary");
     } catch (err) {
       if (axios.isAxiosError(err)) {
         const errorMessage =
@@ -239,34 +231,26 @@ export default function Mentor() {
 
         switch (errorType) {
           case 400:
-            setToastMessage(`⚠️ ${errorMessage}`);
-            setToastBg("warning");
+            showToastMsg(`${errorMessage}`, "warning");
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("warning");
+            showToastMsg("Unauthorized. Please log in.", "warning");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: You do not have permission.");
-            setToastBg("warning");
+            showToastMsg("Forbidden: You do not have permission.", "warning");
             break;
           case 404:
-            setToastMessage("⚠️ Mentor not found");
-            setToastBg("warning");
+            showToastMsg("Mentor not found", "warning");
             break;
           case 409:
-            setToastMessage("⚠️ Email already in use by another user");
-            setToastBg("warning");
+            showToastMsg("Email already in use by another user", "warning");
             break;
           case 500:
-            setToastMessage("⚠️ Server error. Please try later.");
-            setToastBg("warning");
+            showToastMsg("Server error. Please try later.", "warning");
             break;
           default:
-            setToastMessage("⚠️ Unexpected error occurred");
-            setToastBg("warning");
+            showToastMsg("Unexpected error occurred", "warning");
         }
-        setShowToast(true);
       } else {
         console.error("Non-Axios error:", err);
         alert("An unexpected error occurred.");
@@ -489,9 +473,7 @@ export default function Mentor() {
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value.length > 30) {
-                      setToastMessage("⚠️ First name cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("First name cannot exceed 30 characters!", "warning");
                       return;
                     }
                     const isValid =
@@ -521,9 +503,7 @@ export default function Mentor() {
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value.length > 30) {
-                      setToastMessage("⚠️ Last name cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("Last name cannot exceed 30 characters!", "warning");
                       return;
                     }
                     const isValid =
@@ -545,15 +525,15 @@ export default function Mentor() {
                 </label>
                 <input
                   type="password"
-
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newMentor.password}
                   required
                   onChange={(e) => {
                     if (e.target.value.length > 30) {
-                      setToastMessage("⚠️ Password cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("Password cannot exceed 30 characters!", "warning");
                       return;
                     }
                     const value = e.target.value;
@@ -612,9 +592,7 @@ export default function Mentor() {
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value.length > 30) {
-                      setToastMessage("⚠️ Username cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("Username cannot exceed 30 characters!", "warning");
                       return;
                     }
                     const isValid =
@@ -642,9 +620,7 @@ export default function Mentor() {
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value.length > 30) {
-                      setToastMessage("⚠️ First name cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("First name cannot exceed 30 characters!", "warning");
                       return;
                     }
                     const isValid =
@@ -674,9 +650,7 @@ export default function Mentor() {
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value.length > 30) {
-                      setToastMessage("⚠️ Last name cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("Last name cannot exceed 30 characters!", "warning");
                       return;
                     }
                     const isValid =
@@ -696,14 +670,15 @@ export default function Mentor() {
                 <label className="form-label">Password</label>
                 <input
                   type="password"
+                  onClick={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editMentor.password}
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value.length > 30) {
-                      setToastMessage("⚠️ Password cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("Password cannot exceed 30 characters!", "warning");
                       return;
                     }
                     setEditMentor({ ...editMentor, password: value });
@@ -732,20 +707,6 @@ export default function Mentor() {
           </div>
         </div>
       )}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

@@ -4,8 +4,10 @@ import "../styles/superadmin.css";
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaArrowLeft, FaEdit } from 'react-icons/fa';
 import { Modal, Button, Form, Pagination } from "react-bootstrap";
-import { Toast, ToastContainer } from "react-bootstrap";
 import axios from 'axios';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 const BASE_URL = process.env.REACT_APP_API_LINK;
 const API_BASE = `${BASE_URL}/llm`;
 const API_BASE_ADMIN = `${BASE_URL}`;
@@ -23,14 +25,27 @@ function Assignmodels() {
   const [selectedBatch, setSelectedBatch] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
-  // Toast states
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
-  const [showToast, setShowToast] = useState(false);
   // Pagination and search states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
 
   // Helper function to handle API errors with codes
   const handleApiError = (err, context = '') => {
@@ -90,13 +105,6 @@ function Assignmodels() {
     return errorMsg;
   };
 
-  // Show toast helper
-  const showToastMsg = (message, bg = "primary") => {
-    setToastMessage(message);
-    setToastBg(bg);
-    setShowToast(true);
-  };
-
   const handleShow = () => {
     setShowModal(true);
     setIsEditMode(false);
@@ -127,7 +135,7 @@ function Assignmodels() {
       setModels(response.data.data || []);
     } catch (err) {
       const errorMsg = handleApiError(err, 'fetching models');
-      showToastMsg(`⚠️ ${errorMsg}`, 'warning');
+      showToastMsg(errorMsg, 'warning');
       console.error('Error fetching models:', err);
     }
   };
@@ -138,7 +146,7 @@ function Assignmodels() {
       setAssignments(response.data.data || []);
     } catch (err) {
       const errorMsg = handleApiError(err, 'fetching assignments');
-      showToastMsg(`⚠️ ${errorMsg}`, 'warning');
+      showToastMsg(errorMsg, 'warning');
       console.error('Error fetching assignments:', err);
     }
   };
@@ -149,7 +157,7 @@ function Assignmodels() {
       setOrganizations(response.data.data || []);
     } catch (err) {
       const errorMsg = handleApiError(err, 'fetching organizations');
-      showToastMsg(`⚠️ ${errorMsg}`, 'warning');
+      showToastMsg(errorMsg, 'warning');
       console.error('Error fetching organizations:', err);
     }
   };
@@ -160,7 +168,7 @@ function Assignmodels() {
       setBatches(response.data.data || []);
     } catch (err) {
       const errorMsg = handleApiError(err, 'fetching batches');
-      showToastMsg(`⚠️ ${errorMsg}`, 'warning');
+      showToastMsg(errorMsg, 'warning');
       console.error('Error fetching batches:', err);
     }
   };
@@ -191,7 +199,7 @@ function Assignmodels() {
 
   const handleSave = async () => {
     if (!selectedModel) {
-      showToastMsg('⚠️ Please select a model.', 'warning');
+      showToastMsg('Please select a model.', 'warning');
       return;
     }
 
@@ -202,17 +210,17 @@ function Assignmodels() {
 
     if (selectedLevel === 'organization') {
       if (!selectedOrg) {
-        showToastMsg('⚠️ Please select an organization.', 'warning');
+        showToastMsg('Please select an organization.', 'warning');
         return;
       }
       payload.organization_id = parseInt(selectedOrg);
     } else if (selectedLevel === 'batch') {
       if (!selectedOrg) {
-        showToastMsg('⚠️ Please select an organization.', 'warning');
+        showToastMsg('Please select an organization.', 'warning');
         return;
       }
       if (!selectedBatch) {
-        showToastMsg('⚠️ Please select a batch.', 'warning');
+        showToastMsg('Please select a batch.', 'warning');
         return;
       }
       payload.organization_id = parseInt(selectedOrg);
@@ -223,20 +231,20 @@ function Assignmodels() {
       let response;
       if (isEditMode && selectedAssignmentId) {
         response = await axios.put(`${API_BASE}/assignment/${selectedAssignmentId}`, payload);
-        showToastMsg('✅ Assignment updated successfully!', 'primary');
+        showToastMsg('Assignment updated successfully!', 'primary');
       } else {
         response = await axios.post(`${API_BASE}/assignment`, payload);
-        showToastMsg('✅ Model assigned successfully!', 'primary');
+        showToastMsg('Model assigned successfully!', 'primary');
       }
       if (response.data.success) {
         handleClose();
         fetchAssignments();
       } else {
-        showToastMsg(`⚠️ ${response.data.message || 'Failed to save assignment.'}`, 'warning');
+        showToastMsg(response.data.message || 'Failed to save assignment.', 'warning');
       }
     } catch (err) {
       const errorMsg = handleApiError(err, 'saving assignment');
-      showToastMsg(`⚠️ ${errorMsg}`, 'warning');
+      showToastMsg(errorMsg, 'warning');
     }
   };
 
@@ -471,21 +479,6 @@ function Assignmodels() {
           </Button>
         </Modal.Footer>
       </Modal>
-
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

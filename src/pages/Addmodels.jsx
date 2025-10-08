@@ -3,10 +3,8 @@ import Supersidebar from "../components/Supersidebar"
 import { FaArrowLeft, FaPlus } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import axios from "axios"
-import {
-  Toast,
-  ToastContainer,
-} from "react-bootstrap"
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function AddModels() {
   const navigate = useNavigate();
@@ -20,11 +18,24 @@ function AddModels() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
-  const [showToast, setShowToast] = useState(false);
-
   const BASE_URL = process.env.REACT_APP_API_LINK;
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToast = (message, bg) => {
+    toast(message, { type: getToastType(bg) });
+  };
 
   const fetchModels = async () => {
     setLoading(true);
@@ -36,9 +47,7 @@ function AddModels() {
       } else {
         setError("Failed to fetch models");
         setModels([]);
-        setToastMessage("⚠️ Unexpected data format received from server.");
-        setToastBg("warning");
-        setShowToast(true);
+        showToast("Unexpected data format received from server.", "warning");
       }
     } catch (err) {
       console.error("Error fetching models:", err);
@@ -48,33 +57,30 @@ function AddModels() {
         let message = "";
         switch (errorType) {
           case 400:
-            message = `⚠️ Bad request: ${errorMessage}`;
+            message = `Bad request: ${errorMessage}`;
             break;
           case 401:
-            message = "⚠️ Unauthorized. Please log in.";
+            message = "Unauthorized. Please log in.";
             break;
           case 403:
-            message = "⚠️ Forbidden: You do not have permission.";
+            message = "Forbidden: You do not have permission.";
             break;
           case 404:
-            message = "⚠️ Models not found.";
+            message = "Models not found.";
             break;
           case 409:
-            message = "⚠️ Conflict: Data inconsistency.";
+            message = "Conflict: Data inconsistency.";
             break;
           case 500:
-            message = "⚠️ Server error. Please try again later.";
+            message = "Server error. Please try again later.";
             break;
           default:
-            message = `⚠️ Failed to fetch models. (${errorType || "Unknown error"})`;
+            message = `Failed to fetch models. (${errorType || "Unknown error"})`;
         }
-        setToastMessage(message);
-        setToastBg("warning");
+        showToast(message, "warning");
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("danger");
+        showToast("Network error. Please check your connection.", "danger");
       }
-      setShowToast(true);
       setModels([]);
     } finally {
       setLoading(false);
@@ -96,12 +102,10 @@ function AddModels() {
       });
 
       if (response.data.success) {
-        setToastMessage(`✅ Model status updated to ${!currentStatus ? 'Active' : 'Inactive'}`);
-        setToastBg("primary");
+        showToast(`Model status updated to ${!currentStatus ? 'Active' : 'Inactive'}`, "primary");
         fetchModels(); // Refresh the list
       } else {
-        setToastMessage("❌ Error: " + response.data.message);
-        setToastBg("warning");
+        showToast("Error: " + response.data.message, "warning");
       }
     } catch (error) {
       console.error("Error updating model status:", error);
@@ -110,40 +114,34 @@ function AddModels() {
         let message = "";
         switch (error.response.status) {
           case 400:
-            message = `❌ Bad request: ${errorMessage}`;
+            message = `Bad request: ${errorMessage}`;
             break;
           case 401:
-            message = "❌ Unauthorized. Please log in.";
+            message = "Unauthorized. Please log in.";
             break;
           case 403:
-            message = "❌ Forbidden: You do not have permission.";
+            message = "Forbidden: You do not have permission.";
             break;
           case 404:
-            message = "❌ Model not found.";
+            message = "Model not found.";
             break;
           case 500:
-            message = "❌ Server error. Please try again later.";
+            message = "Server error. Please try again later.";
             break;
           default:
-            message = `❌ Unexpected error: ${errorMessage}`;
+            message = `Unexpected error: ${errorMessage}`;
         }
-        setToastMessage(message);
-        setToastBg("warning");
+        showToast(message, "warning");
       } else {
-        setToastMessage("❌ Network error. Please check your connection.");
-        setToastBg("danger");
+        showToast("Network error. Please check your connection.", "danger");
       }
-    } finally {
-      setShowToast(true);
     }
   };
 
   // Save new model
   const handleSave = async () => {
     if (!modelName.trim()) {
-      setToastMessage("⚠️ Model name is required.");
-      setToastBg("warning");
-      setShowToast(true);
+      showToast("Model name is required.", "warning");
       return;
     }
     try {
@@ -154,8 +152,7 @@ function AddModels() {
       });
 
       if (response.data.success) {
-        setToastMessage("✅ " + response.data.message);
-        setToastBg("primary");
+        showToast(response.data.message, "primary");
         console.log("Saved:", response.data);
         fetchModels();
         setModelName("");
@@ -163,8 +160,7 @@ function AddModels() {
         setIsActive(true);
         setShowForm(false);
       } else {
-        setToastMessage("❌ Error: " + response.data.message);
-        setToastBg("warning");
+        showToast("Error: " + response.data.message, "warning");
       }
     } catch (error) {
       console.error("Error saving model:", error);
@@ -173,31 +169,27 @@ function AddModels() {
         let message = "";
         switch (error.response.status) {
           case 400:
-            message = "❌ Bad request. Please check your input.";
+            message = "Bad request. Please check your input.";
             break;
           case 401:
-            message = "❌ Unauthorized. Please log in.";
+            message = "Unauthorized. Please log in.";
             break;
           case 403:
-            message = "❌ Forbidden: You do not have permission to perform this action.";
+            message = "Forbidden: You do not have permission to perform this action.";
             break;
           case 409:
-            message = "❌ Model name already exists!";
+            message = "Model name already exists!";
             break;
           case 500:
-            message = "❌ Server error. Please try again later.";
+            message = "Server error. Please try again later.";
             break;
           default:
-            message = `❌ Unexpected error: ${errorMessage}`;
+            message = `Unexpected error: ${errorMessage}`;
         }
-        setToastMessage(message);
-        setToastBg("warning");
+        showToast(message, "warning");
       } else {
-        setToastMessage("❌ Network error. Please check your connection.");
-        setToastBg("danger");
+        showToast("Network error. Please check your connection.", "danger");
       }
-    } finally {
-      setShowToast(true);
     }
   };
 
@@ -347,21 +339,6 @@ function AddModels() {
           </div>
         </>
       )}
-
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

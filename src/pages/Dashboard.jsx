@@ -25,7 +25,7 @@ import axios from "axios";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
 import Tesseract from 'tesseract.js';
-import { ToastContainer, toast } from 'react-toastify';
+import {toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
@@ -1150,17 +1150,7 @@ function Dashboard() {
   return (
     <div className="learning-dashboard">
       <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} />
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      
       {showRestartDialog && (
         <div className="restart-dialog-overlay">
           <div className="restart-dialog">

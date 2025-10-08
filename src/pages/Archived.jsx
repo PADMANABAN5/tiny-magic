@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Button, Table, Spinner, Alert, Modal, Pagination, Toast,ToastContainer } from 'react-bootstrap';
+import { Button, Table, Spinner, Alert, Modal, Pagination } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css'; 
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+
 function Archived() {
   const [archivedPrompts, setArchivedPrompts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,9 +16,23 @@ function Archived() {
   const [currentPage, setCurrentPage] = useState(1);
   const promptsPerPage = 10;
   const navigate = useNavigate();
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastBg, setToastBg] = useState('primary'); // 'success', 'warning', 'danger', etc.
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
   
   const storedToken = sessionStorage.getItem("token");
   const config = {
@@ -36,37 +53,33 @@ function Archived() {
 
       if (axios.isAxiosError(err) && err.response) {
         const status = err.response.status;
-        let errorMsg = '❌ Failed to load archived prompts.';
+        let errorMsg = 'Failed to load archived prompts.';
 
         switch (status) {
           case 400:
-            errorMsg = '⚠️ Bad request. Something is wrong with the request.';
+            errorMsg = 'Bad request. Something is wrong with the request.';
             break;
           case 401:
-            errorMsg = '⚠️ Unauthorized. Please log in.';
+            errorMsg = 'Unauthorized. Please log in.';
             break;
           case 403:
-            errorMsg = '⚠️ Forbidden. Access denied.';
+            errorMsg = 'Forbidden. Access denied.';
             break;
           case 404:
-            errorMsg = '⚠️ Archived prompts not found.';
+            errorMsg = 'Archived prompts not found.';
             break;
           case 500:
-            errorMsg = '⚠️ Server error while fetching prompts.';
+            errorMsg = 'Server error while fetching prompts.';
             break;
           default:
-            errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+            errorMsg = `Error ${status}: ${err.response.data?.message || err.message}`;
         }
 
         setError(errorMsg);
-        setToastMessage(errorMsg);
-        setToastBg('warning');
-        setShowToast(true);
+        showToastMsg(errorMsg, 'warning');
       } else {
-        setError('❌ Network error. Please check your connection.');
-        setToastMessage('❌ Network error. Please check your connection.');
-        setToastBg('danger');
-        setShowToast(true);
+        setError('Network error. Please check your connection.');
+        showToastMsg('Network error. Please check your connection.', 'danger');
       }
     })
     .finally(() => setLoading(false));
@@ -221,20 +234,6 @@ function Archived() {
           </Modal>
         </div>
       </div>
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

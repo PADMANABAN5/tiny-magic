@@ -3,8 +3,6 @@ import axios from "axios";
 import Supersidebar from "../components/Supersidebar";
 import {
   Pagination,
-  Toast,
-  ToastContainer,
   Accordion,
   Button,
 } from "react-bootstrap";
@@ -12,6 +10,8 @@ import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit, FaHistory } from "react-icons/fa";
 import { useAuth } from '../components/AuthContext.jsx';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Concepts() {
   const navigate = useNavigate();
@@ -22,9 +22,6 @@ export default function Concepts() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedConceptId, setSelectedConceptId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
-  const [showToast, setShowToast] = useState(false);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const storedToken = sessionStorage.getItem("token");
@@ -86,6 +83,23 @@ export default function Concepts() {
     },
   };
 
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
+
   // Fetch concepts on component mount
   useEffect(() => {
     fetchConcepts();
@@ -112,9 +126,7 @@ export default function Concepts() {
         setConcepts(res.data.data);
       } else {
         setConcepts([]);
-        setToastMessage("⚠️ Unexpected data format received from server.");
-        setToastBg("warning");
-        setShowToast(true);
+        showToastMsg("Unexpected data format received from server.", "warning");
       }
     } catch (err) {
       console.error("Error fetching concepts:", err);
@@ -126,34 +138,31 @@ export default function Concepts() {
 
         switch (errorType) {
           case 400:
-            setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+            showToastMsg(`Bad request: ${errorMessage}`);
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
+            showToastMsg("Unauthorized. Please log in.");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: You do not have permission.");
+            showToastMsg("Forbidden: You do not have permission.");
             break;
           case 404:
-            setToastMessage("⚠️ Concepts not found.");
+            showToastMsg("Concepts not found.");
             break;
           case 409:
-            setToastMessage("⚠️ Conflict: Data inconsistency.");
+            showToastMsg("Conflict: Data inconsistency.");
             break;
           case 500:
-            setToastMessage("⚠️ Server error. Please try again later.");
+            showToastMsg("Server error. Please try again later.");
             break;
           default:
-            setToastMessage(
-              `⚠️ Failed to fetch concepts. (${errorType || "Unknown error"})`
+            showToastMsg(
+              `Failed to fetch concepts. (${errorType || "Unknown error"})`
             );
         }
-        setToastBg("warning");
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("danger");
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
-      setShowToast(true);
       setConcepts([]);
     } finally {
       setLoading(false);
@@ -229,16 +238,12 @@ const validateCleanText = (value, key) => {
 
     // Client-side validation
     if (!conceptForm.concept_name || !conceptForm.concept_content) {
-      setToastBg("warning");
-      setToastMessage("⚠️ Concept Name and Content are required.");
-      setShowToast(true);
+      showToastMsg("Concept Name and Content are required.", "warning");
       setIsLoading(false);
       return;
     }
     if (!validateCleanText(conceptForm.concept_name, "concept_name")) {
-  setToastBg("warning");
-  setToastMessage("⚠️ Please remove invalid characters (only letters, numbers, spaces, and . , / * ' \" - \\ are allowed).");
-  setShowToast(true);
+  showToastMsg("Please remove invalid characters (only letters, numbers, spaces, and . , / * ' \" - \\ are allowed).", "warning");
   setIsLoading(false);
   return;
 }
@@ -258,9 +263,7 @@ const validateCleanText = (value, key) => {
           (key) => conceptForm[key] === originalConcept[key]
         );
         if (isFormUnchanged) {
-          setToastBg("warning");
-          setToastMessage("⚠️ No changes detected.");
-          setShowToast(true);
+          showToastMsg("No changes detected.", "warning");
           setIsLoading(false);
           return;
         }
@@ -270,17 +273,14 @@ const validateCleanText = (value, key) => {
           sanitizedForm,
           config
         );
-        setToastBg("primary");
-        setToastMessage("✅ Concept updated successfully!");
+        showToastMsg("Concept updated successfully!", "primary");
       } else {
         await axios.post(`${API_BASE_URL}/concepts`, sanitizedForm, config);
-        setToastBg("primary");
-        setToastMessage("✅ Concept created successfully!");
+        showToastMsg("Concept created successfully!", "primary");
       }
 
       setShowModal(false);
       fetchConcepts();
-      setShowToast(true);
     } catch (err) {
       console.error("Error saving concept:", err);
 
@@ -288,38 +288,35 @@ const validateCleanText = (value, key) => {
         const errorMessage = err.response.data?.message || "An error occurred";
         const validationErrors = err.response.data?.errors;
         if (validationErrors) {
-          setToastMessage(
-            `⚠️ ${errorMessage}: ${Object.values(validationErrors).join(", ")}`
-          );
+          showToastMsg(
+            `${errorMessage}: ${Object.values(validationErrors).join(", ")}`
+          , "warning");
         } else {
           switch (err.response.status) {
             case 400:
-              setToastMessage("⚠️ Bad request. Please check your input.");
+              showToastMsg("Bad request. Please check your input.");
               break;
             case 401:
-              setToastMessage("⚠️ Unauthorized. Please log in.");
+              showToastMsg("Unauthorized. Please log in.");
               break;
             case 403:
-              setToastMessage(
-                "⚠️ Forbidden: You do not have permission to perform this action."
+              showToastMsg(
+                "Forbidden: You do not have permission to perform this action."
               );
               break;
             case 409:
-              setToastMessage("⚠️ Concept name already exists!");
+              showToastMsg("Concept name already exists!");
               break;
             case 500:
-              setToastMessage("⚠️ Server error. Please try again later.");
+              showToastMsg("Server error. Please try again later.");
               break;
             default:
-              setToastMessage(`⚠️ Unexpected error: ${errorMessage}`);
+              showToastMsg(`Unexpected error: ${errorMessage}`);
           }
         }
-        setToastBg("warning");
       } else {
-        setToastBg("danger");
-        setToastMessage("⚠️ Network error. Please check your connection.");
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
-      setShowToast(true);
     } finally {
       setIsLoading(false);
     }
@@ -636,7 +633,7 @@ const validateCleanText = (value, key) => {
     }));
     // ✅ apply only to concept_name & concept_content
    if (key !== "download_link") {
-      validateCleanText(e, key);
+      validateCleanText(e.target.value, key);
     }
   }}
    
@@ -671,21 +668,6 @@ const validateCleanText = (value, key) => {
           </div>
         </div>
       )}
-
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }
