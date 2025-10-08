@@ -1,4 +1,4 @@
-import React , {useState} from 'react';
+import React , {useState, useEffect} from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { toast } from 'react-toastify';
@@ -67,6 +67,8 @@ function getRedirectPath() {
 function App() {
   const [isProtectionEnabled, setIsProtectionEnabled] = useState(true);
 
+  useEffect(() => {
+    if (!isProtectionEnabled) return;
   // Prevent right-click (context menu)
   const handleContextMenu = (e) => {
     if (isProtectionEnabled) {
@@ -101,18 +103,25 @@ function App() {
       toast.error('Keyboard shortcuts for copying, pasting, or selecting are disabled.');
     }
   };
+    // ✅ Attach globally
+    document.addEventListener("contextmenu", handleContextMenu);
+    document.addEventListener("copy", handleCopyCutPaste);
+    document.addEventListener("cut", handleCopyCutPaste);
+    document.addEventListener("paste", handleCopyCutPaste);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+      document.removeEventListener("copy", handleCopyCutPaste);
+      document.removeEventListener("cut", handleCopyCutPaste);
+      document.removeEventListener("paste", handleCopyCutPaste);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isProtectionEnabled]);
   return (
     <>
      <AutoLogout timeout={10 * 60 * 1000} />
-     <div
-          onContextMenu={handleContextMenu}
-          onCopy={handleCopyCutPaste}
-          onCut={handleCopyCutPaste}
-          onPaste={handleCopyCutPaste}
-          // onSelectStart={handleSelectStart}
-          onKeyDown={handleKeyDown}
-          style={{ userSelect: isProtectionEnabled ? 'none' : 'auto', minHeight: '100vh' }}
-        >
+     
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
@@ -230,7 +239,7 @@ function App() {
         draggable={false}
         pauseOnHover={false}
       />
-    </div>
+   
     </>
   );
 }
