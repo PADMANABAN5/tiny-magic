@@ -4,12 +4,14 @@ import axios from "axios";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
+const AutoLogout = ({ timeout = 1 * 60 * 1000 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const [timeLeft, setTimeLeft] = useState(timeout / 1000); // Time in seconds
+  const [displayTimeLeft, setDisplayTimeLeft] = useState(timeout / 1000); // For UI display (throttled updates)
   const timerRef = useRef(null);
   const intervalRef = useRef(null);
+  const warningShownRef = useRef(false); // Track if warning toast has been shown
+  const currentTimeRef = useRef(timeout / 1000); // Ref for exact countdown (no re-renders)
 
   const getToastType = (bg) => {
     switch (bg) {
@@ -63,19 +65,32 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (intervalRef.current) clearInterval(intervalRef.current);
     timerRef.current = setTimeout(logout, timeout);
-    setTimeLeft(timeout / 1000);
+    currentTimeRef.current = timeout / 1000;
+    setDisplayTimeLeft(timeout / 1000);
+    warningShownRef.current = false; // Reset warning flag on activity
     intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-       // console.log(`Time left: ${prev - 1} seconds`);
-        if (prev <= 30) {
-          showToastMsg(`Your session will expire in ${prev} seconds. Stay active to continue.`, "warning");
-        }
-        if (prev <= 1) {
-          clearInterval(intervalRef.current);
-          return 0;
-        }
-        return prev - 1;
-      });
+      currentTimeRef.current -= 1;
+      const prevDisplay = displayTimeLeft;
+      const newDisplay = currentTimeRef.current;
+
+      // Throttle: Update display only when it changes by 10+ seconds, every minute, or when <=60
+      if (
+        newDisplay <= 60 ||
+        Math.abs(newDisplay - prevDisplay) >= 10 ||
+        newDisplay % 60 === 0
+      ) {
+        setDisplayTimeLeft(newDisplay);
+      }
+
+      if (newDisplay <= 30 && !warningShownRef.current) {
+        showToastMsg(`Your session will expire in ${newDisplay} seconds. Stay active to continue.`, "warning");
+        warningShownRef.current = true; // Prevent multiple toasts
+      }
+
+      if (newDisplay <= 0) {
+        clearInterval(intervalRef.current);
+        logout();
+      }
     }, 1000);
   };
 
@@ -111,7 +126,7 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
   return (
     <>
       {/* Countdown timer on protected routes */}
-      {location.pathname !== "/login" && timeLeft <= 60 && (
+      {location.pathname !== "/login" && displayTimeLeft <= 60 && (
         <div
           style={{
             position: "fixed",
@@ -123,7 +138,7 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
             zIndex: 1000,
           }}
         >
-          Session Timeout in: {formatTime(timeLeft)}
+          Session Timeout in: {formatTime(displayTimeLeft)}
         </div>
       )}
     </>
