@@ -3053,10 +3053,16 @@ html, body {
     margin-top: 0 !important;
     z-index: 1;
   }
-  .stage-content, .stage-header {
+  .stage-header {
     align-items: center;
     justify-content: center;
     text-align: center;
+  }
+  .stage-content{
+    align-items: start !important;
+  }
+  .stage-card{
+    align-items: center;
   }
   .section-header {
   display: flex;
