@@ -17,7 +17,8 @@ import {
   FiTrendingUp,
   FiStopCircle,
   FiRefreshCw,
-  FiAlertCircle
+  FiAlertCircle,
+  FiChevronUp
 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import { FaDownload } from 'react-icons/fa';
@@ -56,7 +57,7 @@ function Dashboard() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
   const voiceRecorderRef = useRef(null);
-  
+
   const startListening = () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -65,7 +66,7 @@ function Dashboard() {
       toast.error("Speech recognition not supported in this browser.");
       return;
     }
-    
+
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false; // only final results
@@ -119,6 +120,20 @@ function Dashboard() {
   const isInitializingRef = useRef(false);
   const previousStage = currentStage;
 
+  //Learning progress collapsable in mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showLearningProgress, setShowLearningProgress] = useState(window.innerWidth >= 768);
+
+  // Responsive handler
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setShowLearningProgress(window.innerWidth >= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
@@ -152,9 +167,9 @@ function Dashboard() {
   });
 
   // Initialize PDF downloader
-  const { handleDownloadPDF } = PDFDownloader({ 
-    chatHistory, 
-    selectedConcept 
+  const { handleDownloadPDF } = PDFDownloader({
+    chatHistory,
+    selectedConcept
   });
 
   useEffect(() => {
@@ -387,12 +402,12 @@ function Dashboard() {
 
   const handleEndSession = async () => {
     setShowEndSessionDialog(false);
-     if (voiceRecorderRef.current) {
-    await voiceRecorderRef.current.stopRecording();
-  }
+    if (voiceRecorderRef.current) {
+      await voiceRecorderRef.current.stopRecording();
+    }
     setIsLoading(true);
     setIsProcessingAssessment(true);
-  
+
     try {
       const organizationId = sessionStorage.getItem("organizationId");
       const batchId = sessionStorage.getItem("batchId");
@@ -504,7 +519,7 @@ function Dashboard() {
   const handleSendClick = async () => {
     if (voiceRecorderRef.current) {
       await voiceRecorderRef.current.stopRecording(); // 🔴 auto-stop recording
-  }
+    }
     if (!prompt.trim() || !selectedConcept || isChatEnded) {
       if (isChatEnded) {
         toast.warn("This conversation has ended. Please restart to begin a new session.");
@@ -521,18 +536,18 @@ function Dashboard() {
       setCurrentStage(1);
       setTimeout(() => setIsTransitioning(false), 800);
     }
-    
-    
-    setIsLoading(true);
-     const userPrompt = prompt.trim();
-  setPrompt("");
 
-  // Step 1: Add only user message first
-  setChatHistory((prev) => {
-    const updated = [...prev, { user: userPrompt, system: "" }];
-    sessionStorage.setItem("chatHistory", JSON.stringify(updated));
-    return updated;
-  });
+
+    setIsLoading(true);
+    const userPrompt = prompt.trim();
+    setPrompt("");
+
+    // Step 1: Add only user message first
+    setChatHistory((prev) => {
+      const updated = [...prev, { user: userPrompt, system: "" }];
+      sessionStorage.setItem("chatHistory", JSON.stringify(updated));
+      return updated;
+    });
     console.log("🚀 handleSendClick: Setting isLoading to true");
 
     try {
@@ -553,7 +568,7 @@ function Dashboard() {
       });
 
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-      
+
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
       let newEndRequested = initialResponse.endRequested || false;
@@ -565,12 +580,12 @@ function Dashboard() {
         setCurrentChatStatus('inprogress');
       }
 
-       setChatHistory((prev) => {
-      const updated = [...prev];
-      updated[updated.length - 1].system = initialResponse.apiResponseText;
-      sessionStorage.setItem("chatHistory", JSON.stringify(updated));
-      return updated;
-    });
+      setChatHistory((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1].system = initialResponse.apiResponseText;
+        sessionStorage.setItem("chatHistory", JSON.stringify(updated));
+        return updated;
+      });
 
 
       setSessionHistory((prev) => [
@@ -616,7 +631,7 @@ function Dashboard() {
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
         console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
-        
+
         setCurrentChatStatus('completed');
 
         if (newInteractionCompleted) {
@@ -1229,8 +1244,8 @@ function Dashboard() {
         </div>
       )}
       {(currentStage > 1 && currentStage <= 6) && (
-      <StageCompletionToast stage={currentStage - 1} />
-    )}
+        <StageCompletionToast stage={currentStage - 1} />
+      )}
       <div className="dashboard-layout">
         <div className="control-panel">
           <div className="control-section">
@@ -1298,10 +1313,20 @@ function Dashboard() {
             </div>
           </div>
           <div className="control-section">
-            <div className="section-header">
+            <div className="section-header" onClick={isMobile ? () => setShowLearningProgress(p => !p) : undefined}
+              style={{
+                cursor: isMobile ? 'pointer' : 'default',
+                userSelect: 'none'
+              }}>
               <FiTrendingUp className="section-icon" />
               <h3>Learning Progress</h3>
+              {isMobile && (
+                <span>
+                  {showLearningProgress ? <FiChevronDown /> : <FiChevronUp />}
+                </span>
+              )}
             </div>
+            {(showLearningProgress || !isMobile) && (
             <div className="stage-cards">
               <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
                 <div className="stage-icon not-started">
@@ -1360,6 +1385,7 @@ function Dashboard() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
         <div className="chat-panel">
@@ -1437,14 +1463,14 @@ function Dashboard() {
                           <FiMessageCircle />
                         </div>
                         <div className="message-content">
-                        <div className="message-header">
-                          <span className="message-author">AI Mentor</span>
-                        </div>
-                        <div className="message-text">
-                          <AssessmentDisplay content={item.system} />
+                          <div className="message-header">
+                            <span className="message-author">AI Mentor</span>
+                          </div>
+                          <div className="message-text">
+                            <AssessmentDisplay content={item.system} />
+                          </div>
                         </div>
                       </div>
-                    </div>
                     )}
                   </div>
                 ))
@@ -1491,10 +1517,10 @@ function Dashboard() {
                 </div>
               )}
               <div className="chat-input-wrapper">
-                 <div className="tooltip-container" data-tooltip={
-                  currentChatStatus === 'not_started' ? "Start a conversation first" : 
-                  isChatEnded ? "Session already ended" : 
-                  "End Session"
+                <div className="tooltip-container" data-tooltip={
+                  currentChatStatus === 'not_started' ? "Start a conversation first" :
+                    isChatEnded ? "Session already ended" :
+                      "End Session"
                 }>
                   <button
                     className="end-session-btn"
@@ -1504,7 +1530,7 @@ function Dashboard() {
                   >
                     <FiStopCircle />
                   </button>
-                </div> 
+                </div>
                 <textarea
                   className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
                   placeholder={
@@ -1524,13 +1550,13 @@ function Dashboard() {
                   disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
                   rows="1"
                 />
-                  <VoiceRecorder
-  ref={voiceRecorderRef} 
-  onTranscription={(text) => {
-    setPrompt((prev) => (prev ? prev + " " : "") + text);
-  }}
-  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
-/>
+                <VoiceRecorder
+                  ref={voiceRecorderRef}
+                  onTranscription={(text) => {
+                    setPrompt((prev) => (prev ? prev + " " : "") + text);
+                  }}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
+                />
                 <button
                   className="send-button"
                   onClick={handleSendClick}
