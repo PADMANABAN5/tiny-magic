@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
+import { toast } from 'react-toastify';
 import "../styles/ConversationHistory.css";
 import axios from "axios";
 import PDFDownloader from "../components/PDFDownloader.jsx";

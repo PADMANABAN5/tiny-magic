@@ -4,7 +4,7 @@ import axios from "axios";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const AutoLogout = ({ timeout = 1 * 60 * 1000 }) => {
+const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const [displayTimeLeft, setDisplayTimeLeft] = useState(timeout / 1000); // For UI display (throttled updates)
