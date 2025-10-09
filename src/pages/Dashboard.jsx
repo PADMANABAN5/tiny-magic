@@ -1535,13 +1535,13 @@ function Dashboard() {
                   disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
                   rows="1"
                 />
-                <VoiceRecorder
+                {/* <VoiceRecorder
                   ref={voiceRecorderRef}
                   onTranscription={(text) => {
                     setPrompt((prev) => (prev ? prev + " " : "") + text);
                   }}
                   disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
-                />
+                /> */}
                 <button
                   className="send-button"
                   onClick={handleSendClick}

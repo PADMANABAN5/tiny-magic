@@ -273,14 +273,14 @@ function Login() {
                   </button>
                 </div>
               </div>
-              <div className="forgot-password-link" style={{ textAlign: 'right', marginBottom: '10px' }}>
+              {/* <div className="forgot-password-link" style={{ textAlign: 'right', marginBottom: '10px' }}>
   <Link
     to="/forgot-password"
     style={{ textDecoration: 'none', color: '#085a5cff', cursor: 'pointer'}}
   >
     Forgot Password?
   </Link>
-</div>
+</div> */}
 
               <button className="login-btn" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Please Wait..." : "Login"}

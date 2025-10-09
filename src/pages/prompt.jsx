@@ -330,13 +330,13 @@ export default function Prompt() {
               >
                 <FaHistory />
               </Button>
-               <Button
+               {/* <Button
                 variant="primary"
                 onClick={() => setShowAssignModal(true)}
                 style={{ width: '49%' }}
               >
                 <FaPlus />
-              </Button> 
+              </Button>  */}
             </div>
           </div>
  
