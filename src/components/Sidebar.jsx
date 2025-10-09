@@ -9,7 +9,7 @@ import {
   FaCaretDown,
   FaHistory,
   FaChartLine,
-  FaChartBar
+  FaChartBar,
 } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -24,7 +24,6 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
 
-
   const handleLogout = async () => {
     try {
       const token = sessionStorage.getItem("token"); // store your login token here
@@ -34,7 +33,7 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
         {
           headers: {
             "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         }
       );
@@ -71,7 +70,7 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.dropdown')) {
+      if (!event.target.closest(".dropdown")) {
         setShowDropdown(false);
       }
     };
@@ -82,7 +81,9 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
   return (
     <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
       <div className="container-fluid">
-        <Link to="/dashboard" className={`navbar-brand d-flex align-items-center`}
+        <Link
+          to="/dashboard"
+          className={`navbar-brand d-flex align-items-center`}
           onClick={(e) => isProcessingAssessment && e.preventDefault()}
         >
           <div className="logo-container">
@@ -110,58 +111,82 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
         <div className="ms-auto">
           <div className="dropdown">
             <button
-              className={`btn btn-outline-secondary d-flex align-items-center login-btn ${isProcessingAssessment || isLoading ? "disabled" : ""
-                }`}
+              className={`btn btn-outline-secondary d-flex align-items-center login-btn ${
+                isProcessingAssessment || isLoading ? "disabled" : ""
+              }`}
               type="button"
-              onClick={() => !isProcessingAssessment && !isLoading && setShowDropdown(!showDropdown)}
+              onClick={() =>
+                !isProcessingAssessment &&
+                !isLoading &&
+                setShowDropdown(!showDropdown)
+              }
               aria-expanded={showDropdown}
               disabled={isProcessingAssessment || isLoading}
             >
               <FaUser className="userlogo-desktop text-white" />
-              <span className="text-white username-desktop">{getShortenedUsername(username)}</span>
+              <span className="text-white username-desktop">
+                {getShortenedUsername(username)}
+              </span>
               <FaCaretDown className="ms-2 text-white" />
             </button>
-            
+
             {showDropdown && (
               <ul className="dropdown-menu dropdown-menu-end show">
                 {isMobile && (
                   <>
                     <li>
-                      <span className="dropdown-item d-flex align-items-center" style={{ cursor: "default" }}>
-                        <FaUser className="me-2" style={{ fontSize: "16px", color:"blue" }} />
+                      <span
+                        className="dropdown-item d-flex align-items-center"
+                        style={{ cursor: "default" }}
+                      >
+                        <FaUser
+                          className="me-2"
+                          style={{ fontSize: "16px", color: "blue" }}
+                        />
                         <span>{getShortenedUsername(username)}</span>
                       </span>
                     </li>
-                    <li><hr className="dropdown-divider" /></li>
+                    <li>
+                      <hr className="dropdown-divider" />
+                    </li>
                   </>
                 )}
                 <li>
                   <Link
                     to="/dashboard"
-                    className={`dropdown-item d-flex align-items-center ${location.pathname === "/dashboard" ? "active" : ""
-                      } ${isProcessingAssessment || isLoading ? "disabled" : ""}`}
+                    className={`dropdown-item d-flex align-items-center 
+    ${
+      location.pathname === "/dashboard" && !showHistorySubmenu ? "active" : ""
+    }`}
                     onClick={(e) => {
                       if (isProcessingAssessment || isLoading) {
                         e.preventDefault();
                       } else {
                         setShowDropdown(false);
+                        setShowHistorySubmenu(false); // ✅ Close history when Dashboard clicked
                       }
                     }}
                   >
-                    <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
+                    <FaTachometerAlt
+                      className="me-2"
+                      style={{ fontSize: "16px" }}
+                    />
                     Dashboard
                   </Link>
                 </li>
                 <li>
                   <Link
                     to="/practice"
-                    className={`dropdown-item d-flex align-items-center ${location.pathname === "/practice" ? "active" : ""
-                      } ${isProcessingAssessment || isLoading ? "disabled" : ""}`}
+                    className={`dropdown-item d-flex align-items-center 
+    ${
+      location.pathname === "/practice" && !showHistorySubmenu ? "active" : ""
+    }`}
                     onClick={(e) => {
                       if (isProcessingAssessment || isLoading) {
                         e.preventDefault();
                       } else {
                         setShowDropdown(false);
+                        setShowHistorySubmenu(false); // ✅ Close history when Practice clicked
                       }
                     }}
                   >
@@ -171,10 +196,16 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                 </li>
                 <li>
                   <button
-                    className="dropdown-item history-toggle d-flex align-items-center"
-                    onClick={() => setShowHistorySubmenu(!showHistorySubmenu)}
+                    className={`dropdown-item history-toggle d-flex align-items-center 
+    ${
+      showHistorySubmenu || location.pathname.includes("history")
+        ? "active"
+        : ""
+    }`} // ✅ Highlight if submenu open or page is history
+                    onClick={() => {
+                      setShowHistorySubmenu(!showHistorySubmenu);
+                    }}
                     disabled={isProcessingAssessment || isLoading}
-
                   >
                     <FaHistory className="me-2" style={{ fontSize: "16px" }} />
                     History
@@ -184,12 +215,34 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                   {showHistorySubmenu && (
                     <ul className="list-unstyled history-submenu">
                       <li>
-                        <Link to="/conversationhistory" className="dropdown-item">
+                        <Link
+                          to="/conversationhistory"
+                          className={`dropdown-item ${
+                            location.pathname === "/conversationhistory"
+                              ? "active"
+                              : ""
+                          }`}
+                          onClick={() => {
+                            setShowDropdown(false);
+                            setShowHistorySubmenu(true); // Keep submenu open after click
+                          }}
+                        >
                           <FaChartBar className="me-2" /> Training History
                         </Link>
                       </li>
                       <li>
-                        <Link to="/practicehistory" className="dropdown-item">
+                        <Link
+                          to="/practicehistory"
+                          className={`dropdown-item ${
+                            location.pathname === "/practicehistory"
+                              ? "active"
+                              : ""
+                          }`}
+                          onClick={() => {
+                            setShowDropdown(false);
+                            setShowHistorySubmenu(true); // Keep submenu open after click
+                          }}
+                        >
                           <FaChartLine className="me-2" /> Practice History
                         </Link>
                       </li>
@@ -197,26 +250,29 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                   )}
                 </li>
 
-
-
-                <li><hr className="dropdown-divider" /></li>
+                <li>
+                  <hr className="dropdown-divider" />
+                </li>
                 <li>
                   <button
-                    className={`dropdown-item d-flex align-items-center text-danger ${isProcessingAssessment || isLoading ? "disabled" : ""
-                      }`}
+                    className={`dropdown-item d-flex align-items-center text-danger ${
+                      isProcessingAssessment || isLoading ? "disabled" : ""
+                    }`}
                     onClick={(e) => {
                       e.preventDefault();
                       if (!(isProcessingAssessment || isLoading)) {
                         setShowDropdown(false);
-                        handleLogout();  // ✅ Trigger API call
+                        handleLogout(); // ✅ Trigger API call
                       }
                     }}
                   >
-                    <FaSignOutAlt className="me-2" style={{ fontSize: "16px" }} />
+                    <FaSignOutAlt
+                      className="me-2"
+                      style={{ fontSize: "16px" }}
+                    />
                     Log Out
                   </button>
                 </li>
-
               </ul>
             )}
           </div>
