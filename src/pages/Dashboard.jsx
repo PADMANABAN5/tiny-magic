@@ -26,7 +26,7 @@ import axios from "axios";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
 import Tesseract from 'tesseract.js';
-import { ToastContainer, toast } from 'react-toastify';
+import {toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
@@ -66,7 +66,6 @@ function Dashboard() {
       toast.error("Speech recognition not supported in this browser.");
       return;
     }
-
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
     recognition.interimResults = false; // only final results
@@ -120,8 +119,7 @@ function Dashboard() {
   const isInitializingRef = useRef(false);
   const previousStage = currentStage;
 
-  //Learning progress collapsable in mobile
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showLearningProgress, setShowLearningProgress] = useState(window.innerWidth >= 768);
 
   // Responsive handler
@@ -407,7 +405,6 @@ function Dashboard() {
     }
     setIsLoading(true);
     setIsProcessingAssessment(true);
-
     try {
       const organizationId = sessionStorage.getItem("organizationId");
       const batchId = sessionStorage.getItem("batchId");
@@ -536,18 +533,16 @@ function Dashboard() {
       setCurrentStage(1);
       setTimeout(() => setIsTransitioning(false), 800);
     }
-
-
     setIsLoading(true);
-    const userPrompt = prompt.trim();
-    setPrompt("");
+     const userPrompt = prompt.trim();
+  setPrompt("");
 
-    // Step 1: Add only user message first
-    setChatHistory((prev) => {
-      const updated = [...prev, { user: userPrompt, system: "" }];
-      sessionStorage.setItem("chatHistory", JSON.stringify(updated));
-      return updated;
-    });
+  // Step 1: Add only user message first
+  setChatHistory((prev) => {
+    const updated = [...prev, { user: userPrompt, system: "" }];
+    sessionStorage.setItem("chatHistory", JSON.stringify(updated));
+    return updated;
+  });
     console.log("🚀 handleSendClick: Setting isLoading to true");
 
     try {
@@ -568,7 +563,7 @@ function Dashboard() {
       });
 
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-
+      
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
       let newEndRequested = initialResponse.endRequested || false;
@@ -580,12 +575,12 @@ function Dashboard() {
         setCurrentChatStatus('inprogress');
       }
 
-      setChatHistory((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1].system = initialResponse.apiResponseText;
-        sessionStorage.setItem("chatHistory", JSON.stringify(updated));
-        return updated;
-      });
+       setChatHistory((prev) => {
+      const updated = [...prev];
+      updated[updated.length - 1].system = initialResponse.apiResponseText;
+      sessionStorage.setItem("chatHistory", JSON.stringify(updated));
+      return updated;
+    });
 
 
       setSessionHistory((prev) => [
@@ -631,7 +626,7 @@ function Dashboard() {
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
         console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
-
+        
         setCurrentChatStatus('completed');
 
         if (newInteractionCompleted) {
@@ -1165,17 +1160,7 @@ function Dashboard() {
   return (
     <div className="learning-dashboard">
       <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} />
-      <ToastContainer
-        position="top-right"
-        autoClose={3000}
-        hideProgressBar={false}
-        newestOnTop={false}
-        closeOnClick
-        rtl={false}
-        pauseOnFocusLoss
-        draggable
-        pauseOnHover
-      />
+      
       {showRestartDialog && (
         <div className="restart-dialog-overlay">
           <div className="restart-dialog">
@@ -1244,8 +1229,8 @@ function Dashboard() {
         </div>
       )}
       {(currentStage > 1 && currentStage <= 6) && (
-        <StageCompletionToast stage={currentStage - 1} />
-      )}
+      <StageCompletionToast stage={currentStage - 1} />
+    )}
       <div className="dashboard-layout">
         <div className="control-panel">
           <div className="control-section">

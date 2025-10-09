@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Select from "react-select";
-import { Pagination, Toast, ToastContainer, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Pagination, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
 import Supersidebar from "../components/Supersidebar";
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import { useAuth } from '../components/AuthContext.jsx';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Batch() {
   const navigate = useNavigate();
@@ -19,9 +21,6 @@ export default function Batch() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedBatchId, setSelectedBatchId] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchBatchName, setSearchBatchName] = useState("");
   const [selectedOrganization, setSelectedOrganization] = useState("");
@@ -46,6 +45,23 @@ export default function Batch() {
     concept_ids: [],
   });
 
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
+
   const fetchBatches = async () => {
     setLoading(true);
     setError(null); // Optional if you're only using toast
@@ -60,9 +76,7 @@ export default function Batch() {
         setBatches(res.data.data);
       } else {
         setBatches([]);
-        setToastMessage("⚠️ Unexpected response format from server.");
-        setToastBg("warning");
-        setShowToast(true);
+        showToastMsg("Unexpected response format from server.", "warning");
       }
     } catch (err) {
       console.error("Error fetching batches:", err);
@@ -74,36 +88,32 @@ export default function Batch() {
 
         switch (errorType) {
           case 400:
-            setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+            showToastMsg(`Bad request: ${errorMessage}`);
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
+            showToastMsg("Unauthorized. Please log in.");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: You do not have permission.");
+            showToastMsg("Forbidden: You do not have permission.");
             break;
           case 404:
-            setToastMessage("⚠️ Batches not found.");
+            showToastMsg("Batches not found.");
             break;
           case 409:
-            setToastMessage("⚠️ Conflict: Data inconsistency.");
+            showToastMsg("Conflict: Data inconsistency.");
             break;
           case 500:
-            setToastMessage("⚠️ Server error. Please try again later.");
+            showToastMsg("Server error. Please try again later.");
             break;
           default:
-            setToastMessage(
-              `⚠️ Failed to fetch batches. (${errorType || "Unknown error"})`
+            showToastMsg(
+              `Failed to fetch batches. (${errorType || "Unknown error"})`
             );
         }
-
-        setToastBg("warning");
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("danger");
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
    
-      setShowToast(true);
       setBatches([]);
     } finally {
       setLoading(false);
@@ -194,17 +204,15 @@ export default function Batch() {
           payload,
           config
         );
-        setToastMessage("✅ Batch updated successfully!");
+        showToastMsg("Batch updated successfully!", "primary");
       } else {
         await axios.post(
           `${process.env.REACT_APP_API_LINK}/batches`,
           payload,
           config
         );
-        setToastMessage("✅ Batch created successfully!");
+        showToastMsg("Batch created successfully!", "primary");
       }
-      setToastBg("primary");
-      setShowToast(true);
       setShowModal(false);
       fetchBatches();
     } catch (err) {
@@ -217,52 +225,42 @@ export default function Batch() {
         switch (status) {
           case 400:
             // Handle all validation errors
-            setToastMessage(`⚠️ ${errorData.message || "Invalid request"}`);
-            setToastBg("warning");
+            showToastMsg(`${errorData.message || "Invalid request"}`, "warning");
             break;
           case 401:
             // Handle unauthorized access
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("warning");
+            showToastMsg("Unauthorized. Please log in.", "warning");
             break;
           case 403:
             // Handle forbidden access
-            setToastMessage(
-              "⚠️ Forbidden: You do not have permission to perform this action."
-            );
-            setToastBg("warning");
+            showToastMsg(
+              "Forbidden: You do not have permission to perform this action."
+            , "warning");
             break;
 
           case 404:
             // Handle batch not found (update only)
-            setToastMessage("⚠️ Batch not found");
-            setToastBg("warning");
+            showToastMsg("Batch not found", "warning");
             break;
 
           case 409:
             // Handle duplicate batch name or sequence conflict
-            setToastMessage(`⚠️ ${errorData.message}`);
-            setToastBg("warning");
+            showToastMsg(`${errorData.message}`, "warning");
             break;
 
           case 500:
             // Handle server errors
-            setToastMessage("⚠️ Server error. Please try again later.");
-            setToastBg("warning");
+            showToastMsg("Server error. Please try again later.", "warning");
             break;
 
           default:
             // Handle other errors
-            setToastMessage("⚠️ Unexpected error occurred");
-            setToastBg("warning");
+            showToastMsg("Unexpected error occurred", "warning");
         }
       } else {
         // Handle network errors
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("warning");
+        showToastMsg("Network error. Please check your connection.", "warning");
       }
-
-      setShowToast(true);
     }
   };
   useEffect(() => {
@@ -559,9 +557,7 @@ export default function Batch() {
                   value={batchForm.batch_name}
                  onChange={(e) => {
     if (e.target.value.length > 50) {
-      setToastMessage("⚠️ Batch name cannot exceed 50 characters!");
-      setToastBg("warning");
-      setShowToast(true);
+      showToastMsg("Batch name cannot exceed 50 characters!", "warning");
       return;
     }
     setBatchForm((prev) => ({
@@ -647,22 +643,6 @@ export default function Batch() {
           </div>
         </div>
       )}
-
-      {/* Toast */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

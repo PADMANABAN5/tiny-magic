@@ -1469,22 +1469,7 @@ html, body {
   }
 }
 
-/* Dark mode support (future implementation) */
-@media (prefers-color-scheme: dark) {
-  /* Future dark mode styles can be added here */
-  .learning-dashboard {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-  }
-  
-  .control-panel {
-    background: rgba(30, 41, 59, 0.95);
-    border-right-color: rgba(71, 85, 105, 0.8);
-  }
-  
-  .chat-panel {
-    background: #1e293b;
-  }
-}
+
 
 /* Print styles */
 @media print {

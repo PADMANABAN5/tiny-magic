@@ -3,8 +3,6 @@ import axios from "axios";
 import Supersidebar from "../components/Supersidebar";
 import {
   Pagination,
-  Toast,
-  ToastContainer,
   Badge,
   OverlayTrigger,
   Tooltip,
@@ -13,6 +11,8 @@ import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import { useAuth } from '../components/AuthContext.jsx';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function User() {
   const navigate = useNavigate();
@@ -38,9 +38,6 @@ export default function User() {
 
   const [filteredBatches, setFilteredBatches] = useState([]);
   const [filteredPods, setFilteredPods] = useState([]);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
   const storedToken = sessionStorage.getItem("token");
   const { token } = useAuth();
   const config = {
@@ -64,6 +61,23 @@ export default function User() {
     pod_id: "",
     users: [],
   });
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
 
   // --- API Fetching Functions ---
 
@@ -135,11 +149,9 @@ export default function User() {
       }
 
       // Optional Toast UI
-      setToastBg("warning");
-      setToastMessage(
-        "⚠️ " + (err.response?.data?.message || "Failed to load pod users")
-      );
-      setShowToast(true);
+      showToastMsg(
+        err.response?.data?.message || "Failed to load pod users"
+      , "warning");
     } finally {
       setLoading(false);
     }
@@ -183,11 +195,11 @@ export default function User() {
   const handleAddUser = async (e) => {
     e.preventDefault();
     if (newUser.users.length === 0) {
-      alert("Please select at least one user.");
+      showToastMsg("Please select at least one user.", "warning");
       return;
     }
     if (!newUser.organization_name || !newUser.batch_id || !newUser.pod_id) {
-      alert("Please ensure Organization, Batch, and Pod are selected.");
+      showToastMsg("Please ensure Organization, Batch, and Pod are selected.", "warning");
       return;
     }
     try {
@@ -206,9 +218,7 @@ export default function User() {
         },
         config
       );
-      setToastMessage("User(s) added successfully");
-      setToastBg("primary");
-      setShowToast(true);
+      showToastMsg("User(s) added successfully", "primary");
       setShowAddUserModal(false);
       setNewUser({
         organization_name: "",
@@ -226,26 +236,19 @@ export default function User() {
       if (err.response?.status === 409) {
         message =
           err.response.data.message || "One or more users are already assigned";
-        setToastBg("warning");
       } else if (err.response?.status === 401) {
         message = "Unauthorized. Please log in.";
-        setToastBg("warning");
       } else if (err.response?.status === 403) {
         message =
           "Forbidden: You do not have permission to perform this action.";
-        setToastBg("warning");
       } else if (err.response?.status === 500) {
         message = "Server error. Please try again later.";
-        setToastBg("warning");
       } else if (err.response?.status === 400) {
         message = err.response.data.message || "Invalid input provided";
-        setToastBg("warning");
       } else {
         message = err.response?.data?.message || "An unexpected error occurred";
-        setToastBg("warning");
       }
-      setToastMessage(message);
-      setShowToast(true);
+      showToastMsg(message, "warning");
     }
   };
 
@@ -265,28 +268,24 @@ export default function User() {
         },
         config
       );
-      setToastMessage("Progress updated successfully");
-      setToastBg("primary");
-      setShowToast(true);
+      showToastMsg("Progress updated successfully", "primary");
       setShowProgressModal(false);
       fetchAllUsers();
     } catch (err) {
       console.error("Error updating progress:", err);
       if (err.response?.status === 409) {
-        setToastMessage(err.response.data.message || "Conflict error");
-        setToastBg("warning");
-        setShowToast(true);
+        showToastMsg(err.response.data.message || "Conflict error", "warning");
       } else {
-        alert(
+        showToastMsg(
           `Failed to update progress: ${err.message}. Ensure JSON format is correct.`
-        );
+        , "warning");
       }
     }
   };
 
   const openSelectUsersModal = () => {
     if (!newUser.organization_name) {
-      alert("Please select an Organization first to load unassigned users.");
+      showToastMsg("Please select an Organization first to load unassigned users.", "warning");
       return;
     }
     setTempSelectedUsers([...newUser.users]);
@@ -923,24 +922,6 @@ export default function User() {
           </div>
         </div>
       )}
-      <ToastContainer
-        position="top-end"
-        className="p-3"
-        style={{ zIndex: 1060 }}
-      >
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

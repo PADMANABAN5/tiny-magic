@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import axios  from 'axios';
 import { FaPlus, FaHistory, FaEdit } from 'react-icons/fa';
-import { Button, Table, Spinner, Alert, Modal, Form, Pagination, Toast, ToastContainer } from 'react-bootstrap';
+import { Button, Table, Spinner, Alert, Modal, Form, Pagination } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import EditablePromptEditor from '../components/EditablePromptEditor.jsx';
 import Supersidebar from '../components/Supersidebar';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
  
 export default function Prompt() {
   const navigate = useNavigate();
@@ -29,10 +31,6 @@ export default function Prompt() {
   const [batchListForModal, setBatchListForModal] = useState([]); // Separate batch list for modal to avoid conflicts
   const [filteredPrompts, setFilteredPrompts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastBg, setToastBg] = useState('primary'); // 'success', 'warning', 'danger', etc.
- 
   const promptsPerPage = 10;
  
   const storedToken = sessionStorage.getItem("token");
@@ -40,6 +38,23 @@ export default function Prompt() {
     headers: {
       Authorization: `Bearer ${storedToken}`,
     },
+  };
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
   };
  
   const indexOfLastPrompt = currentPage * promptsPerPage;
@@ -110,34 +125,30 @@ export default function Prompt() {
  
         switch (errorType) {
           case 400:
-            setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+            showToastMsg(`Bad request: ${errorMessage}`);
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
+            showToastMsg("Unauthorized. Please log in.");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: You do not have permission.");
+            showToastMsg("Forbidden: You do not have permission.");
             break;
           case 404:
-            setToastMessage("⚠️ Prompts not found.");
+            showToastMsg("Prompts not found.");
             break;
           case 409:
-            setToastMessage("⚠️ Conflict: A similar prompt may already exist.");
+            showToastMsg("Conflict: A similar prompt may already exist.");
             break;
           case 500:
-            setToastMessage("❌ Server error. Please try again later.");
+            showToastMsg("Server error. Please try again later.");
             break;
           default:
-            setToastMessage(`⚠️ Failed to fetch prompts. (${errorType || "Unknown error"})`);
+            showToastMsg(`Failed to fetch prompts. (${errorType || "Unknown error"})`);
         }
- 
-        setToastBg("warning");
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("danger");
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
- 
-      setShowToast(true);
+
       setAllPrompts([]);
       setError("Failed to load prompts.");
     } finally {
@@ -188,10 +199,8 @@ export default function Prompt() {
   if (
     updatedUserContent.trim() === originalPrompt?.user_content?.trim()
   ) {
-    setToastMessage('ℹ️ No changes detected');
-    setToastBg('warning');
-    setShowToast(true);
- 
+    showToastMsg('No changes detected', 'warning');
+
     return;
   }
  
@@ -201,9 +210,7 @@ export default function Prompt() {
   }, config)
     .then(() => {
       setShowEditor(false);
-      setToastMessage("✅ Prompt updated successfully!");
-      setToastBg("primary");
-      setShowToast(true);
+      showToastMsg("Prompt updated successfully!", "primary");
       fetchPrompts();
     })
     .catch((err) => {
@@ -211,38 +218,34 @@ export default function Prompt() {
  
       if (axios.isAxiosError(err) && err.response) {
         const status = err.response.status;
-        let errorMsg = '❌ Something went wrong.';
- 
+        let errorMsg = 'Something went wrong.';
+
         switch (status) {
           case 400:
-            errorMsg = '⚠️ Bad request. Please check your input.';
+            errorMsg = 'Bad request. Please check your input.';
             break;
           case 401:
-            errorMsg = '⚠️ Unauthorized. Please log in.';
+            errorMsg = 'Unauthorized. Please log in.';
             break;
           case 403:
-            errorMsg = '⚠️ Forbidden. You don’t have permission.';
+            errorMsg = 'Forbidden. You don’t have permission.';
             break;
           case 404:
-            errorMsg = '⚠️ Prompt not found.';
+            errorMsg = 'Prompt not found.';
             break;
           case 409:
-            errorMsg = '⚠️ Conflict. This prompt might already exist.';
+            errorMsg = 'Conflict. This prompt might already exist.';
             break;
           case 500:
-            errorMsg = '⚠️ Server error. Please try again later.';
+            errorMsg = 'Server error. Please try again later.';
             break;
           default:
-            errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+            errorMsg = `Error ${status}: ${err.response.data?.message || err.message}`;
         }
- 
-        setToastMessage(errorMsg);
-        setToastBg("warning");
-        setShowToast(true);
+
+        showToastMsg(errorMsg, "warning");
       } else {
-        setToastMessage("❌ Network error. Please check your connection.");
-        setToastBg("danger");
-        setShowToast(true);
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
     });
 };
@@ -252,9 +255,7 @@ export default function Prompt() {
   const handleAssignPrompt = () => {
     // Use modal-specific state variables for assignment
     if (!selectedPromptId || !modalSelectedOrgId || !modalSelectedBatchId) {
-      setToastMessage("⚠️ Please select all fields.");
-      setToastBg("warning");
-      setShowToast(true);
+      showToastMsg("Please select all fields.", "warning");
       return;
     }
  
@@ -264,9 +265,7 @@ export default function Prompt() {
       batch_id: parseInt(modalSelectedBatchId),   // Use modal's selected batch
     }, config)
       .then(() => {
-        setToastMessage("✅ Prompt assigned successfully!");
-        setToastBg("primary");
-        setShowToast(true);
+        showToastMsg("Prompt assigned successfully!", "primary");
         setShowAssignModal(false);
         fetchPrompts();
         // Reset modal states after successful assignment
@@ -280,38 +279,34 @@ export default function Prompt() {
  
         if (axios.isAxiosError(err) && err.response) {
           const status = err.response.status;
-          let errorMsg = '❌ Something went wrong.';
- 
+          let errorMsg = 'Something went wrong.';
+
           switch (status) {
             case 400:
-              errorMsg = '⚠️ Selected prompt type already exists for this batch.';
+              errorMsg = 'Selected prompt type already exists for this batch.';
               break;
             case 401:
-              errorMsg = '⚠️ Unauthorized. Please log in.';
+              errorMsg = 'Unauthorized. Please log in.';
               break;
             case 403:
-              errorMsg = '⚠️ Forbidden. You do not have access.';
+              errorMsg = 'Forbidden. You do not have access.';
               break;
             case 404:
-              errorMsg = '⚠️ Resource not found.';
+              errorMsg = 'Resource not found.';
               break;
             case 409:
-              errorMsg = '⚠️ Prompt already assigned to this batch.';
+              errorMsg = 'Prompt already assigned to this batch.';
               break;
             case 500:
-              errorMsg = '⚠️ Server error. Try again later.';
+              errorMsg = 'Server error. Try again later.';
               break;
             default:
-              errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+              errorMsg = `Error ${status}: ${err.response.data?.message || err.message}`;
           }
- 
-          setToastMessage(errorMsg);
-          setToastBg("warning");
-          setShowToast(true);
+
+          showToastMsg(errorMsg, "warning");
         } else {
-          setToastMessage("❌ Network error. Please check your connection.");
-          setToastBg("danger");
-          setShowToast(true);
+          showToastMsg("Network error. Please check your connection.", "danger");
         }
       });
   };
@@ -375,7 +370,6 @@ export default function Prompt() {
                                     <option value="">All Batches</option>
                                     {/* You'll need another useEffect to fetch batches specific to the filter's selectedOrgIdFilter */}
             {/* For now, assuming batchList is global or you'll fetch it here */}
-            {/* You need to add a fetch for filter batches here, similar to modal's batch fetch */}
             {/* Example: */}
              {batchListForModal // Re-using for simplicity, but ideally a separate state/fetch
                                         .filter(batch => batch.organization_id?.toString() === selectedOrgIdFilter?.toString())
@@ -548,20 +542,6 @@ export default function Prompt() {
           </Modal>
         </div>
       </div>
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

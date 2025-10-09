@@ -507,7 +507,7 @@
 }
 
 /* Dark mode support */
-@media (prefers-color-scheme: dark) {
+/* @media (prefers-color-scheme: dark) {
   .vertical-progress-container {
     background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
     border-color: rgba(71, 85, 105, 0.3);
@@ -545,5 +545,5 @@
   .stage-mini {
     background: rgba(30, 41, 59, 0.7);
     border-color: rgba(71, 85, 105, 0.2);
-  }
-}
+  } 
+}*/

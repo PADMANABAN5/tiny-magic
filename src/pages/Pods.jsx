@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Supersidebar from "../components/Supersidebar";
-import { Pagination, Toast, ToastContainer } from "react-bootstrap";
+import { Pagination } from "react-bootstrap";
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import { useAuth } from "../components/AuthContext";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Pods() {
   const navigate = useNavigate();
@@ -18,10 +20,6 @@ export default function Pods() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPodId, setSelectedPodId] = useState(null);
-  
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -47,7 +45,7 @@ export default function Pods() {
     pod_name: "",
     is_active: true,
   });
-  const alowCopyPaste = (e) => {
+  const allowCopyPaste = (e) => {
     e.stopPropagation(); // Prevent global event handlers from blocking
   };
 
@@ -105,6 +103,23 @@ export default function Pods() {
   e.target.reportValidity();
 };
 
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
+
   const fetchPods = async () => {
     setLoading(true);
     setError(null); // Optional if only using toast
@@ -119,9 +134,7 @@ export default function Pods() {
         setPods(res.data.data);
       } else {
         setPods([]);
-        setToastMessage("⚠️ Unexpected API response format.");
-        setToastBg("warning");
-        setShowToast(true);
+        showToastMsg("Unexpected API response format.", "warning");
       }
     } catch (err) {
       console.error("Error fetching pods:", err);
@@ -133,36 +146,32 @@ export default function Pods() {
 
         switch (errorType) {
           case 400:
-            setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+            showToastMsg(`Bad request: ${errorMessage}`);
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
+            showToastMsg("Unauthorized. Please log in.");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: You do not have permission.");
+            showToastMsg("Forbidden: You do not have permission.");
             break;
           case 404:
-            setToastMessage("⚠️ Pods not found.");
+            showToastMsg("Pods not found.");
             break;
           case 409:
-            setToastMessage("⚠️ Conflict: Data inconsistency.");
+            showToastMsg("Conflict: Data inconsistency.");
             break;
           case 500:
-            setToastMessage("⚠️ Server error. Please try again later.");
+            showToastMsg("Server error. Please try again later.");
             break;
           default:
-            setToastMessage(
-              `⚠️ Failed to fetch pods. (${errorType || "Unknown error"})`
+            showToastMsg(
+              `Failed to fetch pods. (${errorType || "Unknown error"})`
             );
         }
-
-        setToastBg("warning");
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("danger");
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
 
-      setShowToast(true);
       setPods([]);
     } finally {
       setLoading(false);
@@ -259,18 +268,15 @@ export default function Pods() {
           payload,
           config
         );
-        setToastMessage("✅ Pod updated successfully!");
-        setToastBg("primary"); // Changed to primary for consistency
+        showToastMsg("Pod updated successfully!", "primary");
       } else {
         await axios.post(
           `${process.env.REACT_APP_API_LINK}/pods`,
           payload,
           config
         );
-        setToastMessage("✅ Pod created successfully!");
-        setToastBg("primary"); // Changed to primary for consistency
+        showToastMsg("Pod created successfully!", "primary");
       }
-      setShowToast(true);
       setShowModal(false);
       fetchPods();
     } catch (err) {
@@ -282,41 +288,32 @@ export default function Pods() {
 
         switch (status) {
           case 400:
-            setToastMessage(
-              `⚠️ ${data.message || "Invalid request parameters"}`
-            );
-            setToastBg("warning");
+            showToastMsg(
+              `${data.message || "Invalid request parameters"}`
+            , "warning");
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("warning");
+            showToastMsg("Unauthorized. Please log in.", "warning");
             break;
 
           case 404:
-            setToastMessage(`⚠️ ${data.message || "Resource not found"}`);
-            setToastBg("warning");
+            showToastMsg(`${data.message || "Resource not found"}`, "warning");
             break;
 
           case 409:
-            setToastMessage("⚠️ Pod name already exists!");
-            setToastBg("warning");
+            showToastMsg("Pod name already exists!", "warning");
             break;
 
           case 500:
-            setToastMessage("⚠️ Server error. Please try again later");
-            setToastBg("warning");
+            showToastMsg("Server error. Please try again later", "warning");
             break;
 
           default:
-            setToastMessage("⚠️ An unexpected error occurred");
-            setToastBg("warning");
+            showToastMsg("An unexpected error occurred", "warning");
         }
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection");
-        setToastBg("warning");
+        showToastMsg("Network error. Please check your connection", "warning");
       }
-
-      setShowToast(true);
     }
   };
 
@@ -666,16 +663,14 @@ export default function Pods() {
                 </label>
                 <input
                 type="text"
-                onClick={alowCopyPaste}
-                onKeyDown={alowCopyPaste}
-                onPaste={alowCopyPaste}
+                onClick={allowCopyPaste}
+                onKeyDown={allowCopyPaste}
+                onPaste={allowCopyPaste}
                 className="form-control"
                 value={podForm.pod_name}
                 onChange={(e) => {
                   if (e.target.value.length > 50) {
-                    setToastMessage("⚠️ Pod name cannot exceed 50 characters!");
-                    setToastBg("warning");
-                    setShowToast(true);
+                    showToastMsg("Pod name cannot exceed 50 characters!", "warning");
                     return;
                   }
                   setPodForm((prev) => ({
@@ -704,22 +699,6 @@ export default function Pods() {
           </div>
         </div>
       )}
-
-      {/* Toast */}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

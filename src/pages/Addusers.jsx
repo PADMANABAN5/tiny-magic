@@ -3,9 +3,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import Supersidebar from "../components/Supersidebar";
-import { Pagination, Toast, ToastContainer, Form } from "react-bootstrap";
+import { Pagination, Form } from "react-bootstrap";
 import "../styles/OrgList.css";
 import { useAuth } from "../components/AuthContext";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Addusers() {
   const [orgUsers, setOrgUsers] = useState([]);
@@ -24,9 +26,6 @@ export default function Addusers() {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
-  const [showToast, setShowToast] = useState(false);
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrganization, setSelectedOrganization] = useState("");
@@ -43,6 +42,23 @@ export default function Addusers() {
   const capitalize = (str) =>
     str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
+
   const fetchOrgUsers = async () => {
     setLoading(true);
     setError(null);
@@ -57,9 +73,7 @@ export default function Addusers() {
         setOrgUsers(res.data.data);
       } else {
         setOrgUsers([]);
-        setToastMessage("⚠️ Unexpected data format received from server.");
-        setToastBg("warning");
-        setShowToast(true);
+        showToastMsg("Unexpected data format received from server.", "warning");
       }
     } catch (err) {
       console.error("Error fetching org users:", err);
@@ -71,41 +85,30 @@ export default function Addusers() {
 
         switch (status) {
           case 400:
-            setToastMessage(`⚠️ ${errorMessage}`);
-            setToastBg("warning");
+            showToastMsg(`${errorMessage}`, "warning");
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("danger");
+            showToastMsg("Unauthorized. Please log in.", "danger");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: Access denied.");
-            setToastBg("danger");
+            showToastMsg("Forbidden: Access denied.", "danger");
             break;
           case 404:
-            setToastMessage("⚠️ Organization users not found.");
-            setToastBg("warning");
+            showToastMsg("Organization users not found.", "warning");
             break;
           case 409:
-            setToastMessage("⚠️ Conflict: User data conflict.");
-            setToastBg("warning");
+            showToastMsg("Conflict: User data conflict.", "warning");
             break;
           case 500:
-            setToastMessage("⚠️ Server error. Please try again later.");
-            setToastBg("danger");
+            showToastMsg("Server error. Please try again later.", "danger");
             break;
           default:
-            setToastMessage(
-              "⚠️ Failed to fetch organization users. Please try again later."
+            showToastMsg(
+              "Failed to fetch organization users. Please try again later."
             );
-            setToastBg("warning");
         }
-
-        setShowToast(true);
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("danger");
-        setShowToast(true);
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
 
       setOrgUsers([]);
@@ -187,9 +190,7 @@ export default function Addusers() {
       !trimmedUser.first_name ||
       !trimmedUser.last_name
     ) {
-      setToastMessage("Organization, First Name, and Last Name are required.");
-      setToastBg("warning");
-      setShowToast(true);
+      showToastMsg("Organization, First Name, and Last Name are required.", "warning");
       return;
     }
 
@@ -218,9 +219,7 @@ export default function Addusers() {
       });
       fetchOrgUsers();
 
-      setToastMessage("User created successfully!");
-      setToastBg("primary"); // Changed to primary for consistency
-      setShowToast(true);
+      showToastMsg("User created successfully!", "primary");
     } catch (err) {
       let errorMessage = "Failed to create user.";
 
@@ -231,13 +230,11 @@ export default function Addusers() {
               err.response.data.message || "Bad request: Invalid input data.";
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("danger");
-            break;
+            showToastMsg("Unauthorized. Please log in.", "danger");
+            return;
           case 403:
-            setToastMessage("⚠️ Forbidden: Access denied.");
-            setToastBg("danger");
-            break;
+            showToastMsg("Forbidden: Access denied.", "danger");
+            return;
           case 409:
             errorMessage = "User already exists!";
             break;
@@ -259,9 +256,7 @@ export default function Addusers() {
         errorMessage = "Error: " + err.message;
       }
 
-      setToastMessage(errorMessage);
-      setToastBg("warning");
-      setShowToast(true);
+      showToastMsg(errorMessage, "warning");
     }
   };
 
@@ -270,9 +265,7 @@ export default function Addusers() {
 
     // Validate required fields
     if (!editingUser.first_name?.trim() || !editingUser.last_name?.trim()) {
-      setToastMessage("First Name and Last Name are required.");
-      setToastBg("warning");
-      setShowToast(true);
+      showToastMsg("First Name and Last Name are required.", "warning");
       return;
     }
 
@@ -294,9 +287,7 @@ export default function Addusers() {
       setEditingUser(null);
       fetchOrgUsers();
 
-      setToastMessage("User updated successfully!");
-      setToastBg("primary"); // Changed to primary for consistency
-      setShowToast(true);
+      showToastMsg("User updated successfully!", "primary");
     } catch (err) {
       let errorMessage = "Failed to update user.";
 
@@ -309,13 +300,11 @@ export default function Addusers() {
               "Bad request: Invalid input data.";
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("danger");
-            break;
+            showToastMsg("Unauthorized. Please log in.", "danger");
+            return;
           case 403:
-            setToastMessage("⚠️ Forbidden: Access denied.");
-            setToastBg("danger");
-            break;
+            showToastMsg("Forbidden: Access denied.", "danger");
+            return;
           case 404:
             errorMessage = "User not found.";
             break;
@@ -344,9 +333,7 @@ export default function Addusers() {
       }
 
       console.error("Update failed", err);
-      setToastMessage(errorMessage);
-      setToastBg("warning");
-      setShowToast(true);
+      showToastMsg(errorMessage, "warning");
     }
   };
   useEffect(() => {
@@ -615,9 +602,7 @@ export default function Addusers() {
                    onChange={(e) => {
                   const value = e.target.value;
                   if (value.length > 30) {
-                    setToastMessage("⚠️ First name cannot exceed 30 characters!");
-                    setToastBg("warning");
-                    setShowToast(true);
+                    showToastMsg("First name cannot exceed 30 characters!", "warning");
                     return;
                   }
                   const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
@@ -644,9 +629,7 @@ export default function Addusers() {
                    onChange={(e) => {
                   const value = e.target.value;
                   if (value.length > 30) {
-                    setToastMessage("⚠️ Last name cannot exceed 30 characters!");
-                    setToastBg("warning");
-                    setShowToast(true);
+                    showToastMsg("Last name cannot exceed 30 characters!", "warning");
                     return;
                   }
                   const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
@@ -668,9 +651,7 @@ export default function Addusers() {
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value.length > 30) {
-                      setToastMessage("⚠️ Password cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("Password cannot exceed 30 characters!", "warning");
                       return;
                     }
                     setNewUser({ ...newUser, password: value });
@@ -718,9 +699,7 @@ export default function Addusers() {
                    onChange={(e) => {
                   const value = e.target.value;
                   if (value.length > 30) {
-                    setToastMessage("⚠️ Username cannot exceed 30 characters!");
-                    setToastBg("warning");
-                    setShowToast(true);
+                    showToastMsg("Username cannot exceed 30 characters!", "warning");
                     return;
                   }
                   const isValid = /^[A-Za-z0-9_]+(?: [A-Za-z0-9_]+)*$/.test(value) || value === "";
@@ -762,9 +741,7 @@ export default function Addusers() {
                   onChange={(e) => {
                   const value = e.target.value;
                   if (value.length > 30) {
-                    setToastMessage("⚠️ First name cannot exceed 30 characters!");
-                    setToastBg("warning");
-                    setShowToast(true);
+                    showToastMsg("First name cannot exceed 30 characters!", "warning");
                     return;
                   }
                   const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
@@ -792,9 +769,7 @@ export default function Addusers() {
                   onChange={(e) => {
                   const value = e.target.value;
                   if (value.length > 30) {
-                    setToastMessage("⚠️ Last name cannot exceed 30 characters!");
-                    setToastBg("warning");
-                    setShowToast(true);
+                    showToastMsg("Last name cannot exceed 30 characters!", "warning");
                     return;
                   }
                   const isValid = /^[A-Za-z0-9]+(?: [A-Za-z0-9]+)*$/.test(value) || value === "";
@@ -817,9 +792,7 @@ export default function Addusers() {
                   onChange={(e) => {
                     const value = e.target.value;
                     if (value.length > 30) {
-                      setToastMessage("⚠️ Password cannot exceed 30 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("Password cannot exceed 30 characters!", "warning");
                       return;
                     }
                     setEditingUser({ ...editingUser, password: value });
@@ -848,20 +821,6 @@ export default function Addusers() {
           </div>
         </div>
       )}
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
     </div>
   );
 }

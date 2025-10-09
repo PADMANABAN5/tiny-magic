@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination, Toast, ToastContainer,Form } from 'react-bootstrap';
+import { Pagination, Form } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/OrgList.css';
 import { FaArrowLeft, FaPlus } from 'react-icons/fa';
 import { useAuth } from '../components/AuthContext.jsx';
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function OrgList() {
   const [organizations, setOrganizations] = useState([]);
@@ -15,9 +17,6 @@ export default function OrgList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
-  const [toastBg, setToastBg] = useState('primary');
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const navigate = useNavigate();
@@ -31,6 +30,24 @@ export default function OrgList() {
    const allowCopyPaste = (e) => {
     e.stopPropagation(); // Prevent global event handlers from blocking
   };
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
+
   const fetchOrganizations = async () => {
   setLoading(true);
   setError(null);
@@ -42,9 +59,7 @@ export default function OrgList() {
       setOrganizations(res.data.data);
     } else {
       setOrganizations([]);
-      setToastMessage("⚠️ Unexpected data format from server.");
-      setToastBg("warning");
-      setShowToast(true);
+      showToastMsg("Unexpected data format from server.", "warning");
     }
 
   } catch (err) {
@@ -56,40 +71,31 @@ export default function OrgList() {
 
       switch (status) {
         case 400:
-          setToastMessage(`⚠️ ${message || "Bad request"}`);
-          setToastBg("warning");
+          showToastMsg(`${message || "Bad request"}`, "warning");
           break;
         case 401:
-          setToastMessage("⚠️ Unauthorized access try again");
-          setToastBg("warning");
+          showToastMsg("Unauthorized access try again", "warning");
           break;
         case 403:
-          setToastMessage("⚠️ Forbidden: Access denied try again");
-          setToastBg("warning");
+          showToastMsg("Forbidden: Access denied try again", "warning");
           break;
         case 404:
-          setToastMessage("⚠️ Not found: Endpoint or data missing");
-          setToastBg("warning");
+          showToastMsg("Not found: Endpoint or data missing", "warning");
           break;
         case 409:
-          setToastMessage("⚠️ Conflict: Duplicate data");
-          setToastBg("warning");
+          showToastMsg("Conflict: Duplicate data", "warning");
           break;
         case 500:
-          setToastMessage("⚠️ Server error. Please try again later.");
-          setToastBg("warning");
+          showToastMsg("Server error. Please try again later.", "warning");
           break;
         default:
-          setToastMessage("⚠️ Failed to fetch organizations. please try again later.");
-          setToastBg("warning");
+          showToastMsg("Failed to fetch organizations. please try again later.", "warning");
       }
     } else {
-      setToastMessage("⚠️ Network error. Please check your connection.");
-      setToastBg("danger");
+      showToastMsg("Network error. Please check your connection.", "danger");
     }
 
     setOrganizations([]);
-    setShowToast(true);
   } finally {
     setLoading(false);
   }
@@ -116,9 +122,7 @@ export default function OrgList() {
       config
     );
 
-    setToastBg(newIsActiveState ? 'primary' : 'secondary');
-    setToastMessage(`✅ Marked as ${newIsActiveState ? 'Active' : 'Inactive'} successfully`);
-    setShowToast(true);
+    showToastMsg(`Marked as ${newIsActiveState ? 'Active' : 'Inactive'} successfully`, newIsActiveState ? 'primary' : 'secondary');
   } catch (err) {
     console.error("Error toggling status:", err);
 
@@ -130,9 +134,7 @@ export default function OrgList() {
     );
 
     if (axios.isAxiosError(err) && err.response?.status === 500) {
-      setToastMessage("⚠️ Internal server error. Please try again later.");
-      setToastBg("danger");
-      setShowToast(true);
+      showToastMsg("Internal server error. Please try again later.", "danger");
     }
   }
 };
@@ -145,15 +147,11 @@ const isValidOrgName = (name) => {
   const handleCreateOrganization = async (e) => {
   e.preventDefault();
   if (!newOrgName.trim()) {
-    setToastMessage('⚠️ Organization name cannot be empty!');
-    setToastBg('warning');
-    setShowToast(true);
+    showToastMsg('Organization name cannot be empty!', 'warning');
     return;
   }
     if (!isValidOrgName(newOrgName)) {
-    setToastMessage('⚠️ Special characters are not allowed in the organization name!');
-    setToastBg('warning');
-    setShowToast(true);
+    showToastMsg('Special characters are not allowed in the organization name!', 'warning');
     return;
   }
  
@@ -168,9 +166,7 @@ const isValidOrgName = (name) => {
     setShowModal(false);
     setNewOrgName('');
     fetchOrganizations();
-    setToastMessage('✅ Organization created successfully!');
-    setToastBg('primary');
-    setShowToast(true);
+    showToastMsg('Organization created successfully!', 'primary');
   } catch (err) {
     console.error("Error creating organization:", err);
 
@@ -178,35 +174,28 @@ const isValidOrgName = (name) => {
       switch (err.response?.status) {
         case 400:
           // Bad Request (missing fields or invalid data)
-          setToastMessage(`⚠️ ${err.response.data?.message || 'Invalid organization data'}`);
-          setToastBg('warning');
+          showToastMsg(`${err.response.data?.message || 'Invalid organization data'}`, 'warning');
           break;
         case 404:
           // Not Found (though unlikely for POST, but could happen if endpoint is wrong)
-          setToastMessage('⚠️ Resource not found');
-          setToastBg('danger');
+          showToastMsg('Resource not found', 'danger');
           break;
         case 409:
           // Conflict (organization name exists)
-          setToastMessage('⚠️ Organization name already exists!');
-          setToastBg('warning');
+          showToastMsg('Organization name already exists!', 'warning');
           break;
         case 500:
           // Internal Server Error
-          setToastMessage('⚠️ Server error. Please try again later.');
-          setToastBg('danger');
+          showToastMsg('Server error. Please try again later.', 'danger');
           break;
         default:
           // Other errors
-          setToastMessage('⚠️ Failed to create organization');
-          setToastBg('danger');
+          showToastMsg('Failed to create organization', 'danger');
       }
     } else {
       // Non-Axios errors (network errors, etc.)
-      setToastMessage('⚠️ Network error. Please check your connection.');
-      setToastBg('danger');
+      showToastMsg('Network error. Please check your connection.', 'danger');
     }
-    setShowToast(true);
   }
 };
 
@@ -367,9 +356,7 @@ const isValidOrgName = (name) => {
                   value={newOrgName}
                   onChange={(e) => {
                     if (e.target.value.length > 50) {
-                      setToastMessage("⚠️ Organization name cannot exceed 50 characters!");
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg("Organization name cannot exceed 50 characters!", "warning");
       return; // don’t update state
     }
     setNewOrgName(e.target.value);
@@ -384,21 +371,6 @@ const isValidOrgName = (name) => {
           </div>
         </div>
       )}
-
-     <ToastContainer position="top-end" className="p-3">
-  <Toast
-    bg={toastBg}
-    show={showToast}
-    onClose={() => setShowToast(false)}
-    delay={3000}
-    autohide
-  >
-    <Toast.Header closeButton>
-      <strong className="me-auto">Notice</strong>
-    </Toast.Header>
-    <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-  </Toast>
-</ToastContainer>
     </div>
   );
 }

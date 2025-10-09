@@ -1,11 +1,13 @@
 import React, { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import Supersidebar from "../components/Supersidebar";
-import { Pagination, Toast, ToastContainer, Form } from "react-bootstrap";
+import { Pagination, Form } from "react-bootstrap";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import "../styles/OrgList.css";
 import { useAuth } from "../components/AuthContext";
+import { toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 export default function Addorgadmin() {
   const [orgAdmins, setOrgAdmins] = useState([]);
@@ -23,9 +25,6 @@ export default function Addorgadmin() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastBg, setToastBg] = useState("primary");
-  const [showToast, setShowToast] = useState(false);
   const passwordRef = useRef(null);
   const editPasswordRef = useRef(null);
   const firstNameRef = useRef(null);
@@ -50,6 +49,24 @@ export default function Addorgadmin() {
    const allowCopyPaste = (e) => {
     e.stopPropagation(); // Prevent global event handlers from blocking
   };
+
+  const getToastType = (bg) => {
+    switch (bg) {
+      case 'primary':
+        return 'success';
+      case 'warning':
+        return 'warning';
+      case 'danger':
+        return 'error';
+      default:
+        return 'info';
+    }
+  };
+
+  const showToastMsg = (message, bg = "primary") => {
+    toast(message, { type: getToastType(bg) });
+  };
+
   // Fetch admins & orgs
   const fetchOrgAdmins = async () => {
     setLoading(true);
@@ -65,9 +82,7 @@ export default function Addorgadmin() {
         setOrgAdmins(res.data.data);
       } else {
         setOrgAdmins([]);
-        setToastMessage("⚠️ Unexpected data format received from server.");
-        setToastBg("warning");
-        setShowToast(true);
+        showToastMsg("Unexpected data format received from server.", "warning");
       }
     } catch (err) {
       console.error("Error fetching organization admins:", err);
@@ -79,41 +94,30 @@ export default function Addorgadmin() {
 
         switch (status) {
           case 400:
-            setToastMessage(`⚠️ ${message}`);
-            setToastBg("warning");
+            showToastMsg(`${message}`, "warning");
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
-            setToastBg("warning");
+            showToastMsg("Unauthorized. Please log in.", "warning");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: Access denied.");
-            setToastBg("warning");
+            showToastMsg("Forbidden: Access denied.", "warning");
             break;
           case 404:
-            setToastMessage("⚠️ Organization admins not found.");
-            setToastBg("warning");
+            showToastMsg("Organization admins not found.", "warning");
             break;
           case 409:
-            setToastMessage("⚠️ Conflict: Duplicate admin data.");
-            setToastBg("warning");
+            showToastMsg("Conflict: Duplicate admin data.", "warning");
             break;
           case 500:
-            setToastMessage("⚠️ Server error. Please try again later.");
-            setToastBg("danger");
+            showToastMsg("Server error. Please try again later.", "danger");
             break;
           default:
-            setToastMessage(
-              "⚠️ Failed to fetch organization admins. Please try again later."
+            showToastMsg(
+              "Failed to fetch organization admins. Please try again later."
             );
-            setToastBg("warning");
         }
-
-        setShowToast(true);
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
-        setToastBg("danger");
-        setShowToast(true);
+        showToastMsg("Network error. Please check your connection.", "danger");
       }
 
       setOrgAdmins([]);
@@ -219,9 +223,7 @@ export default function Addorgadmin() {
         newAdmin,
         config
       );
-      setToastBg("primary");
-      setToastMessage("Admin created successfully!");
-      setShowToast(true);
+      showToastMsg("Admin created successfully!", "primary");
       setShowModal(false);
       setNewAdmin({
         organization_name: "",
@@ -238,40 +240,34 @@ export default function Addorgadmin() {
       switch (err.response?.status) {
         case 400:
           if (err.response.data?.message) {
-            toastMessage = `⚠️ ${err.response.data.message}`;
+            toastMessage = `${err.response.data.message}`;
           } else if (err.response.data?.error === "Bad request") {
             toastMessage =
-              "⚠️ Invalid request: " +
+              "Invalid request: " +
               (err.response.data?.message ||
                 "Missing required fields or invalid data");
           } else {
-            toastMessage = "⚠️ Invalid request. Please check your input.";
+            toastMessage = "Invalid request. Please check your input.";
           }
           break;
         case 401:
-          setToastMessage("⚠️ Unauthorized. Please log in.");
-          setToastBg("warning");
-          break;
+          showToastMsg("Unauthorized. Please log in.", "warning");
+          return;
         case 403:
-          setToastMessage("⚠️ Forbidden: Access denied.");
-          setToastBg("warning");
-          break;
+          showToastMsg("Forbidden: Access denied.", "warning");
+          return;
         case 409:
           toastMessage =
-            "⚠️ " +
-            (err.response.data?.message ||
-              "Admin with this email or username already exists");
+            "Admin with this email or username already exists";
           break;
         case 500:
-          toastMessage = "⚠️ Server error. Please try again later.";
+          toastMessage = "Server error. Please try again later.";
           break;
         default:
-          toastMessage = "⚠️ Failed to create admin. Please try again.";
+          toastMessage = "Failed to create admin. Please try again.";
       }
 
-      setToastBg(toastBg);
-      setToastMessage(toastMessage);
-      setShowToast(true);
+      showToastMsg(toastMessage, toastBg);
     }
   };
 
@@ -316,9 +312,7 @@ export default function Addorgadmin() {
         editingAdmin,
         config
       );
-      setToastBg("primary");
-      setToastMessage("Admin updated successfully!");
-      setShowToast(true);
+      showToastMsg("Admin updated successfully!", "primary");
       setShowEditModal(false);
       setEditingAdmin(null);
       fetchOrgAdmins();
@@ -328,33 +322,31 @@ export default function Addorgadmin() {
 
       switch (err.response?.status) {
         case 400:
-          toastMessage = "⚠️ Invalid request. Please check your input.";
+          toastMessage = "Invalid request. Please check your input.";
           break;
         case 401:
-          toastMessage = "⚠️ Unauthorized. Please login again.";
+          toastMessage = "Unauthorized. Please login again.";
           break;
         case 403:
           toastMessage =
-            "⚠️ Forbidden. You don't have permission to update this admin.";
+            "Forbidden. You don't have permission to update this admin.";
           break;
         case 404:
-          toastMessage = "⚠️ Admin not found.";
+          toastMessage = "Admin not found.";
           break;
         case 409:
           toastMessage =
-            "⚠️ Organization Admin with this email already exists.";
+            "Organization Admin with this email already exists.";
           toastBg = "warning";
           break;
         case 500:
-          toastMessage = "⚠️ Server error. Please try again later.";
+          toastMessage = "Server error. Please try again later.";
           break;
         default:
-          toastMessage = "⚠️ Failed to update admin. Please try again.";
+          toastMessage = "Failed to update admin. Please try again.";
       }
 
-      setToastBg(toastBg);
-      setToastMessage(toastMessage);
-      setShowToast(true);
+      showToastMsg(toastMessage, toastBg);
     }
   };
 
@@ -556,21 +548,6 @@ export default function Addorgadmin() {
         </div>
       </div>
 
-      <ToastContainer position="top-end" className="p-3">
-        <Toast
-          bg={toastBg}
-          show={showToast}
-          delay={3000}
-          autohide
-          onClose={() => setShowToast(false)}
-        >
-          <Toast.Header closeButton>
-            <strong className="me-auto">Notice</strong>
-          </Toast.Header>
-          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
-        </Toast>
-      </ToastContainer>
-
       {/* Create Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
@@ -636,11 +613,9 @@ export default function Addorgadmin() {
                   value={newAdmin.first_name}
                   onChange={(e) => {
                     if (e.target.value.length > 30) {
-                      setToastMessage(
-                        "⚠️ First name cannot exceed 30 characters!"
-                      );
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg(
+                        "First name cannot exceed 30 characters!"
+                      , "warning");
                       return;
                     }
                     setNewAdmin({ ...newAdmin, first_name: e.target.value });
@@ -664,11 +639,9 @@ export default function Addorgadmin() {
                   value={newAdmin.last_name}
                   onChange={(e) => {
                     if (e.target.value.length > 30) {
-                      setToastMessage(
-                        "⚠️ Last name cannot exceed 30 characters!"
-                      );
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg(
+                        "Last name cannot exceed 30 characters!"
+                      , "warning");
                       return;
                     }
                     setNewAdmin({ ...newAdmin, last_name: e.target.value });
@@ -689,11 +662,9 @@ export default function Addorgadmin() {
                   value={newAdmin.password}
                   onChange={(e) => {
                     if (e.target.value.length > 30) {
-                      setToastMessage(
-                        "⚠️ Password cannot exceed 30 characters!"
-                      );
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg(
+                        "Password cannot exceed 30 characters!"
+                      , "warning");
                       return;
                     }
                     setNewAdmin({ ...newAdmin, password: e.target.value });
@@ -736,11 +707,9 @@ export default function Addorgadmin() {
                   value={editingAdmin.username || ""}
                   onChange={(e) => {
                     if (e.target.value.length > 30) {
-                      setToastMessage(
-                        "⚠️ Username cannot exceed 30 characters!"
-                      );
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg(
+                        "Username cannot exceed 30 characters!"
+                      , "warning");
                       return;
                     }
                     setEditingAdmin({
@@ -787,11 +756,9 @@ export default function Addorgadmin() {
                   value={editingAdmin.first_name || ""}
                   onChange={(e) => {
                     if (e.target.value.length > 30) {
-                      setToastMessage(
-                        "⚠️ First name cannot exceed 30 characters!"
-                      );
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg(
+                        "First name cannot exceed 30 characters!"
+                      , "warning");
                       return;
                     }
                     setEditingAdmin({
@@ -818,11 +785,9 @@ export default function Addorgadmin() {
                   value={editingAdmin.last_name || ""}
                   onChange={(e) => {
                     if (e.target.value.length > 30) {
-                      setToastMessage(
-                        "⚠️ Last name cannot exceed 30 characters!"
-                      );
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg(
+                        "Last name cannot exceed 30 characters!"
+                      , "warning");
                       return;
                     }
                     setEditingAdmin({
@@ -844,11 +809,9 @@ export default function Addorgadmin() {
                   value={editingAdmin.password || ""}
                   onChange={(e) => {
                     if (e.target.value.length > 30) {
-                      setToastMessage(
-                        "⚠️ Password cannot exceed 30 characters!"
-                      );
-                      setToastBg("warning");
-                      setShowToast(true);
+                      showToastMsg(
+                        "Password cannot exceed 30 characters!"
+                      , "warning");
                       return;
                     }
                     setEditingAdmin({
