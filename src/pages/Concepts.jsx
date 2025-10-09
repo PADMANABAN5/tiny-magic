@@ -364,18 +364,18 @@ const validateCleanText = (value, key) => {
               className="d-flex justify-content-between"
               style={{ width: "26%" }}
             >
-              {/* <Button
+               <Button
                 variant="secondary"
                 onClick={() => navigate("/archivedconcepts")}
                 style={{ width: "49%" }}
                 aria-label="View archived concepts"
               >
                 <FaHistory />
-              </Button> */}
+              </Button> 
               <Button
                 variant="primary"
                 onClick={() => openCreateModal()}
-                style={{ width: "49%",marginLeft:"145px" }}
+                style={{ width: "49%" }}
                 aria-label="Create new concept"
               >
                 <FaPlus />
@@ -430,7 +430,7 @@ const validateCleanText = (value, key) => {
                       <th>Concept Name</th>
                       <th>Concept Content</th>
                       <th>Status</th>
-                      {/* <th>Version</th> */}
+                       <th>Version</th>
                       <th>Action</th>
                     </tr>
                   </thead>
@@ -458,7 +458,7 @@ const validateCleanText = (value, key) => {
                               {concept.is_active ? "Active" : "Inactive"}
                             </span>
                           </td>
-                          {/* <td>{concept.version}</td> */}
+                           <td>{concept.version}</td> 
                           <td>
                             <button
                               className="btn btn-warning btn-sm"
