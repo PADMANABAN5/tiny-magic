@@ -1,24 +1,35 @@
-
 .main-layout-container {
-  display: flex; /* Use flexbox for sidebar and content layout */
-  height: 100vh; /* Make the container take the full viewport height */
-  width: 100vw; /* Make the container take the full viewport width */
-  overflow: hidden; /* Prevent overall scroll if content overflows, let content-area manage */
-  
+  display: flex;
+  /* Use flexbox for sidebar and content layout */
+  height: 100vh;
+  /* Make the container take the full viewport height */
+  width: 100vw;
+  /* Make the container take the full viewport width */
+  overflow: hidden;
+  /* Prevent overall scroll if content overflows, let content-area manage */
+
 }
 
 /* Styles for the sidebar (assuming Supersidebar has a root class like 'supersidebar-container') */
 .supersidebar-container {
-  width: 250px; /* Example fixed width for sidebar */
-  flex-shrink: 0; /* Prevent sidebar from shrinking */
-  background-color: #f8f9fa; /* Example background color for sidebar */
-  overflow-y: auto; /* Allow sidebar to scroll if its content overflows */
-  border-right: 1px solid #dee2e6; /* Optional: Add a border to separate from content */
-  
+  width: 250px;
+  /* Example fixed width for sidebar */
+  flex-shrink: 0;
+  /* Prevent sidebar from shrinking */
+  background-color: #f8f9fa;
+  /* Example background color for sidebar */
+  overflow-y: auto;
+  /* Allow sidebar to scroll if its content overflows */
+  border-right: 1px solid #dee2e6;
+  /* Optional: Add a border to separate from content */
+
 }
+
 .back-button {
-  background-color: #000;     /* Black background */
-  color: white;               /* White icon/text */
+  background-color: #000;
+  /* Black background */
+  color: white;
+  /* White icon/text */
   border: none;
   padding: 8px 12px;
   cursor: pointer;
@@ -27,36 +38,52 @@
   font-size: 1.2rem;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;         /* Slightly rounded corners */
+  border-radius: 4px;
+  /* Slightly rounded corners */
 }
+
 .custom-header {
   background-color: #2034e8;
   color: white;
 }
+
 /* Override hover style */
 .back-button:hover {
-  background-color: #000;     /* Same as normal */
-  color: white;               /* No color change */
-  box-shadow: none;           /* Remove any hover shadow if applied by global styles */
-  filter: none;               /* Remove glow, brightness, etc. */
-  transform: none;            /* Prevent lift/scale */
+  background-color: #000;
+  /* Same as normal */
+  color: white;
+  /* No color change */
+  box-shadow: none;
+  /* Remove any hover shadow if applied by global styles */
+  filter: none;
+  /* Remove glow, brightness, etc. */
+  transform: none;
+  /* Prevent lift/scale */
 }
+
 .single-line-tooltip {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 300px; /* Adjust to fit your design */
+  max-width: 300px;
+  /* Adjust to fit your design */
   display: inline-block;
   vertical-align: middle;
   cursor: help;
 }
+
 .content-area {
-  flex-grow: 1; /* Allow content area to take up remaining space */
-  overflow-y: auto; /* Allow content area to scroll if its content overflows */
-  padding: 20px; /* Add some padding around the content */
-  background-color: #ffffff; 
-  margin-top: 70px;/* Example background color for content area */
+  flex-grow: 1;
+  /* Allow content area to take up remaining space */
+  overflow-y: auto;
+  /* Allow content area to scroll if its content overflows */
+  padding: 25px;
+  /* Add some padding around the content */
+  background-color: #ffffff;
+  margin-top: 80px;
+  /* Example background color for content area */
 }
+
 /* Modal Styles */
 .modal-overlay {
   position: fixed;
@@ -64,11 +91,13 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent black background */
+  background-color: rgba(0, 0, 0, 0.5);
+  /* Semi-transparent black background */
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000; /* Ensure modal is on top of everything */
+  z-index: 1000;
+  /* Ensure modal is on top of everything */
 }
 
 .modal-content {
@@ -76,10 +105,14 @@
   padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  min-width: 350px; /* Minimum width for the modal */
-  max-width: 90%; /* Maximum width for the modal */
-  z-index: 1001; /* Ensure content is above overlay */
+  min-width: 350px;
+  /* Minimum width for the modal */
+  max-width: 90%;
+  /* Maximum width for the modal */
+  z-index: 1001;
+  /* Ensure content is above overlay */
 }
+
 .table-hover tbody tr:hover {
   background-color: #7b7d7f !important;
 }
@@ -100,7 +133,8 @@ thead.bg-primary th {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.2rem; /* Important: needed for icon size */
+  font-size: 1.2rem;
+  /* Important: needed for icon size */
   width: 100%;
   max-width: 150px;
 }
@@ -113,21 +147,59 @@ thead.bg-primary th {
   flex-shrink: 0;
 }
 
+.table {
+  border-spacing: 2px;
+  border-color: gray;
+}
+
+.global-promt-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+}
+.global-promt-container h3 { 
+  font-size: 24px;
+}
+.btn-sec {
+  width: 26%;
+}
 /* Mobile-specific adjustments */
 @media (max-width: 576px) {
+  .btn-sec {
+  width: 50%;
+}
   .create-btn {
     max-width: 50px;
     padding: 8px;
-    font-size: 1.2rem; /* DO NOT SET TO 0 */
+    font-size: 1.2rem;
+    /* DO NOT SET TO 0 */
   }
+
   .back-button {
-    width: 50px; /* Adjust width for mobile */
-    padding: 8px; /* Adjust padding for mobile */
-    font-size: 1.2rem; /* Ensure text/icon is visible */
+    width: 50px;
+    /* Adjust width for mobile */
+    padding: 8px;
+    /* Adjust padding for mobile */
+    font-size: 1.2rem;
+    /* Ensure text/icon is visible */
+  }
+
+  .global-promt-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+
+  }
+  .global-promt-container h3 { 
+  font-size: 19px;
+  margin-bottom: 0;
   }
 }
+
 .custom-tooltip {
-  background-color: transparent !important; /* light gray */
+  background-color: transparent !important;
+  /* light gray */
   color: black !important;
   max-width: 250px;
   padding: 10px 12px;

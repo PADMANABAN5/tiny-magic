@@ -23,14 +23,14 @@ function Superadmin() {
       <Supersidebar /> {/* Sidebar component for navigation */}
 
       {/* Main Content Area */}
-      <Container fluid className="p-4 p-md-5" style={{marginTop: '30px'}}> {/* Adjust margin for fixed sidebar */}
+      <Container fluid className="main-container-bar"> {/* Adjust margin for fixed sidebar */}
         {/* Header Section */}
         <Card className="shadow-sm mb-3 mt-4 border-0 rounded-3" >
-          <Card.Body className="p-4">
-            <h1 className="fs-2 fw-bold text-dark mb-2">
+          <Card.Body>
+            <h1 className="fs-3 text-dark mb-2">
               Welcome, <span className="text-primary">{fullName || 'Super Admin'}</span>!👋 from <span className="text-primary">{'Tiny Magiq'}</span>
             </h1>
-            <p className="text-secondary fs-5">
+            <p className="text-secondary fs-6 mb-0">
               Manage platform-wide settings, organizations, and admin controls. Your central hub for ultimate control.
             </p>
           </Card.Body>
@@ -45,8 +45,8 @@ function Superadmin() {
           <Row xs={1} sm={2} lg={4} className="g-4">
             {/* Organizations Card */}
             <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-primary-subtle rounded-circle d-inline-flex mb-3">
                     <Building2 className="text-primary" size={32} />
                   </div>
@@ -67,8 +67,8 @@ function Superadmin() {
 
             {/* Mentors Card */}
             <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-success-subtle rounded-circle d-inline-flex mb-3">
                     <User className="text-success" size={32} />
                   </div>
@@ -89,8 +89,8 @@ function Superadmin() {
 
             {/* Organization Users Card */}
             <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-warning-subtle rounded-circle d-inline-flex mb-3">
                     <Users className="text-warning" size={32} />
                   </div>
@@ -112,8 +112,8 @@ function Superadmin() {
 
             {/* Organization Admins Card */}
             <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-danger-subtle rounded-circle d-inline-flex mb-3">
                     <ShieldCheck className="text-danger" size={32} />
                   </div>
@@ -143,8 +143,8 @@ function Superadmin() {
           <Row xs={1} sm={2} lg={4} className="g-4">
             {/* Concepts Card */}
             <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-info-subtle rounded-circle d-inline-flex mb-3">
                     <BookOpen className="text-info" size={32} />
                   </div>
@@ -165,8 +165,8 @@ function Superadmin() {
 
             {/* Batch Management Card */}
             <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-secondary-subtle rounded-circle d-inline-flex mb-3">
                     <LayoutGrid className="text-secondary" size={32} />
                   </div>
@@ -187,8 +187,8 @@ function Superadmin() {
 
             {/* Pods Card */}
             <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-warning-subtle rounded-circle d-inline-flex mb-3">
                     <Key className="text-warning" size={32} />
                   </div>
@@ -209,8 +209,8 @@ function Superadmin() {
 
             {/* User Management Card */}
             <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-success-subtle rounded-circle d-inline-flex mb-3">
                     <Database className="text-success" size={32} />
                   </div>
@@ -229,8 +229,8 @@ function Superadmin() {
               </Card>
             </Col>
            <Col>
-              <Card className="shadow-sm h-100 border-0 rounded-3">
-                <Card.Body className="p-4">
+              <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
+                <Card.Body className="">
                   <div className="p-3 bg-gradient-orange rounded-circle d-inline-flex mb-3">
                     <SiOpenai className="text-white" size={32} />
                   </div>

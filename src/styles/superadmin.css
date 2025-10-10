@@ -8,7 +8,10 @@ body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
-
+.main-container-bar {
+    margin-top: 50px;
+    padding: 25px;
+}
 /* Superadmin Container */
 .superadmin-container {
     display: flex;
@@ -45,7 +48,9 @@ body {
     justify-content: center;
     gap: 10px;
 }
-
+.card-body {
+    padding: 25px;
+}
 .superadmin-header h1 .👑 {
     font-size: 1.2em; /* Adjust crown size */
 }
@@ -409,9 +414,11 @@ body {
         font-size: 1.6em;
     }
 }
-
+.text-primary {
+    color: #00b2d7 !important
+}
 .superadmin-button {
-  background-color: #0d8dfd; /* Bootstrap Info color */
+  background-color: #00b2d7; /* Bootstrap Info color */
   color: white !important;
   border: none;
   padding: 10px 16px;
@@ -430,13 +437,13 @@ body {
 
 .superadmin-button:focus,
 .superadmin-button:active {
-  background-color: #0b5ed7; /* Slightly darker */
+  background-color: #02a2c2; /* Slightly darker */
   outline: none;
   box-shadow: none;
 }
 
 .superadmin-button:hover {
-  background-color: #0d6efd; /* Keep same on hover */
+  background-color: #02a2c2; /* Keep same on hover */
   color: white;
 }
 .bg-gradient-orange {
@@ -451,3 +458,30 @@ body {
      background: linear-gradient(135deg, #c2ed78 0%, #b9f47f 100%);
   color: green;
 }
+
+.card-superadmin {
+    text-align: left;
+}
+@media (max-width: 1199.98px) { }
+@media (max-width: 991.98px) { 
+    .main-container-bar {
+    margin-top: 50px;
+    padding: 25px;
+}
+.card-superadmin {
+    text-align: center !important;
+}
+.card-body {
+    padding: 20px;
+}
+.main-container-bar h1 {
+    line-height: 30px;
+}
+.card {
+    text-align: center;
+}
+ }
+
+@media (max-width: 767.98px) {  }
+
+@media (max-width: 575.98px) {  }

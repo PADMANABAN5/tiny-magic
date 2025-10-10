@@ -538,21 +538,21 @@ const [filterPodName, setFilterPodName] = useState('');
 
 
   return (
-    <div className="main-layout-container">
+    <div className="main-layout-containers">
       <Orgadminsidebar />
       <div className="content-area">
-        <Container className="mt-4">
+        <Container className="main-container-bar">
           {/* Welcome Card */}
           <Card
             className="shadow-sm mb-3 mt-2 rounded-3"
             style={{ boxShadow: '0 10px 10px rgba(33, 150, 243, 0.2)' }}
           >
-            <Card.Body className="p-4">
-              <h1 className="fs-2 fw-bold text-dark mb-2">
+            <Card.Body className="">
+              <h1 className="fs-3 text-dark mb-2">
                 Welcome, <span className="text-primary">{fullName}</span> 👋 from{' '}
                 <span className="text-primary">{organizationName}</span>
               </h1>
-              <p className="text-secondary fs-5">
+              <p className="text-secondary fs-6">
                 Manage users, monitor activities, and oversee your organization efficiently. Your
                 central control point.
               </p>

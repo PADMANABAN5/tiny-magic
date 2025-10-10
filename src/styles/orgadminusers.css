@@ -5,6 +5,16 @@
   background-color: #f8fafc;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
+.btn-primary {
+  background-color: #00b2d7;
+  border-color: #00b2d7;
+  box-shadow: none !important;
+} 
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: #00b2d7;
+  border-color: #00b2d7;
+} 
 
 .content-area {
   flex: 1;
@@ -513,13 +523,18 @@
   color: #000;
 }
 
-table,
+table,tbody
 tr,
 th,
 td {
   box-shadow: none !important;
+  border-color: inherit;
+    border-style: solid;
+    border-width: 0;
 }
-
+.table-responsive {
+  white-space: nowrap;
+}
 .view-btn {
   display: flex;
   align-items: center;

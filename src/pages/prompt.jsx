@@ -359,15 +359,15 @@ export default function Prompt() {
     <div className="main-layout-container">
       <Supersidebar />
       <div className="content-area">
-        <div className="container mt-4">
-          <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="container">
+          <div className="mb-3 global-promt-container">
             <h3>Global & Assigned Prompts</h3>
  
-            <div className="d-flex justify-content-between " style={{ width: '26%' }}>
+            <div className="btn-sec">
               <Button
                 variant="secondary"
                 onClick={() => navigate('/archived')}
-                style={{ width: '49%' }}
+                style={{ width: '49%', marginRight: '2%' }}
               >
                 <FaHistory />
               </Button>
@@ -420,8 +420,8 @@ export default function Prompt() {
 
  
           <div className="table-responsive">
-            <table className="table table-striped table-bordered table-hover">
-              <thead className="bg-primary text-white">
+            <table className="table table-hover table-striped table-bordered">
+              <thead className="">
                 <tr>
                   <th>Prompt Type</th>
                   <th>Prompt Level</th>
@@ -441,7 +441,7 @@ export default function Prompt() {
                     <td>{prompt.version}</td>
                     <td>
                       <Button
-                        variant="warning"
+                        variant="outline-success"
                         size="sm"
                         className="me-2"
                         onClick={() => handleEditClick(prompt)}
