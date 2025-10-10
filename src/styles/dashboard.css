@@ -3062,7 +3062,7 @@ html, body {
   margin-bottom: 20px;
 }
 .chat-messages {
-  padding: 4rem 2.5rem 0rem 2.5rem;
+  padding: 64px 24px 0px 24px;
 }
 }
 .pulse-container {
