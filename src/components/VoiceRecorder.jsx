@@ -121,14 +121,14 @@ const VoiceRecorder = forwardRef(({ onTranscription, disabled = false }, ref) =>
           });
 
           if (res.data.success && res.data.data.transcription?.trim()) {
-            toast.success("✅ Transcription complete!");
+            toast.success(" Transcription complete!");
             onTranscription(res.data.data.transcription);
           } else {
-            toast.error("❌ Transcription failed. Please try again.");
+            toast.error(" Transcription failed. Please try again.");
           }
         } catch (err) {
           console.error("Upload error:", err);
-          toast.error("⚠️ Error uploading audio.");
+          toast.error(" Error uploading audio.");
         } finally {
           setIsRecording(false);
           mediaRecorderRef.current = null;
