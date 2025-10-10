@@ -1,4 +1,4 @@
-import React, { use, useEffect, useMemo, useState } from 'react';
+import React, { use, useEffect, useMemo, useState } from "react";
 import {
   Container,
   Row,
@@ -13,49 +13,46 @@ import {
   Dropdown, // Added Dropdown for export options
   ButtonGroup, // Added ButtonGroup for export options
   // InputGroup, // Removed InputGroup
-  
-} from 'react-bootstrap';
-import {
-  
-  FiDownload
- 
-} from "react-icons/fi";
-import Orgadminsidebar from '../components/Orgadminsidebar';
-import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import jsPDF from 'jspdf';
-import * as XLSX from 'xlsx';
-import { saveAs } from 'file-saver';
-import autoTable from 'jspdf-autotable'; // Import autoTable for PDF table generation
-import { useAuth } from '../components/AuthContext';
+} from "react-bootstrap";
+import { FiDownload } from "react-icons/fi";
+import Orgadminsidebar from "../components/Orgadminsidebar";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import jsPDF from "jspdf";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
+import autoTable from "jspdf-autotable"; // Import autoTable for PDF table generation
+import { useAuth } from "../components/AuthContext";
 // Import react-datepicker and its styles
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import usePreventBack from '../utils/usePreventBack';
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import usePreventBack from "../utils/usePreventBack";
 // Define common table cell styles for consistency
 const baseCell = {
-  padding: '8px',
-  border: '1px solid #ddd',
-  textAlign: 'left',
-  verticalAlign: 'top',
+  padding: "8px",
+  border: "1px solid #ddd",
+  textAlign: "left",
+  verticalAlign: "top",
   // Removed whiteSpace: 'nowrap' to allow wrapping in HTML table if needed,
   // but PDF table's overflow: 'linebreak' handles it more robustly.
 };
-const thStyle = { ...baseCell, fontWeight: '600', backgroundColor: '#f2f2f2' };
+const thStyle = { ...baseCell, fontWeight: "600", backgroundColor: "#f2f2f2" };
 const tdStyle = { ...baseCell };
 
 function Orgadmin() {
   usePreventBack("/orgadmin");
   const navigate = useNavigate();
-  const firstname = sessionStorage.getItem('firstname');
-  const lastname = sessionStorage.getItem('lastname');
-  const organizationName = sessionStorage.getItem('organization_name') || 'Your Organization';
-  const email = sessionStorage.getItem('email');
+  const firstname = sessionStorage.getItem("firstname");
+  const lastname = sessionStorage.getItem("lastname");
+  const organizationName =
+    sessionStorage.getItem("organization_name") || "Your Organization";
+  const email = sessionStorage.getItem("email");
 
   const capitalize = (str) =>
-    str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : '';
+    str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
 
-  const fullName = `${capitalize(firstname)} ${capitalize(lastname)}`.trim() || 'User';
+  const fullName =
+    `${capitalize(firstname)} ${capitalize(lastname)}`.trim() || "User";
 
   /* -----------------------------------------------------------
    * State: Batches and Users (existing functionality)
@@ -70,13 +67,13 @@ function Orgadmin() {
   const [progressReportData, setProgressReportData] = useState([]);
   const [progressLoading, setProgressLoading] = useState(true);
   const [progressError, setProgressError] = useState(null);
-  const [searchFullName, setSearchFullName] = useState('');
-  const [searchEmail, setSearchEmail] = useState('');
-  const [filterConceptName, setFilterConceptName] = useState('');
-const [filterStatus, setFilterStatus] = useState('');
-const [filterStage, setFilterStage] = useState('');
-const [filterBatchName, setFilterBatchName] = useState('');
-const [filterPodName, setFilterPodName] = useState('');
+  const [searchFullName, setSearchFullName] = useState("");
+  const [searchEmail, setSearchEmail] = useState("");
+  const [filterConceptName, setFilterConceptName] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterStage, setFilterStage] = useState("");
+  const [filterBatchName, setFilterBatchName] = useState("");
+  const [filterPodName, setFilterPodName] = useState("");
 
   /* -----------------------------------------------------------
    * Pagination for Progress Report
@@ -89,19 +86,19 @@ const [filterPodName, setFilterPodName] = useState('');
    * --------------------------------------------------------- */
   const [filterStartDate, setFilterStartDate] = useState(null); // Will store Date object or null
   const [filterEndDate, setFilterEndDate] = useState(null); // Will store Date object or null
-   const { token } = useAuth();
+  const { token } = useAuth();
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   };
   const getUniqueValues = (data, property) => {
-  const values = new Set();
-  data.forEach(item => {
-    if (item[property]) values.add(item[property]);
-  });
-  return Array.from(values).sort();
-};
+    const values = new Set();
+    data.forEach((item) => {
+      if (item[property]) values.add(item[property]);
+    });
+    return Array.from(values).sort();
+  };
   /* -----------------------------------------------------------
    * Fetch Batches Data
    * --------------------------------------------------------- */
@@ -109,19 +106,22 @@ const [filterPodName, setFilterPodName] = useState('');
     const fetchBatches = async () => {
       if (!email) {
         setBatchesLoading(false);
-        setBatchesError('Organization admin email not found in session.');
+        setBatchesError("Organization admin email not found in session.");
         return;
       }
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`, config);
+        const res = await axios.get(
+          `${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`,
+          config
+        );
         if (res.data.success && Array.isArray(res.data.data)) {
           setBatchesData(res.data.data);
         } else {
-          setBatchesError(res.data.message || 'Failed to fetch batches.');
+          setBatchesError(res.data.message || "Failed to fetch batches.");
           setBatchesData([]);
         }
       } catch (err) {
-        setBatchesError('Error fetching batches: ' + err.message);
+        setBatchesError("Error fetching batches: " + err.message);
         setBatchesData([]);
       } finally {
         setBatchesLoading(false);
@@ -135,9 +135,9 @@ const [filterPodName, setFilterPodName] = useState('');
    * --------------------------------------------------------- */
   useEffect(() => {
     const fetchProgress = async () => {
-      if (!organizationName || organizationName === 'Your Organization') {
+      if (!organizationName || organizationName === "Your Organization") {
         setProgressLoading(false);
-        setProgressError('Organization name not found in session.');
+        setProgressError("Organization name not found in session.");
         return;
       }
       try {
@@ -148,10 +148,12 @@ const [filterPodName, setFilterPodName] = useState('');
           setProgressReportData(res.data.data);
         } else {
           setProgressReportData([]);
-          setProgressError(res.data.message || 'Failed to fetch progress report.');
+          setProgressError(
+            res.data.message || "Failed to fetch progress report."
+          );
         }
       } catch (err) {
-        setProgressError('Error fetching progress report: ' + err.message);
+        setProgressError("Error fetching progress report: " + err.message);
         setProgressReportData([]);
       } finally {
         setProgressLoading(false);
@@ -164,7 +166,11 @@ const [filterPodName, setFilterPodName] = useState('');
    * Helpers: extract and normalize date from record
    * --------------------------------------------------------- */
   const getDateFromItem = (item) => {
-    const dStr = item?.updated_at || item?.updatedAt || item?.created_at || item?.createdAt;
+    const dStr =
+      item?.updated_at ||
+      item?.updatedAt ||
+      item?.created_at ||
+      item?.createdAt;
     if (!dStr) return null;
     const d = new Date(dStr);
     return isNaN(d.getTime()) ? null : d;
@@ -174,52 +180,72 @@ const [filterPodName, setFilterPodName] = useState('');
    * Derived: filtered + sorted progress records
    * --------------------------------------------------------- */
   const filteredSortedProgress = useMemo(() => {
-  if (!Array.isArray(progressReportData)) return [];
+    if (!Array.isArray(progressReportData)) return [];
 
-  let startMs = null;
-  let endMs = null;
+    let startMs = null;
+    let endMs = null;
 
-  if (filterStartDate) {
-    const start = new Date(filterStartDate);
-    start.setHours(0, 0, 0, 0);
-    startMs = start.getTime();
-  }
-  if (filterEndDate) {
-    const end = new Date(filterEndDate);
-    end.setHours(23, 59, 59, 999);
-    endMs = end.getTime();
-  }
-
-  return progressReportData.filter((item) => {
-    const d = getDateFromItem(item);
-    const ms = d ? d.getTime() : null;
-
-    // Date filter
-    if (startMs !== null && ms !== null && ms < startMs) return false;
-    if (endMs !== null && ms !== null && ms > endMs) return false;
-
-    // Full Name search
-    const itemFullName = `${capitalize(item.first_name)} ${capitalize(item.last_name)}`.trim();
-    if (searchFullName && !itemFullName.toLowerCase().includes(searchFullName.toLowerCase())) {
-      return false;
+    if (filterStartDate) {
+      const start = new Date(filterStartDate);
+      start.setHours(0, 0, 0, 0);
+      startMs = start.getTime();
+    }
+    if (filterEndDate) {
+      const end = new Date(filterEndDate);
+      end.setHours(23, 59, 59, 999);
+      endMs = end.getTime();
     }
 
-    // Email search
-    if (searchEmail && item.email && !item.email.toLowerCase().includes(searchEmail.toLowerCase())) {
-      return false;
-    }
+    return progressReportData.filter((item) => {
+      const d = getDateFromItem(item);
+      const ms = d ? d.getTime() : null;
 
-    // New filters
-    if (filterConceptName && item.concept_name !== filterConceptName) return false;
-    if (filterStatus && item.status !== filterStatus) return false;
-    if (filterStage && item.current_stage !== filterStage) return false;
-    if (filterBatchName && item.batch_name !== filterBatchName) return false;
-    if (filterPodName && item.pod_name !== filterPodName) return false;
+      // Date filter
+      if (startMs !== null && ms !== null && ms < startMs) return false;
+      if (endMs !== null && ms !== null && ms > endMs) return false;
 
-    return true;
-  });
-}, [progressReportData, filterStartDate, filterEndDate, searchFullName, searchEmail, 
-    filterConceptName, filterStatus, filterStage, filterBatchName, filterPodName]);
+      // Full Name search
+      const itemFullName = `${capitalize(item.first_name)} ${capitalize(
+        item.last_name
+      )}`.trim();
+      if (
+        searchFullName &&
+        !itemFullName.toLowerCase().includes(searchFullName.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Email search
+      if (
+        searchEmail &&
+        item.email &&
+        !item.email.toLowerCase().includes(searchEmail.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // New filters
+      if (filterConceptName && item.concept_name !== filterConceptName)
+        return false;
+      if (filterStatus && item.status !== filterStatus) return false;
+      if (filterStage && item.current_stage !== filterStage) return false;
+      if (filterBatchName && item.batch_name !== filterBatchName) return false;
+      if (filterPodName && item.pod_name !== filterPodName) return false;
+
+      return true;
+    });
+  }, [
+    progressReportData,
+    filterStartDate,
+    filterEndDate,
+    searchFullName,
+    searchEmail,
+    filterConceptName,
+    filterStatus,
+    filterStage,
+    filterBatchName,
+    filterPodName,
+  ]);
 
   /* -----------------------------------------------------------
    * Pagination for Progress Report Table (now on individual records)
@@ -230,7 +256,10 @@ const [filterPodName, setFilterPodName] = useState('');
 
   const currentPageProgressData = useMemo(() => {
     const startIdx = (currentPage - 1) * progressItemsPerPage;
-    return filteredSortedProgress.slice(startIdx, startIdx + progressItemsPerPage);
+    return filteredSortedProgress.slice(
+      startIdx,
+      startIdx + progressItemsPerPage
+    );
   }, [filteredSortedProgress, currentPage, progressItemsPerPage]);
 
   /* -----------------------------------------------------------
@@ -238,8 +267,10 @@ const [filterPodName, setFilterPodName] = useState('');
    * --------------------------------------------------------- */
   const progressTableRows = useMemo(() => {
     return currentPageProgressData.map((item, idx) => {
-      const displayName = `${capitalize(item.first_name)} ${capitalize(item.last_name)}`.trim();
-      const updated = getDateFromItem(item)?.toLocaleString() || '';
+      const displayName = `${capitalize(item.first_name)} ${capitalize(
+        item.last_name
+      )}`.trim();
+      const updated = getDateFromItem(item)?.toLocaleString() || "";
       const key = `${item.user_id}-${item.id || idx}`; // Unique key for each row
 
       return (
@@ -263,54 +294,56 @@ const [filterPodName, setFilterPodName] = useState('');
    * --------------------------------------------------------- */
   const handleDownloadPDF = () => {
     if (!filteredSortedProgress || filteredSortedProgress.length === 0) {
-      console.log('No progress data to export.');
+      console.log("No progress data to export.");
       return;
     }
 
     // Changed paper size to A2 (420mm x 594mm) for landscape
-    const doc = new jsPDF('l', 'mm', 'a2');
+    const doc = new jsPDF("l", "mm", "a2");
     doc.setFontSize(20); // Increased font size for A2
     doc.text(`Organization Progress Report: ${organizationName}`, 20, 20); // Adjusted text position for A2
 
     const head = [
       [
-        'Full Name',
-        'Email',
-        'Concept Name',
-        'Status',
-        'Current Stage',
-        'Batch Name',
-        'Pod Name',
-        'Exp. Score', // Abbreviated header
-        'Int. Score', // Abbreviated header
-        'App. Score', // Abbreviated header
-        'Per. Score', // Abbreviated header
-        'Emp. Score', // Abbreviated header
-        'Self-K. Score', // Abbreviated header
-        'Ask Q. Score', // Abbreviated header
-        'Clar. Amb. Score', // Abbreviated header
-        'Sum. Conf. Score', // Abbreviated header
-        'Chal. Ideas Score', // Abbreviated header
-        'Comp. Con. Score', // Abbreviated header
-        'Abs. Con. Score', // Abbreviated header
-        '6 Facets Avg',
-        'Und. Skills Avg', // Abbreviated header
-        'Final Score',
-        'Updated At',
+        "Full Name",
+        "Email",
+        "Concept Name",
+        "Status",
+        "Current Stage",
+        "Batch Name",
+        "Pod Name",
+        "Exp. Score", // Abbreviated header
+        "Int. Score", // Abbreviated header
+        "App. Score", // Abbreviated header
+        "Per. Score", // Abbreviated header
+        "Emp. Score", // Abbreviated header
+        "Self-K. Score", // Abbreviated header
+        "Ask Q. Score", // Abbreviated header
+        "Clar. Amb. Score", // Abbreviated header
+        "Sum. Conf. Score", // Abbreviated header
+        "Chal. Ideas Score", // Abbreviated header
+        "Comp. Con. Score", // Abbreviated header
+        "Abs. Con. Score", // Abbreviated header
+        "6 Facets Avg",
+        "Und. Skills Avg", // Abbreviated header
+        "Final Score",
+        "Updated At",
       ],
     ];
 
     const body = filteredSortedProgress.map((item) => {
-      const displayName = `${capitalize(item.first_name)} ${capitalize(item.last_name)}`.trim();
+      const displayName = `${capitalize(item.first_name)} ${capitalize(
+        item.last_name
+      )}`.trim();
       const d = getDateFromItem(item);
       return [
         displayName,
-        item.email || '',
-        item.concept_name || '',
-        item.status || '',
-        item.current_stage ?? '',
-        item.batch_name || '',
-        item.pod_name || '',
+        item.email || "",
+        item.concept_name || "",
+        item.status || "",
+        item.current_stage ?? "",
+        item.batch_name || "",
+        item.pod_name || "",
         item.explanation_score || 0,
         item.interpretation_score || 0,
         item.application_score || 0,
@@ -323,10 +356,10 @@ const [filterPodName, setFilterPodName] = useState('');
         item.challenging_ideas_score || 0,
         item.comparing_concepts_score || 0,
         item.abstract_concrete_score || 0,
-        item.six_facets_average || '0.00',
-        item.understanding_skills_average || '0.00',
+        item.six_facets_average || "0.00",
+        item.understanding_skills_average || "0.00",
         item.final_weighted_score || 0,
-        d ? d.toLocaleString() : '',
+        d ? d.toLocaleString() : "",
       ];
     });
 
@@ -334,7 +367,7 @@ const [filterPodName, setFilterPodName] = useState('');
       head,
       body,
       startY: 30, // Adjusted startY for larger paper and title
-      styles: { fontSize: 10, cellPadding: 2, overflow: 'linebreak' }, // Increased font size to 10, adjusted cell padding
+      styles: { fontSize: 10, cellPadding: 2, overflow: "linebreak" }, // Increased font size to 10, adjusted cell padding
       headStyles: {
         fillColor: [242, 242, 242],
         textColor: [0, 0, 0],
@@ -369,14 +402,16 @@ const [filterPodName, setFilterPodName] = useState('');
       },
       didDrawPage: (data) => {
         const pageSize = doc.internal.pageSize;
-        const pageHeight = pageSize.height ? pageSize.height : pageSize.getHeight();
+        const pageHeight = pageSize.height
+          ? pageSize.height
+          : pageSize.getHeight();
         doc.setFontSize(10); // Adjusted font size for page number
         const pageStr = `Page ${doc.internal.getNumberOfPages()}`;
         doc.text(pageStr, data.settings.margin.left, pageHeight - 10); // Adjusted position for page number
       },
     });
 
-    const fname = organizationName.replace(/\s+/g, '_') || 'organization';
+    const fname = organizationName.replace(/\s+/g, "_") || "organization";
     doc.save(`organization_progress_report_${fname}.pdf`);
   };
 
@@ -385,47 +420,53 @@ const [filterPodName, setFilterPodName] = useState('');
    * --------------------------------------------------------- */
   const handleDownloadExcel = () => {
     if (!filteredSortedProgress || filteredSortedProgress.length === 0) {
-      console.log('No progress data to export.');
+      console.log("No progress data to export.");
       return;
     }
 
     const data = filteredSortedProgress.map((item) => {
-      const displayName = `${capitalize(item.first_name)} ${capitalize(item.last_name)}`.trim();
+      const displayName = `${capitalize(item.first_name)} ${capitalize(
+        item.last_name
+      )}`.trim();
       const d = getDateFromItem(item);
       return {
-        'Full Name': displayName,
-        'Email': item.email || '',
-        'Concept Name': item.concept_name || '',
-        'Status': item.status || '',
-        'Current Stage': item.current_stage ?? '',
-        'Batch Name': item.batch_name || '',
-        'Pod Name': item.pod_name || '',
-        'Explanation Score': item.explanation_score || 0,
-        'Interpretation Score': item.interpretation_score || 0,
-        'Application Score': item.application_score || 0,
-        'Perspective Score': item.perspective_score || 0,
-        'Empathy Score': item.empathy_score || 0,
-        'Self-Knowledge Score': item.self_knowledge_score || 0,
-        'Asking Questions Score': item.asking_questions_score || 0,
-        'Clarifying Ambiguity Score': item.clarifying_ambiguity_score || 0,
-        'Summarizing Confirming Score': item.summarizing_confirming_score || 0,
-        'Challenging Ideas Score': item.challenging_ideas_score || 0,
-        'Comparing Concepts Score': item.comparing_concepts_score || 0,
-        'Abstract Concrete Score': item.abstract_concrete_score || 0,
-        '6 Facets Average': item.six_facets_average || '0.00',
-        'Understanding Skills Average': item.understanding_skills_average || '0.00',
-        'Final Score': item.final_weighted_score || 0,
-        'Updated At': d ? d.toLocaleString() : '',
+        "Full Name": displayName,
+        Email: item.email || "",
+        "Concept Name": item.concept_name || "",
+        Status: item.status || "",
+        "Current Stage": item.current_stage ?? "",
+        "Batch Name": item.batch_name || "",
+        "Pod Name": item.pod_name || "",
+        "Explanation Score": item.explanation_score || 0,
+        "Interpretation Score": item.interpretation_score || 0,
+        "Application Score": item.application_score || 0,
+        "Perspective Score": item.perspective_score || 0,
+        "Empathy Score": item.empathy_score || 0,
+        "Self-Knowledge Score": item.self_knowledge_score || 0,
+        "Asking Questions Score": item.asking_questions_score || 0,
+        "Clarifying Ambiguity Score": item.clarifying_ambiguity_score || 0,
+        "Summarizing Confirming Score": item.summarizing_confirming_score || 0,
+        "Challenging Ideas Score": item.challenging_ideas_score || 0,
+        "Comparing Concepts Score": item.comparing_concepts_score || 0,
+        "Abstract Concrete Score": item.abstract_concrete_score || 0,
+        "6 Facets Average": item.six_facets_average || "0.00",
+        "Understanding Skills Average":
+          item.understanding_skills_average || "0.00",
+        "Final Score": item.final_weighted_score || 0,
+        "Updated At": d ? d.toLocaleString() : "",
       };
     });
 
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'OrgProgress');
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([excelBuffer], { type: 'application/octet-stream' });
+    XLSX.utils.book_append_sheet(workbook, worksheet, "OrgProgress");
+    const excelBuffer = XLSX.write(workbook, {
+      bookType: "xlsx",
+      type: "array",
+    });
+    const blob = new Blob([excelBuffer], { type: "application/octet-stream" });
 
-    const fname = organizationName.replace(/\s+/g, '_') || 'organization';
+    const fname = organizationName.replace(/\s+/g, "_") || "organization";
     saveAs(blob, `organization_progress_report_${fname}.xlsx`);
   };
 
@@ -443,74 +484,81 @@ const [filterPodName, setFilterPodName] = useState('');
   };
 
   const renderProgressPagination = () => {
-  if (totalProgressPages <= 1) return null;
+    if (totalProgressPages <= 1) return null;
 
-  // Calculate the range of pages to show (5 pages max)
-  let startPage = Math.max(1, currentPage - 2);
-  let endPage = Math.min(totalProgressPages, currentPage + 2);
+    // Calculate the range of pages to show (5 pages max)
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalProgressPages, currentPage + 2);
 
-  // Adjust if we're near the start or end
-  if (currentPage <= 3) {
-    endPage = Math.min(5, totalProgressPages);
-  } else if (currentPage >= totalProgressPages - 2) {
-    startPage = Math.max(totalProgressPages - 4, 1);
-  }
+    // Adjust if we're near the start or end
+    if (currentPage <= 3) {
+      endPage = Math.min(5, totalProgressPages);
+    } else if (currentPage >= totalProgressPages - 2) {
+      startPage = Math.max(totalProgressPages - 4, 1);
+    }
 
-  const pages = [];
-  for (let i = startPage; i <= endPage; i++) {
-    pages.push(i);
-  }
+    const pages = [];
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
 
-  return (
-    <Pagination className="justify-content-center mt-3">
-      <Pagination.First onClick={() => handleProgressPageChange(1)} disabled={currentPage === 1} />
-      <Pagination.Prev
-        onClick={() => handleProgressPageChange(currentPage - 1)}
-        disabled={currentPage === 1}
-      />
-      
-      {/* Show first page and ellipsis if needed */}
-      {startPage > 1 && (
-        <>
-          <Pagination.Item onClick={() => handleProgressPageChange(1)}>
-            1
+    return (
+      <Pagination className="justify-content-center mt-3">
+        <Pagination.First
+          onClick={() => handleProgressPageChange(1)}
+          disabled={currentPage === 1}
+        />
+        <Pagination.Prev
+          onClick={() => handleProgressPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        />
+
+        {/* Show first page and ellipsis if needed */}
+        {startPage > 1 && (
+          <>
+            <Pagination.Item onClick={() => handleProgressPageChange(1)}>
+              1
+            </Pagination.Item>
+            {startPage > 2 && <Pagination.Ellipsis disabled />}
+          </>
+        )}
+
+        {/* Visible page numbers */}
+        {pages.map((page) => (
+          <Pagination.Item
+            key={page}
+            active={page === currentPage}
+            onClick={() => handleProgressPageChange(page)}
+          >
+            {page}
           </Pagination.Item>
-          {startPage > 2 && <Pagination.Ellipsis disabled />}
-        </>
-      )}
-      
-      {/* Visible page numbers */}
-      {pages.map((page) => (
-        <Pagination.Item
-          key={page}
-          active={page === currentPage}
-          onClick={() => handleProgressPageChange(page)}
-        >
-          {page}
-        </Pagination.Item>
-      ))}
-      
-      {/* Show last page and ellipsis if needed */}
-      {endPage < totalProgressPages && (
-        <>
-          {endPage < totalProgressPages - 1 && <Pagination.Ellipsis disabled />}
-          <Pagination.Item onClick={() => handleProgressPageChange(totalProgressPages)}>
-            {totalProgressPages}
-          </Pagination.Item>
-        </>
-      )}
-      
-      <Pagination.Next
-        onClick={() => handleProgressPageChange(currentPage + 1)}
-        disabled={currentPage === totalProgressPages}
-      />
-      <Pagination.Last
-        onClick={() => handleProgressPageChange(totalProgressPages)}
-        disabled={currentPage === totalProgressPages}
-      />
-    </Pagination>
-  );
-};
+        ))}
+
+        {/* Show last page and ellipsis if needed */}
+        {endPage < totalProgressPages && (
+          <>
+            {endPage < totalProgressPages - 1 && (
+              <Pagination.Ellipsis disabled />
+            )}
+            <Pagination.Item
+              onClick={() => handleProgressPageChange(totalProgressPages)}
+            >
+              {totalProgressPages}
+            </Pagination.Item>
+          </>
+        )}
+
+        <Pagination.Next
+          onClick={() => handleProgressPageChange(currentPage + 1)}
+          disabled={currentPage === totalProgressPages}
+        />
+        <Pagination.Last
+          onClick={() => handleProgressPageChange(totalProgressPages)}
+          disabled={currentPage === totalProgressPages}
+        />
+      </Pagination>
+    );
+  };
 
   const handleCardClick = (batchId) => {
     navigate(`/orgadminpods/${batchId}`);
@@ -522,44 +570,42 @@ const [filterPodName, setFilterPodName] = useState('');
   const pageLoading = batchesLoading || progressLoading;
 
   // Function to clear all filters
- const handleClearAllFilters = () => {
-  setFilterStartDate(null);
-  setFilterEndDate(null);
-  setSearchFullName('');
-  setSearchEmail('');
-  setFilterConceptName('');
-  setFilterStatus('');
-  setFilterStage('');
-  setFilterBatchName('');
-  setFilterPodName('');
-  setCurrentPage(1);
-};
-
-
+  const handleClearAllFilters = () => {
+    setFilterStartDate(null);
+    setFilterEndDate(null);
+    setSearchFullName("");
+    setSearchEmail("");
+    setFilterConceptName("");
+    setFilterStatus("");
+    setFilterStage("");
+    setFilterBatchName("");
+    setFilterPodName("");
+    setCurrentPage(1);
+  };
 
   return (
-    <div className="main-layout-containers">
+    <div className="main-layout-containers bg-light">
       <Orgadminsidebar />
-      <div className="content-area">
-        <Container className="main-container-bar">
+      <div className="content-areaa">
+        <Container fluid className="main-container-bar">
           {/* Welcome Card */}
           <Card
-            className="shadow-sm mb-3 mt-2 rounded-3"
-            style={{ boxShadow: '0 10px 10px rgba(33, 150, 243, 0.2)' }}
-          >
+            className="shadow-sm mb-3 mt-4 border-0 rounded-3"
+                     >
             <Card.Body className="">
               <h1 className="fs-3 text-dark mb-2">
-                Welcome, <span className="text-primary">{fullName}</span> 👋 from{' '}
-                <span className="text-primary">{organizationName}</span>
+                Welcome, <span className="text-primary">{fullName}</span> 👋
+                from <span className="text-primary">{organizationName}</span>
               </h1>
               <p className="text-secondary fs-6">
-                Manage users, monitor activities, and oversee your organization efficiently. Your
-                central control point.
+                Manage users, monitor activities, and oversee your organization
+                efficiently. Your central control point.
               </p>
             </Card.Body>
           </Card>
-
-          {pageLoading && (
+          <Card className="border-0 rounded-3 shadow-sm mb-4">
+            <Card.Body>
+               {pageLoading && (
             <div className="text-center my-5">
               <Spinner animation="border" role="status" />
               <p className="mt-2">Loading data...</p>
@@ -575,276 +621,339 @@ const [filterPodName, setFilterPodName] = useState('');
           {/* NEW: Progress Report Table */}
           {!pageLoading && !progressError && (
             <>
-              <h2 className="mt-5 mb-3 fs-3 fw-bold text-dark">Progress Report</h2>
+              <h2 className="fs-4 text-dark" style={{ textAlign: "left" }}>
+                Progress Report
+              </h2>
 
               <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 gap-3">
-  {/* Items per page */}
-  <div className="d-flex align-items-center">
-    <span className="me-2">Show entries:</span>
-    <Form.Select
-      value={progressItemsPerPage}
-      onChange={handleProgressItemsPerPageChange}
-      style={{ width: '90px' }}
-      size="sm"
-    >
-      <option value="5">5</option>
-      <option value="10">10</option>
-      <option value="20">20</option>
-      <option value="50">50</option>
-    </Form.Select>
-  </div>
+                {/* Items per page */}
+                <div className="d-flex align-items-center">
+                  <span className="me-2">Show entries:</span>
+                  <Form.Select
+                    value={progressItemsPerPage}
+                    onChange={handleProgressItemsPerPageChange}
+                    style={{ width: "90px" }}
+                    size="sm"
+                  >
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                  </Form.Select>
+                </div>
 
-  {/* Date Filter - Using react-datepicker */}
-  <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
-    <div className="d-flex align-items-center">
-      <span className="me-2">Filter by date:</span>
-      <DatePicker
-        selected={filterStartDate}
-        onChange={(date) => {
-          setFilterStartDate(date);
-          setCurrentPage(1);
-        }}
-        selectsStart
-        startDate={filterStartDate}
-        endDate={filterEndDate}
-        placeholderText="Start Date"
-        className="form-control form-control-sm"
-        dateFormat="yyyy-MM-dd"
-        isClearable
-      />
-      <span className="mx-1">to</span>
-      <DatePicker
-        selected={filterEndDate}
-        onChange={(date) => {
-          setFilterEndDate(date);
-          setCurrentPage(1);
-        }}
-        selectsEnd
-        startDate={filterStartDate}
-        endDate={filterEndDate}
-        minDate={filterStartDate}
-        placeholderText="End Date"
-        className="form-control form-control-sm"
-        dateFormat="yyyy-MM-dd"
-        isClearable
-      />
-    </div>
+                {/* Date Filter - Using react-datepicker */}
+                <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
+                  <div className="d-flex align-items-center">
+                    <span className="me-2">Filter by date:</span>
+                    <DatePicker
+                      selected={filterStartDate}
+                      onChange={(date) => {
+                        setFilterStartDate(date);
+                        setCurrentPage(1);
+                      }}
+                      selectsStart
+                      startDate={filterStartDate}
+                      endDate={filterEndDate}
+                      placeholderText="Start Date"
+                      className="form-control form-control-sm"
+                      dateFormat="yyyy-MM-dd"
+                      isClearable
+                    />
+                    <span className="mx-1">to</span>
+                    <DatePicker
+                      selected={filterEndDate}
+                      onChange={(date) => {
+                        setFilterEndDate(date);
+                        setCurrentPage(1);
+                      }}
+                      selectsEnd
+                      startDate={filterStartDate}
+                      endDate={filterEndDate}
+                      minDate={filterStartDate}
+                      placeholderText="End Date"
+                      className="form-control form-control-sm"
+                      dateFormat="yyyy-MM-dd"
+                      isClearable
+                    />
+                  </div>
 
-    {/* Search Inputs (now below date filter) */}
-    <div className="d-flex flex-grow-1 gap-2" style={{ maxWidth: '400px' }}>
-      <Form.Control
-        placeholder="Search by Full Name"
-        value={searchFullName}
-        onChange={(e) => {
-          setSearchFullName(e.target.value);
-          setCurrentPage(1);
-        }}
-        size="sm"
-      />
-      <Form.Control
-        placeholder="Search by Email"
-        value={searchEmail}
-        onChange={(e) => {
-          setSearchEmail(e.target.value);
-          setCurrentPage(1);
-        }}
-        size="sm"
-      />
-    </div>
-  </div>
+                  {/* Search Inputs (now below date filter) */}
+                  <div
+                    className="d-flex flex-grow-1 gap-2"
+                    style={{ maxWidth: "400px" }}
+                  >
+                    <Form.Control
+                      placeholder="Search by Full Name"
+                      value={searchFullName}
+                      onChange={(e) => {
+                        setSearchFullName(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      size="sm"
+                    />
+                    <Form.Control
+                      placeholder="Search by Email"
+                      value={searchEmail}
+                      onChange={(e) => {
+                        setSearchEmail(e.target.value);
+                        setCurrentPage(1);
+                      }}
+                      size="sm"
+                    />
+                  </div>
+                </div>
 
-  {(filterStartDate || filterEndDate || searchFullName || searchEmail || 
-  filterConceptName || filterStatus || filterStage || filterBatchName || filterPodName) && (
-  <Button variant="outline-danger" size="sm" onClick={handleClearAllFilters}>
-    Clear Filters
-  </Button>
-)}
-  <Dropdown>
-    <Dropdown.Toggle variant="primary" size="sm" className="text-white">
-      <FiDownload className="me-1" /> Download
-    </Dropdown.Toggle>
-    <Dropdown.Menu>
-      <Dropdown.Item onClick={handleDownloadPDF}>Download as PDF</Dropdown.Item>
-      <Dropdown.Item onClick={handleDownloadExcel}>Download as Excel</Dropdown.Item>
-    </Dropdown.Menu>
-  </Dropdown>
-</div>
+                {(filterStartDate ||
+                  filterEndDate ||
+                  searchFullName ||
+                  searchEmail ||
+                  filterConceptName ||
+                  filterStatus ||
+                  filterStage ||
+                  filterBatchName ||
+                  filterPodName) && (
+                  <Button
+                    variant="outline-danger"
+                    size="sm"
+                    onClick={handleClearAllFilters}
+                  >
+                    Clear Filters
+                  </Button>
+                )}
+                <Dropdown>
+                  <Dropdown.Toggle
+                    variant="primary"
+                    size="sm"
+                    className="text-white"
+                  >
+                    <FiDownload className="me-1" /> Download
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu>
+                    <Dropdown.Item onClick={handleDownloadPDF}>
+                      Download as PDF
+                    </Dropdown.Item>
+                    <Dropdown.Item onClick={handleDownloadExcel}>
+                      Download as Excel
+                    </Dropdown.Item>
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
 
               {/* Filter summary */}
               <div className="mb-2 small text-muted">
-  Showing {currentPageProgressData.length} of {filteredSortedProgress.length} records
-  {progressReportData.length !== filteredSortedProgress.length &&
-    ` (filtered from ${progressReportData.length} total)`}.
-  {filterConceptName && ` | Concept: ${filterConceptName}`}
-  {filterStatus && ` | Status: ${filterStatus}`}
-  {filterStage && ` | Stage: ${filterStage}`}
-  {filterBatchName && ` | Batch: ${filterBatchName}`}
-  {filterPodName && ` | Pod: ${filterPodName}`}
-  {filterStartDate && ` | From: ${filterStartDate.toLocaleDateString()}`}
-  {filterEndDate && ` | To: ${filterEndDate.toLocaleDateString()}`}
-</div>
+                Showing {currentPageProgressData.length} of{" "}
+                {filteredSortedProgress.length} records
+                {progressReportData.length !== filteredSortedProgress.length &&
+                  ` (filtered from ${progressReportData.length} total)`}
+                .{filterConceptName && ` | Concept: ${filterConceptName}`}
+                {filterStatus && ` | Status: ${filterStatus}`}
+                {filterStage && ` | Stage: ${filterStage}`}
+                {filterBatchName && ` | Batch: ${filterBatchName}`}
+                {filterPodName && ` | Pod: ${filterPodName}`}
+                {filterStartDate &&
+                  ` | From: ${filterStartDate.toLocaleDateString()}`}
+                {filterEndDate &&
+                  ` | To: ${filterEndDate.toLocaleDateString()}`}
+              </div>
 
-             <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
-  {/* Concept Name Filter */}
-  <Dropdown>
-    <Dropdown.Toggle variant="outline-secondary" size="sm" className="d-flex align-items-center">
-      {filterConceptName || 'Concept Name'}
-    </Dropdown.Toggle>
-    <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto' }}>
-      <Dropdown.Item 
-        active={!filterConceptName}
-        onClick={() => setFilterConceptName('')}
-      >
-        All Concepts
-      </Dropdown.Item>
-      {getUniqueValues(progressReportData, 'concept_name').map(name => (
-        <Dropdown.Item 
-          key={name} 
-          active={filterConceptName === name}
-          onClick={() => {
-            setFilterConceptName(name);
-            setCurrentPage(1);
-          }}
-        >
-          {name}
-        </Dropdown.Item>
-      ))}
-    </Dropdown.Menu>
-  </Dropdown>
+              <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                {/* Concept Name Filter */}
+                <Dropdown>
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    size="sm"
+                    className="d-flex align-items-center"
+                  >
+                    {filterConceptName || "Concept Name"}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu
+                    style={{ maxHeight: "300px", overflowY: "auto" }}
+                  >
+                    <Dropdown.Item
+                      active={!filterConceptName}
+                      onClick={() => setFilterConceptName("")}
+                    >
+                      All Concepts
+                    </Dropdown.Item>
+                    {getUniqueValues(progressReportData, "concept_name").map(
+                      (name) => (
+                        <Dropdown.Item
+                          key={name}
+                          active={filterConceptName === name}
+                          onClick={() => {
+                            setFilterConceptName(name);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          {name}
+                        </Dropdown.Item>
+                      )
+                    )}
+                  </Dropdown.Menu>
+                </Dropdown>
 
-  {/* Status Filter */}
-  <Dropdown>
-    <Dropdown.Toggle variant="outline-secondary" size="sm" className="d-flex align-items-center">
-      {filterStatus || 'Status'}
-    </Dropdown.Toggle>
-    <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto' }}>
-      <Dropdown.Item 
-        active={!filterStatus}
-        onClick={() => setFilterStatus('')}
-      >
-        All Statuses
-      </Dropdown.Item>
-      {getUniqueValues(progressReportData, 'status').map(status => (
-        <Dropdown.Item 
-          key={status} 
-          active={filterStatus === status}
-          onClick={() => {
-            setFilterStatus(status);
-            setCurrentPage(1);
-          }}
-        >
-          {status}
-        </Dropdown.Item>
-      ))}
-    </Dropdown.Menu>
-  </Dropdown>
+                {/* Status Filter */}
+                <Dropdown>
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    size="sm"
+                    className="d-flex align-items-center"
+                  >
+                    {filterStatus || "Status"}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu
+                    style={{ maxHeight: "300px", overflowY: "auto" }}
+                  >
+                    <Dropdown.Item
+                      active={!filterStatus}
+                      onClick={() => setFilterStatus("")}
+                    >
+                      All Statuses
+                    </Dropdown.Item>
+                    {getUniqueValues(progressReportData, "status").map(
+                      (status) => (
+                        <Dropdown.Item
+                          key={status}
+                          active={filterStatus === status}
+                          onClick={() => {
+                            setFilterStatus(status);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          {status}
+                        </Dropdown.Item>
+                      )
+                    )}
+                  </Dropdown.Menu>
+                </Dropdown>
 
-  {/* Stage Filter */}
-  <Dropdown>
-    <Dropdown.Toggle variant="outline-secondary" size="sm" className="d-flex align-items-center">
-      {filterStage || 'Stage'}
-    </Dropdown.Toggle>
-    <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto' }}>
-      <Dropdown.Item 
-        active={!filterStage}
-        onClick={() => setFilterStage('')}
-      >
-        All Stages
-      </Dropdown.Item>
-      {getUniqueValues(progressReportData, 'current_stage').map(stage => (
-        <Dropdown.Item 
-          key={stage} 
-          active={filterStage === stage}
-          onClick={() => {
-            setFilterStage(stage);
-            setCurrentPage(1);
-          }}
-        >
-          {stage}
-        </Dropdown.Item>
-      ))}
-    </Dropdown.Menu>
-  </Dropdown>
+                {/* Stage Filter */}
+                <Dropdown>
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    size="sm"
+                    className="d-flex align-items-center"
+                  >
+                    {filterStage || "Stage"}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu
+                    style={{ maxHeight: "300px", overflowY: "auto" }}
+                  >
+                    <Dropdown.Item
+                      active={!filterStage}
+                      onClick={() => setFilterStage("")}
+                    >
+                      All Stages
+                    </Dropdown.Item>
+                    {getUniqueValues(progressReportData, "current_stage").map(
+                      (stage) => (
+                        <Dropdown.Item
+                          key={stage}
+                          active={filterStage === stage}
+                          onClick={() => {
+                            setFilterStage(stage);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          {stage}
+                        </Dropdown.Item>
+                      )
+                    )}
+                  </Dropdown.Menu>
+                </Dropdown>
 
-  {/* Batch Name Filter */}
-  <Dropdown>
-    <Dropdown.Toggle variant="outline-secondary" size="sm" className="d-flex align-items-center">
-      {filterBatchName || 'Batch Name'}
-    </Dropdown.Toggle>
-    <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto' }}>
-      <Dropdown.Item 
-        active={!filterBatchName}
-        onClick={() => setFilterBatchName('')}
-      >
-        All Batches
-      </Dropdown.Item>
-      {getUniqueValues(progressReportData, 'batch_name').map(name => (
-        <Dropdown.Item 
-          key={name} 
-          active={filterBatchName === name}
-          onClick={() => {
-            setFilterBatchName(name);
-            setCurrentPage(1);
-          }}
-        >
-          {name}
-        </Dropdown.Item>
-      ))}
-    </Dropdown.Menu>
-  </Dropdown>
+                {/* Batch Name Filter */}
+                <Dropdown>
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    size="sm"
+                    className="d-flex align-items-center"
+                  >
+                    {filterBatchName || "Batch Name"}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu
+                    style={{ maxHeight: "300px", overflowY: "auto" }}
+                  >
+                    <Dropdown.Item
+                      active={!filterBatchName}
+                      onClick={() => setFilterBatchName("")}
+                    >
+                      All Batches
+                    </Dropdown.Item>
+                    {getUniqueValues(progressReportData, "batch_name").map(
+                      (name) => (
+                        <Dropdown.Item
+                          key={name}
+                          active={filterBatchName === name}
+                          onClick={() => {
+                            setFilterBatchName(name);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          {name}
+                        </Dropdown.Item>
+                      )
+                    )}
+                  </Dropdown.Menu>
+                </Dropdown>
 
-  {/* Pod Name Filter */}
-  <Dropdown>
-    <Dropdown.Toggle variant="outline-secondary" size="sm" className="d-flex align-items-center">
-      {filterPodName || 'Pod Name'}
-    </Dropdown.Toggle>
-    <Dropdown.Menu style={{ maxHeight: '300px', overflowY: 'auto' }}>
-      <Dropdown.Item 
-        active={!filterPodName}
-        onClick={() => setFilterPodName('')}
-      >
-        All Pods
-      </Dropdown.Item>
-      {getUniqueValues(progressReportData, 'pod_name').map(name => (
-        <Dropdown.Item 
-          key={name} 
-          active={filterPodName === name}
-          onClick={() => {
-            setFilterPodName(name);
-            setCurrentPage(1);
-          }}
-        >
-          {name}
-        </Dropdown.Item>
-      ))}
-    </Dropdown.Menu>
-  </Dropdown>
-</div>
+                {/* Pod Name Filter */}
+                <Dropdown>
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    size="sm"
+                    className="d-flex align-items-center"
+                  >
+                    {filterPodName || "Pod Name"}
+                  </Dropdown.Toggle>
+                  <Dropdown.Menu
+                    style={{ maxHeight: "300px", overflowY: "auto" }}
+                  >
+                    <Dropdown.Item
+                      active={!filterPodName}
+                      onClick={() => setFilterPodName("")}
+                    >
+                      All Pods
+                    </Dropdown.Item>
+                    {getUniqueValues(progressReportData, "pod_name").map(
+                      (name) => (
+                        <Dropdown.Item
+                          key={name}
+                          active={filterPodName === name}
+                          onClick={() => {
+                            setFilterPodName(name);
+                            setCurrentPage(1);
+                          }}
+                        >
+                          {name}
+                        </Dropdown.Item>
+                      )
+                    )}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
 
               {filteredSortedProgress.length > 0 ? (
-                <Card className="shadow-sm rounded-3 mb-4">
-                  <Card.Body>
+              
+                    <div>
                     <div className="table-responsive">
                       <table
                         id="progress-report-table"
-                        className="table table-striped table-bordered table-hover"
-                        style={{
-                          width: '100%',
-                          borderCollapse: 'collapse',
-                          marginTop: '10px',
-                        }}
+                        className="table table-hover table-striped table-bordered"
+                        
                       >
-                        <thead className="bg-primary text-white">
-                          <tr style={{ backgroundColor: '#f2f2f2' }}>
-                            <th style={thStyle}>Full Name</th>
-                            <th style={thStyle}>Email</th>
-                            <th style={thStyle}>Concept Name</th>
-                            <th style={thStyle}>Status</th>
-                            <th style={thStyle}>Current Stage</th>
-                            <th style={thStyle}>Final Score</th>
-                            <th style={thStyle}>Batch Name</th>
-                            <th style={thStyle}>Pod Name</th>
-                            <th style={thStyle}>Updated At</th>
+                        <thead className="">
+                          <tr>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Concept Name</th>
+                            <th >Status</th>
+                            <th >Current Stage</th>
+                            <th >Final Score</th>
+                            <th >Batch Name</th>
+                            <th >Pod Name</th>
+                            <th >Updated At</th>
                           </tr>
                         </thead>
                         <tbody>{progressTableRows}</tbody>
@@ -852,25 +961,28 @@ const [filterPodName, setFilterPodName] = useState('');
                     </div>
 
                     {renderProgressPagination()}
-                  </Card.Body>
-                </Card>
+                    </div>
+                
               ) : (
                 <Card className="shadow-sm rounded-3">
                   <Card.Body>
                     <p className="text-muted text-center">
-                      No progress report data found for your organization or matching the selected
-                      filters.
+                      No progress report data found for your organization or
+                      matching the selected filters.
                     </p>
                   </Card.Body>
                 </Card>
               )}
             </>
           )}
+            </Card.Body>
+          </Card>
+         
 
           {/* Batch Cards */}
           {!pageLoading && !batchesError && (
             <>
-              <h2 className="mt-4 mb-3 fs-3 fw-bold text-dark">Your Batches</h2>
+              <h2 className="mt-4 mb-3 fs-4 text-dark">Your Batches</h2>
               <Row className="g-4">
                 {batchesData.length > 0 ? (
                   batchesData.map((batch) => (
@@ -879,29 +991,37 @@ const [filterPodName, setFilterPodName] = useState('');
                         border="primary"
                         className="h-100 shadow-sm rounded-3 clickable-card"
                         style={{
-                          backgroundColor: '#fff',
-                          cursor: 'pointer',
-                          transition: 'transform 0.2s ease-in-out, boxShadow 0.3s ease',
-                          boxShadow: '0 4px 20px rgba(33, 180, 234, 0.3)',
+                          backgroundColor: "#fff",
+                          cursor: "pointer",
+                          transition:
+                            "transform 0.2s ease-in-out, boxShadow 0.3s ease",
+                          boxShadow: "0 4px 20px rgba(33, 180, 234, 0.3)",
                         }}
                         onClick={() => handleCardClick(batch.batch_id)}
                         onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = 'scale(1.03)';
-                          e.currentTarget.style.boxShadow = '0 12px 20px rgba(33, 180, 234, 0.3)';
+                          e.currentTarget.style.transform = "scale(1.03)";
+                          e.currentTarget.style.boxShadow =
+                            "0 12px 20px rgba(33, 180, 234, 0.3)";
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.boxShadow = '0 10px 10px rgba(33, 180, 234, 0.1)';
+                          e.currentTarget.style.transform = "scale(1)";
+                          e.currentTarget.style.boxShadow =
+                            "0 10px 10px rgba(33, 180, 234, 0.1)";
                         }}
                       >
                         <Card.Header className="fw-bold fs-5 bg-primary text-center text-white">
                           {batch.batch_name}
-                          <Badge bg={batch.is_active ? 'success' : 'secondary'} className="ms-2">
-                            {batch.is_active ? 'Active' : 'Inactive'}
+                          <Badge
+                            bg={batch.is_active ? "success" : "secondary"}
+                            className="ms-2"
+                          >
+                            {batch.is_active ? "Active" : "Inactive"}
                           </Badge>
                         </Card.Header>
                         <Card.Body>
-                          <Card.Title className="text-center">Batch Overview</Card.Title>
+                          <Card.Title className="text-center">
+                            Batch Overview
+                          </Card.Title>
                           <div className="d-flex gap-2 justify-content-around flex-wrap">
                             <Badge bg="info" className="p-2">
                               Batch Size: {batch.batch_size}
@@ -921,7 +1041,9 @@ const [filterPodName, setFilterPodName] = useState('');
                   <Col xs={12}>
                     <Card className="text-center p-3 shadow-sm rounded-3">
                       <Card.Body>
-                        <p className="lead mb-0">No batches found for your organization.</p>
+                        <p className="lead mb-0">
+                          No batches found for your organization.
+                        </p>
                       </Card.Body>
                     </Card>
                   </Col>

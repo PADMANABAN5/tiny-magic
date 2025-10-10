@@ -1066,7 +1066,20 @@ td {
   pointer-events: none;
   /* Prevent tooltip from interfering with hover */
 }
-
+table thead tr th {
+  border: 1px solid rgb(221, 221, 221);
+  font-weight: 600;
+}
+table thead tr {
+  border: 1px solid rgb(221, 221, 221);
+}
+.page-link {
+  color: #00b2d7;
+}
+.active>.page-link, .page-link.active {
+  background-color: #00b2d7;
+  border-color: #00b2d7;
+}
 .score-tooltip-container:hover .score-tooltip {
   opacity: 1;
   visibility: visible;
