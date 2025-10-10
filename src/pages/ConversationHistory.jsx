@@ -57,7 +57,25 @@ const ConversationHistory = () => {
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
+  const headerRef = useRef(null);
+const [headerHeight, setHeaderHeight] = useState(0);
+
 const itemsPerPage = 10;
+
+
+useEffect(() => {
+  const updateHeaderHeight = () => {
+    if (window.innerWidth >= 769 && window.innerWidth <= 1024 && headerRef.current) {
+      setHeaderHeight(headerRef.current.offsetHeight + 20);
+    } else {
+      setHeaderHeight(0); 
+    }
+  };
+
+  updateHeaderHeight(); 
+  window.addEventListener("resize", updateHeaderHeight);
+  return () => window.removeEventListener("resize", updateHeaderHeight);
+}, []);
 
 
   // Get user data from session storage
@@ -638,8 +656,10 @@ const goToPage = (page) => {
     <div className="conversation-history-page">
       <Sidebar />
 
-      <div className="main-content">
-        <div className="page-header">
+      <div className="main-content" style={{
+    paddingTop: window.innerWidth >= 769 && window.innerWidth <= 1024 ? `${headerHeight}px` : "0px"
+  }}>
+        <div className="page-header" ref={headerRef}>
           <div className="header-title">
             <div className="stats-section">
               <div className="stat-card">

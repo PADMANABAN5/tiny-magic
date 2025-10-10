@@ -56,7 +56,7 @@ function Models_management() {
                     </div>
                     <Card.Title className="fs-5 fw-semibold text-dark mb-2">Assign Models</Card.Title>
                     <Card.Text className="text-secondary mb-4 fs-6">
-                      Assign your OpenAi models to respective Levels
+                      Assign your models to respective Levels
                     </Card.Text>
                     <div className="d-flex justify-content-center">
                       <Button

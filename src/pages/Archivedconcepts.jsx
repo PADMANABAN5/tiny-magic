@@ -91,36 +91,36 @@ function Archivedconcepts() {
                         </Alert>
                     ) : (
                         <Table striped bordered hover responsive className="mt-3">
-                            <thead class="bg-primary text-white">
+                            <thead className="bg-primary text-white">
                                 <tr>
                                     <th>Concept Name</th>
-                                    <th>Archived At</th>
                                     <th>Version</th>
+                                    <th>Archived At</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {currentConcepts.map((concept) => (
-                                    <tr key={concept.id || concept._id}>
-                                        <td>{concept.concept_name || '—'}</td>
-                                        <td>{concept.archived_at ? new Date(concept.archived_at).toLocaleString() : '—'}</td>
-                                        <td>{concept.version || '—'}</td>
-                                        <td>
-                                            <Button
-                                                variant="info"
-                                                size="sm"
-                                                onClick={() => {
-                                                    setViewConcept(concept);
-                                                    setShowViewModal(true);
-                                                }}
-                                            >
-                                                View
-                                            </Button>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </Table>
+                    {currentConcepts.map((concept) => (
+                        <tr key={concept.archive_id}>
+                        <td>{concept.concept_name || '—'}</td>
+                        <td>{concept.version || '—'}</td>
+                        <td>{concept.archived_at ? new Date(concept.archived_at).toLocaleString() : '—'}</td>
+                        <td>
+                            <Button
+                            variant="info"
+                            size="sm"
+                            onClick={() => {
+                                setViewConcept(concept);
+                                setShowViewModal(true);
+                            }}
+                            >
+                            View
+                            </Button>
+                        </td>
+                        </tr>
+                    ))}
+                    </tbody>
+                    </Table>
                     )}
                     {totalPages > 1 && (
                         <div className="d-flex justify-content-center mt-4">
@@ -160,61 +160,152 @@ function Archivedconcepts() {
                         </div>
                     )}
  
-                    {/* View Concept Modal */}
-                    <Modal show={showViewModal} onHide={() => setShowViewModal(false)} size="lg">
-                        <Modal.Header closeButton>
-                            <Modal.Title>View Archived Concept</Modal.Title>
-                        </Modal.Header>
-                        <Modal.Body>
-                            <div
-                                className="p-4 bg-light border rounded shadow-sm"
-                                style={{
-                                    minHeight: '120px',
-                                    maxHeight: '400px',
-                                    overflowY: 'auto',
-                                    fontFamily: 'Arial, sans-serif',
-                                    fontSize: '1rem',
-                                    lineHeight: '1.6',
-                                    color: '#333',
-                                    whiteSpace: 'pre-wrap',
-                                    wordBreak: 'break-word',
-                                }}
-                            >
-                                {viewConcept?.download_link ? (
-                                    <>
-                                        <div style={{ textAlign: 'right' }}>{viewConcept?.download_link ? <a className='btn btn-primary' href={viewConcept?.download_link}>Download</a> : "No File"}</div>
-                                    </>
-                                ) : null}
- 
-                                {viewConcept ? (
-                                    <>
- 
-                                        {Object.entries(viewConcept)
-                                            .filter(([key]) =>
-                                                !['archive_id', 'concept_id', 'is_active', 'created_at', 'updated_at', 'archived_at', 'version', 'download_link'].includes(key)
-                                            )
-                                            .map(([key, value]) => (
-                                                <div key={key} style={{ marginBottom: '0.75rem' }}>
-                                                    <strong style={{ color: '#333', textTransform: 'capitalize' }}>
-                                                        {key.replace(/_/g, ' ')}:
-                                                    </strong>
-                                                    <span style={{ paddingLeft: '1rem', whiteSpace: 'pre-wrap', color: '#000' }}>
-                                                        {typeof value === 'string' || typeof value === 'number' ? value :
-                                                            <code>{JSON.stringify(value, null, 2)}</code>}
-                                                    </span>
-                                                </div>
-                                            ))}
- 
-                                    </>
-                                ) : (
-                                    <p className="text-muted fst-italic mb-0">No concept data to display.</p>
-                                )}
+                   {showViewModal && (
+    <div
+        style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1050,
+        }}
+        
+    >
+        <div
+            style={{
+                backgroundColor: '#fff',
+                borderRadius: '8px',
+                width: '90%',
+                maxWidth: '800px',
+                boxShadow: '0 5px 15px rgba(0,0,0,0.3)',
+                position: 'relative',
+                overflow: 'hidden',
+            }}
+            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+        >
+            {/* Header */}
+            <div
+                style={{
+                    padding: '1rem 1.5rem',
+                    borderBottom: '1px solid #ddd',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                }}
+            >
+                <h2 style={{ margin: 0 }}>View Archived Concept</h2>
+                <button
+                    onClick={() => setShowViewModal(false)}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        fontSize: '1.5rem',
+                        cursor: 'pointer',
+                        color: '#666',
+                    }}
+                >
+                    &times;
+                </button>
+            </div>
+
+            {/* Body */}
+            <div
+                style={{
+                    padding: '1.5rem',
+                    backgroundColor: '#f8f9fa',
+                    borderBottom: '1px solid #ddd',
+                    minHeight: '120px',
+                    maxHeight: '400px',
+                    overflowY: 'auto',
+                    fontFamily: 'Arial, sans-serif',
+                    fontSize: '1rem',
+                    lineHeight: '1.6',
+                    color: '#333',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                }}
+            >
+                {viewConcept?.download_link && (
+                    <div style={{ textAlign: 'right', marginBottom: '1rem' }}>
+                        <a
+                            href={viewConcept.download_link}
+                             target="_blank"
+                             rel="noopener noreferrer"
+                            style={{
+                                backgroundColor: '#0d6efd',
+                                color: '#fff',
+                                padding: '0.5rem 1rem',
+                                borderRadius: '5px',
+                                textDecoration: 'none',
+                            }}
+                        >
+                            Download
+                        </a>
+                    </div>
+                )}
+
+                {viewConcept ? (
+                    Object.entries(viewConcept)
+                        .filter(([key]) =>
+                            ![
+                                'archive_id',
+                                'concept_id',
+                                'is_active',
+                                'created_at',
+                                'updated_at',
+                                'archived_at',
+                                'version',
+                                'download_link',
+                            ].includes(key)
+                        )
+                        .map(([key, value]) => (
+                            <div key={key} style={{ marginBottom: '0.75rem' }}>
+                                <strong style={{ textTransform: 'capitalize', color: '#333' }}>
+                                    {key.replace(/_/g, ' ')}:
+                                </strong>
+                                <span style={{ paddingLeft: '1rem', color: '#000' }}>
+                                    {typeof value === 'string' || typeof value === 'number'
+                                        ? value
+                                        : <code>{JSON.stringify(value, null, 2)}</code>}
+                                </span>
                             </div>
-                        </Modal.Body>
-                        <Modal.Footer>
-                            <Button variant="secondary" onClick={() => setShowViewModal(false)}>Close</Button>
-                        </Modal.Footer>
-                    </Modal>
+                        ))
+                ) : (
+                    <p style={{ color: '#666', fontStyle: 'italic' }}>No concept data to display.</p>
+                )}
+            </div>
+
+            {/* Footer */}
+            <div
+                style={{
+                    padding: '1rem',
+                    textAlign: 'right',
+                }}
+            >
+                <button
+                    onClick={() => setShowViewModal(false)}
+                    style={{
+                        backgroundColor: '#6c757d',
+                        color: '#fff',
+                        border: 'none',
+                        padding: '0.5rem 1rem',
+                        borderRadius: '5px',
+                        cursor: 'pointer',
+                    }}
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+)}
+
+
                 </div>
             </div>
         </div>

@@ -1,22 +1,26 @@
 import React, { useState, useRef, forwardRef, useImperativeHandle } from "react";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
-
 import axios from "axios";
 import { toast } from "react-toastify";
 import "../styles/dashboard.css";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
-const VoiceRecorder = forwardRef(({ onTranscription, disabled=false }, ref) => {
+const VoiceRecorder = forwardRef(({ onTranscription, disabled = false }, ref) => {
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
   const silenceStartRef = useRef(null);
   const analyserRef = useRef(null);
+  const bandpassRef = useRef(null);
   const audioStreamRef = useRef(null);
   const audioContextRef = useRef(null);
   const rafRef = useRef(null);
+  const speechStartRef = useRef(null);
+  const hasSpokenRef = useRef(false);
+  const autoStoppedRef = useRef(false); 
 
+  // Detect silence / speech (filtered for voice frequencies)
   const checkSilence = () => {
     if (!analyserRef.current) return;
 
@@ -24,7 +28,6 @@ const VoiceRecorder = forwardRef(({ onTranscription, disabled=false }, ref) => {
     const dataArray = new Uint8Array(bufferLength);
     analyserRef.current.getByteTimeDomainData(dataArray);
 
-    // compute volume
     let sum = 0;
     for (let i = 0; i < bufferLength; i++) {
       const val = (dataArray[i] - 128) / 128;
@@ -32,127 +35,172 @@ const VoiceRecorder = forwardRef(({ onTranscription, disabled=false }, ref) => {
     }
     const rms = Math.sqrt(sum / bufferLength);
 
-    const SILENCE_THRESHOLD = 0.01; // adjust sensitivity
-    const MAX_SILENCE_MS = 10000; // 10s
+    const SILENCE_THRESHOLD = 0.015;
+    const MAX_SILENCE_MS = 10000;
+    const MAX_SPEECH_MS = 10000;
+    const now = Date.now();
 
     if (rms < SILENCE_THRESHOLD) {
       if (!silenceStartRef.current) {
-        silenceStartRef.current = Date.now();
-      } else if (Date.now() - silenceStartRef.current > MAX_SILENCE_MS) {
-        stopRecording();
-        toast.info("🎤 Recording stopped due to 10s silence.");
+        silenceStartRef.current = now;
+      } else {
+        const elapsed = now - silenceStartRef.current;
+        if (elapsed > MAX_SILENCE_MS) {
+          autoStoppedRef.current = true;
+          stopRecording();
+          toast.info("🎤 No speech detected — recording stopped.");
+          return;
+        }
       }
+      speechStartRef.current = null;
     } else {
-      silenceStartRef.current = null; // reset if voice detected
+      hasSpokenRef.current = true;
+      if (!speechStartRef.current) {
+        speechStartRef.current = now;
+      } else {
+        const speakingTime = now - speechStartRef.current;
+        if (speakingTime > MAX_SPEECH_MS) {
+          autoStoppedRef.current = false;
+          stopRecording();
+          toast.success("🗣️ Recording stopped after 10s of continuous speech.");
+          return;
+        }
+      }
+      silenceStartRef.current = null;
     }
 
     rafRef.current = requestAnimationFrame(checkSilence);
   };
 
   const startRecording = async () => {
-  try {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    audioStreamRef.current = stream;
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioStreamRef.current = stream;
 
-    const mediaRecorder = new MediaRecorder(stream);
-    chunksRef.current = [];
+      const mediaRecorder = new MediaRecorder(stream);
+      chunksRef.current = [];
+      hasSpokenRef.current = false;
+      autoStoppedRef.current = false;
 
-    mediaRecorder.ondataavailable = (event) => {
-      if (event.data.size > 0) chunksRef.current.push(event.data);
-    };
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) chunksRef.current.push(event.data);
+      };
 
-    mediaRecorder.onstop = async () => {
-      cancelAnimationFrame(rafRef.current);
-      if (audioContextRef.current) {
-        audioContextRef.current.close();
-        audioContextRef.current = null;
-      }
-
-      if (chunksRef.current.length === 0) {
-        setIsRecording(false);
-        mediaRecorderRef.current = null;
-        return;
-      }
-
-      const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
-      const formData = new FormData();
-      formData.append("audio", audioBlob, "recording.webm");
-
-      try {
-        const res = await axios.post(`${BASE_URL}/transcribe`, formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-
-        if (res.data.success) {
-          onTranscription(res.data.data.transcription);
-        } else {
-          toast.error("Transcription failed. Please try again.");
+      mediaRecorder.onstop = async () => {
+        cancelAnimationFrame(rafRef.current);
+        if (audioContextRef.current) {
+          audioContextRef.current.close();
+          audioContextRef.current = null;
         }
-      } catch (err) {
-        console.error("Upload error:", err);
-        toast.error("Error uploading audio.");
-      } finally {
-        setIsRecording(false);
-        mediaRecorderRef.current = null;
-      }
-    };
 
-    mediaRecorder.start();
-    mediaRecorderRef.current = mediaRecorder;
-    setIsRecording(true);
+        // Case 1: Auto stop (no voice)
+        if (autoStoppedRef.current) {
+          setIsRecording(false);
+          mediaRecorderRef.current = null;
+          return;
+        }
 
-    // 🎤 setup analyser for silence detection
-    audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-    const source = audioContextRef.current.createMediaStreamSource(stream);
-    const analyser = audioContextRef.current.createAnalyser();
-    analyser.fftSize = 2048;
-    source.connect(analyser);
-    analyserRef.current = analyser;
+   
+        // Case 2: Manual stop but no speech detected
+        if (chunksRef.current.length === 0 || !hasSpokenRef.current) {
+          toast.info("🎤 No speech detected — recording stopped.");
+          setIsRecording(false);
+          mediaRecorderRef.current = null;
+          return;
+        }
+        
+        // Case 3: Manual stop after speaking or auto stop after long speech
+        const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
+        const formData = new FormData();
+        formData.append("audio", audioBlob, "recording.webm");
 
-    silenceStartRef.current = null;
-    rafRef.current = requestAnimationFrame(checkSilence);
-  } catch (err) {
-    console.error("Recording error:", err);
-    toast.error("Microphone access denied or not available.");
-  }
-};
+        try {
+          toast.info("⏳ Transcribing your voice...");
+          const res = await axios.post(`${BASE_URL}/transcribe`, formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
 
-const stopRecording = () => {
-  return new Promise((resolve) => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
-      // ✅ Instantly update UI
-      setIsRecording(false);
+          if (res.data.success && res.data.data.transcription?.trim()) {
+            toast.success("✅ Transcription complete!");
+            onTranscription(res.data.data.transcription);
+          } else {
+            toast.error("❌ Transcription failed. Please try again.");
+          }
+        } catch (err) {
+          console.error("Upload error:", err);
+          toast.error("⚠️ Error uploading audio.");
+        } finally {
+          setIsRecording(false);
+          mediaRecorderRef.current = null;
+        }
+      };
 
-      // resolve immediately so Dashboard can continue
-      resolve();
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+      toast.success("🎙️ Recording started. Speak now!");
 
-      // let the MediaRecorder finish and trigger onstop in background
-      mediaRecorderRef.current.stop();
-    } else {
-      resolve();
+      // Audio setup
+      audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
+      const source = audioContextRef.current.createMediaStreamSource(stream);
+
+      // Band-pass filter (human voice)
+      const bandpass = audioContextRef.current.createBiquadFilter();
+      bandpass.type = "bandpass";
+      bandpass.frequency.value = 170;
+      bandpass.Q.value = 1.5;
+      bandpassRef.current = bandpass;
+
+      const analyser = audioContextRef.current.createAnalyser();
+      analyser.fftSize = 2048;
+
+      source.connect(bandpass);
+      bandpass.connect(analyser);
+      analyserRef.current = analyser;
+
+      await audioContextRef.current.resume();
+
+      silenceStartRef.current = null;
+      speechStartRef.current = null;
+      rafRef.current = requestAnimationFrame(checkSilence);
+    } catch (err) {
+      console.error("Recording error:", err);
+      toast.error("🎤 Microphone access denied or unavailable.");
     }
-  });
-};
+  };
 
+  const stopRecording = () => {
+    return new Promise((resolve) => {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+        setIsRecording(false);
+        resolve();
+        mediaRecorderRef.current.stop();
+      } else {
+        resolve();
+      }
+    });
+  };
 
   useImperativeHandle(ref, () => ({
     stopRecording,
   }));
 
- return (
-  
-<div
-  className={`mic-button ${disabled ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}
-  onClick={!disabled ? (isRecording ? stopRecording : startRecording) : undefined}
->
-  {isRecording ? (
-    <FaMicrophoneSlash size={20} className="text-red-500" />
-  ) : (
-    <FaMicrophone size={20} className="text-green-500" />
-  )}
-</div>
-
-);
+  return (
+    <div
+      className={`mic-button ${
+        disabled ? "opacity-50 pointer-events-none" : "cursor-pointer"
+      }`}
+      onClick={!disabled ? (isRecording ? stopRecording : startRecording) : undefined}
+    >
+      {isRecording ? (
+        <div className="pulse-container">
+          <FaMicrophoneSlash size={20} className="text-red-500 mic-icon-animate" />
+        </div>
+      ) : (
+        <FaMicrophone size={20} className="text-green-500" />
+      )}
+    </div>
+  );
 });
 
 export default VoiceRecorder;

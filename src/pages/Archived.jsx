@@ -6,6 +6,7 @@ import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css'; 
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import '../styles/prompt.css';
 
 function Archived() {
   const [archivedPrompts, setArchivedPrompts] = useState([]);
@@ -193,45 +194,42 @@ function Archived() {
             </div>
           )}
 
-          <Modal
-            show={showViewModal}
-            onHide={() => setShowViewModal(false)}
-            size="lg"
-            key={viewPrompt?.prompt_id || 'modal'}
-          >
-            <Modal.Header closeButton>
-              <Modal.Title>View Archived Prompt</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <div
-                className="p-4 bg-light border rounded shadow-sm"
-                style={{
-                  minHeight: '120px',
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  fontFamily: 'Arial, sans-serif',
-                  fontSize: '1rem',
-                  lineHeight: '1.6',
-                  color: '#333',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {viewPrompt && viewPrompt.user_content ? (
-                  <p className="mb-0">{viewPrompt.user_content}</p>
-                ) : (
-                  <p className="text-muted fst-italic mb-0">
-                    No content available for this prompt.
-                  </p>
-                )}
-              </div>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowViewModal(false)}>
-                Close
-              </Button>
-            </Modal.Footer>
-          </Modal>
+          {showViewModal && (
+  <div className="popup-overlay" >
+    <div className="popup-box" onClick={(e) => e.stopPropagation()}>
+      <h4 className="mb-3 text-center">View Archived Prompt</h4>
+
+      <div
+        className="p-4 bg-light border rounded shadow-sm"
+        style={{
+          minHeight: '120px',
+          maxHeight: '400px',
+          overflowY: 'auto',
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '1rem',
+          lineHeight: '1.6',
+          color: '#333',
+          whiteSpace: 'pre-wrap',
+          wordBreak: 'break-word',
+        }}
+      >
+        {viewPrompt && viewPrompt.user_content ? (
+          <p className="mb-0">{viewPrompt.user_content}</p>
+        ) : (
+          <p className="text-muted fst-italic mb-0">
+            No content available for this prompt.
+          </p>
+        )}
+      </div>
+
+      <div className="d-flex justify-content-end mt-3">
+        <Button variant="secondary" onClick={() => setShowViewModal(false)}>
+          Close
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
         </div>
       </div>
     </div>

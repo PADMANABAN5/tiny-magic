@@ -18,6 +18,7 @@ import {
   FiTrendingUp,
   FiRefreshCw,
   FiAlertCircle,
+  FiChevronUp
 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
@@ -31,7 +32,7 @@ import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 import { useAuth } from "../components/AuthContext.jsx";
 import VoiceRecorder from "../components/VoiceRecorder.jsx";
 import LevelCompletionToast from "../components/LevelCompletionToast.jsx";
-const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000"; // Fallback URL
+const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000/api"; // Fallback URL
 
 function Practicemode() {
   const [prompt, setPrompt] = useState("");
@@ -54,6 +55,19 @@ function Practicemode() {
   const recognitionRef = useRef(null);
   const [apiData, setApiData] = useState({});
   const apiDataRef = useRef({});
+
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [showLearningProgress, setShowLearningProgress] = useState(window.innerWidth >= 768);
+
+  // Responsive handler
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+      setShowLearningProgress(window.innerWidth >= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const startListening = () => {
     const SpeechRecognition =
@@ -1492,10 +1506,20 @@ function Practicemode() {
             </div>
           </div>
           <div className="control-section">
-            <div className="section-header">
+            <div className="section-header" onClick={isMobile ? () => setShowLearningProgress(p => !p) : undefined}
+              style={{
+                cursor: isMobile ? 'pointer' : 'default',
+                userSelect: 'none'
+              }}>
               <FiTrendingUp className="section-icon" />
               <h3>Learning Progress</h3>
+              {isMobile && (
+                <span>
+                  {showLearningProgress ? <FiChevronDown /> : <FiChevronUp />}
+                  </span>
+              )}
             </div>
+            {(showLearningProgress || !isMobile) && (
             <div className="stage-cards">
               <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
                 <div className="stage-icon not-started">
@@ -1554,6 +1578,7 @@ function Practicemode() {
                 </div>
               </div>
             </div>
+            )}
           </div>
         </div>
         <div className="chat-panel">

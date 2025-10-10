@@ -12,6 +12,7 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
   const intervalRef = useRef(null);
   const warningShownRef = useRef(false); // Track if warning toast has been shown
   const currentTimeRef = useRef(timeout / 1000); // Ref for exact countdown (no re-renders)
+  const BASE_URL = process.env.REACT_APP_API_LINK;
 
   const getToastType = (bg) => {
     switch (bg) {
@@ -36,7 +37,7 @@ const AutoLogout = ({ timeout = 10 * 60 * 1000 }) => {
      // console.log("Token found:", token);
       if (token) {
         await axios.post(
-          "http://localhost:5000/api/users/logout",
+          `${BASE_URL}/users/logout`,
           {},
           {
             headers: {

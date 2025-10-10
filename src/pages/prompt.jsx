@@ -7,6 +7,7 @@ import EditablePromptEditor from '../components/EditablePromptEditor.jsx';
 import Supersidebar from '../components/Supersidebar';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import '../styles/prompt.css';
  
 export default function Prompt() {
   const navigate = useNavigate();
@@ -22,6 +23,9 @@ export default function Prompt() {
   // Filter states
   const [selectedOrgIdFilter, setSelectedOrgIdFilter] = useState(''); // New state for filter
   const [selectedBatchIdFilter, setSelectedBatchIdFilter] = useState(''); // New state for filter
+  const [batchListForFilter, setBatchListForFilter] = useState([]);
+  
+
  
   // Modal states
   const [modalSelectedOrgId, setModalSelectedOrgId] = useState(''); // New state for modal
@@ -194,6 +198,23 @@ export default function Prompt() {
     setUpdatedUserContent(prompt.user_content);
     setShowEditor(true);
   };
+  useEffect(() => {
+  if (!selectedOrgIdFilter) {
+    setBatchListForFilter([]);
+    setSelectedBatchIdFilter('');
+    return;
+  }
+
+  axios
+    .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgIdFilter}`, config)
+    .then((res) => {
+      setBatchListForFilter(res.data.data || []);
+    })
+    .catch((err) => {
+      console.error('Failed to fetch batches for filter:', err);
+      setBatchListForFilter([]);
+    });
+}, [selectedOrgIdFilter]);
  
   const handleSave = () => {
   if (
@@ -250,7 +271,27 @@ export default function Prompt() {
     });
 };
  
- 
+ useEffect(() => {
+  // If an org is selected, load its batches
+  if (selectedOrgIdFilter) {
+    axios
+      .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgIdFilter}`, config)
+      .then((res) => setBatchListForFilter(res.data.data || []))
+      .catch((err) => {
+        console.error('Failed to fetch batches:', err);
+        setBatchListForFilter([]);
+      });
+  } else {
+    // If no org selected, load all batches
+    axios
+      .get(`${process.env.REACT_APP_API_LINK}/batches`, config)
+      .then((res) => setBatchListForFilter(res.data.data || []))
+      .catch((err) => {
+        console.error('Failed to fetch all batches:', err);
+        setBatchListForFilter([]);
+      });
+  }
+}, [selectedOrgIdFilter]);
  
   const handleAssignPrompt = () => {
     // Use modal-specific state variables for assignment
@@ -340,48 +381,43 @@ export default function Prompt() {
             </div>
           </div>
  
-          {/* Filter Section */}
-           <div className="d-flex gap-3 my-3">
-            <Form.Group>
-              <Form.Label>Filter by Organization</Form.Label>
-              <Form.Select
-                value={selectedOrgIdFilter} // Use filter-specific state
-                onChange={(e) => {
-                  setSelectedOrgIdFilter(e.target.value);
-                  setSelectedBatchIdFilter(''); // Reset batch filter when org filter changes
-                }}
-              >
-                <option value="">All Organizations</option>
-                {orgList.map(org => (
-                  <option key={org.organization_id} value={org.organization_id}>
-                    {org.organization_name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group> 
-            {/* You can add a batch filter dropdown here if needed for the main table */}
-             {selectedOrgIdFilter && (
-                            <Form.Group>
-                                <Form.Label>Filter by Batch</Form.Label>
-                                <Form.Select
-                                    value={selectedBatchIdFilter}
-                                    onChange={(e) => setSelectedBatchIdFilter(e.target.value)}
-                                >
-                                    <option value="">All Batches</option>
-                                    {/* You'll need another useEffect to fetch batches specific to the filter's selectedOrgIdFilter */}
-            {/* For now, assuming batchList is global or you'll fetch it here */}
-            {/* Example: */}
-             {batchListForModal // Re-using for simplicity, but ideally a separate state/fetch
-                                        .filter(batch => batch.organization_id?.toString() === selectedOrgIdFilter?.toString())
-                                        .map(batch => (
-                                            <option key={batch.batch_id} value={batch.batch_id}>
-                                                {batch.batch_name}
-                                            </option>
-                                        ))}
-                                </Form.Select>
-                            </Form.Group>
-                        )} 
-         </div>
+         {/* Filter Section */}
+<div className="d-flex gap-3 my-3">
+  <Form.Group>
+   
+    <Form.Select
+      value={selectedOrgIdFilter}
+      onChange={(e) => {
+        setSelectedOrgIdFilter(e.target.value);
+        setSelectedBatchIdFilter(''); // Reset batch when org changes
+      }}
+    >
+      <option value="">All Organizations</option>
+      {orgList.map(org => (
+        <option key={org.organization_id} value={org.organization_id}>
+          {org.organization_name}
+        </option>
+      ))}
+    </Form.Select>
+  </Form.Group>
+
+  {/* 🔹 Always show Batch Filter */}
+  <Form.Group>
+    
+    <Form.Select
+      value={selectedBatchIdFilter}
+      onChange={(e) => setSelectedBatchIdFilter(e.target.value)}
+    >
+      <option value="">All Batches</option>
+      {batchListForFilter.map(batch => (
+        <option key={batch.batch_id} value={batch.batch_id}>
+          {batch.batch_name}
+        </option>
+      ))}
+    </Form.Select>
+  </Form.Group>
+</div>
+
  
           <div className="table-responsive">
             <table className="table table-striped table-bordered table-hover">
@@ -435,111 +471,85 @@ export default function Prompt() {
           )}
  
  
-          {/* Edit Prompt Modal */}
-          <Modal show={showEditor} onHide={() => setShowEditor(false)} size="lg" backdrop="static" >
-            <Modal.Header closeButton>
-              <Modal.Title>Edit Prompt</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <EditablePromptEditor
-                initialContent={editPrompt?.user_content || ''}
-                onSave={(updatedText) => setUpdatedUserContent(updatedText)}
-                onClick={allowCopyPaste}
-                onCut={allowCopyPaste}
-                onPaste={allowCopyPaste}
-              />
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowEditor(false)}>Cancel</Button>
-              <Button variant="success" onClick={handleSave}>Save Changes</Button>
-            </Modal.Footer>
-          </Modal>
- 
-          {/* Assign Prompt Modal */}
-          <Modal
-            show={showAssignModal}
-            onHide={() => {
-              setShowAssignModal(false);
-              // Reset modal states when closing
-              setSelectedPromptId(null);
-              setModalSelectedOrgId('');
-              setModalSelectedBatchId('');
-              setBatchListForModal([]);
-            }}
-            backdrop="static"
-          >
-            <Modal.Header closeButton>
-              <Modal.Title>Assign Prompt to Batch</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form.Group className="mb-3">
-                <Form.Label>Select Prompt</Form.Label>
-                <Form.Select
-                  value={selectedPromptId || ''}
-                  onChange={(e) => setSelectedPromptId(e.target.value)}
-                >
-                  <option value="">-- Select --</option>
-                  {allPrompts
-                    .filter(p => p.source === 'Global') // Only global prompts can be reassigned
-                    .map((prompt) => (
-                      <option key={prompt.prompt_id} value={prompt.prompt_id}>
-                        {prompt.prompt_type} - v{prompt.version}
-                      </option>
-                    ))}
-                </Form.Select>
-              </Form.Group>
- 
-              <Form.Group className="mb-3">
-                <Form.Label>Select Organization</Form.Label>
-                <Form.Select
-                  value={modalSelectedOrgId} // Use modal's specific organization state
-                  onChange={(e) => setModalSelectedOrgId(e.target.value)}
-                >
-                  <option value="">-- Select --</option>
-                  {orgList.map((org) => (
-                    <option key={org.organization_id} value={org.organization_id}>
-                      {org.organization_name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
- 
-              <Form.Group className="mb-3">
-                <Form.Label>Select Batch</Form.Label>
-                <Form.Select
-                  value={modalSelectedBatchId} // Use modal's specific batch state
-                  onChange={(e) => setModalSelectedBatchId(e.target.value)}
-                  disabled={!modalSelectedOrgId} // Disable based on modal's org selection
-                >
-                  <option value="">-- Select --</option>
-                  {batchListForModal // Use the separate batch list for the modal
-                    .filter(batch => batch.organization_id?.toString() === modalSelectedOrgId?.toString())
-                    .map(batch => (
-                      <option key={batch.batch_id} value={batch.batch_id}>
-                        {batch.batch_name}
-                      </option>
-                    ))}
-                </Form.Select>
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setShowAssignModal(false);
-                  setSelectedPromptId(null);
-                  setModalSelectedOrgId('');
-                  setModalSelectedBatchId('');
-                  setBatchListForModal([]);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button variant="success" onClick={handleAssignPrompt}>
-                Assign
-              </Button>
-            </Modal.Footer>
-          </Modal>
+          {showEditor && (
+  <div className="popup-overlay" >
+    <div className="popup-box" onClick={(e) => e.stopPropagation()}>
+      <h4 className="mb-3 text-center">Edit Prompt</h4>
+
+      <EditablePromptEditor
+        initialContent={editPrompt?.user_content || ''}
+        onSave={(updatedText) => setUpdatedUserContent(updatedText)}
+      />
+
+      <div className="d-flex justify-content-end gap-2 mt-3">
+        <Button variant="secondary" onClick={() => setShowEditor(false)}>Cancel</Button>
+        <Button variant="success" onClick={handleSave}>Save</Button>
+      </div>
+    </div>
+  </div>
+)}
+         {showAssignModal && (
+  <div className="popup-overlay" >
+    <div className="popup-box" onClick={(e) => e.stopPropagation()}>
+      <h4 className="mb-3 text-center">Assign Prompt to Batch</h4>
+
+      <Form.Group className="mb-3">
+        <Form.Label>Select Prompt <span className="text-danger">*</span></Form.Label>
+        <Form.Select
+          value={selectedPromptId || ''}
+          onChange={(e) => setSelectedPromptId(e.target.value)}
+        >
+          <option value="">-- Select --</option>
+          {allPrompts
+            .filter(p => p.source === 'Global')
+            .map((p) => (
+              <option key={p.prompt_id} value={p.prompt_id}>
+                {p.prompt_type} - v{p.version}
+              </option>
+            ))}
+        </Form.Select>
+      </Form.Group>
+
+      <Form.Group className="mb-3">
+        <Form.Label>Select Organization <span className="text-danger">*</span></Form.Label>
+        <Form.Select
+          value={modalSelectedOrgId}
+          onChange={(e) => setModalSelectedOrgId(e.target.value)}
+        >
+          <option value="">-- Select --</option>
+          {orgList.map(org => (
+            <option key={org.organization_id} value={org.organization_id}>
+              {org.organization_name}
+            </option>
+          ))}
+        </Form.Select>
+      </Form.Group>
+
+      <Form.Group className="mb-3">
+        <Form.Label>Select Batch <span className="text-danger">*</span></Form.Label>
+        <Form.Select
+          value={modalSelectedBatchId}
+          onChange={(e) => setModalSelectedBatchId(e.target.value)}
+          disabled={!modalSelectedOrgId}
+        >
+          <option value="">-- Select --</option>
+          {batchListForModal
+            .filter(batch => batch.organization_id?.toString() === modalSelectedOrgId?.toString())
+            .map(batch => (
+              <option key={batch.batch_id} value={batch.batch_id}>
+                {batch.batch_name}
+              </option>
+            ))}
+        </Form.Select>
+      </Form.Group>
+
+      <div className="d-flex justify-content-end gap-2">
+        <Button variant="secondary" onClick={() => setShowAssignModal(false)}>Cancel</Button>
+        <Button variant="success" onClick={handleAssignPrompt}>Assign</Button>
+      </div>
+    </div>
+  </div>
+)}
         </div>
       </div>
     </div>

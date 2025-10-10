@@ -4,6 +4,7 @@ import { FaArrowLeft, FaPlus } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import axios from "axios"
 import { toast } from 'react-toastify';
+import { Pagination, Form } from "react-bootstrap";
 import 'react-toastify/dist/ReactToastify.css';
 
 function AddModels() {
@@ -17,6 +18,9 @@ function AddModels() {
   const [models, setModels] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -199,6 +203,18 @@ function AddModels() {
     }
   };
 
+  const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
+
+  const filteredModels = models.filter((model) => {
+    const matchesName = model.model_name.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesName;
+  });
+
+  const idxLast = currentPage * itemsPerPage;
+  const idxFirst = idxLast - itemsPerPage;
+  const currentModels = filteredModels.slice(idxFirst, idxLast);
+  const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
+
   return (
     <div className="main-layout-container">
       <Supersidebar />
@@ -224,6 +240,40 @@ function AddModels() {
             </button>
           </div>
 
+          <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
+            <div className="d-flex align-items-center">
+              <span className="me-2">Show entries:</span>
+              <Form.Select
+                style={{ width: "100px" }}
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setCurrentPage(1);
+                  setItemsPerPage(Number(e.target.value));
+                }}
+              >
+                {[5, 10, 15, 20, 50].map((num) => (
+                  <option key={num} value={num}>
+                    {num}
+                  </option>
+                ))}
+              </Form.Select>
+            </div>
+
+            <div className="d-flex gap-3 mb-3">
+              <input
+                type="text"
+                className="form-control"
+                style={{ maxWidth: "250px" }}
+                placeholder="Search by Model Name..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
+          </div>
+
           <div className="table-responsive">
             <table className="table table-striped table-bordered table-hover">
               <thead className="bg-primary text-white">
@@ -246,11 +296,11 @@ function AddModels() {
                       {error}
                     </td>
                   </tr>
-                ) : models.length > 0 ? (
-                  models.map((m) => {
-                    const truncatedDesc = m.description.length > 30 
+                ) : currentModels.length > 0 ? (
+                  currentModels.map((m) => {
+                    const truncatedDesc = (m.description?.length || 0) > 30 
                       ? m.description.substring(0, 30) + '...' 
-                      : m.description;
+                      : (m.description || 'No description');
                     return (
                       <tr key={m.model_id}>
                         <td>{m.model_name}</td>
@@ -267,78 +317,115 @@ function AddModels() {
               </tbody>
             </table>
           </div>
+
+          {totalPages > 1 && (
+            <div className="d-flex justify-content-center mt-4">
+              <Pagination>
+                <Pagination.First
+                  onClick={() => handlePageChange(1)}
+                  disabled={currentPage === 1}
+                />
+                <Pagination.Prev
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                />
+                {(() => {
+                  const pageNumbers = [];
+                  const visiblePages = 5;
+                  let startPage = Math.max(
+                    1,
+                    currentPage - Math.floor(visiblePages / 2)
+                  );
+                  let endPage = startPage + visiblePages - 1;
+
+                  if (endPage > totalPages) {
+                    endPage = totalPages;
+                    startPage = Math.max(1, endPage - visiblePages + 1);
+                  }
+
+                  for (let i = startPage; i <= endPage; i++) {
+                    pageNumbers.push(
+                      <Pagination.Item
+                        key={i}
+                        active={i === currentPage}
+                        onClick={() => handlePageChange(i)}
+                      >
+                        {i}
+                      </Pagination.Item>
+                    );
+                  }
+
+                  return pageNumbers;
+                })()}
+                <Pagination.Next
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                />
+                <Pagination.Last
+                  onClick={() => handlePageChange(totalPages)}
+                  disabled={currentPage === totalPages}
+                />
+              </Pagination>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Modal Form */}
-      {showForm && (
-        <>
-          <div className="modal-backdrop fade show" onClick={handleCloseModal}></div>
-          <div className="modal d-block" tabIndex="-1" onClick={handleCloseModal}>
-            <div className="modal-dialog">
-              <div className="modal-content">
-                
-                  <h5 className="modal-title">Add New Model</h5>
-                  <button
-                    type="button"
-                    className="btn-close position-absolute top-0 end-0 m-3"
-                    onClick={() => setShowForm(false)}
-                  ></button>
-                
-                <div className="modal-body">
-                  <div className="mb-3">
-                    <label className="form-label">Model Name</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      onClick={allowCopyPaste}
-                  onKeyDown={allowCopyPaste}
-                  onPaste={allowCopyPaste}
-                      value={modelName}
-                      onChange={(e) => setModelName(e.target.value)}
-                      placeholder="e.g., gpt-4o"
-                    />
-                    <div className="form-text text-muted">
-                      Enter the model name exactly as specified in OpenAI documentation 
-                      (e.g., <code>gpt-4o</code>, <code>gpt-4</code>, <code>gpt-3.5-turbo</code>).
-                    </div>
-                  </div>
-                  <div className="mb-3">
-                    <label className="form-label">Description</label>
-                    <textarea
-                      className="form-control"
-                      rows="4"
-                      onClick={allowCopyPaste}
-                  onKeyDown={allowCopyPaste}
-                  onPaste={allowCopyPaste}
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Enter a brief description of the model..."
-                    ></textarea>
-                  </div>
-                
-                </div>
-                <div className="d-flex justify-content-between mt-3">
-                  <button
-                    type="button"
-                    className="btn btn-secondary"
-                    onClick={() => setShowForm(false)}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={handleSave}
-                  >
-                    Save
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
+     {/* ✅ Custom Add Model Popup */}
+{showForm && (
+  <div className="popup-overlay">
+    <div
+      className="popup-box"
+      onClick={(e) => e.stopPropagation()} // prevent closing on inner click
+    >
+      <h5 className="mb-3 text-center">Add New Model</h5>
+
+      <div className="mb-3">
+        <label className="form-label">
+          Model Name <span style={{ color: "red" }}>*</span>
+        </label>
+        <input
+          type="text"
+          className="form-control"
+          onClick={allowCopyPaste}
+          onKeyDown={allowCopyPaste}
+          onPaste={allowCopyPaste}
+          value={modelName}
+          onChange={(e) => setModelName(e.target.value)}
+          placeholder="e.g., gpt-4o"
+        />
+        <div className="form-text text-muted">
+          Enter the model name exactly as specified in OpenAI documentation (
+          <code>gpt-4o</code>, <code>gpt-4</code>, <code>gpt-3.5-turbo</code>).
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">Description</label>
+        <textarea
+          className="form-control"
+          rows="4"
+          onClick={allowCopyPaste}
+          onKeyDown={allowCopyPaste}
+          onPaste={allowCopyPaste}
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          placeholder="Enter a brief description of the model..."
+        ></textarea>
+      </div>
+
+      <div className="d-flex justify-content-end gap-2 mt-3">
+        <button type="button" className="btn btn-secondary" onClick={handleCloseModal}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn-success" onClick={handleSave}>
+          Create
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }

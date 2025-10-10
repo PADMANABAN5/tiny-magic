@@ -415,70 +415,137 @@ function Assignmodels() {
         </div>
       </div>
 
-      {/* Modal for Assign Form */}
-      <Modal show={showModal} onHide={handleClose}>
-        <Modal.Header closeButton>
-          <Modal.Title>{isEditMode ? 'Update Assignment' : 'Assign Model'}</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Level</Form.Label>
-              <Form.Select value={selectedLevel} onChange={handleLevelChange}>
+         {showModal && (
+  <>
+    {/* Overlay background */}
+    <div
+      className="modal-backdrop fade show"
+      onClick={handleClose}
+      style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+    ></div>
+
+    {/* Modal box */}
+    <div
+      className="modal d-block"
+      tabIndex="-1"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClose();
+      }}
+    >
+      <div className="modal-overlay">
+        <div className="modal-content p-3">
+          <h5 className="mb-3">
+            {isEditMode ? "Update Assignment" : "Assign Model"}
+          </h5>
+
+          {/* Form Section */}
+          <form>
+            {/* Level */}
+            <div className="mb-3">
+              <label className="form-label">
+                Level <span style={{ color: "red" }}>*</span>
+              </label>
+              <select
+                className="form-select"
+                value={selectedLevel}
+                onChange={handleLevelChange}
+              >
                 <option value="global">Global</option>
                 <option value="organization">Organization</option>
                 <option value="batch">Batch</option>
-              </Form.Select>
-            </Form.Group>
+              </select>
+            </div>
 
-            <Form.Group className="mb-3">
-              <Form.Label>Model</Form.Label>
-              <Form.Select value={selectedModel} onChange={(e) => setSelectedModel(e.target.value)}>
+            {/* Model */}
+            <div className="mb-3">
+              <label className="form-label">
+                Model <span style={{ color: "red" }}>*</span>
+              </label>
+              <select
+                className="form-select"
+                value={selectedModel}
+                onChange={(e) => setSelectedModel(e.target.value)}
+              >
                 <option value="">Select Model</option>
                 {models.map((model) => (
-                  <option key={model.model_id} value={model.model_id}>{model.model_name}</option>
+                  <option key={model.model_id} value={model.model_id}>
+                    {model.model_name}
+                  </option>
                 ))}
-              </Form.Select>
-            </Form.Group>
+              </select>
+            </div>
 
-            {(selectedLevel === 'organization' || selectedLevel === 'batch') && (
-              <Form.Group className="mb-3">
-                <Form.Label>Organization</Form.Label>
-                <Form.Select value={selectedOrg} onChange={handleOrgChange}>
+            {/* Organization */}
+            {(selectedLevel === "organization" || selectedLevel === "batch") && (
+              <div className="mb-3">
+                <label className="form-label">
+                  Organization <span style={{ color: "red" }}>*</span>
+                </label>
+                <select
+                  className="form-select"
+                  value={selectedOrg}
+                  onChange={handleOrgChange}
+                >
                   <option value="">Select Organization</option>
                   {organizations.map((org) => (
-                    <option key={org.organization_id} value={org.organization_id}>
+                    <option
+                      key={org.organization_id}
+                      value={org.organization_id}
+                    >
                       {org.organization_name}
                     </option>
                   ))}
-                </Form.Select>
-              </Form.Group>
+                </select>
+              </div>
             )}
 
-            {selectedLevel === 'batch' && (
-              <Form.Group className="mb-3">
-                <Form.Label>Batch</Form.Label>
-                <Form.Select value={selectedBatch} onChange={(e) => setSelectedBatch(e.target.value)}>
+            {/* Batch */}
+            {selectedLevel === "batch" && (
+              <div className="mb-3">
+                <label className="form-label">
+                  Batch <span style={{ color: "red" }}>*</span>
+                </label>
+                <select
+                  className="form-select"
+                  value={selectedBatch}
+                  onChange={(e) => setSelectedBatch(e.target.value)}
+                >
                   <option value="">Select Batch</option>
                   {batches
-                    .filter(b => b.organization_id === parseInt(selectedOrg))
+                    .filter((b) => b.organization_id === parseInt(selectedOrg))
                     .map((batch) => (
-                      <option key={batch.batch_id} value={batch.batch_id}>{batch.batch_name}</option>
+                      <option key={batch.batch_id} value={batch.batch_id}>
+                        {batch.batch_name}
+                      </option>
                     ))}
-                </Form.Select>
-              </Form.Group>
+                </select>
+              </div>
             )}
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleClose}>
-            Cancel
-          </Button>
-          <Button variant="primary" onClick={handleSave}>
-            {isEditMode ? 'Update' : 'Save'}
-          </Button>
-        </Modal.Footer>
-      </Modal>
+          </form>
+
+          {/* Buttons */}
+          <div className="d-flex justify-content-between mt-3">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={handleClose}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-success"
+              onClick={handleSave}
+            >
+              {isEditMode ? "Update" : "Add"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </>
+)}
+
     </div>
   );
 }
