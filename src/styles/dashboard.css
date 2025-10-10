@@ -3062,7 +3062,7 @@ html, body {
   margin-bottom: 20px;
 }
 .chat-messages {
-  padding: 4rem 2.5rem 0rem 2.5rem;
+  padding: 64px 24px 0px 24px;
 }
 }
 .pulse-container {
@@ -3089,4 +3089,17 @@ html, body {
     transform: scale(1);
     opacity: 1;
   }
+}
+.markdown-text {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-family: "Inter", sans-serif;
+}
+ 
+.markdown-text code,
+.markdown-text pre {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 10px;
+  display: block;
 }
