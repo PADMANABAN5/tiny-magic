@@ -14,9 +14,10 @@ import {
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { MdMenu } from 'react-icons/md';
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
-function Sidebar({ isProcessingAssessment, isLoading }) {
+function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, showMobileMenu = false}) {
   const location = useLocation();
   const navigate = useNavigate();
   const username = sessionStorage.getItem("email");
@@ -91,6 +92,17 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
           </div>
         </Link>
 
+        {isMobile && showMobileMenu &&(
+          <button
+            className="hamburger-btn"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label="Toggle menu"
+            style={{ background: "none", border: "none" }}
+          >
+            <MdMenu size={28} />
+          </button>
+        )}
+
         <div className="page-title mx-auto">
           {(() => {
             switch (location.pathname) {
@@ -111,9 +123,8 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
         <div className="ms-auto">
           <div className="dropdown">
             <button
-              className={`btn btn-outline-secondary d-flex align-items-center login-btn ${
-                isProcessingAssessment || isLoading ? "disabled" : ""
-              }`}
+              className={`btn btn-outline-secondary d-flex align-items-center login-btn ${isProcessingAssessment || isLoading ? "disabled" : ""
+                }`}
               type="button"
               onClick={() =>
                 !isProcessingAssessment &&
@@ -155,9 +166,8 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                   <Link
                     to="/dashboard"
                     className={`dropdown-item d-flex align-items-center 
-    ${
-      location.pathname === "/dashboard" && !showHistorySubmenu ? "active" : ""
-    }`}
+    ${location.pathname === "/dashboard" && !showHistorySubmenu ? "active" : ""
+                      }`}
                     onClick={(e) => {
                       if (isProcessingAssessment || isLoading) {
                         e.preventDefault();
@@ -178,9 +188,8 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                   <Link
                     to="/practice"
                     className={`dropdown-item d-flex align-items-center 
-    ${
-      location.pathname === "/practice" && !showHistorySubmenu ? "active" : ""
-    }`}
+    ${location.pathname === "/practice" && !showHistorySubmenu ? "active" : ""
+                      }`}
                     onClick={(e) => {
                       if (isProcessingAssessment || isLoading) {
                         e.preventDefault();
@@ -197,11 +206,10 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                 <li>
                   <button
                     className={`dropdown-item history-toggle d-flex align-items-center 
-    ${
-      showHistorySubmenu || location.pathname.includes("history")
-        ? "active"
-        : ""
-    }`} // ✅ Highlight if submenu open or page is history
+    ${showHistorySubmenu || location.pathname.includes("history")
+                        ? "active"
+                        : ""
+                      }`} // ✅ Highlight if submenu open or page is history
                     onClick={() => {
                       setShowHistorySubmenu(!showHistorySubmenu);
                     }}
@@ -217,11 +225,10 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                       <li>
                         <Link
                           to="/conversationhistory"
-                          className={`dropdown-item ${
-                            location.pathname === "/conversationhistory"
-                              ? "active"
-                              : ""
-                          }`}
+                          className={`dropdown-item ${location.pathname === "/conversationhistory"
+                            ? "active"
+                            : ""
+                            }`}
                           onClick={() => {
                             setShowDropdown(false);
                             setShowHistorySubmenu(true); // Keep submenu open after click
@@ -233,11 +240,10 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                       <li>
                         <Link
                           to="/practicehistory"
-                          className={`dropdown-item ${
-                            location.pathname === "/practicehistory"
-                              ? "active"
-                              : ""
-                          }`}
+                          className={`dropdown-item ${location.pathname === "/practicehistory"
+                            ? "active"
+                            : ""
+                            }`}
                           onClick={() => {
                             setShowDropdown(false);
                             setShowHistorySubmenu(true); // Keep submenu open after click
@@ -255,9 +261,8 @@ function Sidebar({ isProcessingAssessment, isLoading }) {
                 </li>
                 <li>
                   <button
-                    className={`dropdown-item d-flex align-items-center text-danger ${
-                      isProcessingAssessment || isLoading ? "disabled" : ""
-                    }`}
+                    className={`dropdown-item d-flex align-items-center text-danger ${isProcessingAssessment || isLoading ? "disabled" : ""
+                      }`}
                     onClick={(e) => {
                       e.preventDefault();
                       if (!(isProcessingAssessment || isLoading)) {

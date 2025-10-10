@@ -40,7 +40,18 @@ function AddModels() {
   const showToast = (message, bg) => {
     toast(message, { type: getToastType(bg) });
   };
-
+  const validateModelName = (name) => {
+  const regex = /^[a-zA-Z0-9._-]+$/;
+  if (name.length > 20) {
+    showToast("Model name cannot exceed 20 characters.", "warning");
+    return false;
+  }
+  if (!regex.test(name)) {
+    showToast("Model name can only contain letters, numbers, '-', '.', and '_'.", "warning");
+    return false;
+  }
+  return true;
+};
   const fetchModels = async () => {
     setLoading(true);
     setError(null);
@@ -144,10 +155,16 @@ function AddModels() {
 
   // Save new model
   const handleSave = async () => {
-    if (!modelName.trim()) {
-      showToast("Model name is required.", "warning");
-      return;
-    }
+     const trimmedName = modelName.trim();
+
+  if (!trimmedName) {
+    showToast("Model name is required.", "warning");
+    return;
+  }
+
+  // ✅ Apply validation
+  if (!validateModelName(trimmedName)) return;
+
     try {
       const response = await axios.post(`${BASE_URL}/llm/model`, {
         model_name: modelName.trim(),
@@ -173,7 +190,7 @@ function AddModels() {
         let message = "";
         switch (error.response.status) {
           case 400:
-            message = "Bad request. Please check your input.";
+            message = "Please check your model.";
             break;
           case 401:
             message = "Unauthorized. Please log in.";

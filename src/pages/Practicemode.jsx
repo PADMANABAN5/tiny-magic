@@ -57,13 +57,12 @@ function Practicemode() {
   const apiDataRef = useRef({});
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
-  const [showLearningProgress, setShowLearningProgress] = useState(window.innerWidth >= 768);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   // Responsive handler
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768);
-      setShowLearningProgress(window.innerWidth >= 768);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
@@ -1364,7 +1363,8 @@ function Practicemode() {
 
   return (
     <div className="learning-dashboard">
-      <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} />
+      <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} menuOpen={menuOpen}
+        setMenuOpen={setMenuOpen} showMobileMenu={true}/>
     
       {showRestartDialog && (
         <div className="restart-dialog-overlay">
@@ -1440,6 +1440,7 @@ function Practicemode() {
         />
       )}
       <div className="dashboard-layout">
+        {(isMobile ? menuOpen : true) && (
         <div className="control-panel">
           <div className="control-section">
             <div className="section-header">
@@ -1506,20 +1507,14 @@ function Practicemode() {
             </div>
           </div>
           <div className="control-section">
-            <div className="section-header" onClick={isMobile ? () => setShowLearningProgress(p => !p) : undefined}
+            <div className="section-header"
               style={{
                 cursor: isMobile ? 'pointer' : 'default',
                 userSelect: 'none'
               }}>
               <FiTrendingUp className="section-icon" />
               <h3>Learning Progress</h3>
-              {isMobile && (
-                <span>
-                  {showLearningProgress ? <FiChevronDown /> : <FiChevronUp />}
-                  </span>
-              )}
             </div>
-            {(showLearningProgress || !isMobile) && (
             <div className="stage-cards">
               <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
                 <div className="stage-icon not-started">
@@ -1578,9 +1573,9 @@ function Practicemode() {
                 </div>
               </div>
             </div>
-            )}
           </div>
         </div>
+        )}
         <div className="chat-panel">
           <div className="top-right-actions">
             <div className="save-section">
