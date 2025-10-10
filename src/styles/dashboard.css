@@ -3090,3 +3090,16 @@ html, body {
     opacity: 1;
   }
 }
+.markdown-text {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-family: "Inter", sans-serif;
+}
+ 
+.markdown-text code,
+.markdown-text pre {
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 10px;
+  display: block;
+}

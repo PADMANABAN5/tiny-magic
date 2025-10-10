@@ -34,6 +34,9 @@ import usePreventBack from "../utils/usePreventBack.js";
 import { useAuth } from "../components/AuthContext.jsx";
 import StageCompletionToast from "../components/StageCompletionToast.jsx";
 import VoiceRecorder from "../components/VoiceRecorder.jsx";
+import { formatMarkdownResponse } from "../utils/formatMarkdownResponse.js";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
 function Dashboard() {
@@ -293,7 +296,7 @@ function Dashboard() {
         batchId
       });
 
-      const mentorMessage = response.apiResponseText;
+      const mentorMessage = formatMarkdownResponse(response.apiResponseText);
       const updatedHistory = [{ user: "", system: mentorMessage }];
 
       setChatHistory(updatedHistory);
@@ -370,7 +373,7 @@ function Dashboard() {
         batchId
       });
 
-      const mentorMessage = response.apiResponseText;
+      const mentorMessage = formatMarkdownResponse(response.apiResponseText);
       const updatedHistory = [{ user: "", system: mentorMessage }];
 
       setChatHistory(updatedHistory);
@@ -576,7 +579,7 @@ function Dashboard() {
 
        setChatHistory((prev) => {
       const updated = [...prev];
-      updated[updated.length - 1].system = initialResponse.apiResponseText;
+      updated[updated.length - 1].system = formatMarkdownResponse(initialResponse.apiResponseText);
       sessionStorage.setItem("chatHistory", JSON.stringify(updated));
       return updated;
     });
@@ -1448,7 +1451,15 @@ function Dashboard() {
                             <span className="message-author">AI Mentor</span>
                           </div>
                           <div className="message-text">
-                            <AssessmentDisplay content={item.system} />
+                            {hasAssessmentData(item.system) ? (
+                              // Assessment JSON → custom UI
+                              <AssessmentDisplay content={item.system} />
+                            ) : (
+                              // Normal mentor text → Markdown
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {item.system}
+                              </ReactMarkdown>
+                            )}
                           </div>
                         </div>
                       </div>
