@@ -587,7 +587,8 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="email"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -605,7 +606,8 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -631,7 +633,8 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -657,6 +660,10 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="password"
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   ref={passwordRef}
                   value={newAdmin.password}
@@ -699,7 +706,8 @@ export default function Addorgadmin() {
                 <label className="form-label">Username</label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -727,7 +735,8 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="email"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -748,7 +757,8 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -777,7 +787,8 @@ export default function Addorgadmin() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -804,6 +815,10 @@ export default function Addorgadmin() {
                 <label className="form-label">Password</label>
                 <input
                   type="password"
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   ref={editPasswordRef}
                   value={editingAdmin.password || ""}

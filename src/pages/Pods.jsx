@@ -672,7 +672,7 @@ export default function Pods() {
                   options={mentorOptions}
                   value={mentorOptions.filter(option => podForm.mentors.includes(option.value))}
                   onChange={(selected) => setPodForm(prev => ({ ...prev, mentors: selected ? selected.map(s => s.value) : [] }))}
-                  placeholder="Select mentors (hold Ctrl/Cmd for multiple)..."
+                  placeholder="Select mentors ..."
                   isClearable
                   classNamePrefix="react-select"
                   styles={{
@@ -687,7 +687,8 @@ export default function Pods() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"

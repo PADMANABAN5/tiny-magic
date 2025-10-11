@@ -619,7 +619,8 @@ const validateCleanText = (value, key) => {
                         <textarea
   className="form-control"
   id={key}
-  onClick={allowCopyPaste}
+  onCopy={allowCopyPaste}
+  onCut={allowCopyPaste}
   onKeyDown={allowCopyPaste}
   onPaste={allowCopyPaste}
   name={key}

@@ -404,7 +404,8 @@ function AddModels() {
         <input
           type="text"
           className="form-control"
-          onClick={allowCopyPaste}
+          onCopy={allowCopyPaste}
+          onCut={allowCopyPaste}
           onKeyDown={allowCopyPaste}
           onPaste={allowCopyPaste}
           value={modelName}
@@ -422,7 +423,8 @@ function AddModels() {
         <textarea
           className="form-control"
           rows="4"
-          onClick={allowCopyPaste}
+          onCopy={allowCopyPaste}
+          onCut={allowCopyPaste}
           onKeyDown={allowCopyPaste}
           onPaste={allowCopyPaste}
           value={description}
