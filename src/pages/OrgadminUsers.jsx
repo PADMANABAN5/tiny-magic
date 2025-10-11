@@ -89,78 +89,135 @@ function OrgadminUsers() {
             <Row className="g-4 justify-content-center">
               {/* Pod Info Card */}
               <Col xs={12} md={4} className="mb-4 mb-md-0">
-                <Card className="shadow-sm rounded-4 border-primary bg-white w-100">
-                  <Card.Header className="bg-primary text-white rounded-top-4 py-3">
-                    <h4 className="mb-0 text-center fw-bold">{podInfo?.podName || 'N/A'}</h4>
-                  </Card.Header>
-                  <Card.Body className="p-4">
-                    <div className="d-flex align-items-center mb-3">
-                      <strong className="me-2">Batch:</strong>
-                      <Badge bg="secondary" className="px-3 py-2 rounded-pill">
-                        {podInfo?.batchName}
-                      </Badge>
-                    </div>
+               <Card
+  className="border-0 shadow-lg rounded-4 bg-white w-100"
+  style={{
+    background: "rgba(255, 255, 255, 0.85)",
+    backdropFilter: "blur(14px)",
+    border: "1px solid rgba(0, 178, 215, 0.25)",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  }}
+>
+  {/* Header */}
+  <Card.Header
+    className="text-white rounded-top-4 text-center fw-bold"
+    style={{
+      background: "linear-gradient(135deg, #00b2d7 0%, #0072ff 100%)",
+      fontSize: "1.5rem",
+      letterSpacing: "0.5px",
+    }}
+  >
+    {podInfo?.podName || "N/A"}
+  </Card.Header>
 
-                    <div className="d-flex align-items-center mb-3">
-                      <strong className="me-2">Mentor{podInfo?.mentors?.length > 1 ? 's' : ''}:</strong>
-                      <OverlayTrigger
-                        trigger="click"
-                        placement="bottom"
-                        overlay={
-                          <Popover id="popover-mentors">
-                            <Popover.Header as="h3">Mentor {podInfo?.mentors?.length || 0} Mentor{podInfo?.mentors?.length > 1 ? 's' : ''}
-                    </Popover.Header>
-                            <Popover.Body>
-                              <ul className="mb-0 ps-3">
-                                {podInfo?.mentors?.map((mentor, idx) => (
-                      <li key={idx}>{mentor.first_name} {mentor.last_name} ({mentor.email})</li>
-                    ))}
-                    
-                              </ul>
-                            </Popover.Body>
-                          </Popover>
-                        }
-                        rootClose
-                      >
-                        <Badge
-                          bg="success"
-                          className="px-3 py-2 rounded-pill"
-                          style={{ cursor: 'pointer' }}
-                        >
-                          {podInfo?.mentors?.length || 0} Mentor{podInfo?.mentors?.length > 1 ? 's' : ''}
-                        </Badge>
-                      </OverlayTrigger>
-                    </div>
-                    
+  {/* Body */}
+  <Card.Body className="p-4">
 
-                    {podInfo?.concepts?.length > 0 ? (
-                      <div className="d-flex align-items-center mb-2">
-                        <strong className="me-2">Concepts:</strong>
-                        <OverlayTrigger
-                          trigger="click"
-                          placement="bottom"
-                          overlay={<Popover id="popover-concepts">
-                            <Popover.Header as="h3">Concepts</Popover.Header>
-                            <Popover.Body>
-                              <ul className="mb-0 ps-3">
-                                {podInfo.concepts.map((concept, idx) => (
-                                  <li key={idx}>{concept.concept_name}</li>
-                                ))}
-                              </ul>
-                            </Popover.Body>
-                          </Popover>}
-                          rootClose
-                        >
-                          <Badge bg="info" className="px-3 py-2 rounded-pill" style={{ cursor: 'pointer' }}>
-                            {podInfo.concepts.length} Concept{podInfo.concepts.length > 1 ? 's' : ''}
-                          </Badge>
-                        </OverlayTrigger>
-                      </div>
-                    ) : (
-                      <p className="text-muted fst-italic mb-2">No concepts found for this batch.</p>
-                    )}
-                  </Card.Body>
-                </Card>
+    {/* Batch Info */}
+    <div className="d-flex align-items-center mb-3">
+      <strong className="me-2 text-secondary">Batch:</strong>
+      <Badge
+        bg="secondary"
+        className="px-3 py-2 rounded-pill fw-semibold"
+        style={{
+          fontSize: "0.9rem",
+          background:
+            "linear-gradient(135deg, rgba(108,117,125,0.9), rgba(73,80,87,0.9))",
+        }}
+      >
+        {podInfo?.batchName || "N/A"}
+      </Badge>
+    </div>
+
+    {/* Mentors Info */}
+    <div className="d-flex align-items-center mb-3">
+      <strong className="me-2 text-secondary">
+        Mentor{podInfo?.mentors?.length > 1 ? "s" : ""}:
+      </strong>
+      <OverlayTrigger
+        trigger="click"
+        placement="bottom"
+        overlay={
+          <Popover id="popover-mentors">
+            <Popover.Header as="h3">
+              {podInfo?.mentors?.length || 0} Mentor
+              {podInfo?.mentors?.length > 1 ? "s" : ""}
+            </Popover.Header>
+            <Popover.Body>
+              <ul className="mb-0 ps-3">
+                {podInfo?.mentors?.length > 0 ? (
+                  podInfo.mentors.map((mentor, idx) => (
+                    <li key={idx}>
+                      {mentor.first_name} {mentor.last_name} ({mentor.email})
+                    </li>
+                  ))
+                ) : (
+                  <li>No Mentors</li>
+                )}
+              </ul>
+            </Popover.Body>
+          </Popover>
+        }
+        rootClose
+      >
+        <Badge
+          className="px-3 py-2 rounded-pill fw-semibold"
+          style={{
+            background: "linear-gradient(135deg, #43e97b, #38f9d7)",
+            color: "#fff",
+            cursor: "pointer",
+            fontSize: "0.9rem",
+          }}
+        >
+          {podInfo?.mentors?.length || 0} Mentor
+          {podInfo?.mentors?.length > 1 ? "s" : ""}
+        </Badge>
+      </OverlayTrigger>
+    </div>
+
+    {/* Concepts Info */}
+    {podInfo?.concepts?.length > 0 ? (
+      <div className="d-flex align-items-center mb-3">
+        <strong className="me-2 text-secondary">Concepts:</strong>
+        <OverlayTrigger
+          trigger="click"
+          placement="bottom"
+          overlay={
+            <Popover id="popover-concepts">
+              <Popover.Header as="h3">Concepts</Popover.Header>
+              <Popover.Body>
+                <ul className="mb-0 ps-3">
+                  {podInfo.concepts.map((concept, idx) => (
+                    <li key={idx}>{concept.concept_name}</li>
+                  ))}
+                </ul>
+              </Popover.Body>
+            </Popover>
+          }
+          rootClose
+        >
+          <Badge
+            className="px-3 py-2 rounded-pill fw-semibold"
+            style={{
+              background: "linear-gradient(135deg, #f7971e, #ffd200)",
+              color: "#212529",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+            }}
+          >
+            {podInfo.concepts.length} Concept
+            {podInfo.concepts.length > 1 ? "s" : ""}
+          </Badge>
+        </OverlayTrigger>
+      </div>
+    ) : (
+      <p className="text-muted fst-italic mb-0">
+        No concepts found for this batch.
+      </p>
+    )}
+  </Card.Body>
+</Card>
+
               </Col>
 
               {/* Users Table */}
@@ -168,11 +225,11 @@ function OrgadminUsers() {
                 <Card className="shadow-sm border-0 rounded-3">
                   <Card.Body className="p-0">
                     {currentUsers.length > 0 ? (
-                      <Table responsive bordered hover className="mb-0 w-100 overflow-hidden custom-table">
-                        <caption className="text-center fw-medium text-white p-2 bg-primary caption-top" style={{ borderTopLeftRadius: '0.5rem', borderTopRightRadius: '0.5rem' }}>
+                      <Table responsive bordered hover className="mb-0 w-100 overflow-hidden custom-table table-bordered">
+                        <caption className="text-left fw-medium p-3 h5 caption-top" style={{ borderTopLeftRadius: '0.5rem', borderTopRightRadius: '0.5rem' }}>
                           List of Users in this Pod
                         </caption>
-                        <thead className=" text-white">
+                        <thead className="">
                           <tr>
                             <th className="py-3 text-center" style={{ width: '5%' }}>S.No</th>
                             <th className="py-3" style={{ width: '20%' }}>First Name</th>
@@ -190,7 +247,7 @@ function OrgadminUsers() {
                               <td>{user.email}</td>
                               <td>
                                 <button
-                                  className="btn btn-outline-primary w-100 text-white bg-primary"
+                                  className="btn btn-outline-primary w-100"
                                   onClick={() => navigate(`/orgadminuserprogress/${user.user_id}`)}
                                 >
                                   View Progress
