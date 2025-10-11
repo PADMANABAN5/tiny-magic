@@ -802,70 +802,143 @@ const parseField = (field) => {
           ) : (
             <>
               {/* User Info Card with Back Button in Header */}
-              <Card className="shadow-sm rounded-4 border-primary mb-4">
-                <Card.Header className="bg-primary text-white py-3 rounded-top-4">
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    position: 'relative'
-                  }}>
-                    <Button 
-                      variant="outline-light" 
-                      onClick={() => navigate(-1)} 
-                      style={{ 
-                        position: 'absolute',
-                        left: '0',
-                        padding: '8px', 
-                        width: '40px',
-                        height: '40px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: 'none',
-                        background:'transparent',
-                        boxShadow:'none'
-                      }}
-                    >
-                      <FaArrowLeft />
-                    </Button>
-                    <h4 className="mb-0 fw-bold">
-                      Progress of {userData.user.first_name} {userData.user.last_name}
-                    </h4>
-                  </div>
-                </Card.Header>
-                <Card.Body>
-                  <p><strong>Email:</strong> {userData.user.email}</p>
-                  <p><strong>Pod:</strong> <Badge bg="info">{userData.pod?.pod_name || 'N/A'}</Badge></p>
-                  <p><strong>Batch:</strong> <Badge bg="secondary">{userData.batch?.batch_name || 'N/A'}</Badge></p>
-                  <p>
-  <strong>Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}:</strong>{' '}
-  <OverlayTrigger
-    trigger="click"
-    placement="bottom"
-    overlay={
-      <Popover id="popover-mentors">
-        <Popover.Header as="h3">Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}</Popover.Header>
-        <Popover.Body>
-          <ul className="mb-0 ps-3">
-            {userData.pod?.mentors?.map((m) => (
-              <li key={m.user_id}>
-                {m.first_name} {m.last_name} ({m.email})
-              </li>
-            ))}
-          </ul>
-        </Popover.Body>
-      </Popover>
-    }
-    rootClose
+             <Card
+  className="border-0 shadow-lg rounded-4 mb-4"
+  style={{
+    background: "rgba(255, 255, 255, 0.85)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(0, 178, 215, 0.25)",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  }}
+>
+  {/* Header */}
+  <Card.Header
+    className="text-white py-4 rounded-top-4"
+    style={{
+      background: "linear-gradient(135deg, #00b2d7 0%, #0072ff 100%)",
+      position: "relative",
+    }}
   >
-    <Badge bg="success" style={{ cursor: 'pointer' }}>
-      {userData.pod?.mentors?.length || 0} Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}
-    </Badge>
-  </OverlayTrigger>
-</p>
-                </Card.Body>
-              </Card>
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+      }}
+    >
+      <Button
+        variant="outline-light"
+        onClick={() => navigate(-1)}
+        style={{
+          position: "absolute",
+          left: "0",
+          padding: "8px",
+          width: "40px",
+          height: "40px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "none",
+          background: "transparent",
+          boxShadow: "none",
+          transition: "transform 0.2s ease, opacity 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.1)";
+          e.currentTarget.style.opacity = "0.9";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.opacity = "1";
+        }}
+      >
+        <FaArrowLeft />
+      </Button>
+
+      <h4 className="mb-0 fw-bold text-center">
+        Progress of {userData.user.first_name} {userData.user.last_name}
+      </h4>
+    </div>
+  </Card.Header>
+
+  {/* Body */}
+  <Card.Body className="p-4">
+    <p className="mb-3">
+      <strong className="text-secondary">Email:</strong>{" "}
+      <span className="text-dark fw-medium">{userData.user.email}</span>
+    </p>
+
+    <p className="mb-3">
+      <strong className="text-secondary">Pod:</strong>{" "}
+      <Badge
+        className="px-3 py-2 rounded-pill fw-semibold"
+        style={{
+          background: "linear-gradient(135deg, #43e97b, #38f9d7)",
+          color: "#fff",
+          fontSize: "0.9rem",
+        }}
+      >
+        {userData.pod?.pod_name || "N/A"}
+      </Badge>
+    </p>
+
+    <p className="mb-3">
+      <strong className="text-secondary">Batch:</strong>{" "}
+      <Badge
+        className="px-3 py-2 rounded-pill fw-semibold"
+        style={{
+          background: "linear-gradient(135deg, rgba(108,117,125,0.9), rgba(73,80,87,0.9))",
+          color: "#fff",
+          fontSize: "0.9rem",
+        }}
+      >
+        {userData.batch?.batch_name || "N/A"}
+      </Badge>
+    </p>
+
+    <p className="mb-0">
+      <strong className="text-secondary">
+        Mentor{userData.pod?.mentors?.length > 1 ? "s" : ""}:
+      </strong>{" "}
+      <OverlayTrigger
+        trigger="click"
+        placement="bottom"
+        overlay={
+          <Popover id="popover-mentors">
+            <Popover.Header as="h3">
+              Mentor{userData.pod?.mentors?.length > 1 ? "s" : ""}
+            </Popover.Header>
+            <Popover.Body>
+              <ul className="mb-0 ps-3">
+                {userData.pod?.mentors?.map((m) => (
+                  <li key={m.user_id}>
+                    {m.first_name} {m.last_name} ({m.email})
+                  </li>
+                ))}
+              </ul>
+            </Popover.Body>
+          </Popover>
+        }
+        rootClose
+      >
+        <Badge
+          className="px-3 py-2 rounded-pill fw-semibold"
+          style={{
+            background: "linear-gradient(135deg, #f7971e, #ffd200)",
+            color: "#212529",
+            cursor: "pointer",
+            fontSize: "0.9rem",
+          }}
+        >
+          {userData.pod?.mentors?.length || 0} Mentor
+          {userData.pod?.mentors?.length > 1 ? "s" : ""}
+        </Badge>
+      </OverlayTrigger>
+    </p>
+  </Card.Body>
+</Card>
+
 
               {/* Header Actions */}
               <div className="page-header">

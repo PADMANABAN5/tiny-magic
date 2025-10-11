@@ -37,7 +37,7 @@
 }
 
 .page-icon {
-  color: #3b82f6;
+  color: #00b2d7;
   font-size: 2rem;
 }
 
@@ -76,9 +76,9 @@
 }
 
 .refresh-btn {
-  background: #3b82f6;
+  background: #00b2d7;
   color: white;
-  border-color: #3b82f6;
+  border-color: #00b2d7;
 }
 
 .refresh-btn:hover {
@@ -135,7 +135,7 @@
 
 .search-input input:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #00b2d7;
 }
 
 .filter-group select {
@@ -150,7 +150,7 @@
 
 .filter-group select:focus {
   outline: none;
-  border-color: #3b82f6;
+  border-color: #00b2d7;
 }
 
 /* Statistics Section */
@@ -187,7 +187,7 @@
 }
 
 .stat-icon.in-progress {
-  background: #3b82f6;
+  background: #00b2d7;
 }
 
 .stat-icon.completed {
@@ -238,7 +238,7 @@
   width: 2rem;
   height: 2rem;
   border: 3px solid #e2e8f0;
-  border-top: 3px solid #3b82f6;
+  border-top: 3px solid #00b2d7;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -297,7 +297,7 @@
 }
 
 .conversations-table thead {
-  background: #3b82f6;
+  background: #00b2d7;
   position: relative;
 }
 
@@ -406,7 +406,7 @@ td {
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 1rem;
-  background: #3b82f6;
+  background: #00b2d7;
   color: white;
   border: none;
   border-radius: 6px;
@@ -537,7 +537,7 @@ td {
 }
 
 .message-avatar.user {
-  background: #3b82f6;
+  background: #00b2d7;
   color: white;
 }
 
@@ -733,7 +733,7 @@ td {
 }
 
 .page-icon {
-  color: #3b82f6;
+  color: #00b2d7;
 }
 
 /* Header Actions */
@@ -783,7 +783,7 @@ td {
 }
 
 .stat-icon.in-progress {
-  background-color: #3b82f6;
+  background-color: #00b2d7;
 }
 
 .stat-icon.completed {
@@ -1470,7 +1470,7 @@ table thead tr {
     margin-top: 10px;
   }
   .main-content {
-    padding-top: 220px; 
+    padding-top: 20px; 
   }
 }
 
