@@ -1083,6 +1083,8 @@ html, body {
 
 .chat-input::placeholder {
   color: #94a3b8;
+  text-align: left;    /* For horizontal left alignment */
+  white-space: nowrap; 
 }
 
 .chat-input:focus {
@@ -3036,6 +3038,7 @@ html, body {
     background: #fff !important;
     margin-top: 0 !important;
     z-index: 1;
+    padding-bottom: 80px;
   }
   .stage-header {
     align-items: center;
@@ -3058,12 +3061,25 @@ html, body {
   margin-bottom: 0rem !important;
   animation: messageSlideIn 0.4s ease-out;
 }
-.chat-input-container {
-  margin-bottom: 20px;
+
+.chat-container{
+  height: calc(100vh - 70px);
 }
 .chat-messages {
   padding: 64px 24px 0px 24px;
 }
+ .chat-input-container {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    margin-bottom: 0;
+    padding: 1rem;
+    background: #fff;
+    z-index: 999; /* ensure it stays above other elements */
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+  }
+
 }
 .pulse-container {
   position: relative;
