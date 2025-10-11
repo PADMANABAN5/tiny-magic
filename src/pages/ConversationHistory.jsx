@@ -802,8 +802,8 @@ const goToPage = (page) => {
               )}
             </div>
           ) : (
-            <div className="conversations-table-container">
-              <table className="conversations-table">
+            <div className="conversations-table-container table-responsive">
+              <table className="conversations-table table table-hover table-striped table-bordered">
                 <thead>
                   <tr>
                     <th>Concept</th>
@@ -883,7 +883,7 @@ const goToPage = (page) => {
 
                         <td className="actions-cell">
                           <button
-                            className="view-btn"
+                            className="view-btn  btn-primary"
                             onClick={() => handleViewConversation(conversation)}
                           >
                             <FiEye />

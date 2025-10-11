@@ -76,16 +76,26 @@
 }
 
 .refresh-btn {
-  background: #3b82f6;
-  color: white;
-  border-color: #3b82f6;
+   background-color: #00b2d7;
+  border-color: #00b2d7;
+  color:white;
 }
 
 .refresh-btn:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  background-color: #00b2d7;
+  border-color: #00b2d7;
 }
 
+.btn-primary {
+  background-color: #00b2d7;
+  border-color: #00b2d7;
+  box-shadow: none !important;
+} 
+
+.btn-primary:hover, .btn-primary:focus {
+  background-color: #00b2d7;
+  border-color: #00b2d7;
+} 
 /* Filters Section */
 .filters-section {
   background: white;
@@ -297,7 +307,6 @@
 }
 
 .conversations-table thead {
-  background: #3b82f6;
   position: relative;
 }
 
@@ -305,9 +314,9 @@
   padding: 1rem;
   text-align: left;
   font-weight: 600;
-  color: white;
+  color: black;
   font-size: 0.875rem;
-  border: 1px solid #374151;
+   border: 1px solid rgb(221, 221, 221) !important;
   box-shadow: none;
 }
 
@@ -315,7 +324,7 @@
   padding: 1rem;
   border-bottom: 1px solid #f1f5f9;
   vertical-align: middle;
-  border: 1px solid #374151;
+  border: 1px solid rgb(221, 221, 221) !important;
   box-shadow: none;
 }
 
@@ -406,7 +415,7 @@ td {
   align-items: center;
   gap: 0.375rem;
   padding: 0.5rem 1rem;
-  background: #3b82f6;
+  background-color: #00b2d7;
   color: white;
   border: none;
   border-radius: 6px;
@@ -417,7 +426,7 @@ td {
 }
 
 .view-btn:hover {
-  background: #2563eb;
+  background-color: #00b2d7;
 }
 
 /* Modal Styles */
@@ -1067,11 +1076,11 @@ td {
   /* Prevent tooltip from interfering with hover */
 }
 table thead tr th {
-  border: 1px solid rgb(221, 221, 221);
+  border: 1px solid rgb(221, 221, 221) !important;
   font-weight: 600;
 }
 table thead tr {
-  border: 1px solid rgb(221, 221, 221);
+  border: 1px solid rgb(221, 221, 221) !important;
 }
 .page-link {
   color: #00b2d7;
@@ -1497,3 +1506,4 @@ table thead tr {
 
 
 } */
+
