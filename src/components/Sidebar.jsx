@@ -21,7 +21,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
   const location = useLocation();
   const navigate = useNavigate();
   const username = sessionStorage.getItem("email");
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98)
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
 
@@ -63,7 +63,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 768.98)
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);

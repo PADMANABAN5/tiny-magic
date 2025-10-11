@@ -56,13 +56,13 @@ function Practicemode() {
   const [apiData, setApiData] = useState({});
   const apiDataRef = useRef({});
 
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98);
   const [menuOpen, setMenuOpen] = useState(false);
 
   // Responsive handler
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 768.98);
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
