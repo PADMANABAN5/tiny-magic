@@ -578,7 +578,8 @@ export default function Addusers() {
                 <label className="form-label">Email</label>
                 <input
                   type="email"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -594,7 +595,8 @@ export default function Addusers() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -621,7 +623,8 @@ export default function Addusers() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -646,6 +649,10 @@ export default function Addusers() {
                 <label className="form-label">Password</label>
                 <input
                   type="password"
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={newUser.password}
                   onChange={(e) => {
@@ -691,7 +698,8 @@ export default function Addusers() {
                 <label className="form-label">Username</label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -717,7 +725,8 @@ export default function Addusers() {
                 <label className="form-label">Email</label>
                 <input
                   type="email"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -733,7 +742,8 @@ export default function Addusers() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -761,7 +771,8 @@ export default function Addusers() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -787,6 +798,10 @@ export default function Addusers() {
                 <label className="form-label">Password</label>
                 <input
                   type="password"
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  onPaste={allowCopyPaste}
                   className="form-control"
                   value={editingUser.password || ""}
                   onChange={(e) => {

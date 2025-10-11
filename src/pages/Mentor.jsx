@@ -448,7 +448,8 @@ export default function Mentor() {
                 </label>
                 <input
                   type="email"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -465,7 +466,8 @@ export default function Mentor() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onCopy={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -495,7 +497,8 @@ export default function Mentor() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -525,7 +528,8 @@ export default function Mentor() {
                 </label>
                 <input
                   type="password"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -569,7 +573,8 @@ export default function Mentor() {
                 <label className="form-label">Email</label>
                 <input
                   type="email"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -584,7 +589,8 @@ export default function Mentor() {
                 <label className="form-label">Username</label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -612,7 +618,8 @@ export default function Mentor() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -642,7 +649,8 @@ export default function Mentor() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"
@@ -670,7 +678,8 @@ export default function Mentor() {
                 <label className="form-label">Password</label>
                 <input
                   type="password"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"

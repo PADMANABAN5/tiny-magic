@@ -550,7 +550,8 @@ export default function Batch() {
                 </label>
                 <input
                   type="text"
-                  onClick={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
                   onPaste={allowCopyPaste}
                   className="form-control"

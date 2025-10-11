@@ -350,13 +350,14 @@ const isValidOrgName = (name) => {
                   className="form-control"
                   id="orgName"
                   placeholder="Enter organization name"
-                  onClick={allowCopyPaste}
-                  onKeyDown={allowCopyPaste}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
                   onPaste={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
                   value={newOrgName}
                   onChange={(e) => {
-                    if (e.target.value.length > 50) {
-                      showToastMsg("Organization name cannot exceed 50 characters!", "warning");
+                    if (e.target.value.length > 30) {
+                      showToastMsg("Organization name cannot exceed 30 characters!", "warning");
       return; // don’t update state
     }
     setNewOrgName(e.target.value);
