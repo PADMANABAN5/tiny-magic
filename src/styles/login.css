@@ -385,7 +385,7 @@ body {
 
 .input-group input {
   width: 100%;
-  padding: 10px 0;
+  padding: 5px 0px 3px 0px;
   font-size: 16px;
   border: none;
   border-bottom: 2px solid #ccc;
@@ -508,7 +508,7 @@ input:-moz-autofill {
   }
 
   .input-group input {
-    padding: 10px 0px 10px 0px;
+    padding: 5px 0px 3px 0px;
     font-size: 16px;
   }
 
@@ -955,7 +955,6 @@ input::-webkit-contacts-auto-fill-button {
   }
   .input-group input {
     font-size: 20px;
-    padding-left: 5px;
   }
    .forgot-password-link {
     font-size: 16px;
@@ -1006,7 +1005,7 @@ input::-webkit-contacts-auto-fill-button {
     padding: 8px 10px;
   }
   .input-group input {
-    padding: 5px 0px 3px 5px;
+    padding: 5px 0px 3px 0px;
     font-size: 16px;
   }
   .login-btn {
