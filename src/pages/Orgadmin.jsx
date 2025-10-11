@@ -27,6 +27,7 @@ import { useAuth } from "../components/AuthContext";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import usePreventBack from "../utils/usePreventBack";
+import '../styles/orgadmin.css';
 // Define common table cell styles for consistency
 const baseCell = {
   padding: "8px",
@@ -625,7 +626,7 @@ function Orgadmin() {
                 Progress Report
               </h2>
 
-              <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 gap-3">
+              <div className="progress-table-filter d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 gap-3">
                 {/* Items per page */}
                 <div className="d-flex align-items-center">
                   <span className="me-2">Show entries:</span>
@@ -643,8 +644,9 @@ function Orgadmin() {
                 </div>
 
                 {/* Date Filter - Using react-datepicker */}
-                <div className="d-flex flex-column flex-md-row align-items-start align-items-md-center gap-2">
-                  <div className="d-flex align-items-center">
+                <div className="date-pic d-flex  flex-md-row flex-column align-items-start align-items-md-center gap-2 w-100">
+
+                  <div className="d-flex align-items-md-center date-pick-div">
                     <span className="me-2">Filter by date:</span>
                     <DatePicker
                       selected={filterStartDate}
@@ -958,13 +960,14 @@ function Orgadmin() {
                         </thead>
                         <tbody>{progressTableRows}</tbody>
                       </table>
+                        {renderProgressPagination()}
                     </div>
 
-                    {renderProgressPagination()}
+                  
                     </div>
                 
               ) : (
-                <Card className="shadow-sm rounded-3">
+                <Card className="shadow-sm rounded-3 no-progress-card">
                   <Card.Body>
                     <p className="text-muted text-center">
                       No progress report data found for your organization or
@@ -983,72 +986,100 @@ function Orgadmin() {
           {!pageLoading && !batchesError && (
             <>
               <h2 className="mt-4 mb-3 fs-4 text-dark">Your Batches</h2>
-              <Row className="g-4">
-                {batchesData.length > 0 ? (
-                  batchesData.map((batch) => (
-                    <Col key={batch.batch_id} xs={12} md={6} lg={4}>
-                      <Card
-                        border="primary"
-                        className="h-100 shadow-sm rounded-3 clickable-card"
-                        style={{
-                          backgroundColor: "#fff",
-                          cursor: "pointer",
-                          transition:
-                            "transform 0.2s ease-in-out, boxShadow 0.3s ease",
-                          boxShadow: "0 4px 20px rgba(33, 180, 234, 0.3)",
-                        }}
-                        onClick={() => handleCardClick(batch.batch_id)}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.transform = "scale(1.03)";
-                          e.currentTarget.style.boxShadow =
-                            "0 12px 20px rgba(33, 180, 234, 0.3)";
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.transform = "scale(1)";
-                          e.currentTarget.style.boxShadow =
-                            "0 10px 10px rgba(33, 180, 234, 0.1)";
-                        }}
-                      >
-                        <Card.Header className="fw-bold fs-5 bg-primary text-center text-white">
-                          {batch.batch_name}
-                          <Badge
-                            bg={batch.is_active ? "success" : "secondary"}
-                            className="ms-2"
-                          >
-                            {batch.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </Card.Header>
-                        <Card.Body>
-                          <Card.Title className="text-center">
-                            Batch Overview
-                          </Card.Title>
-                          <div className="d-flex gap-2 justify-content-around flex-wrap">
-                            <Badge bg="info" className="p-2">
-                              Batch Size: {batch.batch_size}
-                            </Badge>
-                            <Badge bg="success" className="p-2">
-                              Pod Count: {batch.pod_count}
-                            </Badge>
-                            <Badge bg="warning" text="dark" className="p-2">
-                              User Count: {batch.user_count}
-                            </Badge>
-                          </div>
-                        </Card.Body>
-                      </Card>
-                    </Col>
-                  ))
-                ) : (
-                  <Col xs={12}>
-                    <Card className="text-center p-3 shadow-sm rounded-3">
-                      <Card.Body>
-                        <p className="lead mb-0">
-                          No batches found for your organization.
-                        </p>
-                      </Card.Body>
-                    </Card>
-                  </Col>
-                )}
-              </Row>
+            <Row className="g-4">
+  {batchesData.length > 0 ? (
+    batchesData.map((batch) => (
+      <Col key={batch.batch_id} xs={12} md={6} lg={4}>
+        <Card
+          className="h-100 border-0 shadow-lg rounded-4 clickable-card"
+          style={{
+            background: "rgba(255, 255, 255, 0.85)",
+            backdropFilter: "blur(14px)",
+            border: "1px solid rgba(0, 178, 215, 0.3)",
+            cursor: "pointer",
+            transition: "transform 0.3s ease, box-shadow 0.3s ease",
+          }}
+          onClick={() => handleCardClick(batch.batch_id)}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-8px)";
+            e.currentTarget.style.boxShadow =
+              "0 14px 28px rgba(0, 178, 215, 0.25)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow =
+              "0 6px 15px rgba(0, 178, 215, 0.1)";
+          }}
+        >
+          <div
+            className="p-3 rounded-top-4 text-white text-center fw-semibold"
+            style={{
+              background: "linear-gradient(135deg, rgb(0,178,215) 0%, #00b2d7 100%)",
+            }}
+          >
+            <h5 className="mb-0 text-capitalize">
+              {batch.batch_name}
+              <Badge
+                bg={batch.is_active ? "success" : "secondary"}
+                className="ms-2 rounded-pill px-3 py-1"
+              >
+                {batch.is_active ? "Active" : "Inactive"}
+              </Badge>
+            </h5>
+          </div>
+
+          <Card.Body className="text-center">
+            <h6 className="fw-semibold mb-md-4 mb-2 text-muted">Batch Overview</h6>
+            <div className="d-flex justify-content-around flex-wrap gap-3">
+              <div
+                className="px-3 py-2 rounded-3 fw-medium text-white"
+                style={{
+                  background: "linear-gradient(135deg, rgb(0,178,215), #00a3c4)",
+                }}
+              >
+                Batch Size: {batch.batch_size}
+              </div>
+              <div
+                className="px-3 py-2 rounded-3 fw-medium text-white"
+                style={{
+                  background: "linear-gradient(135deg, #43e97b, #38f9d7)",
+                }}
+              >
+                Pod Count: {batch.pod_count}
+              </div>
+              <div
+                className="px-3 py-2 rounded-3 fw-medium text-white"
+                style={{
+                  background: "linear-gradient(135deg, #f7971e, #ffd200)",
+                }}
+              >
+                User Count: {batch.user_count}
+              </div>
+            </div>
+          </Card.Body>
+        </Card>
+      </Col>
+    ))
+  ) : (
+    <Col xs={12}>
+      <Card
+        className="text-center p-4 shadow-sm rounded-4 border-0"
+        style={{
+          background: "rgba(0,178,215,0.05)",
+          border: "1px solid rgba(0,178,215,0.2)",
+        }}
+      >
+        <Card.Body>
+          <p className="lead mb-0 text-muted">
+            No batches found for your organization.
+          </p>
+        </Card.Body>
+      </Card>
+    </Col>
+  )}
+</Row>
+
+
             </>
           )}
         </Container>

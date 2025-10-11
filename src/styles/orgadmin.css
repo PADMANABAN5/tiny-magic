@@ -10,10 +10,40 @@
     padding: 25px;
 }
 
-/* You can also make it responsive */
-@media (min-width: 768px) { /* For medium screens and up */
+@media (max-width: 767.98px) { 
   .custom-wide-container {
     padding-left: 20px !important;
     padding-right: 20px !important;
   }
 }
+@media (max-width: 575.98px) { 
+  .custom-wide-container {
+    padding-left: 15px !important;
+    padding-right: 15px !important;
+  }
+  .main-container-bar {
+    margin-top: 50px;
+    padding: 20px;
+}
+.progress-table-filter span {
+  font-size: 14px;
+}
+.progress-table-filter  .form-select {
+  font-size: 14px;
+  height: 30px;
+  width: 70px;
+}
+.date-pick-div {
+  flex-direction: column !important ;
+  align-items: flex-start;
+}
+.no-progress-card {
+  font-size: 12px;
+}
+.no-progress-card .card-body {
+  padding: 15px;
+}
+.no-progress-card .card-body p {
+  margin-bottom: 0;
+}
+ }
