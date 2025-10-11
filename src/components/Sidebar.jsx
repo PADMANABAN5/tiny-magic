@@ -17,7 +17,7 @@ import { toast } from "react-toastify";
 import { MdMenu } from 'react-icons/md';
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
-function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, showMobileMenu = false}) {
+function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, showMobileMenu = false }) {
   const location = useLocation();
   const navigate = useNavigate();
   const username = sessionStorage.getItem("email");
@@ -92,14 +92,22 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
           </div>
         </Link>
 
-        {isMobile && showMobileMenu &&(
+        {isMobile && showMobileMenu && (
           <button
             className="hamburger-btn"
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
-            style={{ background: "none", border: "none" }}
+            style={{
+              background:"linear-gradient(135deg, #0077b6, #00b4d8)",
+              border: "none",
+              padding: "3px 11px",
+              borderRadius: "12px", // Medium rounding
+              boxShadow: "0 2px 8px rgba(65, 88, 208, 0.15)",
+              cursor: "pointer"
+            }}
+
           >
-            <MdMenu size={28} />
+            <MdMenu size={28} color="#fff"  />
           </button>
         )}
 

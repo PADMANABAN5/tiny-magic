@@ -327,18 +327,36 @@ a.nav-link.link-dark.active {
   }
 }
 
+@media (max-width: 768px) {
+  .page-title {
+    position: static !important;
+    left: auto !important;
+    transform: none !important;
+    margin: 0 auto;
+    text-align: center;
+    flex: 1 1 auto;
+    width: auto;
+    display: block;
+  }
+}
 @media (max-width: 575px) {
   .page-title{
     font-size: 20px;
   }
 }
-@media (max-width: 380px) {
+@media (max-width: 450px){
   .page-title{
     font-size: 18px;
     max-width: 100px;
   }
 }
-@media (max-width: 321px) {
+@media (max-width:350px){
+  .page-title{
+     font-size: 15px;
+     max-width: 80px;
+  }
+}
+@media (max-width:330px){
   .page-title{
     display: none;
   }
