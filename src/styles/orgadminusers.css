@@ -1019,13 +1019,6 @@ td {
     padding: 0.5rem;
   }
 
-  .conversations-table th:nth-child(4),
-  .conversations-table td:nth-child(4),
-  .conversations-table th:nth-child(5),
-  .conversations-table td:nth-child(5) {
-    display: none;
-  }
-
   .concept-cell .concept-name {
     max-width: 150px;
   }
