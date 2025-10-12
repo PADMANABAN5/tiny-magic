@@ -1493,11 +1493,6 @@ table thead tr {
   .message-content {
     word-break: break-word !important;
   }
-  button,
-  .download-pdf-btn {
-    font-size: 0.9rem !important;
-    padding: 0.4rem 0.75rem !important;
-  }
   .modal-close {
     top: 0.7rem;
     right: 0.7rem;
