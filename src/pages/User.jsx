@@ -766,7 +766,7 @@ export default function User() {
               </div>
               <div className="mb-3">
                 <label className="form-label">
-                  Selected User Email(s) <span style={{ color: "red" }}>*</span>
+                  Selected User(s) <span style={{ color: "red" }}>*</span>
                 </label>
                 <div className="d-flex align-items-center border p-2 rounded">
                   <span className="flex-grow-1 text-muted">

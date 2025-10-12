@@ -198,7 +198,7 @@ thead.bg-primary th {
 }
 
 .custom-tooltip {
-  background-color: transparent !important;
+  background-color: white !important;
   /* light gray */
   color: black !important;
   max-width: 250px;
@@ -208,7 +208,7 @@ thead.bg-primary th {
 }
 
 .custom-tooltip .concept-item {
-  color: rgb(240, 231, 231);
+  color: rgb(1, 1, 1);
   font-weight: 500;
   font-size: 0.9rem;
 }
@@ -245,4 +245,11 @@ table,tr,th,td{
 .outline-primary:hover {
   background-color: #0d6efd !important;
   color: white !important;
+}
+.tooltip-inner{
+  background-color: white;
+  color: black;
+}
+.tooltip-arrow::before{
+  border-top-color: white;
 }

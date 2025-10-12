@@ -446,7 +446,7 @@ export default function Addusers() {
                   <thead className="">
                     <tr>
                       <th>Organization</th>
-                      <th>Email</th>
+                     
                       <th>Username</th>
                       <th>Full Name</th>
 
@@ -458,7 +458,7 @@ export default function Addusers() {
                       currentUsers.map((user) => (
                         <tr key={user.user_id}>
                           <td>{user.organization_name}</td>
-                          <td>{user.email}</td>
+                          
                           <td>{user.username || "-"}</td>
                           <td>{`${user.first_name} ${user.last_name}`}</td>
                           <td>
@@ -721,7 +721,7 @@ export default function Addusers() {
                 
               />
               </div>
-              <div className="mb-3">
+              {/* <div className="mb-3">
                 <label className="form-label">Email</label>
                 <input
                   type="email"
@@ -735,7 +735,7 @@ export default function Addusers() {
                     setEditingUser({ ...editingUser, email: e.target.value })
                   }
                 />
-              </div>
+              </div> */}
               <div className="mb-3">
                 <label className="form-label">
                   First Name<span style={{ color: "red" }}>*</span>

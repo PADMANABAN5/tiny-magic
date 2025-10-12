@@ -456,7 +456,7 @@ export default function Addorgadmin() {
                   <thead className="">
                     <tr>
                       <th>Organization</th>
-                      <th>Email</th>
+                      
                       <th>Username</th>
                       <th>Full Name</th>
                       <th>Action</th>
@@ -467,7 +467,7 @@ export default function Addorgadmin() {
                       currentAdmins.map((admin) => (
                         <tr key={admin.user_id}>
                           <td>{admin.organization_name}</td>
-                          <td>{admin.email}</td>
+                          
                           <td>{admin.username || "-"}</td>
                           <td>{`${admin.first_name} ${admin.last_name}`}</td>
                           <td>
@@ -729,7 +729,7 @@ export default function Addorgadmin() {
                 />
               </div>
 
-              <div className="mb-3">
+              {/* <div className="mb-3">
                 <label className="form-label">
                   Email<span style={{ color: "red" }}>*</span>
                 </label>
@@ -749,7 +749,7 @@ export default function Addorgadmin() {
                   }
                   required
                 />
-              </div>
+              </div> */}
 
               <div className="mb-3">
                 <label className="form-label">

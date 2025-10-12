@@ -357,7 +357,7 @@ export default function Pods() {
   // react-select options for mentors
   const mentorOptions = mentors.map(mentor => ({
     value: mentor.email,
-    label: `${mentor.email} (${`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})`
+    label: `${`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()}`
   }));
 
   return (
@@ -405,11 +405,7 @@ export default function Pods() {
               </select>
             </div>
 
-            {/* Filters Row */}
-            <div
-              className="d-flex align-items-center gap-3 flex-grow-1"
-              style={{ flexWrap: "nowrap" }}
-            >
+           
               <input
                 type="text"
                 className="form-control"
@@ -464,12 +460,12 @@ export default function Pods() {
                 <option value="">All Mentors</option>
                 {mentors.map((mentor) => (
                   <option key={mentor.user_id} value={mentor.user_id}>
-                    {mentor.email} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
+                    {`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()}
                   </option>
                 ))}
               </select>
 
-            </div>
+            
           </div>
 
           {loading ? (
