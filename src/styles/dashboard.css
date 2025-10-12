@@ -3126,3 +3126,86 @@ html, body {
   padding: 10px;
   display: block;
 }
+
+@media (max-width: 768px) {
+  .assessment-display,
+  .assessment-section,
+  .overall-assessment,
+  .overall-score-card,
+  .score-card,
+  .score-badge,
+  .score-justification,
+  .score-example,
+  .score-improvement {
+    padding: 0px !important;
+    margin: 6px 0 !important;
+    font-size: 0.90rem !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .scoring-grid,
+  .breakdown-grid {
+    grid-template-columns: 1fr !important;
+    gap: 4px !important;
+  }
+}
+
+@media (max-width: 450px) {
+  .overall-assessment p,
+  .overall-score-card,
+  .overall-score-badge,
+  .score-value,
+  .score-label,
+  .overall-summary {
+    font-size: 0.9rem !important;
+    border: none !important;
+  }
+  .overall-score-badge {
+    min-width: 60px !important;
+    padding: 8px 10px !important;
+  }
+  .overall-header h4{
+    flex-direction: column !important;
+    gap: 8px !important;
+    text-align: center !important;
+    align-items: center !important;
+    font-size: 1.2rem !important;
+  }
+   .score-breakdown {
+    margin-top: 6px !important;
+    padding: 4px !important;
+    background-color: #f9fafb !important;
+    border-radius: 5px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    border: none !important;
+    font-size: 0.9rem !important;
+    box-sizing: border-box !important;
+  }
+  .score-breakdown h5,
+  .score-breakdown-label,
+  .breakdown-facet,
+  .breakdown-score {
+    font-size: 1.1rem !important;
+    text-align: center !important;
+    width: 100% !important;
+  }
+  .score-breakdown-section {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 6px !important;
+    margin: 0 !important;
+  }
+  .breakdown-facet,
+  .breakdown-score {
+    margin: 2px 0 !important;
+    width: 100% !important;
+    border-radius: 4px !important;
+    padding: 3px !important;
+    box-sizing: border-box !important;
+  }
+  .scoring-header h4{
+    font-size:1.2rem ;
+  }
+}
+

@@ -567,7 +567,6 @@ td {
 
 .conversation-modal-overlay .modal-content {
   background: white;
-  padding: 30px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   min-width: auto;
@@ -1478,8 +1477,8 @@ table thead tr {
     border-radius: 6px;
     padding: 0.5rem;
   }
-  .modal-content {
-    padding: 0.5rem !important;
+  .conversation-modal-overlay .modal-content {
+    padding: 1rem 0.5rem  !important;
     font-size: 0.95rem; /* scale down text */
   }
   .modal-header h3,
@@ -1494,22 +1493,24 @@ table thead tr {
     word-break: break-word !important;
   }
   .modal-close {
-    top: 0.7rem;
-    right: 0.7rem;
-    font-size: 1.1rem;
+    position: absolute !important;
+    top: 0.2rem !important;
+    right: 0.2rem !important;
+    font-size: 1.2rem !important;
+    z-index: 2 !important;
   }
   .modal-meta {
     gap:0.75rem;
   }
-  .modal-actions > * {
-    font-size: 0.9rem;
-    padding: 0.3rem 0.5rem;
-  } 
   .modal-header{
     display: block !important;
     padding: 18px !important;
+    position: relative !important;
   }
   .modal-actions{
     margin-top: 10px;
+  }
+  .message{
+    gap: 0.7rem;
   }
 }
