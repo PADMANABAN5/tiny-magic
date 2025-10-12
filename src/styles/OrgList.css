@@ -229,8 +229,8 @@ table,tr,th,td{
 }
 
 .badge.bg-success {
-  background-color: transparent !important;
-  color: green !important;
+  background-color: green !important;
+  color: #fff !important;
   border: 1px solid green !important;
 }
 .outline-primary {

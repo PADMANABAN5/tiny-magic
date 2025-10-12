@@ -775,7 +775,7 @@ const getUniqueValues = (data, property) => {
                         id="mentor-progress-report-table"
                         style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}
                       >
-                        <thead className="bg-primary text-white">
+                        <thead className="">
                           <tr style={{ backgroundColor: '#f2f2f2' }}>
                             <th style={thStyle}>Full Name</th>
                             <th style={thStyle}>Email</th>
@@ -827,52 +827,79 @@ const getUniqueValues = (data, property) => {
 
           {!pageLoading && !podsError && pods.length > 0 && (
   <>
-    <div className="d-flex flex-wrap gap-4 justify-content-center">
+    <div className="row">
       {currentPagePods.map((pod) => (
-        <Card
-          key={pod.pod_id}
-          className="shadow-sm rounded-3 border-primary clickable-card"
-          style={{
-            width: '300px',
-            cursor: 'pointer',
-            transition: 'transform 0.2s ease-in-out, box-shadow 0.3s ease',
-            boxShadow: '0 10px 10px rgba(33, 180, 234, 0.1)',
-          }}
-          onClick={() => navigate(`/mentorpodusers/${pod.pod_id}`)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.03)';
-            e.currentTarget.style.boxShadow = '0 12px 20px rgba(33, 180, 234, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 10px 10px rgba(33, 180, 234, 0.1)';
-          }}
-        >
-          <Card.Header className="fw-bold fs-5 text-white bg-primary text-center">
-            {pod.pod_name}
-            <Badge bg={pod.pod_is_active ? 'success' : 'secondary'} className="ms-2">
-              {pod.pod_is_active ? 'Active' : 'Inactive'}
-            </Badge>
-          </Card.Header>
+        
+                      
+                      <Col xs={12} md={6} className="mb-3">
+     <Card
+  key={pod.pod_id}
+   className="border-0 shadow-lg rounded-4 bg-white w-100"
+                  style={{
+                    background: "rgba(255, 255, 255, 0.85)",
+                    backdropFilter: "blur(14px)",
+                    border: "1px solid rgba(0, 178, 215, 0.25)",
+                    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                  }}
+  onClick={() => navigate(`/mentorpodusers/${pod.pod_id}`)}
+  onMouseEnter={(e) => {
+    e.currentTarget.style.transform = 'scale(1.03)';
+    e.currentTarget.style.boxShadow = '0 14px 22px rgba(33, 180, 234, 0.3)';
+  }}
+  onMouseLeave={(e) => {
+    e.currentTarget.style.transform = 'scale(1)';
+    e.currentTarget.style.boxShadow = '0 10px 10px rgba(33, 180, 234, 0.1)';
+  }}
+>
+  {/* Card Header */}
+  <Card.Header  className="text-white rounded-top-4 text-center fw-bold"
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #00b2d7 0%, #0072ff 100%)",
+                      fontSize: "1.5rem",
+                      letterSpacing: "0.5px",
+                    }}>
+    <h5 className="mb-0 fw-bold">{pod.pod_name}</h5>
+    <Badge
+      bg={pod.pod_is_active ? 'success' : 'secondary'}
+      className="ms-2 rounded-pill px-3 py-1"
+    >
+      {pod.pod_is_active ? 'Active' : 'Inactive'}
+    </Badge>
+  </Card.Header>
 
-          <Card.Body>
-            <Card.Title className="text-center mb-3">Pod Details</Card.Title>
+  {/* Card Body */}
+  <Card.Body className="p-4">
+    <Card.Title className="text-center fw-semibold text-primary mb-3">
+      Pod Details
+    </Card.Title>
 
-            <div className="d-flex flex-column gap-2 align-items-center">
-              <Badge bg="info" className="p-2 text-wrap text-center">
-                Organization: {pod.organization_name}
-              </Badge>
+    <div className="d-flex flex-column gap-3 align-items-start">
+      <div className="d-flex align-items-center">
+        <strong className="me-2">Organization:</strong>
+        <Badge bg="info" className="px-3 py-2 rounded-pill">
+          {pod.organization_name}
+        </Badge>
+      </div>
 
-              <Badge bg="secondary" className="p-2 text-wrap text-center">
-                Batch: {pod.batch_name}
-              </Badge>
+      <div className="d-flex align-items-center">
+        <strong className="me-2">Batch:</strong>
+        <Badge bg="secondary" className="px-3 py-2 rounded-pill">
+          {pod.batch_name}
+        </Badge>
+      </div>
 
-              <Badge bg="warning" className="p-2 text-wrap text-center text-dark">
-                Batch Size: {pod.batch_size}
-              </Badge>
-            </div>
-          </Card.Body>
-        </Card>
+      <div className="d-flex align-items-center">
+        <strong className="me-2">Batch Size:</strong>
+        <Badge bg="warning" className="px-3 py-2 rounded-pill text-dark">
+          {pod.batch_size}
+        </Badge>
+      </div>
+    </div>
+  </Card.Body>
+</Card>
+</Col>
+                  
       ))}
     </div>
 

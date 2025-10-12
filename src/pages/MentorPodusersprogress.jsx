@@ -969,7 +969,7 @@ const parseField = (field) => {
               
                   <div className="table-responsive">
                   <div className="conversations-table-container">
-                    <table className="conversations-table">
+                    <table className="conversations-table table table-striped table-bordered table-hover">
                       <thead>
                         <tr>
                           <th>Concept</th>
@@ -1118,7 +1118,7 @@ const parseField = (field) => {
         </div>
       ) : (
         <div className="table-responsive">
-          <table className="conversations-table">
+          <table className="conversations-table table table-striped table-bordered table-hover">
             <thead>
               <tr>
                 <th>Concept</th>
