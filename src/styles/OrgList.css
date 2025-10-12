@@ -224,7 +224,7 @@ table,tr,th,td{
 }
 .badge.bg-secondary {
   background-color: transparent !important; 
-  color: gray !important;                  
+  color: gray;                  
   border: 1px solid gray !important;       
 }
 

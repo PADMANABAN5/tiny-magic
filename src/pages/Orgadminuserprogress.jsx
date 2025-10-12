@@ -791,7 +791,7 @@ const parseField = (field) => {
     <div className="conversation-history-page">
       <Orgadminsidebar />
       <div className="main-content">
-        <div className="container mt-4">
+        <div className="container-fluid mt-4">
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
@@ -813,7 +813,7 @@ const parseField = (field) => {
 >
   {/* Header */}
   <Card.Header
-    className="text-white py-4 rounded-top-4"
+    className="text-white py-3 py-md-2 rounded-top-4"
     style={{
       background: "linear-gradient(135deg, #00b2d7 0%, #0072ff 100%)",
       position: "relative",
