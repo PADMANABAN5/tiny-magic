@@ -286,7 +286,7 @@ export default function Mentor() {
           {/* Back Button */}
           <div className="d-flex justify-content-start mb-3">
             <button
-              className="back-button bg-primary text-white border-0"
+              className="back-button text-white border-0"
               onClick={() => navigate(-1)}
             >
               <FaArrowLeft />
@@ -297,7 +297,7 @@ export default function Mentor() {
             <button
               className="create-btn"
               onClick={() => setShowModal(true)}
-              style={{ width: "10%" }}
+              
             >
               <FaPlus />
             </button>
@@ -342,8 +342,8 @@ export default function Mentor() {
           ) : (
             <>
               <div className="table-responsive">
-                <table className="table table-striped table-bordered table-hover">
-                  <thead className="bg-primary text-white">
+                <table className="table table-hover table-striped table-bordered">
+                  <thead className="">
                     <tr>
                       <th>Email</th>
                       <th>Username</th>
@@ -360,7 +360,7 @@ export default function Mentor() {
                           <td>{`${mentor.first_name} ${mentor.last_name}`}</td>
                           <td>
                             <button
-                              className="btn btn-sm btn-warning"
+                              className="btn btn-sm btn-outline-success"
                               onClick={() => handleUpdateClick(mentor)}
                             >
                               <FaEdit />

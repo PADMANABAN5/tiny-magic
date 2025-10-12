@@ -16,7 +16,7 @@ function Models_management() {
         <div className="container mt-4">
              <div className="d-flex justify-content-start mb-3">
                                     <button
-                                      className="back-button bg-primary text-white border-0"
+                                      className="back-button text-white border-0"
                                       onClick={() => navigate(-1)}
                                     >
                                       <FaArrowLeft />

@@ -91,7 +91,7 @@ function Archivedconcepts() {
                         </Alert>
                     ) : (
                         <Table striped bordered hover responsive className="mt-3">
-                            <thead className="bg-primary text-white">
+                            <thead>
                                 <tr>
                                     <th>Concept Name</th>
                                     <th>Version</th>
@@ -107,7 +107,7 @@ function Archivedconcepts() {
                         <td>{concept.archived_at ? new Date(concept.archived_at).toLocaleString() : '—'}</td>
                         <td>
                             <Button
-                            variant="info"
+                            variant="outline-info"
                             size="sm"
                             onClick={() => {
                                 setViewConcept(concept);

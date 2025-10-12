@@ -26,7 +26,7 @@
 }
 
 .back-button {
-  background-color: #000;
+  background-color:#00b2d7;
   /* Black background */
   color: white;
   /* White icon/text */
@@ -49,7 +49,7 @@
 
 /* Override hover style */
 .back-button:hover {
-  background-color: #000;
+  background-color: #00b2d7;
   /* Same as normal */
   color: white;
   /* No color change */
@@ -125,7 +125,7 @@ thead.bg-primary th {
 }
 
 .create-btn {
-  background-color: #0d6efd;
+  background-color: #00b2d7;
   color: white;
   border: none;
   border-radius: 8px;
@@ -211,4 +211,38 @@ thead.bg-primary th {
   color: rgb(240, 231, 231);
   font-weight: 500;
   font-size: 0.9rem;
+}
+table,tr,th,td{
+    padding: 8px;
+    border: 1px solid rgb(221, 221, 221) !important;
+    text-align: left;
+    vertical-align: top;
+}
+.form-check-input{
+  background-color: #00b2d7 !important;
+    border-color: #00b2b7 !important;
+}
+.badge.bg-secondary {
+  background-color: transparent !important; 
+  color: gray !important;                  
+  border: 1px solid gray !important;       
+}
+
+.badge.bg-success {
+  background-color: transparent !important;
+  color: green !important;
+  border: 1px solid green !important;
+}
+.outline-primary {
+  background-color: transparent !important; 
+  color: #0d6efd !important;               
+  border: 1px solid #0d6efd !important;   
+  padding: 0.4em 0.6em;
+  border-radius: 0.5rem;
+  font-weight: 500;
+}
+
+.outline-primary:hover {
+  background-color: #0d6efd !important;
+  color: white !important;
 }

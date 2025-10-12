@@ -286,7 +286,7 @@ function Assignmodels() {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-              className="back-button bg-primary text-white border-0"
+              className="back-button text-white border-0"
               onClick={() => navigate(-1)}
             >
               <FaArrowLeft />
@@ -297,7 +297,7 @@ function Assignmodels() {
             <h3 className="mb-0">Assigned Models</h3>
             <button
               className="create-btn btn btn-primary"
-              style={{ width: "10%" }}
+              
               onClick={handleShow}
             >
               <FaPlus />
@@ -333,7 +333,7 @@ function Assignmodels() {
 
           <div className="table-responsive">
             <table className="table table-striped table-bordered table-hover">
-              <thead className="bg-primary text-white">
+              <thead className="">
                 <tr>
                   <th>Model</th>
                   <th>Level</th>
@@ -351,7 +351,7 @@ function Assignmodels() {
                     <td>{getBatchName(assignment.batch_id || "-")}</td>
                     <td>
                       <button
-                        className="btn btn-warning btn-sm"
+                        className="btn btn-outline-success btn-sm"
                         onClick={() => openEditModal(assignment)}
                       >
                         <FaEdit />

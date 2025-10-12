@@ -239,7 +239,7 @@ function AddModels() {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-              className="back-button bg-primary text-white border-0"
+              className="back-button text-white border-0"
               onClick={() => navigate(-1)}
             >
               <FaArrowLeft />
@@ -292,8 +292,8 @@ function AddModels() {
           </div>
 
           <div className="table-responsive">
-            <table className="table table-striped table-bordered table-hover">
-              <thead className="bg-primary text-white">
+            <table className="table table-striped table-hover">
+              <thead className="">
                 <tr>
                   <th>Model</th>
                   <th>Description</th>

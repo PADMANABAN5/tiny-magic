@@ -350,7 +350,7 @@ const validateCleanText = (value, key) => {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-              className="back-button bg-primary text-white border-0"
+              className="back-button text-white border-0"
               onClick={() => navigate(-1)}
               aria-label="Go back"
             >
@@ -361,13 +361,13 @@ const validateCleanText = (value, key) => {
           <div className="d-flex justify-content-between align-items-center mb-3">
             <h3>Concepts</h3>
             <div
-              className="d-flex justify-content-between"
-              style={{ width: "26%" }}
+              className="btn-sec"
+              
             >
               <Button
                 variant="secondary"
                 onClick={() => navigate("/archivedconcepts")}
-                style={{ width: "49%" }}
+                style={{ width: '49%', marginRight: '2%' }}
                 aria-label="View archived concepts"
               >
                 <FaHistory />
@@ -424,7 +424,7 @@ const validateCleanText = (value, key) => {
             <>
               <div className="table-responsive">
                 <table className="table table-striped table-bordered table-hover">
-                  <thead className="bg-primary text-white">
+                  <thead className="">
                     <tr>
                       <th>Concept ID</th>
                       <th>Concept Name</th>
@@ -461,7 +461,7 @@ const validateCleanText = (value, key) => {
                           <td>{concept.version}</td>
                           <td>
                             <button
-                              className="btn btn-warning btn-sm"
+                              className="btn btn-outline-success btn-sm"
                               onClick={() => openEditModal(concept)}
                               aria-label={`Edit concept ${concept.concept_name}`}
                             >

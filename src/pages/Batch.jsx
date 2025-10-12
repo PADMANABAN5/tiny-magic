@@ -298,7 +298,7 @@ export default function Batch() {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-              className="back-button bg-primary text-white border-0"
+              className="back-button text-white border-0"
               onClick={() => navigate(-1)}
             >
               <FaArrowLeft />
@@ -309,7 +309,7 @@ export default function Batch() {
             <button
               className="create-btn"
               onClick={openCreateModal}
-              style={{ width: "10%" }}
+              
             >
               <FaPlus />
             </button>
@@ -380,7 +380,7 @@ export default function Batch() {
             <>
               <div className="table-responsive">
                 <table className="table table-striped table-bordered table-hover">
-                  <thead className="bg-primary text-white">
+                  <thead className="">
                     <tr>
                       <th>Org Name</th>
                       <th>Batch Name</th>
@@ -432,7 +432,7 @@ export default function Batch() {
 
                           <td>
                             <button
-                              className="btn btn-warning btn-sm"
+                              className="btn btn-outline-success btn-sm"
                               onClick={() => openEditModal(batch)}
                             >
                               <FaEdit />
