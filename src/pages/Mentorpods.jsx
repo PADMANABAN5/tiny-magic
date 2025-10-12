@@ -31,6 +31,7 @@ import { useAuth } from '../components/AuthContext.jsx';
 // Import react-datepicker and its styles
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css'; // This is the default stylesheet
+import "../styles/Mentor.css";
  const storedToken = sessionStorage.getItem("token");
  
   
@@ -791,7 +792,9 @@ const getUniqueValues = (data, property) => {
                         <tbody>{mentorProgressTableRows}</tbody>
                       </table>
                     </div>
-                    {renderPagination()}
+                    <div className="mentor-progress-pagination">
+  {renderPagination()}
+</div>
                   </Card.Body>
                 </Card>
               ) : (

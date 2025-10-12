@@ -352,3 +352,212 @@
         font-size: 0.8125rem;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+.mentor-progress-pagination .pagination {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  justify-content: center !important;
+  align-items: center;
+  list-style: none;
+  padding-left: 0;
+  margin: 0 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 576px) {
+  .mentor-progress-pagination {
+    overflow-x: auto;       
+    -webkit-overflow-scrolling: touch; 
+    padding-bottom: 4px;
+    scrollbar-width: none; 
+    -ms-overflow-style: none; 
+  }
+
+  .mentor-progress-pagination::-webkit-scrollbar {
+    display: none;
+  }
+
+  .mentor-progress-pagination .pagination {
+    justify-content: flex-start !important;
+    width: max-content;
+    gap: 4px;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+/* @media (max-width: 768px) {
+  .assessment-display {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+} */
+
+
+
+
+
+
+
+
+
+
+
+
+@media (max-width: 768px) {
+.conversation-modal .modal-close:hover {
+  color: #000 !important;
+}
+
+.conversation-modal .modal-header {
+  position: relative;
+  padding: 20px 16px 10px 16px !important;
+}
+  .conversation-modal .modal-actions {
+    top: 10px;
+    right: 10px;
+  }
+   
+  .conversation-modal .modal-close {
+    font-size: 1.1rem !important;
+  }
+}
+
+
+
+
+/* Close Button Styling */
+.conversation-modal .modal-close {
+  background: transparent !important;
+  border: none !important;
+  color: #444 !important;
+  font-size: 1.2rem !important;
+  cursor: pointer;
+  padding: 4px !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none !important;
+  transition: color 0.2s ease-in-out;
+}
+
+
+
+
+@media (max-width: 768px) {
+  /* Conversation Modal */
+  .conversation-modal {
+    width: 95% !important;
+    max-height: 90vh !important;
+    border-radius: 1rem !important;
+  }
+
+  .conversation-modal h3 {
+    font-size: 1.1rem !important;
+  }
+
+  .conversation-modal .modal-meta {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+
+  .conversation-modal .modal-content {
+    padding: 1rem !important;
+  }
+
+  .conversation-modal .message-group {
+    margin-bottom: 1rem !important;
+  }
+
+  .conversation-modal .message-content {
+    max-width: 90% !important;
+  }
+
+  .conversation-modal .message-text {
+    font-size: 0.9rem !important;
+    line-height: 1.4 !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .card-header-custom h4 {
+    font-size: 0.9rem !important;
+  }
+
+  .filters-section label {
+    font-size: 0.85rem !important;
+  }
+
+  .view-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+  }
+
+  .view-btn svg {
+    font-size: 0.9rem;
+  }
+}
+
+
+
+.conversation-modal .modal-title-section h3 {
+  font-size: 1.05rem !important;
+  font-weight: 600 !important;
+  line-height: 1.3 !important;
+  color: #000 !important;
+  margin-bottom: 6px !important;
+  white-space: normal !important;
+}
+
+@media (max-width: 768px) {
+  .conversation-modal .modal-title-section {
+    padding-right: 80px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .conversation-modal .modal-title-section {
+    padding-right: 70px !important;
+  }
+}
