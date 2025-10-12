@@ -368,7 +368,7 @@ export default function Pods() {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-              className="back-button bg-primary text-white border-0"
+              className="back-button text-white border-0"
               onClick={() => navigate(-1)}
             >
               <FaArrowLeft />
@@ -379,7 +379,7 @@ export default function Pods() {
             <button
               className="create-btn"
               onClick={openCreateModal}
-              style={{ width: "10%" }}
+              
             >
               <FaPlus />
             </button>
@@ -480,7 +480,7 @@ export default function Pods() {
             <>
               <div className="table-responsive">
                 <table className="table table-striped table-bordered table-hover">
-                  <thead className="bg-primary text-white">
+                  <thead className="">
                     <tr>
                       <th>Pod Name</th>
                       <th>Organization Name</th>
@@ -516,7 +516,7 @@ export default function Pods() {
       </Popover>
     }
   >
-    <Badge bg="primary" className="cursor-pointer user-select-none">
+    <Badge className="outline-primary cursor-pointer user-select-none">
       {pod.mentors?.length || 0} Mentors
     </Badge>
   </OverlayTrigger>
@@ -525,8 +525,8 @@ export default function Pods() {
                             <span
                               className={`badge ${
                                 pod.is_active
-                                  ? "bg-success text-white"
-                                  : "bg-secondary text-white"
+                                  ? "bg-success"
+                                  : "bg-secondary"
                               }`}
                             >
                               {pod.is_active ? "Active" : "Inactive"}
@@ -534,7 +534,7 @@ export default function Pods() {
                           </td>
                           <td>
                             <button
-                              className="btn btn-warning btn-sm"
+                              className="btn btn-outline-success btn-sm"
                               onClick={() => openEditModal(pod)}
                             >
                               <FaEdit />

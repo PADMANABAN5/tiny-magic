@@ -421,7 +421,7 @@ export default function Prompt() {
  
           <div className="table-responsive">
             <table className="table table-hover table-striped table-bordered">
-              <thead className="bg-primary text-white">
+              <thead className="">
                 <tr>
                   <th>Prompt Type</th>
                   <th>Prompt Level</th>
@@ -441,9 +441,9 @@ export default function Prompt() {
                     <td>{prompt.version}</td>
                     <td>
                       <Button
-                        
-                        
-                        className="btn btn-warning btn-sm bg-warning"
+                        variant="outline-success"
+                        size="sm"
+                        className="me-2"
                         onClick={() => handleEditClick(prompt)}
                       >
                         <FaEdit />

@@ -405,7 +405,7 @@ export default function User() {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-              className="back-button bg-primary text-white border-0"
+              className="back-button text-white border-0"
               onClick={() => navigate(-1)}
             >
               <FaArrowLeft />
@@ -430,7 +430,7 @@ export default function User() {
                 setFilteredBatches([]);
                 setFilteredPods([]);
               }}
-              style={{ width: "10%" }}
+              
             >
               <FaPlus />
             </button>
@@ -523,7 +523,7 @@ export default function User() {
             <>
               <div className="table-responsive">
                 <table className="table table-striped table-bordered table-hover">
-                  <thead className="bg-primary text-white">
+                  <thead className="">
                     <tr>
                       <th>Full name</th>
                       <th>Organization</th>
@@ -572,7 +572,7 @@ export default function User() {
                                   style={{
                                     display: "inline-flex",
                                     alignItems: "center",
-                                    backgroundColor: "#0d6efd",
+                                    backgroundColor: "#00b2d7",
                                     color: "white",
                                     borderRadius: "0.5rem",
                                     padding: "4px 10px",

@@ -140,7 +140,7 @@ function Archived() {
             
 <div className="table-responsive">
         <table className="table table-striped table-bordered table-hover">
-                  <thead className="bg-primary text-white">
+                  <thead className="">
                 <tr>
                   <th scope="col">Prompt Type</th>
                   <th scope="col">Prompt Level</th>
@@ -160,7 +160,7 @@ function Archived() {
                     <td>{prompt.version}</td>
                     <td>
                       <Button
-                        variant="info"
+                        variant="outline-info"
                         size="sm"
                         onClick={() => {
                           setViewPrompt(prompt);

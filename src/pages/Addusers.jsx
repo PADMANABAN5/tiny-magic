@@ -362,7 +362,7 @@ export default function Addusers() {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-              className="back-button bg-primary text-white border-0"
+              className="back-button text-white border-0"
               onClick={() => navigate(-1)}
             >
               <FaArrowLeft />
@@ -374,7 +374,7 @@ export default function Addusers() {
             <button
               className="create-btn"
               onClick={() => setShowModal(true)}
-              style={{ width: "10%" }}
+              
             >
               <FaPlus />
             </button>
@@ -443,7 +443,7 @@ export default function Addusers() {
             <>
               <div className="table-responsive">
                 <table className="table table-striped table-bordered table-hover">
-                  <thead className="bg-primary text-white">
+                  <thead className="">
                     <tr>
                       <th>Organization</th>
                       <th>Email</th>
@@ -463,7 +463,7 @@ export default function Addusers() {
                           <td>{`${user.first_name} ${user.last_name}`}</td>
                           <td>
                             <button
-                              className="btn btn-sm btn-warning"
+                              className="btn btn-sm btn-outline-success"
                               onClick={() => {
                                 setEditingUser({ ...user, password: "" });
                                 setShowEditModal(true);

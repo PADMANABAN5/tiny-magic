@@ -217,7 +217,7 @@ const isValidOrgName = (name) => {
         <div className="container mt-4">
           <div className="d-flex justify-content-start mb-3">
             <button
-            className='back-button bg-primary text-white border-0'
+            className='back-button text-white border-0'
             onClick={() => navigate(-1)}>
             <FaArrowLeft />
           </button>
@@ -225,7 +225,7 @@ const isValidOrgName = (name) => {
 
           <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap">
   <h3 className="mb-0">Organizations</h3>
-  <button className="create-btn" onClick={() => setShowModal(true)} style={{ width: '10%' }}>
+  <button className="create-btn" onClick={() => setShowModal(true)} >
     <FaPlus />
   </button>
 </div>
@@ -257,7 +257,7 @@ const isValidOrgName = (name) => {
             <>
               <div className="table-responsive">
                 <table className="table table-striped table-bordered table-hover">
-                  <thead className="bg-primary text-white">
+                  <thead className="">
                     <tr>
                       <th>Organization ID</th>
                       <th>Organization Name</th>
@@ -279,7 +279,7 @@ const isValidOrgName = (name) => {
                                 checked={org.is_active}
                                 onChange={() => toggleIsActive(org)}
                               />
-                              <label className="form-check-label" htmlFor={`toggle-${org.organization_id}`}>
+                              <label className="form-check-label " htmlFor={`toggle-${org.organization_id}`}>
                                 {org.is_active ? 'Active' : 'Inactive'}
                               </label>
                             </div>
