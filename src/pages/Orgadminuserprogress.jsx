@@ -865,8 +865,8 @@ const parseField = (field) => {
   {/* Body */}
   <Card.Body className="p-4">
     <p className="mb-3">
-      <strong className="text-secondary">Email:</strong>{" "}
-      <span className="text-dark fw-medium">{userData.user.email}</span>
+      <strong className="text-secondary">Username:</strong>{" "}
+      <span className="text-dark fw-medium">{userData.user.username}</span>
     </p>
 
     <p className="mb-3">

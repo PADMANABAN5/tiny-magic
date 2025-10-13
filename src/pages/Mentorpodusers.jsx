@@ -176,8 +176,7 @@ function Mentorpodusers() {
                                 {podInfo?.mentors?.length > 0 ? (
                                   podInfo.mentors.map((mentor, idx) => (
                                     <li key={idx}>
-                                      {mentor.first_name} {mentor.last_name} (
-                                      {mentor.email})
+                                      {mentor.first_name} {mentor.last_name}
                                     </li>
                                   ))
                                 ) : (
@@ -286,9 +285,7 @@ function Mentorpodusers() {
                             <th className="py-3" style={{ width: "20%" }}>
                               Last Name
                             </th>
-                            <th className="py-3" style={{ width: "30%" }}>
-                              Email
-                            </th>
+                            
                             <th
                               className="py-3 text-center"
                               style={{ width: "25%" }}
@@ -305,7 +302,7 @@ function Mentorpodusers() {
                               </td>
                               <td>{user.first_name}</td>
                               <td>{user.last_name}</td>
-                              <td>{user.email}</td>
+                              
                               <td>
                                 <button
                                   className="btn btn-outline-primary w-100 btn-sm"

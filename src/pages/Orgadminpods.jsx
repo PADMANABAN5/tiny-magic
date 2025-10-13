@@ -176,7 +176,7 @@ function Orgadminpods() {
               {pod.mentors && pod.mentors.length > 0 ? (
                 pod.mentors.map((m) => (
                   <li key={m.user_id}>
-                    {m.first_name} {m.last_name} ({m.email})
+                    {m.first_name} {m.last_name}
                   </li>
                 ))
               ) : (

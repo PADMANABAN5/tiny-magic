@@ -835,7 +835,7 @@ const parseField = (field) => {
                   </div>
                 </Card.Header>
                 <Card.Body>
-                  <p><strong>Email:</strong> {userData.user.email}</p>
+                  <p><strong>Username:</strong> {userData.user.username}</p>
                   <p><strong>Pod:</strong> <Badge bg="info">{userData.pod?.pod_name || 'N/A'}</Badge></p>
                   <p><strong>Batch:</strong> <Badge bg="secondary">{userData.batch?.batch_name || 'N/A'}</Badge></p>
                  <p>
