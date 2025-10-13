@@ -944,7 +944,7 @@ const baseCell = {
   verticalAlign: 'top',
   whiteSpace: 'nowrap',
 };
-const thStyle = { ...baseCell, fontWeight: '600', backgroundColor: '#f2f2f2' };
+const thStyle = { ...baseCell, fontWeight: '600', backgroundColor: '#fff' };
 const tdStyle = { ...baseCell };
 
 export default Mentorpods;
