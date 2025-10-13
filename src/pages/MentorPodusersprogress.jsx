@@ -835,38 +835,70 @@ const parseField = (field) => {
                   </div>
                 </Card.Header>
                 <Card.Body>
-                  <p><strong>Username:</strong> {userData.user.username}</p>
-                  <p><strong>Pod:</strong> <Badge bg="info">{userData.pod?.pod_name || 'N/A'}</Badge></p>
-                  <p><strong>Batch:</strong> <Badge bg="secondary">{userData.batch?.batch_name || 'N/A'}</Badge></p>
-                 <p>
-  <strong>Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}:</strong>{' '}
-  <OverlayTrigger
-    trigger="click"
-    placement="bottom"
-    overlay={
-      <Popover id="popover-mentors">
-        <Popover.Header as="h3">Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}</Popover.Header>
-        <Popover.Body>
-          <ul className="mb-0 ps-3">
-            {userData.pod?.mentors?.map((m) => (
-              <li key={m.user_id}>
-                {m.first_name} {m.last_name} ({m.email})
-              </li>
-            ))}
-          </ul>
-        </Popover.Body>
-      </Popover>
-    }
-    rootClose
-  >
-    <Badge bg="success" style={{ cursor: 'pointer' }}>
-      {userData.pod?.mentors?.length || 0} Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}
-    </Badge>
-  </OverlayTrigger>
-</p>
+  {/* Username */}
+  <p>
+    <strong>Username:</strong> {userData.user.username}
+  </p>
 
+  {/* Pod */}
+  <p>
+    <strong>Pod:</strong>{' '}
+    <span className="custom-badge pod">{userData.pod?.pod_name || 'N/A'}</span>
+  </p>
 
-                </Card.Body>
+  {/* Batch */}
+  <p>
+    <strong>Batch:</strong>{' '}
+    <span className="custom-badge batch">{userData.batch?.batch_name || 'N/A'}</span>
+  </p>
+
+  {/* Mentor */}
+  <p>
+    <strong>
+      Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}:
+    </strong>{' '}
+    <OverlayTrigger
+      trigger="click"
+      placement="bottom"
+      overlay={
+        <Popover id="popover-mentors">
+          <Popover.Header as="h3">
+            Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}
+          </Popover.Header>
+          <Popover.Body>
+            <ul className="mb-0 ps-3">
+              {userData.pod?.mentors?.map((m) => (
+                <li key={m.user_id}>
+                  {m.first_name} {m.last_name} ({m.email})
+                </li>
+              ))}
+            </ul>
+          </Popover.Body>
+        </Popover>
+      }
+      rootClose
+    >
+      <Badge
+        bg=""
+        style={{
+          backgroundColor: '#ffb400',
+          color: '#000000ff',
+          borderRadius: '9999px',
+          padding: '5px 12px',
+          fontSize: '0.9rem',
+          textTransform: 'lowercase',
+          marginLeft: '6px',
+          cursor: 'pointer',
+          border: 'none',
+        }}
+      >
+        {userData.pod?.mentors?.length || 0} Mentor
+        {userData.pod?.mentors?.length > 1 ? 's' : ''}
+      </Badge>
+    </OverlayTrigger>
+  </p>
+</Card.Body>
+
               </Card>
 
               {/* Header Actions */}
