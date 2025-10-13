@@ -538,7 +538,7 @@ const getUniqueValues = (data, property) => {
     <div className="main-layout-container">
       <Mentorsidebar />
       <div className="content-area">
-        <Container className="mt-4">
+        
           {/* Welcome Section */}
           <Card className="shadow-sm mb-4 text-center">
             <Card.Body>
@@ -562,10 +562,11 @@ const getUniqueValues = (data, property) => {
             </Alert>
           )}
 
+<Container className="">
           {/* Progress Report Table */}
           {!pageLoading && !progressError && (
             <>
-              <h2 className="mt-5 mb-3 fs-3 fw-bold text-dark">Mentor Progress Report</h2>
+              <h2 className=" mb-3 fs-3 fw-bold text-dark">Mentor Progress Report</h2>
 
               <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 gap-3">
   {/* Items per page */}
@@ -799,6 +800,8 @@ const getUniqueValues = (data, property) => {
             </>
           )}
 
+          </Container>
+
           {/* Pods Section */}
           <Row className="align-items-center justify-content-between mb-4 mt-5">
             <Col>
@@ -826,7 +829,7 @@ const getUniqueValues = (data, property) => {
       {currentPagePods.map((pod) => (
         
                       
-                      <Col xs={12} md={6} className="mb-3">
+                      <Col xs={12} md={4} className="mb-3">
      <Card
   key={pod.pod_id}
    className="border-0 shadow-lg rounded-4 bg-white w-100"
@@ -847,51 +850,55 @@ const getUniqueValues = (data, property) => {
   }}
 >
   {/* Card Header */}
-  <Card.Header  className="text-white rounded-top-4 text-center fw-bold"
-                    style={{
-                      background:
-                        "linear-gradient(135deg, #00b2d7 0%, #0072ff 100%)",
-                      fontSize: "1.5rem",
-                      letterSpacing: "0.5px",
-                    }}>
+ <Card.Header
+  className="text-white rounded-top-4 fw-bold"
+  style={{
+    background: "linear-gradient(135deg, #00b2d7 0%, #0072ff 100%)",
+    fontSize: "1.5rem",
+    letterSpacing: "0.5px",
+  }}
+>
+  <div className="d-flex justify-content-center align-items-center gap-2">
     <h5 className="mb-0 fw-bold">{pod.pod_name}</h5>
     <Badge
-      bg={pod.pod_is_active ? 'success' : 'secondary'}
-      className="ms-2 rounded-pill px-3 py-1"
+      bg={pod.pod_is_active ? "success" : "secondary"}
+      className="rounded-pill px-3 py-1"
+      style={{ fontSize: "0.7rem" }}
     >
-      {pod.pod_is_active ? 'Active' : 'Inactive'}
+      {pod.pod_is_active ? "Active" : "Inactive"}
     </Badge>
-  </Card.Header>
+  </div>
+</Card.Header>
+
 
   {/* Card Body */}
-  <Card.Body className="p-4">
-    <Card.Title className="text-center fw-semibold text-primary mb-3">
-      Pod Details
-    </Card.Title>
+  <Card.Body className="pod-card-body">
+        <Card.Title className="text-center mb-3 pod-title">
+          Pod Details
+        </Card.Title>
 
-    <div className="d-flex flex-column gap-3 align-items-start">
-      <div className="d-flex align-items-center">
-        <strong className="me-2">Organization:</strong>
-        <Badge bg="info" className="px-3 py-2 rounded-pill">
-          {pod.organization_name}
-        </Badge>
-      </div>
+        <div className="pod-info-container d-flex flex-column align-items-center">
+  <div className="pod-top-row">
+    <Badge bg="info" className="p-2 text-wrap text-center org-badge">
+      Organization: {pod.organization_name}
+    </Badge>
+  </div>
 
-      <div className="d-flex align-items-center">
-        <strong className="me-2">Batch:</strong>
-        <Badge bg="secondary" className="px-3 py-2 rounded-pill">
-          {pod.batch_name}
-        </Badge>
-      </div>
+  <div className="pod-bottom-row">
+    <Badge bg="secondary" className="p-2 text-wrap text-center batch-badge">
+      Batch: {pod.batch_name}
+    </Badge>
 
-      <div className="d-flex align-items-center">
-        <strong className="me-2">Batch Size:</strong>
-        <Badge bg="warning" className="px-3 py-2 rounded-pill text-dark">
-          {pod.batch_size}
-        </Badge>
-      </div>
-    </div>
-  </Card.Body>
+    <Badge
+      bg="warning"
+      className="p-2 text-wrap text-center text-dark batchsize-badge"
+    >
+      Batch Size: {pod.batch_size}
+    </Badge>
+  </div>
+</div>
+
+      </Card.Body>
 </Card>
 </Col>
                   
@@ -920,7 +927,7 @@ const getUniqueValues = (data, property) => {
   </>
 )}
 
-        </Container>
+       
       </div>
     </div>
   );

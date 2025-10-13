@@ -127,7 +127,7 @@ function Mentorpodusers() {
                 >
                   {/* HEADER */}
                   <Card.Header
-                    className="text-white rounded-top-4 py-4 text-center fw-bold"
+                    className="text-white rounded-top-4  text-center fw-bold"
                     style={{
                       background:
                         "linear-gradient(135deg, #00b2d7 0%, #0072ff 100%)",
@@ -139,39 +139,29 @@ function Mentorpodusers() {
                   </Card.Header>
 
                   {/* BODY */}
-                  <Card.Body className="p-4">
-                    {/* BATCH INFO */}
-                    <div className="d-flex align-items-center mb-3">
-                      <strong className="me-2 text-secondary">Batch:</strong>
-                      <Badge
-                        className="px-3 py-2 rounded-pill fw-semibold"
-                        style={{
-                          background:
-                            "linear-gradient(135deg, #6c757d, #495057)",
-                          color: "#fff",
-                          fontSize: "0.9rem",
-                        }}
-                      >
-                        {podInfo?.batchName || "N/A"}
-                      </Badge>
-                    </div>
+                  <Card.Body className="pod-card-body">
+  <Card.Title className="text-center mb-3 pod-title">Pod Details</Card.Title>
 
-                    {/* MENTORS INFO */}
-                    <div className="d-flex align-items-center mb-3">
-                      <strong className="me-2 text-secondary">
-                        Mentor{podInfo?.mentors?.length > 1 ? "s" : ""}:
-                      </strong>
+  <div className="pod-info-container d-flex flex-column align-items-center">
+    {/* Organization Row */}
+    <div className="pod-top-row">
+      <Badge bg="info" className="p-2 text-wrap text-center org-badge">
+        Batch: {podInfo?.batchName || "N/A"}
+      </Badge>
+    </div>
 
-                      <OverlayTrigger
-                        trigger="click"
-                        placement="bottom"
-                        overlay={
-                          <Popover id="popover-mentors">
-                            <Popover.Header as="h3">
+    {/* Mentors and Concepts Row */}
+    <div className="pod-bottom-row">
+      <OverlayTrigger
+        trigger="click"
+        placement="bottom"
+        overlay={
+          <Popover id="popover-mentors">
+            <Popover.Header as="h3">
                               {podInfo?.mentors?.length || 0} Mentor
                               {podInfo?.mentors?.length > 1 ? "s" : ""}
                             </Popover.Header>
-                            <Popover.Body>
+            <Popover.Body>
                               <ul className="mb-0 ps-3">
                                 {podInfo?.mentors?.length > 0 ? (
                                   podInfo.mentors.map((mentor, idx) => (
@@ -184,38 +174,26 @@ function Mentorpodusers() {
                                 )}
                               </ul>
                             </Popover.Body>
-                          </Popover>
-                        }
-                        rootClose
-                      >
-                        <Badge
-                          className="px-3 py-2 rounded-pill fw-semibold"
-                          style={{
-                            background:
-                              "linear-gradient(135deg, #43e97b, #38f9d7)",
-                            color: "#fff",
-                            cursor: "pointer",
-                            fontSize: "0.9rem",
-                          }}
-                        >
-                          {podInfo?.mentors?.length || 0} Mentor
-                          {podInfo?.mentors?.length > 1 ? "s" : ""}
-                        </Badge>
-                      </OverlayTrigger>
-                    </div>
+          </Popover>
+        }
+        rootClose
+      >
+        <Badge
+          bg="secondary"
+          className="p-2 text-wrap text-center batch-badge"
+          style={{ cursor: "pointer" }}
+        >
+          Mentors: {podInfo?.mentors?.length || 0}
+        </Badge>
+      </OverlayTrigger>
 
-                    {/* CONCEPTS INFO */}
-                    {podInfo?.concepts?.length > 0 ? (
-                      <div className="d-flex align-items-center mb-3">
-                        <strong className="me-2 text-secondary">
-                          Concepts:
-                        </strong>
-                        <OverlayTrigger
-                          trigger="click"
-                          placement="bottom"
-                          overlay={
-                            <Popover id="popover-concepts">
-                              <Popover.Header as="h3">Concepts</Popover.Header>
+      {podInfo?.concepts?.length > 0 ? (
+        <OverlayTrigger
+          trigger="click"
+          placement="bottom"
+          overlay={
+            <Popover id="popover-concepts">
+              <Popover.Header as="h3">Concepts</Popover.Header>
                               <Popover.Body>
                                 <ul className="mb-0 ps-3">
                                   {podInfo.concepts.map((concept, idx) => (
@@ -223,31 +201,30 @@ function Mentorpodusers() {
                                   ))}
                                 </ul>
                               </Popover.Body>
-                            </Popover>
-                          }
-                          rootClose
-                        >
-                          <Badge
-                            className="px-3 py-2 rounded-pill fw-semibold"
-                            style={{
-                              background:
-                                "linear-gradient(135deg, #f7971e, #ffd200)",
-                              color: "#212529",
-                              cursor: "pointer",
-                              fontSize: "0.9rem",
-                            }}
-                          >
-                            {podInfo.concepts.length} Concept
-                            {podInfo.concepts.length > 1 ? "s" : ""}
-                          </Badge>
-                        </OverlayTrigger>
-                      </div>
-                    ) : (
-                      <p className="text-muted fst-italic mb-0">
-                        No concepts found for this batch.
-                      </p>
-                    )}
-                  </Card.Body>
+            </Popover>
+          }
+          rootClose
+        >
+          <Badge
+            bg="warning"
+            className="p-2 text-wrap text-center text-dark batchsize-badge"
+            style={{ cursor: "pointer" }}
+          >
+            Concepts: {podInfo.concepts.length}
+          </Badge>
+        </OverlayTrigger>
+      ) : (
+        <Badge
+          bg="warning"
+          className="p-2 text-wrap text-center text-dark batchsize-badge"
+        >
+          No Concepts
+        </Badge>
+      )}
+    </div>
+  </div>
+</Card.Body>
+
                 </Card>
               </Col>
 
@@ -305,15 +282,15 @@ function Mentorpodusers() {
                               
                               <td>
                                 <button
-                                  className="btn btn-outline-primary w-100 btn-sm"
-                                  onClick={() =>
-                                    navigate(
-                                      `/mentorpodusersprogress/${user.user_id}`
-                                    )
-                                  }
-                                >
-                                  View Progress
-                                </button>
+  className="btn btn-outline-primary w-100 btn-sm"
+  style={{ borderRadius: "18px" }}
+  onClick={() =>
+    navigate(`/mentorpodusersprogress/${user.user_id}`)
+  }
+>
+  View Progress
+</button>
+
                               </td>
                             </tr>
                           ))}

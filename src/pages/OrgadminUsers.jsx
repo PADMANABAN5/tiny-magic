@@ -83,7 +83,17 @@ function OrgadminUsers() {
             <Button
                 variant="secondary"
                 onClick={() => navigate(-1)}
-                style={{ borderRadius: "50px", marginRight:"5px" }}
+                style={{
+        borderRadius: "50px",
+        marginRight: "12px",
+        padding: "12px 14px", 
+        fontSize: "0.9rem",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        lineHeight: "1",
+        whiteSpace: "nowrap",
+      }}
               >
                 <FaArrowLeft className="me-2" /> Back
               </Button>
