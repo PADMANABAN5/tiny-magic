@@ -20,7 +20,17 @@ const BASE_URL = process.env.REACT_APP_API_LINK;
 function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, showMobileMenu = false }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const username = sessionStorage.getItem("email");
+   // 🔹 CHANGED: read name sources we saved at login
+  const firstName = sessionStorage.getItem("firstName"); 
+  const username  = sessionStorage.getItem("username");  
+  const email     = sessionStorage.getItem("email");     
+ // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
+  const displayName =
+    (firstName && firstName.trim()) ||
+    (username && username.trim()) ||
+    (email && email.split("@")[0]) ||
+    "User";
+  
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98)
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
@@ -54,13 +64,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
       navigate("/login");
     }
   };
-  // Function to shorten username
-  const getShortenedUsername = (email) => {
-    if (!email) return "User";
-    const parts = email.split("@");
-    return parts[0]; // Returns only the part before @
-  };
-
+ 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768.98)
@@ -144,7 +148,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
             >
               <FaUser className="userlogo-desktop text-white" />
               <span className="text-white username-desktop">
-                {getShortenedUsername(username)}
+                {displayName}
               </span>
               <FaCaretDown className="ms-2 text-white" />
             </button>
@@ -162,7 +166,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
                           className="me-2"
                           style={{ fontSize: "16px", color: "blue" }}
                         />
-                        <span>{getShortenedUsername(username)}</span>
+                        <span>{displayName}</span>
                       </span>
                     </li>
                     <li>

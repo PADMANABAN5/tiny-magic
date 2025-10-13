@@ -80,6 +80,11 @@ function Login() {
       }
 
       login(user);
+      sessionStorage.setItem("firstName", user.first_name || "");
+sessionStorage.setItem("lastName",  user.last_name  || "");
+sessionStorage.setItem("username",  user.username   || "");
+
+sessionStorage.setItem("token",     user.token || "");
 
       if (user.is_default_password) {
         setUserDetails(user);

@@ -18,9 +18,20 @@ const BASE_URL = process.env.REACT_APP_API_LINK;
 function Supersidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const username = sessionStorage.getItem("email");
+ 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  // 🔹 CHANGED: read name sources we saved at login
+  const firstName = sessionStorage.getItem("firstName"); 
+  const username  = sessionStorage.getItem("username");  
+  const email     = sessionStorage.getItem("email");    
+ // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
+  const displayName =
+    (firstName && firstName.trim()) ||
+    (username && username.trim()) ||
+    (email && email.split("@")[0]) ||
+    "User";
 
     const handleLogout = async () => {
     try {
@@ -52,12 +63,7 @@ function Supersidebar() {
     }
   };
 
-  // Function to shorten username
-  const getShortenedUsername = (email) => {
-    if (!email) return "User";
-    const parts = email.split("@");
-    return parts[0]; // Returns only the part before @
-  };
+  
 
   useEffect(() => {
     const handleResize = () => {
@@ -95,7 +101,7 @@ function Supersidebar() {
               aria-expanded={showDropdown}
             >
               <FaUser className="me-2 text-white" />
-              <span className="text-white">{getShortenedUsername(username)}</span>
+              <span className="text-white">{displayName}</span>
               <FaCaretDown className="ms-2 text-white" />
             </button>
             
