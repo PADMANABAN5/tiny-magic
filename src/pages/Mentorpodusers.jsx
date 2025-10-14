@@ -29,7 +29,7 @@ function Mentorpodusers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [podInfo, setPodInfo] = useState(null);
   const usersPerPage = 6;
-  const email = sessionStorage.getItem("email");
+  const username = sessionStorage.getItem("username");
   const { token } = useAuth();
 
   const config = {
@@ -65,8 +65,8 @@ function Mentorpodusers() {
       }
     };
 
-    if (email && podId) fetchUsers();
-  }, [email, podId]);
+    if (username && podId) fetchUsers();
+  }, [username, podId]);
 
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;

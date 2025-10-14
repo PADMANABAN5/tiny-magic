@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef , useCallback} from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaDownload, FaArrowLeft } from 'react-icons/fa';
 import {
@@ -18,10 +18,10 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiBarChart,
-  FiBarChart2,
+  FiBarChart2
 } from "react-icons/fi";
 import axios from 'axios';
-import { Spinner, Alert, Card, Row, Col, Badge, Button,OverlayTrigger,Popover } from 'react-bootstrap';
+import { Spinner, Alert, Card, Row, Col, Badge, Button, OverlayTrigger, Popover } from 'react-bootstrap';
 import Mentorsidebar from '../components/Mentorsidebar';
 import PDFDownloader from '../components/PDFDownloader.jsx';
 import AssessmentDisplay, { 
@@ -35,7 +35,8 @@ import AssessmentDisplay, {
 import '../styles/orgadminusers.css';
 import { Accordion } from 'react-bootstrap';
 import { useAuth } from '../components/AuthContext.jsx';
-function MentorPodusersprogress() {
+import { debounce } from 'lodash';
+function MentorPodusersprogress(){
   const navigate = useNavigate();
   const { userId } = useParams();
   const [userData, setUserData] = useState(null);
@@ -52,23 +53,20 @@ function MentorPodusersprogress() {
   const [sortBy, setSortBy] = useState('date_desc');
   const [showFilters, setShowFilters] = useState(false);
   const [isDownloadingPDF, setIsDownloadingPDF] = useState(false);
+  const [practiceHistory, setPracticeHistory] = useState([]);
+  const [isPracticeLoading, setIsPracticeLoading] = useState(false);
+  const [practiceError, setPracticeError] = useState(null);
+  const [practiceFilterStatus, setPracticeFilterStatus] = useState("all");
+  const [practiceSearchTerm, setPracticeSearchTerm] = useState("");
+  const [practiceSortBy, setPracticeSortBy] = useState("date_desc");
   const modalRef = useRef(null);
   const chatEndRef = useRef(null);
-  // Practice history states
-const [practiceHistory, setPracticeHistory] = useState([]);
-const [isPracticeLoading, setIsPracticeLoading] = useState(false);
-const [practiceError, setPracticeError] = useState(null);
-const [practiceFilterStatus, setPracticeFilterStatus] = useState("all");
-const [practiceSearchTerm, setPracticeSearchTerm] = useState("");
-const [practiceSortBy, setPracticeSortBy] = useState("date_desc");
-const [practicePage, setPracticePage] = useState(1);
-const itemsPerPage = 10;
-const [showPracticeScoreModal, setShowPracticeScoreModal] = useState(false);
+  const [showPracticeScoreModal, setShowPracticeScoreModal] = useState(false);
 const [selectedPracticeScoreData, setSelectedPracticeScoreData] = useState(null);
 
-
+ 
+   const storedToken = sessionStorage.getItem("token");
    const { token } = useAuth();
-
   const config = {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -117,7 +115,25 @@ const [selectedPracticeScoreData, setSelectedPracticeScoreData] = useState(null)
       setIsDownloadingPDF(false);
     }
   };
+  const debouncedSearch = useCallback(
+  debounce((value) => {
+    setSearchTerm(value);
+    
+  }, 500),
+  []
+);
 
+// useEffect(() => {
+//   if (userId) fetchChatHistory();
+// }, [searchTerm]);
+
+  // Debounced search handler for Practice History (optional, for consistency—prevents unnecessary re-renders)
+  const debouncedSetPracticeSearchTerm = useCallback(
+  debounce((value) => {
+    setPracticeSearchTerm(value);
+  }, 500),
+  []
+);
   useEffect(() => {
     const fetchUserProgress = async () => {
       try {
@@ -236,49 +252,6 @@ const [selectedPracticeScoreData, setSelectedPracticeScoreData] = useState(null)
     setIsPracticeLoading(false);
   }
 };
-const handlePracticeScoreClick = (conversation) => {
-  if (
-    conversation.status === 'completed' &&
-    conversation.overall_performance &&
-    conversation.overall_performance !== 'Not Available' &&
-    parseFloat(conversation.overall_performance.split(' - ')[0]) > 0
-  ) {
-    setSelectedPracticeScoreData(conversation);
-    setShowPracticeScoreModal(true);
-  }
-};
-
-const closePracticeScoreModal = () => {
-  setShowPracticeScoreModal(false);
-  setSelectedPracticeScoreData(null);
-};
-
-const renderPracticeScoreCell = (conversation) => {
-  const hasScoring = conversation.status === 'completed' && conversation.overall_performance;
-
-  if (!hasScoring) {
-    return <div className="score-cell-content"><span className="no-score">-</span></div>;
-  }
-
-  const finalScore = parseFloat(conversation.overall_performance?.split(' - ')[0]) || null;
-
-  return (
-    <div className="score-cell-content">
-      <div
-        className="score-badge-large clickable-score"
-        style={{ 
-          backgroundColor: getScoreColor(finalScore),
-          cursor: 'pointer'
-        }}
-        onClick={() => handlePracticeScoreClick(conversation)}
-        title="Click to view detailed score breakdown"
-      >
-        <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
-        <span className="score-max">/5</span>
-      </div>
-    </div>
-  );
-};
 
 
 
@@ -325,15 +298,17 @@ const renderPracticeScoreCell = (conversation) => {
   };
 
   // Load conversations when filters change
-  useEffect(() => {
-    if (userId) {
-      fetchChatHistory();
-    }
-  }, [filterStatus, searchTerm]);
+  
+ useEffect(() => {
+  if (userId) {
+    fetchPracticeHistory();
+  }
+}, [practiceFilterStatus, practiceSearchTerm]);
 
   // Refresh data
   const handleRefresh = () => {
     fetchChatHistory();
+    fetchPracticeHistory();
   };
 
   // Utility functions
@@ -379,7 +354,7 @@ const renderPracticeScoreCell = (conversation) => {
     }
   };
 
- const getStageProgress = (currentStage, status) => {
+  const getStageProgress = (currentStage, status) => {
     console.log(`Calculating progress: stage=${currentStage}, status=${status}`);
     const maxStage = 5;
     const progressPerStage = 100 / maxStage; // 20% per stage
@@ -420,7 +395,49 @@ const renderPracticeScoreCell = (conversation) => {
 
     return filtered;
   };
-// Simple parser for malformed JSON arrays like {"item1","item2"}
+   const handlePracticeScoreClick = (conversation) => {
+  if (
+    conversation.status === 'completed' &&
+    conversation.overall_performance &&
+    conversation.overall_performance !== 'Not Available' &&
+    parseFloat(conversation.overall_performance.split(' - ')[0]) > 0
+  ) {
+    setSelectedPracticeScoreData(conversation);
+    setShowPracticeScoreModal(true);
+  }
+};
+
+const closePracticeScoreModal = () => {
+  setShowPracticeScoreModal(false);
+  setSelectedPracticeScoreData(null);
+};
+
+const renderPracticeScoreCell = (conversation) => {
+  const hasScoring = conversation.status === 'completed' && conversation.overall_performance;
+
+  if (!hasScoring) {
+    return <div className="score-cell-content"><span className="no-score">-</span></div>;
+  }
+
+  const finalScore = parseFloat(conversation.overall_performance?.split(' - ')[0]) || null;
+
+  return (
+    <div className="score-cell-content">
+      <div
+        className="score-badge-large clickable-score"
+        style={{ 
+          backgroundColor: getScoreColor(finalScore),
+          cursor: 'pointer'
+        }}
+        onClick={() => handlePracticeScoreClick(conversation)}
+        title="Click to view detailed score breakdown"
+      >
+        <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
+        <span className="score-max">/5</span>
+      </div>
+    </div>
+  );
+};
 const parseField = (field) => {
   if (!field || field === 'Not Available') return ['Not Available'];
   
@@ -445,6 +462,7 @@ const parseField = (field) => {
   // Fallback for other formats - just return as single item
   return [field.replace(/^"|"$/g, '').trim()];
 };
+
   const filteredAndSortedPractice = () => {
   let filtered = practiceHistory.filter(conv => {
     const matchesStatus = practiceFilterStatus === "all" || conv.status === practiceFilterStatus;
@@ -497,6 +515,7 @@ const parseField = (field) => {
     const finalScore = parseFloat(conversation.scoring.final_score) || null;
     const sixFacetsAvg = parseFloat(conversation.scoring.six_facets?.average) || null;
     const skillsAvg = parseFloat(conversation.scoring.understanding_skills?.average) || null;
+    
 
     // Dynamic positioning function
     const handleMouseEnter = (e) => {
@@ -530,6 +549,7 @@ const parseField = (field) => {
       tooltip.style.left = `${left}px`;
       tooltip.style.top = `${top}px`;
     };
+   
 
     const handleMouseLeave = (e) => {
       const tooltip = e.currentTarget.querySelector('.score-tooltip');
@@ -791,7 +811,7 @@ const parseField = (field) => {
     <div className="conversation-history-page">
       <Mentorsidebar />
       <div className="main-content">
-        <div className="container mt-4">
+        <div className="container-fluid mt-4">
           {loading ? (
             <div className="loading-container">
               <div className="loading-spinner"></div>
@@ -802,58 +822,102 @@ const parseField = (field) => {
           ) : (
             <>
               {/* User Info Card with Back Button in Header */}
-              <Card className="shadow-sm rounded-4 border-primary mb-4">
-                <Card.Header className="bg-primary text-white py-3 rounded-top-4">
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    justifyContent: 'center',
-                    position: 'relative'
-                  }}>
-                    <Button 
-                      variant="outline-light" 
-                      onClick={() => navigate(-1)} 
-                      style={{ 
-                        position: 'absolute',
-                        left: '0',
-                        padding: '8px', 
-                        width: '40px',
-                        height: '40px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        border: 'none',
-                        background:'transparent',
-                        boxShadow:'none'
-                      }}
-                    >
-                      <FaArrowLeft />
-                    </Button>
-                    <h4 className="mb-0 fw-bold">
-                      Progress of {userData.user.first_name} {userData.user.last_name}
-                    </h4>
-                  </div>
-                </Card.Header>
-                <Card.Body>
-  {/* Username */}
-  <p>
-    <strong>Username:</strong> {userData.user.username}
-  </p>
+             <Card
+  className="border-0 shadow-lg rounded-4 mb-4"
+  style={{
+    background: "rgba(255, 255, 255, 0.85)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(0, 178, 215, 0.25)",
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+  }}
+>
+  {/* Header */}
+  <Card.Header
+    className="text-white py-3 py-md-2 rounded-top-4"
+    style={{
+      background: "linear-gradient(135deg, #00b2d7 0%, #0072ff 100%)",
+      position: "relative",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        position: "relative",
+      }}
+    >
+      <Button
+        variant="outline-light"
+        onClick={() => navigate(-1)}
+        style={{
+          position: "absolute",
+          left: "0",
+          padding: "8px",
+          width: "40px",
+          height: "40px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          border: "none",
+          background: "transparent",
+          boxShadow: "none",
+          transition: "transform 0.2s ease, opacity 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.1)";
+          e.currentTarget.style.opacity = "0.9";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+          e.currentTarget.style.opacity = "1";
+        }}
+      >
+        <FaArrowLeft />
+      </Button>
 
-  {/* Pod */}
-  <p>
-    <strong>Pod:</strong>{' '}
-    <span className="custom-badge pod">{userData.pod?.pod_name || 'N/A'}</span>
-  </p>
+      <h4 className="mb-0 fw-bold text-center">
+        Progress of {userData.user.first_name} {userData.user.last_name}
+      </h4>
+    </div>
+  </Card.Header>
 
-  {/* Batch */}
-  <p>
-    <strong>Batch:</strong>{' '}
-    <span className="custom-badge batch">{userData.batch?.batch_name || 'N/A'}</span>
-  </p>
+  {/* Body */}
+  <Card.Body className="p-4">
+    <p className="mb-3">
+      <strong className="text-secondary">Username:</strong>{" "}
+      <span className="text-dark fw-medium">{userData.user.username}</span>
+    </p>
 
-  {/* Mentor */}
-  <p>
+    <p className="mb-3">
+      <strong className="text-secondary">Pod:</strong>{" "}
+      <Badge
+        className="px-3 py-2 rounded-pill fw-semibold"
+        style={{
+          background: "linear-gradient(135deg, #43e97b, #38f9d7)",
+          color: "#fff",
+          fontSize: "0.9rem",
+        }}
+      >
+        {userData.pod?.pod_name || "N/A"}
+      </Badge>
+    </p>
+
+    <p className="mb-3">
+      <strong className="text-secondary">Batch:</strong>{" "}
+      <Badge
+        className="px-3 py-2 rounded-pill fw-semibold"
+        style={{
+          background: "linear-gradient(135deg, rgba(108,117,125,0.9), rgba(73,80,87,0.9))",
+          color: "#fff",
+          fontSize: "0.9rem",
+        }}
+      >
+        {userData.batch?.batch_name || "N/A"}
+      </Badge>
+    </p>
+
+    <p>
     <strong>
       Mentor{userData.pod?.mentors?.length > 1 ? 's' : ''}:
     </strong>{' '}
@@ -869,7 +933,7 @@ const parseField = (field) => {
             <ul className="mb-0 ps-3">
               {userData.pod?.mentors?.map((m) => (
                 <li key={m.user_id}>
-                  {m.first_name} {m.last_name} ({m.email})
+                  {m.first_name} {m.last_name}
                 </li>
               ))}
             </ul>
@@ -901,6 +965,7 @@ const parseField = (field) => {
 
               </Card>
 
+
               {/* Header Actions */}
               <div className="page-header">
                 <div className="header-title">
@@ -929,278 +994,284 @@ const parseField = (field) => {
               
 
               {/* Conversations Table */}
-              <div className="conversations-section">
-                {isConversationsLoading ? (
-                  <div className="loading-container">
-                    <div className="loading-spinner"></div>
-                    <span>Loading conversations...</span>
-                  </div>
-                ) : filteredAndSortedConversations().length === 0 ? (
-                  <div className="empty-state">
-                    <div className="empty-icon">
-                      <FiMessageCircle />
-                    </div>
-                    <h3>No conversations found</h3>
-                    <p>
-                      {searchTerm || filterStatus !== 'all'
-                        ? "Try adjusting your search or filter criteria."
-                        : "This user hasn't started any learning sessions yet."
-                      }
-                    </p>
-                  </div>
-                ) : (
-                   <Accordion defaultActiveKey="0">
-      <Accordion.Item eventKey="0">
-        <Accordion.Header>
-          <FiBarChart style={{fontWeight:'bold', fontSize:'20px', marginRight:'8px'}} />
-          Training History
-        </Accordion.Header>
-        <Accordion.Body>
-          {/* Filters Section */}
-             
-                <div className="filters-section">
-                  <div className="filter-group">
-                    <label>Search Concepts:</label>
-                    <div className="search-input">
-                      <FiSearch />
-                      <input
-                        type="text"
-                        placeholder="Search by concept name..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                      />
-                    </div>
-                  </div>
-                  <div className="filter-group">
-                    <label>Status:</label>
-                    <select
-                      value={filterStatus}
-                      onChange={(e) => setFilterStatus(e.target.value)}
-                    >
-                      <option value="all">All Statuses</option>
-                      <option value="not_started">Not Started</option>
-                      <option value="inprogress">In Progress</option>
-                      <option value="completed">Completed</option>
-                    </select>
-                  </div>
-                  <div className="filter-group">
-                    <label>Sort By:</label>
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value)}
-                    >
-                      <option value="date_desc">Latest First</option>
-                      <option value="date_asc">Oldest First</option>
-                      <option value="concept_asc">Concept A-Z</option>
-                      <option value="concept_desc">Concept Z-A</option>
-                      <option value="status">Status</option>
-                      <option value="stage">Stage Progress</option>
-                    </select>
-                  </div>
-                </div>
-              
-                  <div className="table-responsive">
-                  <div className="conversations-table-container">
-                    <table className="conversations-table table table-striped table-bordered table-hover">
-                      <thead>
-                        <tr>
-                          <th>Concept</th>
-                          <th>Status</th>
-                          <th>Progress</th>
-                          <th>Stage</th>
-                          <th>Overall Score</th>
-                          <th>Created</th>
-                          <th>Last Updated</th>
-                          <th>Actions</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredAndSortedConversations().map((conversation) => {
-                          const { date: createdDate, time: createdTime } = formatDate(conversation.created_at);
-                          const { date: updatedDate, time: updatedTime } = formatDate(conversation.updated_at);
-                          const progress = getStageProgress(conversation.current_stage, conversation.status);
+             <div className="conversations-section">
+  <Accordion defaultActiveKey="0" className="w-100">
+    <Accordion.Item eventKey="0">
+      <Accordion.Header>
+        <FiBarChart style={{fontWeight:'bold', fontSize:'20px', marginRight:'8px'}} />
+        Training History
+      </Accordion.Header>
+      <Accordion.Body>
+        {/* Filters Section - Moved outside conditional for consistency */}
+        <div className="filters-section">
+          <div className="filter-group">
+            <label>Search Concepts:</label>
+            <div className="search-input">
+              <FiSearch />
+              <input
+                type="text"
+                placeholder="Search by concept name..."
+                defaultValue={searchTerm}  // Optional: Comment out for "uncontrolled" feel during typing (no lag)
+                onChange={(e) => debouncedSearch(e.target.value)} 
+              />
+            </div>
+          </div>
+          <div className="filter-group">
+            <label>Status:</label>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="not_started">Not Started</option>
+              <option value="inprogress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div className="filter-group">
+            <label>Sort By:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="date_desc">Latest First</option>
+              <option value="date_asc">Oldest First</option>
+              <option value="concept_asc">Concept A-Z</option>
+              <option value="concept_desc">Concept Z-A</option>
+              <option value="status">Status</option>
+              <option value="stage">Stages</option>
+            </select>
+          </div>
+        </div>
 
-                          return (
-                            <tr key={conversation.id}>
-                              <td className="concept-cell">
-                                <div className="concept-name">{conversation.concept_name}</div>
-                              </td>
-                              <td className="status-cell">
-                                <span
-                                  className="status-badge"
-                                  style={{
-                                    backgroundColor: getStatusColor(conversation.status),
-                                    color: 'white'
-                                  }}
-                                >
-                                  {getStatusIcon(conversation.status)}
-                                  {getStatusLabel(conversation.status)}
-                                </span>
-                              </td>
-                              <td className="progress-cell">
-                                <div className="progress-container">
-                                  <div className="progress-bar">
-                                    <div
-                                      className="progress-fill"
-                                      style={{
-                                        width: `${progress}%`,
-                                        backgroundColor: getStatusColor(conversation.status)
-                                      }}
-                                    ></div>
-                                  </div>
-                                  <span className="progress-text">{progress}%</span>
-                                </div>
-                              </td>
-                              <td className="stage-cell">
-                                <span className="stage-info">
-                                  <FiTarget />
-                                  {conversation.current_stage}/5
-                                </span>
-                              </td>
-                              <td className="score-cell">
-                                {renderScoreCell(conversation)}
-                              </td>
-                              <td className="date-cell">
-                                <div className="date-info">
-                                  <div className="date">{createdDate}</div>
-                                  <div className="time">{createdTime}</div>
-                                </div>
-                              </td>
-                              <td className="date-cell">
-                                <div className="date-info">
-                                  <div className="date">{updatedDate}</div>
-                                  <div className="time">{updatedTime}</div>
-                                </div>
-                              </td>
-                              <td className="actions-cell">
-                                <button
-                                  className="view-btn"
-                                  onClick={() => handleViewConversation(conversation)}
-                                >
-                                  <FiEye />
-                                  View
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  </div>
-                    </Accordion.Body>
-      </Accordion.Item>
+        {isConversationsLoading ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <span>Loading conversations...</span>
+          </div>
+        ) : filteredAndSortedConversations().length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon">
+              <FiMessageCircle />
+            </div>
+            <h3>No conversations found</h3>
+            <p>
+              {searchTerm || filterStatus !== 'all'
+                ? "Try adjusting your search or filter criteria."
+                : "This user hasn't started any learning sessions yet."
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <div className="conversations-table-container">
+              <table className="conversations-table">
+                <thead>
+                  <tr>
+                    <th>Concept</th>
+                    <th>Status</th>
+                    <th>Progress</th>
+                    <th>Stage</th>
+                    <th>Overall Score</th>
+                    <th>Created</th>
+                    <th>Last Updated</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredAndSortedConversations().map((conversation) => {
+                    const { date: createdDate, time: createdTime } = formatDate(conversation.created_at);
+                    const { date: updatedDate, time: updatedTime } = formatDate(conversation.updated_at);
+                    const progress = getStageProgress(conversation.current_stage, conversation.status);
+
+                    return (
+                      <tr key={conversation.id}>
+                        <td className="concept-cell">
+                          <div className="concept-name">{conversation.concept_name}</div>
+                        </td>
+                        <td className="status-cell">
+                          <span
+                            className="status-badge"
+                            style={{
+                              backgroundColor: getStatusColor(conversation.status),
+                              color: 'white'
+                            }}
+                          >
+                            {getStatusIcon(conversation.status)}
+                            {getStatusLabel(conversation.status)}
+                          </span>
+                        </td>
+                        <td className="progress-cell">
+                          <div className="progress-container">
+                            <div className="progress-bar">
+                              <div
+                                className="progress-fill"
+                                style={{
+                                  width: `${progress}%`,
+                                  backgroundColor: getStatusColor(conversation.status)
+                                }}
+                              ></div>
+                            </div>
+                            <span className="progress-text">{progress}%</span>
+                          </div>
+                        </td>
+                        <td className="stage-cell">
+                          <span className="stage-info">
+                            <FiTarget />
+                            {conversation.current_stage}/5
+                          </span>
+                        </td>
+                        <td className="score-cell">
+                          {renderScoreCell(conversation)}
+                        </td>
+                        <td className="date-cell">
+                          <div className="date-info">
+                            <div className="date">{createdDate}</div>
+                            <div className="time">{createdTime}</div>
+                          </div>
+                        </td>
+                        <td className="date-cell">
+                          <div className="date-info">
+                            <div className="date">{updatedDate}</div>
+                            <div className="time">{updatedTime}</div>
+                          </div>
+                        </td>
+                        <td className="actions-cell">
+                          <button
+                            className="view-btn"
+                            onClick={() => handleViewConversation(conversation)}
+                          >
+                            <FiEye />
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </Accordion.Body>
+    </Accordion.Item>
     <Accordion.Item eventKey="1">
-    <Accordion.Header style={{fontWeight:'bolder', fontSize:'20px', marginRight:'8px'}}><FiBarChart2 style={{fontWeight:'bold', fontSize:'20px', marginRight:'8px'}}/> Practice History</Accordion.Header>
-    <Accordion.Body>
-      {/* Practice Filters */}
-<div className="filters-section mb-3">
-  <div className="filter-group">
-    <label>Search Concepts:</label>
-    <div className="search-input">
-      <FiSearch />
-      <input
-        type="text"
-        placeholder="Search by concept name..."
-        value={practiceSearchTerm}
-        onChange={(e) => setPracticeSearchTerm(e.target.value)}
-      />
-    </div>
-  </div>
+      <Accordion.Header style={{fontWeight:'bolder', fontSize:'20px', marginRight:'8px'}}>
+        <FiBarChart2 style={{fontWeight:'bold', fontSize:'20px', marginRight:'8px'}}/>
+        Practice History
+      </Accordion.Header>
+      <Accordion.Body>
+        {/* Practice Filters */}
+        <div className="filters-section mb-3">
+          <div className="filter-group">
+            <label>Search Concepts:</label>
+            <div className="search-input">
+              <FiSearch />
+              <input
+                type="text"
+                placeholder="Search by concept name..."
+                defaultValue={practiceSearchTerm}  // Optional: Comment out
+                onChange={(e) => debouncedSetPracticeSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
 
-  <div className="filter-group">
-    <label>Status:</label>
-    <select
-      value={practiceFilterStatus}
-      onChange={(e) => setPracticeFilterStatus(e.target.value)}
-    >
-      <option value="all">All Statuses</option>
-      <option value="not_started">Not Started</option>
-      <option value="inprogress">In Progress</option>
-      <option value="completed">Completed</option>
-    </select>
-  </div>
+          <div className="filter-group">
+            <label>Status:</label>
+            <select
+              value={practiceFilterStatus}
+              onChange={(e) => setPracticeFilterStatus(e.target.value)}
+            >
+              <option value="all">All Statuses</option>
+              <option value="not_started">Not Started</option>
+              <option value="inprogress">In Progress</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
 
-  <div className="filter-group">
-    <label>Sort By:</label>
-    <select
-      value={practiceSortBy}
-      onChange={(e) => setPracticeSortBy(e.target.value)}
-    >
-      <option value="date_desc">Latest First</option>
-      <option value="date_asc">Oldest First</option>
-      <option value="concept_asc">Concept A-Z</option>
-      <option value="concept_desc">Concept Z-A</option>
-      <option value="status">Status</option>
-      <option value="stage">Stage Progress</option>
-    </select>
-  </div>
+          <div className="filter-group">
+            <label>Sort By:</label>
+            <select
+              value={practiceSortBy}
+              onChange={(e) => setPracticeSortBy(e.target.value)}
+            >
+              <option value="date_desc">Latest First</option>
+              <option value="date_asc">Oldest First</option>
+              <option value="concept_asc">Concept A-Z</option>
+              <option value="concept_desc">Concept Z-A</option>
+              <option value="status">Status</option>
+              <option value="stage">Levels</option>
+            </select>
+          </div>
+        </div>
+
+        {isPracticeLoading ? (
+          <div className="loading-container">
+            <div className="loading-spinner"></div>
+            <span>Loading practice history...</span>
+          </div>
+        ) : filteredAndSortedPractice().length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon"><FiMessageCircle /></div>
+            <h3>No practice history found</h3>
+            <p>
+  {practiceSearchTerm || practiceFilterStatus !== 'all'
+    ? "Try adjusting the filters or adding new practice sessions."
+    : "This user hasn't done any practice sessions yet."
+  }
+</p>
+          </div>
+        ) : (
+          <div className="table-responsive">
+            <table className="conversations-table">
+              <thead>
+                <tr>
+                  <th>Concept</th>
+                  <th>Status</th>
+                  <th>Progress</th>
+                  <th>Level</th>
+                  <th>Overall Score</th>
+                  <th>Created</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredAndSortedPractice().map((conversation) => {
+                  const { date: createdDate } = formatDate(conversation.created_at);
+                  const { date: updatedDate } = formatDate(conversation.updated_at);
+                  const progress = getStageProgress(conversation.current_stage, conversation.status);
+
+                  return (
+                    <tr key={conversation.id}>
+                      <td>{conversation.concept_name}</td>
+                      <td>
+                        <span className="status-badge" style={{ backgroundColor: getStatusColor(conversation.status), color: 'white' }}>
+                          {getStatusIcon(conversation.status)} {getStatusLabel(conversation.status)}
+                        </span>
+                      </td>
+                      <td>{progress}%</td>
+                      <td>{conversation.current_stage}/5</td>
+                      <td className="score-cell">{renderPracticeScoreCell(conversation)}</td>
+
+                      <td>{createdDate}</td>
+                      <td>{updatedDate}</td>
+                      <td>
+                        <button className="view-btn" onClick={() => handleViewConversation(conversation)}>
+                          <FiEye /> View
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Accordion.Body>
+    </Accordion.Item>
+  </Accordion>
 </div>
-
-      {isPracticeLoading ? (
-        <div className="loading-container">
-          <div className="loading-spinner"></div>
-          <span>Loading practice history...</span>
-        </div>
-      ) : practiceHistory.length === 0 ? (
-        <div className="empty-state">
-          <div className="empty-icon"><FiMessageCircle /></div>
-          <h3>No practice history found</h3>
-          <p>{practiceError || "This user hasn't done any practice sessions yet."}</p>
-        </div>
-      ) : (
-        <div className="table-responsive">
-          <table className="conversations-table table table-striped table-bordered table-hover">
-            <thead>
-              <tr>
-                <th>Concept</th>
-                <th>Status</th>
-                <th>Progress</th>
-                <th>Level</th>
-                <th>Overall Score</th>
-                <th>Created</th>
-                <th>Last Updated</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-           <tbody>
-  {filteredAndSortedPractice().map((conversation) => {
-    const { date: createdDate } = formatDate(conversation.created_at);
-    const { date: updatedDate } = formatDate(conversation.updated_at);
-    const progress = getStageProgress(conversation.current_stage, conversation.status);
-
-    return (
-      <tr key={conversation.id}>
-        <td>{conversation.concept_name}</td>
-        <td>
-          <span className="status-badge" style={{ backgroundColor: getStatusColor(conversation.status), color: 'white' }}>
-            {getStatusIcon(conversation.status)} {getStatusLabel(conversation.status)}
-          </span>
-        </td>
-        <td>{progress}%</td>
-        <td>{conversation.current_stage}/5</td>
-        <td className="score-cell">{renderPracticeScoreCell(conversation)}</td>
-
-        <td>{createdDate}</td>
-        <td>{updatedDate}</td>
-        <td>
-          <button className="view-btn" onClick={() => handleViewConversation(conversation)}>
-            <FiEye /> View
-          </button>
-        </td>
-      </tr>
-    );
-  })}
-</tbody>
-
-          </table>
-        </div>
-      )}
-    </Accordion.Body>
-  </Accordion.Item>
-</Accordion>
-                )}
-              </div>
             </>
           )}
         </div>

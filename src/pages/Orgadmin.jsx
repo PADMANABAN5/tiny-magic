@@ -47,7 +47,7 @@ function Orgadmin() {
   const lastname = sessionStorage.getItem("lastname");
   const organizationName =
     sessionStorage.getItem("organization_name") || "Your Organization";
-  const email = sessionStorage.getItem("email");
+  const username = sessionStorage.getItem("username");
 
   const capitalize = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
@@ -105,14 +105,14 @@ function Orgadmin() {
    * --------------------------------------------------------- */
   useEffect(() => {
     const fetchBatches = async () => {
-      if (!email) {
+      if (!username) {
         setBatchesLoading(false);
-        setBatchesError("Organization admin email not found in session.");
+        setBatchesError("Organization admin username not found in session.");
         return;
       }
       try {
         const res = await axios.get(
-          `${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`,
+          `${process.env.REACT_APP_API_LINK}/orgadmin/batches/${username}`,
           config
         );
         if (res.data.success && Array.isArray(res.data.data)) {
@@ -129,7 +129,7 @@ function Orgadmin() {
       }
     };
     fetchBatches();
-  }, [email]);
+  }, [username]);
 
   /* -----------------------------------------------------------
    * Fetch Progress Report Data based on organizationName
