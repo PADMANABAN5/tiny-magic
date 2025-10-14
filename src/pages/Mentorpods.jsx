@@ -15,7 +15,7 @@ import {
   ButtonGroup,
 } from 'react-bootstrap';
 import {
-  
+  FiChevronDown,
   FiDownload
  
 } from "react-icons/fi";
@@ -571,18 +571,47 @@ const getUniqueValues = (data, property) => {
               <div className="d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 gap-3">
   {/* Items per page */}
   <div className="d-flex align-items-center">
-    <span className="me-2">Show entries:</span>
-    <Form.Select
-      value={itemsPerPage}
-      onChange={handleItemsPerPageChange}
-      style={{ width: '90px' }}
-      size="sm"
-    >
-      <option value="5">5</option>
-      <option value="10">10</option>
-      <option value="20">20</option>
-      <option value="50">50</option>
-    </Form.Select>
+   <span className="me-2">Show entries:</span>
+<Dropdown
+  onSelect={(eventKey) =>
+    handleItemsPerPageChange({ target: { value: eventKey } })
+  }
+>
+  <Dropdown.Toggle
+    variant="light"
+    size="sm"
+    id="entries-dropdown"
+    style={{
+      width: "90px",
+      border: "1px solid #ced4da",
+      borderRadius: "0.25rem",
+      backgroundColor: "#fff",
+      color: "#212529",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "0.25rem 0.5rem",
+      boxSizing: "border-box",
+    }}
+  >
+    <span>{itemsPerPage}</span>
+    
+  </Dropdown.Toggle>
+
+  <Dropdown.Menu
+    style={{
+      width: "90px",
+      minWidth: "90px",
+      textAlign: "left",
+      padding: "0",
+    }}
+  >
+    <Dropdown.Item eventKey="5">5</Dropdown.Item>
+    <Dropdown.Item eventKey="10">10</Dropdown.Item>
+    <Dropdown.Item eventKey="20">20</Dropdown.Item>
+    <Dropdown.Item eventKey="50">50</Dropdown.Item>
+  </Dropdown.Menu>
+</Dropdown>
   </div>
 
   {/* Date Filter - Using react-datepicker */}
@@ -604,21 +633,32 @@ const getUniqueValues = (data, property) => {
         isClearable
       />
       <span className="mx-1">to</span>
-      <DatePicker
-        selected={filterEndDate}
-        onChange={(date) => {
-          setFilterEndDate(date);
-          setCurrentPage(1);
-        }}
-        selectsEnd
-        startDate={filterStartDate}
-        endDate={filterEndDate}
-        minDate={filterStartDate}
-        placeholderText="End Date"
-        className="form-control form-control-sm"
-        dateFormat="yyyy-MM-dd"
-        isClearable
-      />
+     <DatePicker
+  selected={filterStartDate}
+  onChange={(date) => {
+    setFilterStartDate(date);
+    setCurrentPage(1);
+  }}
+  selectsStart
+  startDate={filterStartDate}
+  endDate={filterEndDate}
+  placeholderText="Start Date"
+  className="form-control form-control-sm"
+  dateFormat="yyyy-MM-dd"
+  isClearable
+  popperPlacement="bottom-end"
+  popperProps={{
+    modifiers: [
+      {
+        name: "preventOverflow",
+        options: {
+          boundary: "viewport",
+        },
+      },
+    ],
+  }}
+/>
+
     </div>
 
     {/* Search Inputs */}
