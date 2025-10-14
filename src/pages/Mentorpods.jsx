@@ -51,7 +51,7 @@ function Mentorpods() {
    * --------------------------------------------------------- */
   const firstname = sessionStorage.getItem('firstname') || '';
   const lastname = sessionStorage.getItem('lastname') || '';
-  const email = sessionStorage.getItem('email') || '';
+  const username = sessionStorage.getItem('username') || '';
   const mentorId = sessionStorage.getItem('userId') || sessionStorage.getItem('mentor_id') || '';
   const fullName = `${firstname} ${lastname}`.trim() || 'User';
 
@@ -104,13 +104,13 @@ const getUniqueValues = (data, property) => {
 };
   useEffect(() => {
     const fetchPods = async () => {
-      if (!email) {
+      if (!username) {
         setPodsLoading(false);
-        setPodsError('Mentor email not found in session.');
+        setPodsError('Mentor username not found in session.');
         return;
       }
       try {
-        const response = await axios.get(`${process.env.REACT_APP_API_LINK}/mentor/pods/${email}`, config);
+        const response = await axios.get(`${process.env.REACT_APP_API_LINK}/mentor/pods/${username}`, config);
         if (response?.data?.success) {
           setPods(response.data.data || []);
         } else {
@@ -123,7 +123,7 @@ const getUniqueValues = (data, property) => {
       }
     };
     fetchPods();
-  }, [email]);
+  }, [username]);
 
   /* -----------------------------------------------------------
    * Fetch mentor progress report data

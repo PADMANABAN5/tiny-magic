@@ -28,7 +28,7 @@ function OrgadminUsers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [podInfo, setPodInfo] = useState(null);
   const usersPerPage = 6;
-  const email = sessionStorage.getItem("email");
+  const username = sessionStorage.getItem("username");
   const storedToken = sessionStorage.getItem("token");
   const { token } = useAuth();
   const config = {
@@ -63,8 +63,8 @@ function OrgadminUsers() {
       }
     };
 
-    if (email && podId) fetchUsers();
-  }, [email, podId]);
+    if (username && podId) fetchUsers();
+  }, [username, podId]);
 
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
