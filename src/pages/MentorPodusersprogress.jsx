@@ -297,13 +297,12 @@ const [selectedPracticeScoreData, setSelectedPracticeScoreData] = useState(null)
     return "Learning Session";
   };
 
-  // Load conversations when filters change
   
  useEffect(() => {
   if (userId) {
     fetchPracticeHistory();
   }
-}, [practiceFilterStatus, practiceSearchTerm]);
+}, [userId]);
 
   // Refresh data
   const handleRefresh = () => {
