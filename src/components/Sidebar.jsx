@@ -148,8 +148,10 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
             >
               <FaUser className="userlogo-desktop text-white" />
               <span className="text-white username-desktop">
-                {displayName}
-              </span>
+  {firstName
+    ? `${firstName} (${username || email.split("@")[0] || "User"})`
+    : displayName}
+</span>
               <FaCaretDown className="ms-2 text-white" />
             </button>
 

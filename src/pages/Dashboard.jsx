@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
@@ -36,9 +37,9 @@ import StageCompletionToast from "../components/StageCompletionToast.jsx";
 import VoiceRecorder from "../components/VoiceRecorder.jsx";
 import { formatMarkdownResponse } from "../utils/formatMarkdownResponse.js";
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-const BASE_URL = process.env.REACT_APP_API_LINK;
+import remarkGfm from "remark-gfm";
 
+const BASE_URL = process.env.REACT_APP_API_LINK;
 function Dashboard() {
   usePreventBack("/dashboard");
   const [prompt, setPrompt] = useState("");
@@ -61,11 +62,19 @@ function Dashboard() {
   const recognitionRef = useRef(null);
   const voiceRecorderRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
-
+const lastSystemMsg = chatHistory.length
+  ? chatHistory[chatHistory.length - 1].system || ""
+  : "";
+const normalized = formatMarkdownResponse(lastSystemMsg, {
+  splitInlineEmojiBullets: true,
+  normalizeBullets: true,
+  normalizeNumbers: true,
+  numberDashLists: true,
+  boldHeadings: true,
+});
   const startListening = () => {
     const SpeechRecognition =
       window.SpeechRecognition || window.webkitSpeechRecognition;
-
     if (!SpeechRecognition) {
       toast.error("Speech recognition not supported in this browser.");
       return;
@@ -74,7 +83,6 @@ function Dashboard() {
     recognition.lang = "en-US";
     recognition.interimResults = false; // only final results
     recognition.continuous = true;
-
     recognition.onresult = (event) => {
       let finalTranscript = "";
       for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -84,16 +92,13 @@ function Dashboard() {
       }
       setPrompt(prev => (prev ? prev + " " : "") + finalTranscript.trim());
     };
-
     recognition.onend = () => {
       setIsListening(false);
     };
-
     recognition.start();
     recognitionRef.current = recognition;
     setIsListening(true);
   };
-
   const stopListening = () => {
     if (recognitionRef.current) {
       recognitionRef.current.stop();
@@ -101,7 +106,6 @@ function Dashboard() {
     }
     setIsListening(false);
   };
-
   // Enhanced state for proper session management
   const [currentChatId, setCurrentChatId] = useState(null);
   const [sessionType, setSessionType] = useState(null);
@@ -122,9 +126,7 @@ function Dashboard() {
   // Lock for initialization to prevent race conditions
   const isInitializingRef = useRef(false);
   const previousStage = currentStage;
-
    const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98);
-
   // Responsive handler
   useEffect(() => {
     const handleResize = () => {
@@ -133,7 +135,6 @@ function Dashboard() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
@@ -145,7 +146,6 @@ function Dashboard() {
       Authorization: `Bearer ${token}`,
     },
   };
-
   useEffect(() => {
     const unlisten = () => {
       if (isProcessingAssessment && prevPathRef.current !== location.pathname) {
@@ -155,35 +155,29 @@ function Dashboard() {
         prevPathRef.current = location.pathname;
       }
     };
-
     unlisten();
   }, [location.pathname, isProcessingAssessment]);
-
   const [chatCounts, setChatCounts] = useState({
     not_started: 0,
     inprogress: 0,
     completed: 0,
     archived: 0,
   });
-
   // Initialize PDF downloader
   const { handleDownloadPDF } = PDFDownloader({
     chatHistory,
     selectedConcept
   });
-
   useEffect(() => {
     if (isProcessingAssessment) {
       const handleBeforeUnload = (e) => {
         e.preventDefault();
         e.returnValue = 'An assessment is being processed. Are you sure you want to leave?';
       };
-
       window.addEventListener('beforeunload', handleBeforeUnload);
       return () => window.removeEventListener('beforeunload', handleBeforeUnload);
     }
   }, [isProcessingAssessment]);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (
@@ -195,7 +189,6 @@ function Dashboard() {
       ) {
         setShowSaveOptions(false);
       }
-
       if (
         showConceptDropdown &&
         conceptDropdownRef.current &&
@@ -204,19 +197,15 @@ function Dashboard() {
         setShowConceptDropdown(false);
       }
     };
-
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showSaveOptions, showConceptDropdown]);
-
   const fetchAndReturnConcepts = async () => {
     if (!username || conceptsLoading) return [];
-
     setConceptsLoading(true);
     try {
       console.log("🎯 Fetching concepts for fresh session:", username);
       const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
-
       if (response.data && response.data.success && response.data.data) {
         const conceptsData = response.data.data.batch?.concepts || [];
         console.log("✅ Concepts fetched for fresh session:", conceptsData.length);
@@ -233,21 +222,16 @@ function Dashboard() {
       setConceptsLoading(false);
     }
   };
-
   const fetchConcepts = async () => {
     if (!username || conceptsLoading) return;
-
     setConceptsLoading(true);
     try {
       const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
-
       if (response.data && response.data.success && response.data.data) {
         const data = response.data.data;
         const conceptsData = data.batch?.concepts || [];
-
         console.log("✅ Concepts loaded:", conceptsData.length);
         setConcepts(conceptsData);
-
         const batch = response.data.data.batch;
         if (batch?.batch_id && batch?.organization_id) {
           sessionStorage.setItem("batchId", batch.batch_id);
@@ -273,7 +257,6 @@ function Dashboard() {
       setConceptsLoading(false);
     }
   };
-
   const initiateFirstMentorMessageWithConcept = async (concept) => {
     if (!concept) {
       setIsInitializing(false);
@@ -295,10 +278,8 @@ function Dashboard() {
         organizationId,
         batchId
       });
-
       const mentorMessage = formatMarkdownResponse(response.apiResponseText);
       const updatedHistory = [{ user: "", system: mentorMessage }];
-
       setChatHistory(updatedHistory);
       setSessionHistory([{ Mentee: "", Mentor: mentorMessage }]);
       setCurrentStage(0);
@@ -310,7 +291,6 @@ function Dashboard() {
       setEndReason(null);
       sessionStorage.setItem("chatHistory", JSON.stringify(updatedHistory));
       sessionStorage.setItem("sessionType", "fresh");
-
       console.log("✅ First mentor message initiated successfully");
     } catch (err) {
       console.error("❌ Failed to load initial mentor message:", err);
@@ -320,7 +300,6 @@ function Dashboard() {
       setIsInitializing(false);
     }
   };
-
   const clearSessionData = () => {
     setChatHistory([]);
     setSessionHistory([]);
@@ -335,11 +314,9 @@ function Dashboard() {
     sessionStorage.removeItem("currentChatId");
     sessionStorage.removeItem("sessionType");
   };
-
   const mapApiStageToProgressbarIndex = (apiCurrentStage, status, interactionCompleted) => {
     if (interactionCompleted || status === 'completed') return 7;
     if (status === 'not_started') return 0;
-
     switch (apiCurrentStage) {
       case 0: return 1;
       case 1: return 2;
@@ -350,13 +327,11 @@ function Dashboard() {
       default: return 1;
     }
   };
-
   const initiateFirstMentorMessage = async () => {
     if (!selectedConcept) {
       setIsInitializing(false);
       return;
     }
-
     console.log("🚀 Initiating first mentor message");
     setIsLoading(true);
     try {
@@ -372,10 +347,15 @@ function Dashboard() {
         organizationId,
         batchId
       });
-
-      const mentorMessage = formatMarkdownResponse(response.apiResponseText);
+      const cleaned = response.apiResponseText.replace(/\*\*(.*?)\*\*/g, '$1');
+const mentorMessage = formatMarkdownResponse(cleaned, {
+  boldHeadings: false,
+  numberDashLists: true,
+  normalizeBullets: true,
+  normalizeNumbers: true,
+  splitInlineEmojiBullets: true,
+});
       const updatedHistory = [{ user: "", system: mentorMessage }];
-
       setChatHistory(updatedHistory);
       setSessionHistory([{ Mentee: "", Mentor: mentorMessage }]);
       setCurrentStage(0);
@@ -395,11 +375,9 @@ function Dashboard() {
       setIsInitializing(false);
     }
   };
-
   const handleRestartChat = () => {
     setShowRestartDialog(true);
   };
-
   const handleEndSession = async () => {
     setShowEndSessionDialog(false);
     if (voiceRecorderRef.current) {
@@ -420,29 +398,23 @@ function Dashboard() {
         organizationId,
         batchId
       });
-
       setLlmContent(assessmentResponse.apiResponseText);
-
       const assessmentChatEntry = {
         user: "",
         system: assessmentResponse.apiResponseText,
       };
-
       setChatHistory((prev) => {
         const finalHistory = [...prev, assessmentChatEntry];
         sessionStorage.setItem("chatHistory", JSON.stringify(finalHistory));
         return finalHistory;
       });
-
       setSessionHistory((prev) => [
         ...prev,
         { Mentee: "", Mentor: assessmentResponse.apiResponseText },
       ]);
-
       setCurrentChatStatus("completed");
       setIsChatEnded(true);
       setEndReason("endRequested");
-
     } catch (error) {
       toast.error("❌ Failed to end session and load assessment.");
       console.error("End session error:", error);
@@ -451,13 +423,10 @@ function Dashboard() {
       setIsProcessingAssessment(false);
     }
   };
-
   const restartWithoutSaving = async () => {
     setShowRestartDialog(false);
     console.log("🔄 Restarting chat without saving");
-
     setIsLoading(true);
-
     try {
       if (selectedConcept) {
         await initiateFirstMentorMessageWithConcept(selectedConcept);
@@ -469,7 +438,6 @@ function Dashboard() {
           await initiateFirstMentorMessageWithConcept(conceptToUse);
         }
       }
-
       await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error restarting chat:", error);
@@ -478,19 +446,14 @@ function Dashboard() {
       setIsLoading(false);
     }
   };
-
   const restartWithSaving = async () => {
     setShowRestartDialog(false);
     console.log("💾 Saving session before restart");
-
     setIsLoading(true);
-
     try {
       const statusToSave = 'completed';
       await handleSaveChat(statusToSave);
-
       clearSessionData();
-
       if (selectedConcept) {
         await initiateFirstMentorMessageWithConcept(selectedConcept);
       } else {
@@ -501,7 +464,6 @@ function Dashboard() {
           await initiateFirstMentorMessageWithConcept(conceptToUse);
         }
       }
-
       await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error saving and restarting chat:", error);
@@ -510,11 +472,9 @@ function Dashboard() {
       setIsLoading(false);
     }
   };
-
   const handleInputChange = (event) => {
     setPrompt(event.target.value);
   };
-
   const handleSendClick = async () => {
     if (voiceRecorderRef.current) {
       await voiceRecorderRef.current.stopRecording(); // 🔴 auto-stop recording
@@ -527,9 +487,7 @@ function Dashboard() {
       toast.warn("Please enter a prompt and select a concept.");
       return;
     }
-
     const isFirstUserMessage = currentStage === 0;
-
     if (isFirstUserMessage) {
       setIsTransitioning(true);
       setCurrentStage(1);
@@ -538,7 +496,6 @@ function Dashboard() {
     setIsLoading(true);
      const userPrompt = prompt.trim();
   setPrompt("");
-
   // Step 1: Add only user message first
   setChatHistory((prev) => {
     const updated = [...prev, { user: userPrompt, system: "" }];
@@ -546,13 +503,11 @@ function Dashboard() {
     return updated;
   });
     console.log("🚀 handleSendClick: Setting isLoading to true");
-
     try {
       // const userPrompt = prompt.trim();
       // setPrompt("");
       const organizationId = sessionStorage.getItem("organizationId");
       const batchId = sessionStorage.getItem("batchId");
-
       const initialResponse = await processPromptAndCallLLM({
         username,
         selectedPrompt,
@@ -563,33 +518,34 @@ function Dashboard() {
         organizationId,
         batchId
       });
-
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
       
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
       let newEndRequested = initialResponse.endRequested || false;
-
       const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
-
       if (isFirstUserMessage || newProgressStage >= currentStage) {
         setCurrentStage(newProgressStage);
         setCurrentChatStatus('inprogress');
       }
-
        setChatHistory((prev) => {
       const updated = [...prev];
-      updated[updated.length - 1].system = formatMarkdownResponse(initialResponse.apiResponseText);
+     const cleaned = initialResponse.apiResponseText.replace(/\*\*(.*?)\*\*/g, '$1');
+updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
+  boldHeadings: false,
+  numberDashLists: true,
+  normalizeBullets: true,
+  normalizeNumbers: true,
+  splitInlineEmojiBullets: true,
+});
       sessionStorage.setItem("chatHistory", JSON.stringify(updated));
       return updated;
     });
-
 
       setSessionHistory((prev) => [
         ...prev,
         { Mentee: userPrompt, Mentor: initialResponse.apiResponseText },
       ]);
-
       if (newEndRequested || newInteractionCompleted) {
         console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
         setIsProcessingAssessment(true);
@@ -608,21 +564,17 @@ function Dashboard() {
           organizationId,
           batchId
         });
-
         setLlmContent(assessmentResponse.apiResponseText);
-
         const assessmentChatEntry = {
           user: "",
           system: assessmentResponse.apiResponseText,
         };
-
         let finalChatHistory = [];
         setChatHistory((prev) => {
           finalChatHistory = [...prev, assessmentChatEntry];
           sessionStorage.setItem("chatHistory", JSON.stringify(finalChatHistory));
           return finalChatHistory;
         });
-
         setSessionHistory((prev) => [
           ...prev,
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
@@ -630,13 +582,11 @@ function Dashboard() {
         console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
         
         setCurrentChatStatus('completed');
-
         if (newInteractionCompleted) {
           setEndReason('interactionCompleted');
         } else {
           setEndReason('endRequested');
         }
-
         setIsChatEnded(true);
         console.log("🔒 handleSendClick: Chat ended, input restricted");
       }
@@ -649,7 +599,6 @@ function Dashboard() {
       setIsProcessingAssessment(false);
     }
   };
-
   const handleDownloadConcept = (downloadLink, conceptName) => {
     if (!downloadLink) {
       toast.warn(`No download available for ${conceptName}`);
@@ -657,7 +606,6 @@ function Dashboard() {
     }
     window.open(downloadLink, '_blank');
   };
-
   const getCurrentStageForAPI = (saveStatus) => {
     if (saveStatus === "not_started") {
       return 0;
@@ -665,36 +613,30 @@ function Dashboard() {
       if (currentStage === 0) return 0;
       return Math.min(Math.max(currentStage - 1, 0), 5);
     }
-
     const frontendStatus = getStageStatus();
     if (frontendStatus === 'not-started') return 0;
     if (currentStage === 7) return 5;
     return Math.min(Math.max(currentStage - 1, 0), 5);
   };
-
   const getFrontendStatusForSave = () => {
     if (isChatEnded) {
       return 'completed';
     }
-
     if (currentStage === 0 && chatHistory.length <= 1) {
       return 'not_started';
     } else {
       return 'inprogress';
     }
   };
-
   const handleSaveChat = async (requestedStatus = null, showLoader = true) => {
     if (!username) {
       toast.error("Cannot save chat: User not identified.");
       return;
     }
-
     if (chatHistory.length === 0) {
       toast.warn("No chat history to save.");
       return;
     }
-
     if (!selectedConcept || !selectedConcept.concept_name) {
       const concepts = await fetchAndReturnConcepts();
       if (concepts.length > 0) {
@@ -705,17 +647,14 @@ function Dashboard() {
         return;
       }
     }
-
     const statusToSave = requestedStatus || getFrontendStatusForSave();
     const stageToSave = getCurrentStageForAPI(statusToSave);
     const conceptNameToSave = selectedConcept?.concept_name;
-
     let scoring_data = null;
     if (statusToSave === 'completed' && llmContent) {
       scoring_data = extractScoringData(llmContent);
       console.log("📊 Extracted scoring data for save:", scoring_data);
     }
-
     console.log("💾 Saving chat with:", {
       requestedStatus,
       statusToSave,
@@ -727,24 +666,19 @@ function Dashboard() {
       conceptName: conceptNameToSave,
       hasScoring: !!scoring_data
     });
-
     if (showLoader) setIsLoading(true);
-
     try {
       let response;
       let actionMessage = "";
-
       const requestData = {
         conversation: chatHistory,
         status: statusToSave,
         current_stage: stageToSave,
         concept_name: conceptNameToSave
       };
-
       if (statusToSave === 'completed' && scoring_data) {
         requestData.scoring_data = scoring_data;
       }
-
       if (currentChatId && sessionType === "resume") {
         response = await axios.put(`${BASE_URL}/chat/conversation/${currentChatId}`, requestData, config);
         actionMessage = `Updated existing chat (ID: ${currentChatId})`;
@@ -755,9 +689,7 @@ function Dashboard() {
         });
         actionMessage = "Created new chat";
       }
-
       setShowSaveOptions(false);
-
       console.log("✅ Chat saved successfully:", {
         status: statusToSave,
         stage: stageToSave,
@@ -765,7 +697,6 @@ function Dashboard() {
         chatId: response.data.data.id,
         hasScoring: !!response.data.data.scoring
       });
-
       if (response.data.data.scoring) {
         console.log("📊 Scoring data saved:", {
           sixFacetsAverage: response.data.data.scoring.six_facets.average,
@@ -773,7 +704,6 @@ function Dashboard() {
           finalScore: response.data.data.scoring.final_score
         });
       }
-
       toast.success(`Chat saved as ${statusToSave}!`, {
         position: "top-right",
         autoClose: 3000,
@@ -782,16 +712,13 @@ function Dashboard() {
         pauseOnHover: true,
         draggable: true,
       });
-
       if (response.data.data.shouldStartFresh) {
         clearSessionData();
-
         if (statusToSave === "completed") {
           setTimeout(async () => {
             await initiateFirstMentorMessage();
           }, 1000);
         }
-
         setSessionType(statusToSave === "completed" ? "completed" : "fresh");
         setCurrentChatId(null);
         setResumedFromStatus(null);
@@ -804,10 +731,8 @@ function Dashboard() {
         setResumedFromStatus(statusToSave);
         setCurrentChatStatus(statusToSave);
       }
-
       sessionStorage.setItem("chatHistory", JSON.stringify(chatHistory));
       await fetchChatCounts();
-
     } catch (error) {
       console.error("❌ Error saving chat:", error);
       if (error.response) {
@@ -833,16 +758,13 @@ function Dashboard() {
       if (showLoader) setIsLoading(false);
     }
   };
-
   const fetchChatCounts = async () => {
     if (!userId) {
       return;
     }
-
     setIsCountsLoading(true);
     try {
       const response = await axios.get(`${BASE_URL}/chat/counts/${userId}`, config);
-
       if (
         response.data &&
         response.data.success &&
@@ -860,30 +782,24 @@ function Dashboard() {
       setIsCountsLoading(false);
     }
   };
-
   const checkSessionStatus = async (conceptName = null) => {
     if (!username || !userId) {
       setIsInitializing(false);
       return;
     }
-
     setIsLoading(true);
     try {
       let apiUrl = `${BASE_URL}/chat/session-status/${userId}`;
       if (conceptName) {
         apiUrl += `?concept_name=${encodeURIComponent(conceptName)}`;
       }
-
       const response = await axios.get(apiUrl, config);
-
       if (response.data && response.data.success) {
         const { sessionType, hasActiveSession, shouldStartFresh, chat } = response.data.data;
-
         if (chat && chat.status === 'completed') {
           console.log("🎯 Resumed session is completed, starting fresh conversation instead");
           clearSessionData();
           setCurrentChatStatus('not_started');
-
           const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             const conceptToUse = currentConcepts.find(c => c.concept_name === chat.concept_name) || currentConcepts[0];
@@ -892,40 +808,32 @@ function Dashboard() {
           }
           return;
         }
-
         if (sessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
           console.log("🔄 Resuming existing session:", chat);
-
           setChatHistory(chat.conversation);
-
           const loadedSessionHistory = chat.conversation
             .filter((item) => item.user !== undefined && item.system !== undefined)
             .map((item) => ({ Mentee: item.user, Mentor: item.system }));
           setSessionHistory(loadedSessionHistory);
-
           setCurrentChatId(chat.id);
           setSessionType("resume");
           setResumedFromStatus(chat.status);
           setCurrentChatStatus(chat.status);
-
           const progressStage = mapApiStageToProgressbarIndex(
             chat.current_stage,
             chat.status,
             false
           );
           setCurrentStage(progressStage);
-
           console.log("✅ Session resumed with stage:", {
             apiStage: chat.current_stage,
             status: chat.status,
             progressStage: progressStage,
             conceptName: chat.concept_name
           });
-
           sessionStorage.setItem("chatHistory", JSON.stringify(chat.conversation));
           sessionStorage.setItem("currentChatId", chat.id.toString());
           sessionStorage.setItem("sessionType", "resume");
-
           if (chat.concept_name && concepts.length > 0) {
             const matchingConcept = concepts.find(c => c.concept_name === chat.concept_name);
             if (matchingConcept) {
@@ -949,19 +857,15 @@ function Dashboard() {
           console.log("🆕 Starting fresh session");
           clearSessionData();
           setCurrentChatStatus('not_started');
-
           const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             let conceptToUse;
-
             if (conceptName) {
               conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
             }
-
             if (!conceptToUse) {
               conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
             }
-
             if (conceptToUse) {
               console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
               setSelectedConcept(conceptToUse);
@@ -973,19 +877,15 @@ function Dashboard() {
         console.log("⚠️ No session data, starting fresh");
         clearSessionData();
         setCurrentChatStatus('not_started');
-
         const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
         if (currentConcepts.length > 0) {
           let conceptToUse;
-
           if (conceptName) {
             conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
           }
-
           if (!conceptToUse) {
             conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
           }
-
           console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
           setSelectedConcept(conceptToUse);
           await initiateFirstMentorMessageWithConcept(conceptToUse);
@@ -993,25 +893,20 @@ function Dashboard() {
           console.error("❌ No concepts available for fresh conversation");
         }
       }
-
       await fetchChatCounts();
     } catch (error) {
       console.error("❌ Error checking session status:", error);
       clearSessionData();
       setCurrentChatStatus('not_started');
-
       const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
       if (currentConcepts.length > 0) {
         let conceptToUse;
-
         if (conceptName) {
           conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
         }
-
         if (!conceptToUse) {
           conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
         }
-
         console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
         setSelectedConcept(conceptToUse);
         await initiateFirstMentorMessageWithConcept(conceptToUse);
@@ -1024,7 +919,6 @@ function Dashboard() {
       isInitializingRef.current = false;
     }
   };
-
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -1033,7 +927,6 @@ function Dashboard() {
       }
     }
   };
-
   const handleConceptSelect = async (concept) => {
     if (isProcessingAssessment) {
       toast.warn("⚠️ Please wait, assessment is being processed.");
@@ -1042,24 +935,19 @@ function Dashboard() {
     console.log("🎯 Concept selected:", concept.concept_name);
     setSelectedConcept(concept);
     setShowConceptDropdown(false);
-
     clearSessionData();
     setCurrentChatStatus('not_started');
-
     console.log("🔍 Checking session status for concept:", concept.concept_name);
     await checkSessionStatus(concept.concept_name);
   };
-
   const getStageStatus = () => {
     if (currentChatStatus === 'completed') return 'completed';
     if (currentChatStatus === 'not_started') return 'not-started';
     if (currentChatStatus === 'inprogress') return 'in-progress';
-
     if (currentStage === 0) return 'not-started';
     if (currentStage === 7) return 'completed';
     return 'in-progress';
   };
-
   useEffect(() => {
     if (username && userId && !isInitializingRef.current) {
       isInitializingRef.current = true; // Set lock to prevent concurrent initializations
@@ -1071,7 +959,6 @@ function Dashboard() {
           if (concepts.length === 0) {
             await fetchConcepts();
           }
-
           const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
@@ -1088,39 +975,31 @@ function Dashboard() {
           isInitializingRef.current = false;
         }
       };
-
       initializeSession();
     }
   }, [username, userId]);
-
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [chatHistory]);
-
   useEffect(() => {
     if (!isInitializing && !chatHistory.length) {
       const savedSessionType = sessionStorage.getItem("sessionType");
-
       if (savedSessionType === "completed") {
         clearSessionData();
         return;
       }
-
       const savedHistory = sessionStorage.getItem("chatHistory");
       const savedChatId = sessionStorage.getItem("currentChatId");
-
       if (savedHistory && savedSessionType === "resume") {
         try {
           const parsedHistory = JSON.parse(savedHistory);
           if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
             setChatHistory(parsedHistory);
-
             if (savedChatId) {
               setCurrentChatId(parseInt(savedChatId));
               setSessionType("resume");
-
               if (parsedHistory.length > 1) {
                 setCurrentStage(1);
               } else {
@@ -1135,7 +1014,6 @@ function Dashboard() {
       }
     }
   }, [isInitializing, chatHistory.length]);
-
   useEffect(() => {
     if (
       chatHistory.length > 0 &&
@@ -1144,7 +1022,6 @@ function Dashboard() {
     ) {
       const lastEntry = chatHistory[chatHistory.length - 1];
       const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
-
       if (isAssessmentEntry && currentChatStatus === 'completed') {
         console.log("💾 Detected assessment response, auto-saving as completed...");
         handleSaveChat('completed', false);
@@ -1158,7 +1035,6 @@ function Dashboard() {
       }
     }
   }, [chatHistory, isInitializing, currentChatStatus, isLoading]);
-
   return (
     <div className="learning-dashboard">
       <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} menuOpen={menuOpen}
@@ -1310,7 +1186,6 @@ function Dashboard() {
               <FiTrendingUp className="section-icon" />
               <h3>Learning Progress</h3>
             </div>
-
             <div className="stage-cards">
               <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
                 <div className="stage-icon not-started">
@@ -1439,7 +1314,6 @@ function Dashboard() {
                           <div className="message-text">{item.user}</div>
                         </div>
                       </div>
-
                     )}
                     {item.system && (
                       <div className="message mentor-message">
@@ -1456,9 +1330,9 @@ function Dashboard() {
                               <AssessmentDisplay content={item.system} />
                             ) : (
                               // Normal mentor text → Markdown
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {item.system}
-                              </ReactMarkdown>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+  {item.system}
+</ReactMarkdown>
                             )}
                           </div>
                         </div>
@@ -1570,5 +1444,4 @@ function Dashboard() {
     </div>
   );
 }
-
 export default Dashboard;
