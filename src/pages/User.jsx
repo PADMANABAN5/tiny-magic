@@ -169,21 +169,21 @@ export default function User() {
       console.error("Error fetching dropdown data (batches/pods):", err);
     }
   };
-
-  const fetchUnassignedUsersForOrg = async (organizationName) => {
+ 
+  const fetchAllUsersForOrg = async (organizationName) => {
     if (!organizationName) {
       setUnassignedOrgUsers([]);
       return;
     }
     try {
       const res = await axios.get(
-        `${process.env.REACT_APP_API_LINK}/pod-users/unassigned/${organizationName}`,
+        `${process.env.REACT_APP_API_LINK}/pod-users/users/${organizationName}`,
         config
       );
       setUnassignedOrgUsers(res.data.data || []);
     } catch (err) {
       console.error(
-        `Error fetching unassigned users for ${organizationName}:`,
+        `Error fetching all users for ${organizationName}:`,
         err
       );
       setUnassignedOrgUsers([]);
@@ -392,7 +392,7 @@ export default function User() {
 
   useEffect(() => {
     if (newUser.organization_name) {
-      fetchUnassignedUsersForOrg(newUser.organization_name);
+      fetchAllUsersForOrg(newUser.organization_name);
     } else {
       setUnassignedOrgUsers([]);
     }
