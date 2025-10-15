@@ -311,10 +311,18 @@ export default function User() {
 
   // --- Filtering and Pagination ---
 
-  const filteredUnassignedUsers = unassignedOrgUsers.filter((user) =>
-    (user.email || "").toLowerCase().includes(userSearchTerm.toLowerCase())
+ const filteredUnassignedUsers = unassignedOrgUsers.filter((user) => {
+  const searchLower = userSearchTerm.toLowerCase();
+  const fullName = `${user.first_name || ""} ${user.last_name || ""}`.toLowerCase();
+  const username = (user.username || "").toLowerCase();
+  const email = (user.email || "").toLowerCase();
+  
+  return (
+    fullName.includes(searchLower) ||
+    username.includes(searchLower) ||
+    email.includes(searchLower)
   );
-
+});
   const assignedUsers = podUsers.filter((user) => user.assigned);
 
   const filteredAssignedUsers = assignedUsers.filter((user) => {
@@ -823,7 +831,7 @@ export default function User() {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Search user name or email..."
+                placeholder="Search user name..."
                 value={userSearchTerm}
                 onChange={(e) => setUserSearchTerm(e.target.value)}
               />

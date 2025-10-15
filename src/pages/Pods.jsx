@@ -60,7 +60,7 @@ export default function Pods() {
   };
 
   // Helper to clean mentors array (remove empties, though not needed for react-select)
-  const cleanMentors = () => podForm.mentors.filter(m => m && m.trim() !== "");
+  const cleanMentors = () => podForm.mentors.filter(m => m);
 
   const filteredPods = pods.filter((pod) => {
     const podNameMatch = pod.pod_name
@@ -233,7 +233,7 @@ export default function Pods() {
     setPodForm({
       organization_id: pod.organization_id || "",
       batch_id: pod.batch_id || "",
-      mentors: pod.mentors ? pod.mentors.map(m => m.email) : [],  // Load existing as array of emails
+      mentors: pod.mentors ? pod.mentors.map(m => m.user_id) : [],  // Load existing as array of emails
       pod_name: pod.pod_name || "",
       is_active: pod.is_active || false,
     });
@@ -348,7 +348,7 @@ export default function Pods() {
     return (
       <ul style={{ margin: 0, paddingLeft: '15px' }}>
         {podMentors.map((m, index) => (
-          <li key={index}>{`${m.first_name || ""} ${m.last_name || ""}`.trim() || m.email}</li>
+          <li key={index}>{`${m.first_name || ""} ${m.last_name || ""}`.trim() || m.user_id}</li>
         ))}
       </ul>
     );
@@ -356,7 +356,7 @@ export default function Pods() {
 
   // react-select options for mentors
   const mentorOptions = mentors.map(mentor => ({
-    value: mentor.email,
+    value: mentor.user_id,
     label: `${`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()}`
   }));
 
