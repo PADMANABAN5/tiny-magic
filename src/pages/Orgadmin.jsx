@@ -28,6 +28,8 @@ import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import usePreventBack from "../utils/usePreventBack";
 import '../styles/orgadmin.css';
+import { FaRobot, FaTasks, FaUsers } from "react-icons/fa";
+
 // Define common table cell styles for consistency
 const baseCell = {
   padding: "8px",
@@ -969,6 +971,51 @@ function Orgadmin() {
             </Card.Body>
           </Card>
          
+         {/*Show Models, Assignment*/}
+          <Row className="mb-4 g-4">
+            <Col xs={12} md={4}>
+              <Card className="shadow-sm rounded-4 border-0 h-100">
+                <Card.Body>
+                  <div className="d-flex align-items-center mb-2">
+                    <FaRobot size={38} className="me-3" style={{ color: "#00b2d7" }} />
+                    <div>
+                      <span className="fw-bold fs-5">Show Models</span>
+                      <p className="mb-2 small text-muted">View all available OpenAI models.</p>
+                      <Button variant="primary" size="sm" onClick={() => navigate('/orgadmin/models')}>View Models</Button>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col xs={12} md={4}>
+              <Card className="shadow-sm rounded-4 border-0 h-100">
+                <Card.Body>
+                  <div className="d-flex align-items-center mb-2">
+                    <FaTasks size={38} className="me-3" style={{ color: "#43e97b" }} />
+                    <div>
+                      <span className="fw-bold fs-5">Show Assignments</span>
+                      <p className="mb-2 small text-muted">Check all model assignments within your org.</p>
+                      <Button variant="success" size="sm" onClick={() => navigate('/orgadmin/assignments')}>View Assignments</Button>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col xs={12} md={4}>
+              <Card className="shadow-sm rounded-4 border-0 h-100">
+                <Card.Body>
+                  <div className="d-flex align-items-center mb-2">
+                    <FaUsers size={38} className="me-3" style={{ color: "#f7971e" }} />
+                    <div>
+                      <span className="fw-bold fs-5">Org Specific Models</span>
+                      <p className="mb-2 small text-muted">Explore models created only for your org.</p>
+                      <Button variant="info" size="sm"  onClick={() => navigate('/orgadmin/organization-models')}>View Org Models</Button>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
 
           {/* Batch Cards */}
           {!pageLoading && !batchesError && (
