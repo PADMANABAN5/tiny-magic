@@ -251,32 +251,26 @@ function AssignmentOrg() {
                   <table className="table table-hover align-middle">
                     <thead className="bg-dark text-white">
                       <tr>
-                        <th>ID</th>
+
                         <th>Model Name</th>
                         <th>Display Name</th>
                         <th>Level</th>
                         <th>Organization</th>
                         <th>Batch</th>
-                        <th>Created</th>
-                        <th>Updated</th>
+          
                         <th className="text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {assignments.map((a) => (
                         <tr key={a.assignment_id}>
-                          <td>{a.assignment_id}</td>
+                         
                           <td>{a.model_name}</td>
                           <td>{a.name || "—"}</td>
                           <td>{a.level}</td>
                           <td>{a.organization_name || "—"}</td>
                           <td>{a.batch_name || "—"}</td>
-                          <td>
-                            {new Date(a.created_at).toLocaleString("en-GB")}
-                          </td>
-                          <td>
-                            {new Date(a.updated_at).toLocaleString("en-GB")}
-                          </td>
+                         
                           <td className="text-center">
                             <Button
                               variant="outline-success"

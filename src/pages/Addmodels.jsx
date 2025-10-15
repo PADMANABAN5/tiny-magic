@@ -486,42 +486,97 @@ const handleDelete = async (modelId, modelName) => {
       <h5 className="mb-3 text-center">{editMode ? 'Edit Model' : 'Add New Model'}</h5>
 
       <div className="mb-3">
-        <label className="form-label">
-           Name <span style={{ color: "red" }}>*</span>
-        </label>
-        <input
-          type="text"
-          className="form-control"
-          onCopy={allowCopyPaste}
-          onCut={allowCopyPaste}
-          onKeyDown={allowCopyPaste}
-          onPaste={allowCopyPaste}
-          value={modelName}
-          onChange={(e) => setModelName(e.target.value)}
-          placeholder="e.g., gpt-4o"
-        />
-        <div className="form-text text-muted">
-          Enter the model name exactly as specified in OpenAI documentation (
-          <code>gpt-4o</code>, <code>gpt-4</code>, <code>gpt-3.5-turbo</code>).
-        </div>
-      </div>
+  <label className="form-label">
+    Model <span style={{ color: "red" }}>*</span>
+  </label>
+  <input
+    type="text"
+    className="form-control"
+    onCopy={allowCopyPaste}
+    onCut={allowCopyPaste}
+    onKeyDown={allowCopyPaste}
+    onPaste={allowCopyPaste}
+    value={modelName}
+    onChange={(e) => {
+      const value = e.target.value;
+      const validPattern = /^[A-Za-z0-9._\- ]*$/;
+
+      // Check for invalid characters
+      if (!validPattern.test(value)) {
+        toast.warning(
+          "Invalid character ignored — only letters, numbers, '.', '-', '_' allowed.",
+          {
+            autoClose: 2000,
+            hideProgressBar: true,
+          }
+        );
+        return;
+      }
+
+      // Check for max length (30)
+      if (value.length > 30) {
+        toast.info("Maximum 30 characters reached.", {
+          autoClose: 2000,
+          hideProgressBar: true,
+        });
+        return;
+      }
+
+      setModelName(value);
+    }}
+    placeholder="e.g., gpt-4o"
+    pattern="^[A-Za-z0-9._\\- ]*$"
+  />
+  <div className="form-text text-muted">
+    Enter the model name exactly as specified in OpenAI documentation (
+    <code>gpt-4o</code>, <code>gpt-4</code>, <code>gpt-3.5-turbo</code>).
+  </div>
+</div>
 
       <div className="mb-3">
-        <label className="form-label">
-          Name <span style={{ color: "red" }}>*</span>
-        </label>
-        <input
-          type="text"
-          onCopy={allowCopyPaste}
-          onCut={allowCopyPaste}
-          onKeyDown={allowCopyPaste}
-          onPaste={allowCopyPaste}
-          className="form-control"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Enter name "
-        />
-      </div>
+  <label className="form-label">
+    Name <span style={{ color: "red" }}>*</span>
+  </label>
+  <input
+    type="text"
+    onCopy={allowCopyPaste}
+    onCut={allowCopyPaste}
+    onKeyDown={allowCopyPaste}
+    onPaste={allowCopyPaste}
+    className="form-control"
+    value={name}
+    onChange={(e) => {
+      const value = e.target.value;
+      const validPattern = /^[A-Za-z0-9._\- ]*$/; // same as model field
+
+      // Check for invalid characters
+      if (!validPattern.test(value)) {
+        toast.warning(
+          "Invalid character ignored — only letters, numbers, '.', '-', '_' allowed.",
+          {
+            autoClose: 2000,
+            hideProgressBar: true,
+          }
+        );
+        return;
+      }
+
+      // Check for max length (30)
+      if (value.length > 30) {
+        toast.info("Maximum 30 characters reached.", {
+          autoClose: 2000,
+          hideProgressBar: true,
+        });
+        return;
+      }
+
+      setName(value);
+    }}
+    placeholder="Enter name"
+    pattern="^[A-Za-z0-9._\\- ]*$"
+  />
+</div>
+
 
       <div className="mb-3">
         <label className="form-label">

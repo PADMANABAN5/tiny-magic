@@ -210,6 +210,10 @@ function AddOrgModels() {
   const currentModels = filteredModels.slice(idxFirst, idxLast);
   const totalPages = Math.ceil(filteredModels.length / itemsPerPage);
 
+  const allowCopyPaste = (e) => {
+    e.stopPropagation(); // Prevent global event handlers from blocking
+  };
+
   return (
     <div className="main-layout-container">
       <Supersidebar />
@@ -226,7 +230,7 @@ function AddOrgModels() {
           </div>
 
           <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap">
-            <h3 className="mb-0">Organization Models</h3>
+            <h3 className="mb-0">Add Models</h3>
            <button
   className="btn btn-primary d-flex align-items-center justify-content-center gap-2"
   style={{ minWidth: "120px" }}
@@ -368,6 +372,10 @@ function AddOrgModels() {
   </label>
   <input
     type="text"
+    onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onPaste={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
     className="form-control"
     value={modelName}
     onChange={(e) => {
@@ -409,6 +417,10 @@ function AddOrgModels() {
   </label>
   <input
     type="text"
+    onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onPaste={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
     className="form-control"
     value={name}
     onChange={(e) => {
@@ -450,6 +462,10 @@ function AddOrgModels() {
         </label>
         <input
           type="text"
+          onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onPaste={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
           className="form-control"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
@@ -460,6 +476,10 @@ function AddOrgModels() {
       <div className="mb-3">
         <label className="form-label">Description</label>
         <textarea
+         onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onPaste={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
           className="form-control"
           rows="3"
           value={description}
@@ -469,18 +489,23 @@ function AddOrgModels() {
       </div>
 
       {/* ✅ NEW FIELD ADDED BELOW — Activate / Deactivate toggle */}
-      <div className="form-check form-switch mb-3">
-        <input
-          className="form-check-input"
-          type="checkbox"
-          id="isActiveSwitch"
-          checked={isActive}
-          onChange={(e) => setIsActive(e.target.checked)}
-        />
-        <label className="form-check-label" htmlFor="isActiveSwitch">
-          {isActive ? "Active" : "Inactive"}
-        </label>
-      </div>
+      {/* ✅ ONLY show the toggle during Edit mode */}
+{editMode && (
+  <div className="form-check form-switch mb-3">
+    <input
+      className="form-check-input"
+      type="checkbox"
+      id="isActiveSwitch"
+      checked={isActive}
+      onChange={(e) => setIsActive(e.target.checked)}
+    />
+    <label className="form-check-label" htmlFor="isActiveSwitch">
+      {isActive ? "Active" : "Inactive"}
+    </label>
+  </div>
+)}
+{/* ✅ END toggle */}
+
       {/* ✅ END OF NEW FIELD */}
 
       <div className="d-flex justify-content-end gap-2 mt-3">
