@@ -7,10 +7,10 @@ import { Modal, Button, Form, Pagination } from "react-bootstrap";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { useAuth } from '../components/AuthContext';
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
-const API_BASE = `${BASE_URL}/llm`;
-const API_BASE_ADMIN = `${BASE_URL}`;
+
 
 function Assignmodels() {
   const navigate = useNavigate();
@@ -25,6 +25,14 @@ function Assignmodels() {
   const [selectedBatch, setSelectedBatch] = useState('');
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
+   const { token } = useAuth();
+    const config = {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+    };
+  
   // Pagination and search states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -131,7 +139,7 @@ function Assignmodels() {
 
   const fetchModels = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/models`);
+      const response = await axios.get(`${BASE_URL}/llm/models`,config);
       setModels(response.data.data || []);
     } catch (err) {
       const errorMsg = handleApiError(err, 'fetching models');
@@ -142,7 +150,7 @@ function Assignmodels() {
 
   const fetchAssignments = async () => {
     try {
-      const response = await axios.get(`${API_BASE}/assignments`);
+      const response = await axios.get(`${BASE_URL}/llm/assignments`,config);
       setAssignments(response.data.data || []);
     } catch (err) {
       const errorMsg = handleApiError(err, 'fetching assignments');
@@ -153,7 +161,7 @@ function Assignmodels() {
 
   const fetchOrganizations = async () => {
     try {
-      const response = await axios.get(`${API_BASE_ADMIN}/organizations`);
+      const response = await axios.get(`${BASE_URL}/organizations/active`,config);
       setOrganizations(response.data.data || []);
     } catch (err) {
       const errorMsg = handleApiError(err, 'fetching organizations');
@@ -164,7 +172,7 @@ function Assignmodels() {
 
   const fetchBatches = async () => {
     try {
-      const response = await axios.get(`${API_BASE_ADMIN}/batches`);
+      const response = await axios.get(`${BASE_URL}/batches`,config);
       setBatches(response.data.data || []);
     } catch (err) {
       const errorMsg = handleApiError(err, 'fetching batches');
@@ -230,10 +238,10 @@ function Assignmodels() {
     try {
       let response;
       if (isEditMode && selectedAssignmentId) {
-        response = await axios.put(`${API_BASE}/assignment/${selectedAssignmentId}`, payload);
+        response = await axios.put(`${BASE_URL}/llm/assignments/${selectedAssignmentId}`, payload ,config);
         showToastMsg('Assignment updated successfully!', 'primary');
       } else {
-        response = await axios.post(`${API_BASE}/assignment`, payload);
+        response = await axios.post(`${BASE_URL}/llm/assignments`, payload ,config);
         showToastMsg('Model assigned successfully!', 'primary');
       }
       if (response.data.success) {
