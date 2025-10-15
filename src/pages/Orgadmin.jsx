@@ -32,7 +32,7 @@ import { FiPlus } from "react-icons/fi"; // ✅ correct import for FiPlus
 import "react-datepicker/dist/react-datepicker.css";
 import usePreventBack from "../utils/usePreventBack";
 import '../styles/orgadmin.css';
-import { FaRobot, FaTasks, FaUsers } from "react-icons/fa";
+import { FaRobot, FaTasks, FaUsers, FaDatabase } from "react-icons/fa";
 
 // Define common table cell styles for consistency
 const baseCell = {
@@ -283,7 +283,7 @@ function Orgadmin() {
       return (
         <tr key={key}>
           <td style={tdStyle}>{displayName}</td>
-          
+
           <td style={tdStyle}>{item.concept_name}</td>
           <td style={tdStyle}>{item.status}</td>
           <td style={tdStyle}>{item.current_stage}</td>
@@ -594,7 +594,7 @@ function Orgadmin() {
           {/* Welcome Card */}
           <Card
             className="shadow-sm mb-3 mt-4 border-0 rounded-3"
-                     >
+          >
             <Card.Body className="">
               <h1 className="fs-3 text-dark mb-2">
                 Welcome, <span className="text-primary">{fullName}</span> 👋
@@ -608,374 +608,374 @@ function Orgadmin() {
           </Card>
           <Card className="border-0 rounded-3 shadow-sm mb-4">
             <Card.Body>
-               {pageLoading && (
-            <div className="text-center my-5">
-              <Spinner animation="border" role="status" />
-              <p className="mt-2">Loading data...</p>
-            </div>
-          )}
-
-          {!pageLoading && (batchesError || progressError) && (
-            <Alert variant="danger" className="text-center">
-              {batchesError || progressError}
-            </Alert>
-          )}
-
-          {/* NEW: Progress Report Table */}
-          {!pageLoading && !progressError && (
-            <>
-              <h2 className="fs-4 text-dark" style={{ textAlign: "left" }}>
-                Progress Report
-              </h2>
-
-              <div className="progress-table-filter d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 gap-3">
-                {/* Items per page */}
-                <div className="d-flex align-items-center">
-                  <span className="me-2">Show entries:</span>
-                  <Form.Select
-                    value={progressItemsPerPage}
-                    onChange={handleProgressItemsPerPageChange}
-                    style={{ width: "90px" }}
-                    size="sm"
-                  >
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="20">20</option>
-                    <option value="50">50</option>
-                  </Form.Select>
+              {pageLoading && (
+                <div className="text-center my-5">
+                  <Spinner animation="border" role="status" />
+                  <p className="mt-2">Loading data...</p>
                 </div>
-
-                {/* Date Filter - Using react-datepicker */}
-                <div className="date-pic d-flex  flex-md-row flex-column align-items-start align-items-md-center gap-2 w-100">
-
-                  <div className="d-flex align-items-md-center date-pick-div">
-                    <span className="me-2">Filter by date:</span>
-                    <DatePicker
-                      selected={filterStartDate}
-                      onChange={(date) => {
-                        setFilterStartDate(date);
-                        setCurrentPage(1);
-                      }}
-                      selectsStart
-                      startDate={filterStartDate}
-                      endDate={filterEndDate}
-                      placeholderText="Start Date"
-                      className="form-control form-control-sm"
-                      dateFormat="yyyy-MM-dd"
-                      isClearable
-                    />
-                    <span className="mx-1">to</span>
-                    <DatePicker
-                      selected={filterEndDate}
-                      onChange={(date) => {
-                        setFilterEndDate(date);
-                        setCurrentPage(1);
-                      }}
-                      selectsEnd
-                      startDate={filterStartDate}
-                      endDate={filterEndDate}
-                      minDate={filterStartDate}
-                      placeholderText="End Date"
-                      className="form-control form-control-sm"
-                      dateFormat="yyyy-MM-dd"
-                      isClearable
-                    />
-                  </div>
-
-                  {/* Search Inputs (now below date filter) */}
-                  <div
-                    className="d-flex flex-grow-1 gap-2"
-                    style={{ maxWidth: "400px" }}
-                  >
-                    <Form.Control
-                      placeholder="Search by Full Name"
-                      value={searchFullName}
-                      onChange={(e) => {
-                        setSearchFullName(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      size="sm"
-                    />
-                    
-                  </div>
-                </div>
-
-                {(filterStartDate ||
-                  filterEndDate ||
-                  searchFullName ||
-                  searchEmail ||
-                  filterConceptName ||
-                  filterStatus ||
-                  filterStage ||
-                  filterBatchName ||
-                  filterPodName) && (
-                  <Button
-                    variant="outline-danger"
-                    size="sm"
-                    onClick={handleClearAllFilters}
-                  >
-                    Clear Filters
-                  </Button>
-                )}
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="primary"
-                    size="sm"
-                    className="text-white"
-                  >
-                    <FiDownload className="me-1" /> Download
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu>
-                    <Dropdown.Item onClick={handleDownloadPDF}>
-                      Download as PDF
-                    </Dropdown.Item>
-                    <Dropdown.Item onClick={handleDownloadExcel}>
-                      Download as Excel
-                    </Dropdown.Item>
-                  </Dropdown.Menu>
-                </Dropdown>
-              </div>
-
-              {/* Filter summary */}
-              <div className="mb-2 small text-muted">
-                Showing {currentPageProgressData.length} of{" "}
-                {filteredSortedProgress.length} records
-                {progressReportData.length !== filteredSortedProgress.length &&
-                  ` (filtered from ${progressReportData.length} total)`}
-                .{filterConceptName && ` | Concept: ${filterConceptName}`}
-                {filterStatus && ` | Status: ${filterStatus}`}
-                {filterStage && ` | Stage: ${filterStage}`}
-                {filterBatchName && ` | Batch: ${filterBatchName}`}
-                {filterPodName && ` | Pod: ${filterPodName}`}
-                {filterStartDate &&
-                  ` | From: ${filterStartDate.toLocaleDateString()}`}
-                {filterEndDate &&
-                  ` | To: ${filterEndDate.toLocaleDateString()}`}
-              </div>
-
-              <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
-                {/* Concept Name Filter */}
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="outline-secondary"
-                    size="sm"
-                    className="d-flex align-items-center"
-                  >
-                    {filterConceptName || "Concept Name"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu
-                    style={{ maxHeight: "300px", overflowY: "auto" }}
-                  >
-                    <Dropdown.Item
-                      active={!filterConceptName}
-                      onClick={() => setFilterConceptName("")}
-                    >
-                      All Concepts
-                    </Dropdown.Item>
-                    {getUniqueValues(progressReportData, "concept_name").map(
-                      (name) => (
-                        <Dropdown.Item
-                          key={name}
-                          active={filterConceptName === name}
-                          onClick={() => {
-                            setFilterConceptName(name);
-                            setCurrentPage(1);
-                          }}
-                        >
-                          {name}
-                        </Dropdown.Item>
-                      )
-                    )}
-                  </Dropdown.Menu>
-                </Dropdown>
-
-                {/* Status Filter */}
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="outline-secondary"
-                    size="sm"
-                    className="d-flex align-items-center"
-                  >
-                    {filterStatus || "Status"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu
-                    style={{ maxHeight: "300px", overflowY: "auto" }}
-                  >
-                    <Dropdown.Item
-                      active={!filterStatus}
-                      onClick={() => setFilterStatus("")}
-                    >
-                      All Statuses
-                    </Dropdown.Item>
-                    {getUniqueValues(progressReportData, "status").map(
-                      (status) => (
-                        <Dropdown.Item
-                          key={status}
-                          active={filterStatus === status}
-                          onClick={() => {
-                            setFilterStatus(status);
-                            setCurrentPage(1);
-                          }}
-                        >
-                          {status}
-                        </Dropdown.Item>
-                      )
-                    )}
-                  </Dropdown.Menu>
-                </Dropdown>
-
-                {/* Stage Filter */}
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="outline-secondary"
-                    size="sm"
-                    className="d-flex align-items-center"
-                  >
-                    {filterStage || "Stage"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu
-                    style={{ maxHeight: "300px", overflowY: "auto" }}
-                  >
-                    <Dropdown.Item
-                      active={!filterStage}
-                      onClick={() => setFilterStage("")}
-                    >
-                      All Stages
-                    </Dropdown.Item>
-                    {getUniqueValues(progressReportData, "current_stage").map(
-                      (stage) => (
-                        <Dropdown.Item
-                          key={stage}
-                          active={filterStage === stage}
-                          onClick={() => {
-                            setFilterStage(stage);
-                            setCurrentPage(1);
-                          }}
-                        >
-                          {stage}
-                        </Dropdown.Item>
-                      )
-                    )}
-                  </Dropdown.Menu>
-                </Dropdown>
-
-                {/* Batch Name Filter */}
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="outline-secondary"
-                    size="sm"
-                    className="d-flex align-items-center"
-                  >
-                    {filterBatchName || "Batch Name"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu
-                    style={{ maxHeight: "300px", overflowY: "auto" }}
-                  >
-                    <Dropdown.Item
-                      active={!filterBatchName}
-                      onClick={() => setFilterBatchName("")}
-                    >
-                      All Batches
-                    </Dropdown.Item>
-                    {getUniqueValues(progressReportData, "batch_name").map(
-                      (name) => (
-                        <Dropdown.Item
-                          key={name}
-                          active={filterBatchName === name}
-                          onClick={() => {
-                            setFilterBatchName(name);
-                            setCurrentPage(1);
-                          }}
-                        >
-                          {name}
-                        </Dropdown.Item>
-                      )
-                    )}
-                  </Dropdown.Menu>
-                </Dropdown>
-
-                {/* Pod Name Filter */}
-                <Dropdown>
-                  <Dropdown.Toggle
-                    variant="outline-secondary"
-                    size="sm"
-                    className="d-flex align-items-center"
-                  >
-                    {filterPodName || "Pod Name"}
-                  </Dropdown.Toggle>
-                  <Dropdown.Menu
-                    style={{ maxHeight: "300px", overflowY: "auto" }}
-                  >
-                    <Dropdown.Item
-                      active={!filterPodName}
-                      onClick={() => setFilterPodName("")}
-                    >
-                      All Pods
-                    </Dropdown.Item>
-                    {getUniqueValues(progressReportData, "pod_name").map(
-                      (name) => (
-                        <Dropdown.Item
-                          key={name}
-                          active={filterPodName === name}
-                          onClick={() => {
-                            setFilterPodName(name);
-                            setCurrentPage(1);
-                          }}
-                        >
-                          {name}
-                        </Dropdown.Item>
-                      )
-                    )}
-                  </Dropdown.Menu>
-                </Dropdown>
-              </div>
-
-              {filteredSortedProgress.length > 0 ? (
-              
-                    <div>
-                    <div className="table-responsive">
-                      <table
-                        id="progress-report-table"
-                        className="table table-hover table-striped table-bordered"
-                        
-                      >
-                        <thead className="">
-                          <tr>
-                            <th>Full Name</th>
-                          
-                            <th>Concept Name</th>
-                            <th >Status</th>
-                            <th >Current Stage</th>
-                            <th >Final Score</th>
-                            <th >Batch Name</th>
-                            <th >Pod Name</th>
-                            <th >Updated At</th>
-                          </tr>
-                        </thead>
-                        <tbody>{progressTableRows}</tbody>
-                      </table>
-                        {renderProgressPagination()}
-                    </div>
-
-                  
-                    </div>
-                
-              ) : (
-                <Card className="shadow-sm rounded-3 no-progress-card">
-                  <Card.Body>
-                    <p className="text-muted text-center">
-                      No progress report data found for your organization or
-                      matching the selected filters.
-                    </p>
-                  </Card.Body>
-                </Card>
               )}
-            </>
-          )}
+
+              {!pageLoading && (batchesError || progressError) && (
+                <Alert variant="danger" className="text-center">
+                  {batchesError || progressError}
+                </Alert>
+              )}
+
+              {/* NEW: Progress Report Table */}
+              {!pageLoading && !progressError && (
+                <>
+                  <h2 className="fs-4 text-dark" style={{ textAlign: "left" }}>
+                    Progress Report
+                  </h2>
+
+                  <div className="progress-table-filter d-flex flex-column flex-lg-row justify-content-between align-items-start align-items-lg-center mb-3 gap-3">
+                    {/* Items per page */}
+                    <div className="d-flex align-items-center">
+                      <span className="me-2">Show entries:</span>
+                      <Form.Select
+                        value={progressItemsPerPage}
+                        onChange={handleProgressItemsPerPageChange}
+                        style={{ width: "90px" }}
+                        size="sm"
+                      >
+                        <option value="5">5</option>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                      </Form.Select>
+                    </div>
+
+                    {/* Date Filter - Using react-datepicker */}
+                    <div className="date-pic d-flex  flex-md-row flex-column align-items-start align-items-md-center gap-2 w-100">
+
+                      <div className="d-flex align-items-md-center date-pick-div">
+                        <span className="me-2">Filter by date:</span>
+                        <DatePicker
+                          selected={filterStartDate}
+                          onChange={(date) => {
+                            setFilterStartDate(date);
+                            setCurrentPage(1);
+                          }}
+                          selectsStart
+                          startDate={filterStartDate}
+                          endDate={filterEndDate}
+                          placeholderText="Start Date"
+                          className="form-control form-control-sm"
+                          dateFormat="yyyy-MM-dd"
+                          isClearable
+                        />
+                        <span className="mx-1">to</span>
+                        <DatePicker
+                          selected={filterEndDate}
+                          onChange={(date) => {
+                            setFilterEndDate(date);
+                            setCurrentPage(1);
+                          }}
+                          selectsEnd
+                          startDate={filterStartDate}
+                          endDate={filterEndDate}
+                          minDate={filterStartDate}
+                          placeholderText="End Date"
+                          className="form-control form-control-sm"
+                          dateFormat="yyyy-MM-dd"
+                          isClearable
+                        />
+                      </div>
+
+                      {/* Search Inputs (now below date filter) */}
+                      <div
+                        className="d-flex flex-grow-1 gap-2"
+                        style={{ maxWidth: "400px" }}
+                      >
+                        <Form.Control
+                          placeholder="Search by Full Name"
+                          value={searchFullName}
+                          onChange={(e) => {
+                            setSearchFullName(e.target.value);
+                            setCurrentPage(1);
+                          }}
+                          size="sm"
+                        />
+
+                      </div>
+                    </div>
+
+                    {(filterStartDate ||
+                      filterEndDate ||
+                      searchFullName ||
+                      searchEmail ||
+                      filterConceptName ||
+                      filterStatus ||
+                      filterStage ||
+                      filterBatchName ||
+                      filterPodName) && (
+                        <Button
+                          variant="outline-danger"
+                          size="sm"
+                          onClick={handleClearAllFilters}
+                        >
+                          Clear Filters
+                        </Button>
+                      )}
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="primary"
+                        size="sm"
+                        className="text-white"
+                      >
+                        <FiDownload className="me-1" /> Download
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu>
+                        <Dropdown.Item onClick={handleDownloadPDF}>
+                          Download as PDF
+                        </Dropdown.Item>
+                        <Dropdown.Item onClick={handleDownloadExcel}>
+                          Download as Excel
+                        </Dropdown.Item>
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </div>
+
+                  {/* Filter summary */}
+                  <div className="mb-2 small text-muted">
+                    Showing {currentPageProgressData.length} of{" "}
+                    {filteredSortedProgress.length} records
+                    {progressReportData.length !== filteredSortedProgress.length &&
+                      ` (filtered from ${progressReportData.length} total)`}
+                    .{filterConceptName && ` | Concept: ${filterConceptName}`}
+                    {filterStatus && ` | Status: ${filterStatus}`}
+                    {filterStage && ` | Stage: ${filterStage}`}
+                    {filterBatchName && ` | Batch: ${filterBatchName}`}
+                    {filterPodName && ` | Pod: ${filterPodName}`}
+                    {filterStartDate &&
+                      ` | From: ${filterStartDate.toLocaleDateString()}`}
+                    {filterEndDate &&
+                      ` | To: ${filterEndDate.toLocaleDateString()}`}
+                  </div>
+
+                  <div className="d-flex flex-wrap gap-2 mb-3 align-items-center">
+                    {/* Concept Name Filter */}
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-secondary"
+                        size="sm"
+                        className="d-flex align-items-center"
+                      >
+                        {filterConceptName || "Concept Name"}
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu
+                        style={{ maxHeight: "300px", overflowY: "auto" }}
+                      >
+                        <Dropdown.Item
+                          active={!filterConceptName}
+                          onClick={() => setFilterConceptName("")}
+                        >
+                          All Concepts
+                        </Dropdown.Item>
+                        {getUniqueValues(progressReportData, "concept_name").map(
+                          (name) => (
+                            <Dropdown.Item
+                              key={name}
+                              active={filterConceptName === name}
+                              onClick={() => {
+                                setFilterConceptName(name);
+                                setCurrentPage(1);
+                              }}
+                            >
+                              {name}
+                            </Dropdown.Item>
+                          )
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+
+                    {/* Status Filter */}
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-secondary"
+                        size="sm"
+                        className="d-flex align-items-center"
+                      >
+                        {filterStatus || "Status"}
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu
+                        style={{ maxHeight: "300px", overflowY: "auto" }}
+                      >
+                        <Dropdown.Item
+                          active={!filterStatus}
+                          onClick={() => setFilterStatus("")}
+                        >
+                          All Statuses
+                        </Dropdown.Item>
+                        {getUniqueValues(progressReportData, "status").map(
+                          (status) => (
+                            <Dropdown.Item
+                              key={status}
+                              active={filterStatus === status}
+                              onClick={() => {
+                                setFilterStatus(status);
+                                setCurrentPage(1);
+                              }}
+                            >
+                              {status}
+                            </Dropdown.Item>
+                          )
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+
+                    {/* Stage Filter */}
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-secondary"
+                        size="sm"
+                        className="d-flex align-items-center"
+                      >
+                        {filterStage || "Stage"}
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu
+                        style={{ maxHeight: "300px", overflowY: "auto" }}
+                      >
+                        <Dropdown.Item
+                          active={!filterStage}
+                          onClick={() => setFilterStage("")}
+                        >
+                          All Stages
+                        </Dropdown.Item>
+                        {getUniqueValues(progressReportData, "current_stage").map(
+                          (stage) => (
+                            <Dropdown.Item
+                              key={stage}
+                              active={filterStage === stage}
+                              onClick={() => {
+                                setFilterStage(stage);
+                                setCurrentPage(1);
+                              }}
+                            >
+                              {stage}
+                            </Dropdown.Item>
+                          )
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+
+                    {/* Batch Name Filter */}
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-secondary"
+                        size="sm"
+                        className="d-flex align-items-center"
+                      >
+                        {filterBatchName || "Batch Name"}
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu
+                        style={{ maxHeight: "300px", overflowY: "auto" }}
+                      >
+                        <Dropdown.Item
+                          active={!filterBatchName}
+                          onClick={() => setFilterBatchName("")}
+                        >
+                          All Batches
+                        </Dropdown.Item>
+                        {getUniqueValues(progressReportData, "batch_name").map(
+                          (name) => (
+                            <Dropdown.Item
+                              key={name}
+                              active={filterBatchName === name}
+                              onClick={() => {
+                                setFilterBatchName(name);
+                                setCurrentPage(1);
+                              }}
+                            >
+                              {name}
+                            </Dropdown.Item>
+                          )
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+
+                    {/* Pod Name Filter */}
+                    <Dropdown>
+                      <Dropdown.Toggle
+                        variant="outline-secondary"
+                        size="sm"
+                        className="d-flex align-items-center"
+                      >
+                        {filterPodName || "Pod Name"}
+                      </Dropdown.Toggle>
+                      <Dropdown.Menu
+                        style={{ maxHeight: "300px", overflowY: "auto" }}
+                      >
+                        <Dropdown.Item
+                          active={!filterPodName}
+                          onClick={() => setFilterPodName("")}
+                        >
+                          All Pods
+                        </Dropdown.Item>
+                        {getUniqueValues(progressReportData, "pod_name").map(
+                          (name) => (
+                            <Dropdown.Item
+                              key={name}
+                              active={filterPodName === name}
+                              onClick={() => {
+                                setFilterPodName(name);
+                                setCurrentPage(1);
+                              }}
+                            >
+                              {name}
+                            </Dropdown.Item>
+                          )
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </div>
+
+                  {filteredSortedProgress.length > 0 ? (
+
+                    <div>
+                      <div className="table-responsive">
+                        <table
+                          id="progress-report-table"
+                          className="table table-hover table-striped table-bordered"
+
+                        >
+                          <thead className="">
+                            <tr>
+                              <th>Full Name</th>
+
+                              <th>Concept Name</th>
+                              <th >Status</th>
+                              <th >Current Stage</th>
+                              <th >Final Score</th>
+                              <th >Batch Name</th>
+                              <th >Pod Name</th>
+                              <th >Updated At</th>
+                            </tr>
+                          </thead>
+                          <tbody>{progressTableRows}</tbody>
+                        </table>
+                        {renderProgressPagination()}
+                      </div>
+
+
+                    </div>
+
+                  ) : (
+                    <Card className="shadow-sm rounded-3 no-progress-card">
+                      <Card.Body>
+                        <p className="text-muted text-center">
+                          No progress report data found for your organization or
+                          matching the selected filters.
+                        </p>
+                      </Card.Body>
+                    </Card>
+                  )}
+                </>
+              )}
             </Card.Body>
           </Card>
-         
-         {/*Show Models, Assignment*/}
+
+          {/*Show Models, Assignment*/}
           <Row className="mb-4 g-4">
             <Col xs={12} md={4}>
               <Card className="shadow-sm rounded-4 border-0 h-100">
@@ -1013,56 +1013,56 @@ function Orgadmin() {
                     <div>
                       <span className="fw-bold fs-5">Org Specific Models</span>
                       <p className="mb-2 small text-muted">Explore models created only for your org.</p>
-                      <Button variant="primary" size="sm"  onClick={() => navigate('/orgadmin/organization-models')}>View Org Models</Button>
+                      <Button variant="primary" size="sm" onClick={() => navigate('/orgadmin/organization-models')}>View Org Models</Button>
                     </div>
                   </div>
                 </Card.Body>
               </Card>
             </Col>
             <Col xs={12} md={4}>
-  <Card className="shadow-sm rounded-4 border-0 h-100">
-    <Card.Body>
-      <div className="d-flex align-items-center mb-2">
-        <FaUsers size={38} className="me-3" style={{ color: "#f7971e" }} />
-        <div>
-          <span className="fw-bold fs-5">Add Models</span>
-          <p className="mb-2 small text-muted">
-            Explore models created only for your org.
-          </p>
-          <Button variant="info" size="sm" onClick={() => navigate('/orgadmin/add-orgmodels')}>
-            Add Org Models
-          </Button>
-        </div>
-      </div>
-    </Card.Body>
-  </Card>
-</Col>
+              <Card className="shadow-sm rounded-4 border-0 h-100">
+                <Card.Body>
+                  <div className="d-flex align-items-center mb-2">
+                    <FaDatabase size={38} className="me-3" style={{ color: "#388e3c" }} />
+                    <div>
+                      <span className="fw-bold fs-5">Add Models</span>
+                      <p className="mb-2 small text-muted">
+                        Add a new Model for your org.
+                      </p>
+                      <Button variant="primary" size="sm" onClick={() => navigate('/orgadmin/add-orgmodels')}>
+                        Add Org Models
+                      </Button>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
 
             <Col xs={12} md={4}>
-  <Card className="shadow-sm rounded-4 border-0 h-100">
-    <Card.Body>
-      <div className="d-flex align-items-center mb-3">
-        <div className="me-3 d-flex justify-content-center align-items-center rounded-circle bg-primary bg-opacity-10" style={{ width: "56px", height: "56px" }}>
-          <FiPlus size={28} style={{ color: "#0d6efd" }} />
-        </div>
-        <div>
-          <span className="fw-bold fs-5 text-dark">Manage Assignments</span>
-          <p className="mb-2 small text-muted">
-            Assign organization or batch-level models easily.
-          </p>
-          <Button
-            variant="primary"
-            size="sm"
-            className=" px-3"
-            onClick={() => navigate("/orgadmin/org-assignment")}
-          >
-            Go to Assignments
-          </Button>
-        </div>
-      </div>
-    </Card.Body>
-  </Card>
-</Col>
+              <Card className="shadow-sm rounded-4 border-0 h-100">
+                <Card.Body>
+                  <div className="d-flex align-items-center mb-3">
+                    <div className="me-3 d-flex justify-content-center align-items-center rounded-circle bg-primary bg-opacity-10" style={{ width: "56px", height: "56px" }}>
+                      <FiPlus size={28} style={{ color: "#0d6efd" }} />
+                    </div>
+                    <div>
+                      <span className="fw-bold fs-5 text-dark">Manage Assignments</span>
+                      <p className="mb-2 small text-muted">
+                        Assign organization or batch-level models easily.
+                      </p>
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className=" px-3"
+                        onClick={() => navigate("/orgadmin/org-assignment")}
+                      >
+                        Go to Assignments
+                      </Button>
+                    </div>
+                  </div>
+                </Card.Body>
+              </Card>
+            </Col>
 
           </Row>
 
@@ -1070,98 +1070,98 @@ function Orgadmin() {
           {!pageLoading && !batchesError && (
             <>
               <h2 className="mt-4 mb-3 fs-4 text-dark">Your Batches</h2>
-            <Row className="g-4">
-  {batchesData.length > 0 ? (
-    batchesData.map((batch) => (
-      <Col key={batch.batch_id} xs={12} md={6} lg={4}>
-        <Card
-          className="h-100 border-0 shadow-lg rounded-4 clickable-card"
-          style={{
-            background: "rgba(255, 255, 255, 0.85)",
-            backdropFilter: "blur(14px)",
-            border: "1px solid rgba(0, 178, 215, 0.3)",
-            cursor: "pointer",
-            transition: "transform 0.3s ease, box-shadow 0.3s ease",
-          }}
-          onClick={() => handleCardClick(batch.batch_id)}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-8px)";
-            e.currentTarget.style.boxShadow =
-              "0 14px 28px rgba(0, 178, 215, 0.25)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow =
-              "0 6px 15px rgba(0, 178, 215, 0.1)";
-          }}
-        >
-          <div
-            className="p-3 rounded-top-4 text-white text-center fw-semibold"
-            style={{
-              background: "linear-gradient(135deg, rgb(0,178,215) 0%, #00b2d7 100%)",
-            }}
-          >
-            <h5 className="mb-0 text-capitalize">
-              {batch.batch_name}
-              <Badge
-                bg={batch.is_active ? "success" : "secondary"}
-                className="ms-2 rounded-pill px-3 py-1"
-              >
-                {batch.is_active ? "Active" : "Inactive"}
-              </Badge>
-            </h5>
-          </div>
+              <Row className="g-4">
+                {batchesData.length > 0 ? (
+                  batchesData.map((batch) => (
+                    <Col key={batch.batch_id} xs={12} md={6} lg={4}>
+                      <Card
+                        className="h-100 border-0 shadow-lg rounded-4 clickable-card"
+                        style={{
+                          background: "rgba(255, 255, 255, 0.85)",
+                          backdropFilter: "blur(14px)",
+                          border: "1px solid rgba(0, 178, 215, 0.3)",
+                          cursor: "pointer",
+                          transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                        }}
+                        onClick={() => handleCardClick(batch.batch_id)}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = "translateY(-8px)";
+                          e.currentTarget.style.boxShadow =
+                            "0 14px 28px rgba(0, 178, 215, 0.25)";
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = "translateY(0)";
+                          e.currentTarget.style.boxShadow =
+                            "0 6px 15px rgba(0, 178, 215, 0.1)";
+                        }}
+                      >
+                        <div
+                          className="p-3 rounded-top-4 text-white text-center fw-semibold"
+                          style={{
+                            background: "linear-gradient(135deg, rgb(0,178,215) 0%, #00b2d7 100%)",
+                          }}
+                        >
+                          <h5 className="mb-0 text-capitalize">
+                            {batch.batch_name}
+                            <Badge
+                              bg={batch.is_active ? "success" : "secondary"}
+                              className="ms-2 rounded-pill px-3 py-1"
+                            >
+                              {batch.is_active ? "Active" : "Inactive"}
+                            </Badge>
+                          </h5>
+                        </div>
 
-          <Card.Body className="text-center">
-            <h6 className="fw-semibold mb-md-4 mb-2 text-muted">Batch Overview</h6>
-            <div className="d-flex justify-content-around flex-wrap gap-3">
-              <div
-                className="px-3 py-2 rounded-3 fw-medium text-white"
-                style={{
-                  background: "linear-gradient(135deg, rgb(0,178,215), #00a3c4)",
-                }}
-              >
-                Batch Size: {batch.batch_size}
-              </div>
-              <div
-                className="px-3 py-2 rounded-3 fw-medium text-white"
-                style={{
-                  background: "linear-gradient(135deg, #43e97b, #38f9d7)",
-                }}
-              >
-                Pod Count: {batch.pod_count}
-              </div>
-              <div
-                className="px-3 py-2 rounded-3 fw-medium text-white"
-                style={{
-                  background: "linear-gradient(135deg, #f7971e, #ffd200)",
-                }}
-              >
-                User Count: {batch.user_count}
-              </div>
-            </div>
-          </Card.Body>
-        </Card>
-      </Col>
-    ))
-  ) : (
-    <Col xs={12}>
-      <Card
-        className="text-center p-4 shadow-sm rounded-4 border-0"
-        style={{
-          background: "rgba(0,178,215,0.05)",
-          border: "1px solid rgba(0,178,215,0.2)",
-        }}
-      >
-        <Card.Body>
-          <p className="lead mb-0 text-muted">
-            No batches found for your organization.
-          </p>
-        </Card.Body>
-      </Card>
-    </Col>
-  )}
-</Row>
+                        <Card.Body className="text-center">
+                          <h6 className="fw-semibold mb-md-4 mb-2 text-muted">Batch Overview</h6>
+                          <div className="d-flex justify-content-around flex-wrap gap-3">
+                            <div
+                              className="px-3 py-2 rounded-3 fw-medium text-white"
+                              style={{
+                                background: "linear-gradient(135deg, rgb(0,178,215), #00a3c4)",
+                              }}
+                            >
+                              Batch Size: {batch.batch_size}
+                            </div>
+                            <div
+                              className="px-3 py-2 rounded-3 fw-medium text-white"
+                              style={{
+                                background: "linear-gradient(135deg, #43e97b, #38f9d7)",
+                              }}
+                            >
+                              Pod Count: {batch.pod_count}
+                            </div>
+                            <div
+                              className="px-3 py-2 rounded-3 fw-medium text-white"
+                              style={{
+                                background: "linear-gradient(135deg, #f7971e, #ffd200)",
+                              }}
+                            >
+                              User Count: {batch.user_count}
+                            </div>
+                          </div>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  ))
+                ) : (
+                  <Col xs={12}>
+                    <Card
+                      className="text-center p-4 shadow-sm rounded-4 border-0"
+                      style={{
+                        background: "rgba(0,178,215,0.05)",
+                        border: "1px solid rgba(0,178,215,0.2)",
+                      }}
+                    >
+                      <Card.Body>
+                        <p className="lead mb-0 text-muted">
+                          No batches found for your organization.
+                        </p>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                )}
+              </Row>
 
 
             </>

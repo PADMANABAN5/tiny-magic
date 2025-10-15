@@ -217,7 +217,6 @@ function AssignmentOrg() {
             <button
   className="back-button text-white border-0"
   onClick={() => navigate(-1)}
-  style={{ width: "55px", height: "35px" }} // ✅ added width & height
 >
   <FaArrowLeft />
 </button>
