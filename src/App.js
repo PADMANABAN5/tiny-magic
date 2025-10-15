@@ -43,6 +43,8 @@ import Assignmodels from './pages/Assignmodels.jsx';
 import ViewModel from './pages/Viewmodels.js';
 import ViewAssignedModels from './pages/ViewAssignedModels.jsx';
 import ViewOrgModels from './pages/ViewOrgmodels.jsx';
+import AddOrgModels from './pages/AddOrgModel.jsx';
+import AssignmentOrg from './pages/AssignmentOrg.jsx';
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
   const role = sessionStorage.getItem("role_name");
@@ -210,7 +212,13 @@ function App() {
         } />       
          <Route path="/orgadmin/organization-models" element={
           <PrivateRoute roles={["orgadmin"]}><ViewOrgModels /></PrivateRoute>
-        } />       
+        } />
+        <Route path="/orgadmin/add-orgmodels" element={
+          <PrivateRoute roles={["orgadmin"]}><AddOrgModels /></PrivateRoute>
+        } />
+        <Route path="/orgadmin/org-assignment" element={
+          <PrivateRoute roles={["orgadmin"]}><AssignmentOrg /></PrivateRoute>
+        } />          
         <Route path="/mentordashboard" element={
           <PrivateRoute roles={["mentor"]}><Mentordashboard /></PrivateRoute>
         } />

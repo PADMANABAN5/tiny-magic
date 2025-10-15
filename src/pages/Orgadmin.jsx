@@ -25,6 +25,10 @@ import autoTable from "jspdf-autotable"; // Import autoTable for PDF table gener
 import { useAuth } from "../components/AuthContext";
 // Import react-datepicker and its styles
 import DatePicker from "react-datepicker";
+
+import { FiPlus } from "react-icons/fi"; // ✅ correct import for FiPlus
+
+
 import "react-datepicker/dist/react-datepicker.css";
 import usePreventBack from "../utils/usePreventBack";
 import '../styles/orgadmin.css';
@@ -1015,6 +1019,51 @@ function Orgadmin() {
                 </Card.Body>
               </Card>
             </Col>
+            <Col xs={12} md={4}>
+  <Card className="shadow-sm rounded-4 border-0 h-100">
+    <Card.Body>
+      <div className="d-flex align-items-center mb-2">
+        <FaUsers size={38} className="me-3" style={{ color: "#f7971e" }} />
+        <div>
+          <span className="fw-bold fs-5">Add Models</span>
+          <p className="mb-2 small text-muted">
+            Explore models created only for your org.
+          </p>
+          <Button variant="info" size="sm" onClick={() => navigate('/orgadmin/add-orgmodels')}>
+            Add Org Models
+          </Button>
+        </div>
+      </div>
+    </Card.Body>
+  </Card>
+</Col>
+
+            <Col xs={12} md={4}>
+  <Card className="shadow-sm rounded-4 border-0 h-100">
+    <Card.Body>
+      <div className="d-flex align-items-center mb-3">
+        <div className="me-3 d-flex justify-content-center align-items-center rounded-circle bg-primary bg-opacity-10" style={{ width: "56px", height: "56px" }}>
+          <FiPlus size={28} style={{ color: "#0d6efd" }} />
+        </div>
+        <div>
+          <span className="fw-bold fs-5 text-dark">Manage Assignments</span>
+          <p className="mb-2 small text-muted">
+            Assign organization or batch-level models easily.
+          </p>
+          <Button
+            variant="primary"
+            size="sm"
+            className=" px-3"
+            onClick={() => navigate("/orgadmin/org-assignment")}
+          >
+            Go to Assignments
+          </Button>
+        </div>
+      </div>
+    </Card.Body>
+  </Card>
+</Col>
+
           </Row>
 
           {/* Batch Cards */}
