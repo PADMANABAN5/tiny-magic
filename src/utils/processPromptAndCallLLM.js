@@ -28,16 +28,16 @@ export const processPromptAndCallLLM = async (
       !organizationId ||
       !batchId
     ) {
-      console.error("Missing required fields:", {
-        username,
-        selectedPrompt,
-        selectedModel,
-        sessionHistoryLength: sessionHistory?.length,
-        userPrompt,
-        selectedConcept,
-        organizationId,
-        batchId,
-      });
+      // console.error("Missing required fields:", {
+      //   username,
+      //   selectedPrompt,
+      //   selectedModel,
+      //   sessionHistoryLength: sessionHistory?.length,
+      //   userPrompt,
+      //   selectedConcept,
+      //   organizationId,
+      //   batchId,
+      // });
       throw new Error("Missing required fields for LLM request");
     }
 
@@ -77,10 +77,10 @@ export const processPromptAndCallLLM = async (
     };
 
     // Log request for debugging
-    console.log(
-      `Sending request to /api/prompts/process (Prompt: ${selectedPrompt}):`,
-      requestData
-    );
+    // console.log(
+    //   `Sending request to /api/prompts/process (Prompt: ${selectedPrompt}):`,
+    //   requestData
+    // );
 
     // Attempt request with retries
     let lastError;
@@ -103,10 +103,10 @@ export const processPromptAndCallLLM = async (
           throw new Error(response.data.message || "Backend processing failed");
         }
 
-        console.log(
-          `Received response for ${selectedPrompt}:`,
-          response.data.data
-        );
+        // console.log(
+        //   `Received response for ${selectedPrompt}:`,
+        //   response.data.data
+        // );
         return response.data.data;
       } catch (error) {
         console.error(

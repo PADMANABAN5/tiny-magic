@@ -214,20 +214,20 @@ function Dashboard() {
 
     setConceptsLoading(true);
     try {
-      console.log("🎯 Fetching concepts for fresh session:", username);
+      //console.log("🎯 Fetching concepts for fresh session:", username);
       const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
 
       if (response.data && response.data.success && response.data.data) {
         const conceptsData = response.data.data.batch?.concepts || [];
-        console.log("✅ Concepts fetched for fresh session:", conceptsData.length);
+        //console.log("✅ Concepts fetched for fresh session:", conceptsData.length);
         setConcepts(conceptsData);
         return conceptsData;
       } else {
-        console.warn("⚠️ No concepts data in response for fresh session");
+        //console.warn("⚠️ No concepts data in response for fresh session");
         return [];
       }
     } catch (error) {
-      console.error("❌ Error fetching concepts for fresh session:", error);
+     // console.error("❌ Error fetching concepts for fresh session:", error);
       return [];
     } finally {
       setConceptsLoading(false);
@@ -245,7 +245,7 @@ function Dashboard() {
         const data = response.data.data;
         const conceptsData = data.batch?.concepts || [];
 
-        console.log("✅ Concepts loaded:", conceptsData.length);
+       // console.log("✅ Concepts loaded:", conceptsData.length);
         setConcepts(conceptsData);
 
         const batch = response.data.data.batch;
@@ -564,7 +564,7 @@ function Dashboard() {
         batchId
       });
 
-      console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
+      //console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
       
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
@@ -591,7 +591,7 @@ function Dashboard() {
       ]);
 
       if (newEndRequested || newInteractionCompleted) {
-        console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
+        //console.log("🎯 handleSendClick: Triggering assessment due to", newInteractionCompleted ? "interactionCompleted" : "endRequested");
         setIsProcessingAssessment(true);
         const organizationId = sessionStorage.getItem("organizationId");
         const batchId = sessionStorage.getItem("batchId");
@@ -627,7 +627,7 @@ function Dashboard() {
           ...prev,
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
-        console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
+       // console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
         
         setCurrentChatStatus('completed');
 
@@ -716,17 +716,17 @@ function Dashboard() {
       console.log("📊 Extracted scoring data for save:", scoring_data);
     }
 
-    console.log("💾 Saving chat with:", {
-      requestedStatus,
-      statusToSave,
-      stageToSave,
-      currentStage,
-      frontendStatus: getStageStatus(),
-      currentChatStatus,
-      chatHistoryLength: chatHistory.length,
-      conceptName: conceptNameToSave,
-      hasScoring: !!scoring_data
-    });
+    // console.log("💾 Saving chat with:", {
+    //   requestedStatus,
+    //   statusToSave,
+    //   stageToSave,
+    //   currentStage,
+    //   frontendStatus: getStageStatus(),
+    //   currentChatStatus,
+    //   chatHistoryLength: chatHistory.length,
+    //   conceptName: conceptNameToSave,
+    //   hasScoring: !!scoring_data
+    // });
 
     if (showLoader) setIsLoading(true);
 
@@ -894,7 +894,7 @@ function Dashboard() {
         }
 
         if (sessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
-          console.log("🔄 Resuming existing session:", chat);
+          //console.log("🔄 Resuming existing session:", chat);
 
           setChatHistory(chat.conversation);
 
@@ -915,12 +915,12 @@ function Dashboard() {
           );
           setCurrentStage(progressStage);
 
-          console.log("✅ Session resumed with stage:", {
-            apiStage: chat.current_stage,
-            status: chat.status,
-            progressStage: progressStage,
-            conceptName: chat.concept_name
-          });
+          // console.log("✅ Session resumed with stage:", {
+          //   apiStage: chat.current_stage,
+          //   status: chat.status,
+          //   progressStage: progressStage,
+          //   conceptName: chat.concept_name
+          // });
 
           sessionStorage.setItem("chatHistory", JSON.stringify(chat.conversation));
           sessionStorage.setItem("currentChatId", chat.id.toString());
@@ -930,12 +930,12 @@ function Dashboard() {
             const matchingConcept = concepts.find(c => c.concept_name === chat.concept_name);
             if (matchingConcept) {
               setSelectedConcept(matchingConcept);
-              console.log("✅ Concept restored from session:", matchingConcept.concept_name);
+              //console.log("✅ Concept restored from session:", matchingConcept.concept_name);
             } else if (conceptName) {
               const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
               if (providedConcept) {
                 setSelectedConcept(providedConcept);
-                console.log("🔄 Using provided concept:", providedConcept.concept_name);
+                //console.log("🔄 Using provided concept:", providedConcept.concept_name);
               }
             }
           } else if (conceptName && concepts.length > 0) {
