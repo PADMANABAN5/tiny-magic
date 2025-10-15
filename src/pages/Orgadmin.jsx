@@ -999,7 +999,7 @@ function Orgadmin() {
                     <div>
                       <span className="fw-bold fs-5">Show Assignments</span>
                       <p className="mb-2 small text-muted">Check all model assignments within your org.</p>
-                      <Button variant="success" size="sm" onClick={() => navigate('/orgadmin/assignments')}>View Assignments</Button>
+                      <Button variant="primary" size="sm" onClick={() => navigate('/orgadmin/assignments')}>View Assignments</Button>
                     </div>
                   </div>
                 </Card.Body>
@@ -1013,7 +1013,7 @@ function Orgadmin() {
                     <div>
                       <span className="fw-bold fs-5">Org Specific Models</span>
                       <p className="mb-2 small text-muted">Explore models created only for your org.</p>
-                      <Button variant="info" size="sm"  onClick={() => navigate('/orgadmin/organization-models')}>View Org Models</Button>
+                      <Button variant="primary" size="sm"  onClick={() => navigate('/orgadmin/organization-models')}>View Org Models</Button>
                     </div>
                   </div>
                 </Card.Body>
