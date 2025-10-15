@@ -4,6 +4,7 @@ import { Table, Spinner, Pagination, Form } from "react-bootstrap";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft } from "react-icons/fa";
 import Orgadminsidebar from "../components/Orgadminsidebar";
+import "../styles/OrgList.css";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -64,7 +65,7 @@ function ViewOrgModels() {
           {/* Back Button */}
           <div style={{ marginBottom: "20px", marginTop: "10px" }}>
             <button
-              className="btn"
+              className="back-button text-white border-0"
               style={{
                 background: "#07b7df",
                 color: "white",
@@ -155,7 +156,7 @@ function ViewOrgModels() {
                           whiteSpace: "nowrap",
                         }}
                       >
-                        {model.apikey}
+                        {model.api_key}
                       </td>
                       <td>{model.description}</td>
                     </tr>
