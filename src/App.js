@@ -40,6 +40,9 @@ import ForgotPassword from './components/Forgotpassword.jsx';
 import Models from './pages/Models_management.jsx'
 import Addmodels from './pages/Addmodels.jsx';
 import Assignmodels from './pages/Assignmodels.jsx';
+import ViewModel from './pages/Viewmodels.js';
+import ViewAssignedModels from './pages/ViewAssignedModels.jsx';
+import ViewOrgModels from './pages/ViewOrgmodels.jsx';
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
   const role = sessionStorage.getItem("role_name");
@@ -199,6 +202,15 @@ function App() {
         <Route path="/orgadminuserprogress/:userId" element={
           <PrivateRoute roles={["orgadmin"]}><Orgadminuserprogress /></PrivateRoute>
         } />
+        <Route path="/orgadmin/models" element={
+          <PrivateRoute roles={["orgadmin"]}><ViewModel /></PrivateRoute>
+        } />
+        <Route path="/orgadmin/assignments" element={
+          <PrivateRoute roles={["orgadmin"]}><ViewAssignedModels /></PrivateRoute>
+        } />       
+         <Route path="/orgadmin/organization-models" element={
+          <PrivateRoute roles={["orgadmin"]}><ViewOrgModels /></PrivateRoute>
+        } />       
         <Route path="/mentordashboard" element={
           <PrivateRoute roles={["mentor"]}><Mentordashboard /></PrivateRoute>
         } />

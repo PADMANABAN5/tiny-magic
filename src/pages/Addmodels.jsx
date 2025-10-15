@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react'
 import Supersidebar from "../components/Supersidebar"
-import { FaArrowLeft, FaPlus } from 'react-icons/fa'
+import { FaArrowLeft, FaPlus, FaEdit,FaTrash } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import axios from "axios"
 import { toast } from 'react-toastify';
 import { Pagination, Form } from "react-bootstrap";
 import 'react-toastify/dist/ReactToastify.css';
+import { useAuth } from '../components/AuthContext.jsx';
 
 function AddModels() {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedModel, setSelectedModel] = useState(null);
 
   const [modelName, setModelName] = useState("");
+  const [name, setName] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
 
@@ -21,8 +26,15 @@ function AddModels() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-
+  
   const BASE_URL = process.env.REACT_APP_API_LINK;
+  const { token } = useAuth();
+  const config = {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    },
+  };
 
   const getToastType = (bg) => {
     switch (bg) {
@@ -56,9 +68,10 @@ function AddModels() {
     setLoading(true);
     setError(null);
     try {
-      const response = await axios.get(`${BASE_URL}/llm/models`);
+      const response = await axios.get(`${BASE_URL}/llm/models`, config);
       if (response.data.success) {
-        setModels(response.data.data || []);
+        const sortedModels = (response.data.data || []).sort((a, b) => b.model_id - a.model_id);
+        setModels(sortedModels);
       } else {
         setError("Failed to fetch models");
         setModels([]);
@@ -109,76 +122,122 @@ function AddModels() {
     fetchModels();
   }, []);
 
-  // Toggle model status
-  const handleToggle = async (modelId, currentStatus) => {
-    try {
-      const response = await axios.patch(`${BASE_URL}/llm/model/${modelId}`, {
-        is_active: !currentStatus,
-      });
+  // Delete model (soft delete: sets is_active to false)
+const handleDelete = async (modelId, modelName) => {
+  if (!window.confirm(`Are you sure you want to deactivate the model "${modelName}"? This action cannot be undone.`)) {
+    return;  // User canceled
+  }
 
-      if (response.data.success) {
-        showToast(`Model status updated to ${!currentStatus ? 'Active' : 'Inactive'}`, "primary");
-        fetchModels(); // Refresh the list
-      } else {
-        showToast("Error: " + response.data.message, "warning");
-      }
-    } catch (error) {
-      console.error("Error updating model status:", error);
-      if (axios.isAxiosError(error)) {
-        const errorMessage = error.response?.data?.message || "Something went wrong while updating status";
-        let message = "";
-        switch (error.response.status) {
-          case 400:
-            message = `Bad request: ${errorMessage}`;
-            break;
-          case 401:
-            message = "Unauthorized. Please log in.";
-            break;
-          case 403:
-            message = "Forbidden: You do not have permission.";
-            break;
-          case 404:
-            message = "Model not found.";
-            break;
-          case 500:
-            message = "Server error. Please try again later.";
-            break;
-          default:
-            message = `Unexpected error: ${errorMessage}`;
-        }
-        showToast(message, "warning");
-      } else {
-        showToast("Network error. Please check your connection.", "danger");
-      }
+  try {
+    const response = await axios.delete(`${BASE_URL}/llm/models/${modelId}`, config);
+
+    if (response.data.success) {
+      showToast(`Model "${modelName}" deactivated successfully.`, "primary");
+      fetchModels();  // Refresh the list
+    } else {
+      showToast("Error: " + response.data.message, "warning");
     }
+  } catch (error) {
+    console.error("Error deleting model:", error);
+    if (axios.isAxiosError(error) && error.response) {
+      const errorMessage = error.response.data?.message || "Something went wrong while deleting";
+      let message = "";
+      switch (error.response.status) {
+        case 400:
+          message = `Bad request: ${errorMessage}`;
+          break;
+        case 401:
+          message = "Unauthorized. Please log in.";
+          break;
+        case 403:
+          message = "Forbidden: You do not have permission.";
+          break;
+        case 404:
+          message = "Model not found.";
+          break;
+        case 500:
+          message = "Server error. Please try again later.";
+          break;
+        default:
+          message = `Unexpected error: ${errorMessage}`;
+      }
+      showToast(message, "warning");
+    } else {
+      showToast("Network error. Please check your connection.", "danger");
+    }
+  }
+};
+
+  
+  const handleEdit = (model) => {
+    setSelectedModel(model);
+    setModelName(model.model_name);
+    setName(model.name || '');
+    setApiKey(model.api_key);
+    setDescription(model.description || '');
+    setIsActive(model.is_active);
+    setEditMode(true);
+    setShowForm(true);
   };
 
-  // Save new model
-  const handleSave = async () => {
-     const trimmedName = modelName.trim();
+  const resetForm = () => {
+    setModelName("");
+    setName("");
+    setApiKey("");
+    setDescription("");
+    setIsActive(true);
+    setSelectedModel(null);
+    setEditMode(false);
+  };
 
-  if (!trimmedName) {
-    showToast("Model name is required.", "warning");
+  // Save new model or update existing
+ const handleSave = async () => {
+  const trimmedModelName = modelName.trim();
+  const trimmedName = name.trim();
+  const trimmedApiKey = apiKey.trim();
+
+  if (!trimmedModelName || !trimmedName || !trimmedApiKey) {
+    showToast("Model name, display name, and API key are required.", "warning");
     return;
   }
 
-  // ✅ Apply validation
-  if (!validateModelName(trimmedName)) return;
+  if (!validateModelName(trimmedModelName)) {
+    return;
+  }
 
-    try {
-      const response = await axios.post(`${BASE_URL}/llm/model`, {
-        model_name: modelName.trim(),
-        description: description.trim(),
-        is_active: isActive,
-      });
+  try {
+    const payload = {
+      model_name: trimmedModelName,
+      name: trimmedName,
+      api_key: trimmedApiKey,
+      description: description.trim(),
+      is_active: isActive
+    };
+
+    console.log("Payload:", payload);
+    
+    let response;
+    if (editMode) {
+      const modelId = selectedModel.model_id;
+      response = await axios.put(
+        `${BASE_URL}/llm/models/${modelId}`,
+        payload,
+        config
+      );
+    } else {
+      response = await axios.post(
+        `${BASE_URL}/llm/models`,
+        payload,
+        config
+      );
+    }
 
       if (response.data.success) {
-        showToast(response.data.message, "primary");
+        const successMessage = editMode ? "Model updated successfully" : response.data.message;
+        showToast(successMessage, "primary");
         console.log("Saved:", response.data);
         fetchModels();
-        setModelName("");
-        setDescription("");
-        setIsActive(true);
+        resetForm();
         setShowForm(false);
       } else {
         showToast("Error: " + response.data.message, "warning");
@@ -216,6 +275,7 @@ function AddModels() {
 
   const handleCloseModal = (e) => {
     if (e.target === e.currentTarget) {
+      resetForm();
       setShowForm(false);
     }
   };
@@ -251,7 +311,10 @@ function AddModels() {
             <button
               className="create-btn btn btn-primary"
               style={{ minWidth: "120px" }}
-              onClick={() => setShowForm(true)}
+              onClick={() => {
+                resetForm();
+                setShowForm(true);
+              }}
             >
               <FaPlus />
             </button>
@@ -296,20 +359,23 @@ function AddModels() {
               <thead className="">
                 <tr>
                   <th>Model</th>
+                  <th>Name</th>
+                  <th>API Key</th>
                   <th>Description</th>
                   <th>Status</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="3" className="text-center">
+                    <td colSpan="6" className="text-center">
                       Loading...
                     </td>
                   </tr>
                 ) : error ? (
                   <tr>
-                    <td colSpan="3" className="text-center text-danger">
+                    <td colSpan="6" className="text-center text-danger">
                       {error}
                     </td>
                   </tr>
@@ -321,14 +387,36 @@ function AddModels() {
                     return (
                       <tr key={m.model_id}>
                         <td>{m.model_name}</td>
+                        <td>{m.name || '—'}</td>
+                        <td title={m.api_key}>
+                  {m.api_key ? m.api_key.substring(0, 6)  : '—'}
+                </td>
                         <td title={m.description}>{truncatedDesc}</td>
                         <td><span className={`badge ${m.is_active ? 'bg-success' : 'bg-secondary'}`}>{m.is_active ? "Active" : "Inactive"}</span></td>
+<td>
+  <div className="d-flex gap-2">  {/* Container for icons */}
+    <button
+      className="btn btn-sm btn-outline-success"
+      title="Edit"
+      onClick={() => handleEdit(m)}  // Assuming you have handleEdit from previous update integration
+    >
+      <FaEdit />
+    </button>
+    <button
+      className="btn btn-sm btn-outline-danger"
+      title="Deactivate"
+      onClick={() => handleDelete(m.model_id, m.model_name)}
+    >
+      <FaTrash />
+    </button>
+  </div>
+</td>
                       </tr>
                     );
                   })
                 ) : (
                   <tr>
-                    <td colSpan="3" className="text-center">No models found</td>
+                    <td colSpan="6" className="text-center">No models found</td>
                   </tr>
                 )}
               </tbody>
@@ -388,18 +476,18 @@ function AddModels() {
         </div>
       </div>
 
-     {/* ✅ Custom Add Model Popup */}
+     {/* ✅ Custom Add/Edit Model Popup */}
 {showForm && (
-  <div className="popup-overlay">
+  <div className="popup-overlay" onClick={handleCloseModal}>
     <div
       className="popup-box"
       onClick={(e) => e.stopPropagation()} // prevent closing on inner click
     >
-      <h5 className="mb-3 text-center">Add New Model</h5>
+      <h5 className="mb-3 text-center">{editMode ? 'Edit Model' : 'Add New Model'}</h5>
 
       <div className="mb-3">
         <label className="form-label">
-          Model Name <span style={{ color: "red" }}>*</span>
+           Name <span style={{ color: "red" }}>*</span>
         </label>
         <input
           type="text"
@@ -416,6 +504,40 @@ function AddModels() {
           Enter the model name exactly as specified in OpenAI documentation (
           <code>gpt-4o</code>, <code>gpt-4</code>, <code>gpt-3.5-turbo</code>).
         </div>
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">
+          Name <span style={{ color: "red" }}>*</span>
+        </label>
+        <input
+          type="text"
+          onCopy={allowCopyPaste}
+          onCut={allowCopyPaste}
+          onKeyDown={allowCopyPaste}
+          onPaste={allowCopyPaste}
+          className="form-control"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter name "
+        />
+      </div>
+
+      <div className="mb-3">
+        <label className="form-label">
+          API Key <span style={{ color: "red" }}>*</span>
+        </label>
+        <input
+          type="text"
+          onCopy={allowCopyPaste}
+          onCut={allowCopyPaste}
+          onKeyDown={allowCopyPaste}
+          onPaste={allowCopyPaste}
+          className="form-control"
+          value={apiKey}
+          onChange={(e) => setApiKey(e.target.value)}
+          placeholder="Enter API Key "
+        />
       </div>
 
       <div className="mb-3">
@@ -438,7 +560,7 @@ function AddModels() {
           Cancel
         </button>
         <button type="button" className="btn btn-success" onClick={handleSave}>
-          Create
+          {editMode ? 'Update' : 'Create'}
         </button>
       </div>
     </div>

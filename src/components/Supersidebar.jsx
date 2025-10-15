@@ -101,7 +101,9 @@ function Supersidebar() {
               aria-expanded={showDropdown}
             >
               <FaUser className="me-2 text-white" />
-              <span className="text-white">{displayName}</span>
+              <span className="text-white">{firstName
+    ? `${firstName} (${username || email.split("@")[0] || "User"})`
+    : displayName}</span>
               <FaCaretDown className="ms-2 text-white" />
             </button>
             
