@@ -242,12 +242,12 @@ export default function Pods() {
     );
 
     const payload = {
-      organization_name: selectedOrg ? selectedOrg.organization_name : "",
-      batch_name: selectedBatch ? selectedBatch.batch_name : "",
-      mentor_email: selectedMentor ? selectedMentor.email : "",
-      pod_name: podForm.pod_name,
-      is_active: podForm.is_active,
-    };
+  organization_name: selectedOrg ? selectedOrg.organization_name : "",
+  batch_name: selectedBatch ? selectedBatch.batch_name : "",
+  mentor_id: selectedMentor ? selectedMentor.user_id : "",
+  pod_name: podForm.pod_name,
+  is_active: podForm.is_active,
+};
 
     try {
       if (isEditMode && selectedPodId) {
@@ -442,7 +442,7 @@ export default function Pods() {
   <option value="">All Mentors</option>
   {mentors.map((mentor) => (
     <option key={mentor.user_id} value={mentor.user_id}>
-      {mentor.email} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
+      {mentor.user_id} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
     </option>
   ))}
 </select>
@@ -651,7 +651,7 @@ export default function Pods() {
                   <option value="">-- Select Mentor --</option>
                   {mentors.map((mentor) => (
                     <option key={mentor.user_id} value={mentor.user_id}>
-                      {mentor.email} ({`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()})
+                      {`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()}
                     </option>
                   ))}
                 </select>

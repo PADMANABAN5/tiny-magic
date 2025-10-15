@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, use } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -22,7 +22,7 @@ function Orgadminpods() {
   const [pods, setPods] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const email = sessionStorage.getItem("email");
+  const username = sessionStorage.getItem("username");
    const storedToken = sessionStorage.getItem("token");
   const { token } = useAuth();
   const config = {
@@ -35,7 +35,7 @@ function Orgadminpods() {
     const fetchPods = async () => {
       try {
         const response = await axios.get(
-          `${process.env.REACT_APP_API_LINK}/orgadmin/pods/${email}`,
+          `${process.env.REACT_APP_API_LINK}/orgadmin/pods/${username}`,
           config
         );
         if (response.data.success) {
@@ -53,8 +53,8 @@ function Orgadminpods() {
       }
     };
 
-    if (email && batchId) fetchPods();
-  }, [email, batchId]);
+    if (username && batchId) fetchPods();
+  }, [username, batchId]);
 
   const handleCardClick = (podId) => {
     navigate(`/orgadminusers/${podId}`);

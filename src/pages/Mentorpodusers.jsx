@@ -19,7 +19,7 @@ function Mentorpodusers() {
   const [currentPage, setCurrentPage] = useState(1);
   const [podInfo, setPodInfo] = useState(null);
   const usersPerPage = 6;
-  const email = sessionStorage.getItem("email");
+  const email = sessionStorage.getItem("username");
   const { token } = useAuth();
 
   const config = {
@@ -153,7 +153,7 @@ function Mentorpodusers() {
                             <th className="py-3 text-center" style={{ width: '5%' }}>S.No</th>
                             <th className="py-3" style={{ width: '20%' }}>First Name</th>
                             <th className="py-3" style={{ width: '20%' }}>Last Name</th>
-                            <th className="py-3" style={{ width: '30%' }}>Email</th>
+                            
                             <th className="py-3 text-center" style={{ width: '25%' }}>Action</th>
                           </tr>
                         </thead>
@@ -163,7 +163,7 @@ function Mentorpodusers() {
                               <td className="text-center">{indexOfFirstUser + index + 1}</td>
                               <td>{user.first_name}</td>
                               <td>{user.last_name}</td>
-                              <td>{user.email}</td>
+                              
                               <td>
                                 <button
                                   className="btn btn-outline-primary w-100 text-white bg-primary"

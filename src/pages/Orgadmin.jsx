@@ -50,7 +50,7 @@ function Orgadmin() {
   const firstname = sessionStorage.getItem('firstname');
   const lastname = sessionStorage.getItem('lastname');
   const organizationName = sessionStorage.getItem('organization_name') || 'Your Organization';
-  const email = sessionStorage.getItem('email');
+  const username = sessionStorage.getItem('username');
 
   const capitalize = (str) =>
     str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : '';
@@ -107,13 +107,13 @@ const [filterPodName, setFilterPodName] = useState('');
    * --------------------------------------------------------- */
   useEffect(() => {
     const fetchBatches = async () => {
-      if (!email) {
+      if (!username) {
         setBatchesLoading(false);
-        setBatchesError('Organization admin email not found in session.');
+        setBatchesError('Organization admin username not found in session.');
         return;
       }
       try {
-        const res = await axios.get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`, config);
+        const res = await axios.get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${username}`, config);
         if (res.data.success && Array.isArray(res.data.data)) {
           setBatchesData(res.data.data);
         } else {
@@ -128,7 +128,7 @@ const [filterPodName, setFilterPodName] = useState('');
       }
     };
     fetchBatches();
-  }, [email]);
+  }, [username]);
 
   /* -----------------------------------------------------------
    * Fetch Progress Report Data based on organizationName
@@ -245,7 +245,7 @@ const [filterPodName, setFilterPodName] = useState('');
       return (
         <tr key={key}>
           <td style={tdStyle}>{displayName}</td>
-          <td style={tdStyle}>{item.email}</td>
+          
           <td style={tdStyle}>{item.concept_name}</td>
           <td style={tdStyle}>{item.status}</td>
           <td style={tdStyle}>{item.current_stage}</td>
@@ -275,7 +275,7 @@ const [filterPodName, setFilterPodName] = useState('');
     const head = [
       [
         'Full Name',
-        'Email',
+        
         'Concept Name',
         'Status',
         'Current Stage',
@@ -305,7 +305,7 @@ const [filterPodName, setFilterPodName] = useState('');
       const d = getDateFromItem(item);
       return [
         displayName,
-        item.email || '',
+        
         item.concept_name || '',
         item.status || '',
         item.current_stage ?? '',
@@ -344,28 +344,27 @@ const [filterPodName, setFilterPodName] = useState('');
       bodyStyles: { lineWidth: 0.1, lineColor: [0, 0, 0] },
       columnStyles: {
         0: { cellWidth: 40 }, // Full Name
-        1: { cellWidth: 50 }, // Email
-        2: { cellWidth: 40 }, // Concept Name
-        3: { cellWidth: 20 }, // Status
-        4: { cellWidth: 25 }, // Current Stage
-        5: { cellWidth: 30 }, // Explanation Score
-        6: { cellWidth: 30 }, // Interpretation Score
-        7: { cellWidth: 20 }, // Application Score
-        8: { cellWidth: 20 }, // Perspective Score
-        9: { cellWidth: 20 }, // Empathy Score
-        10: { cellWidth: 20 }, // Self-Knowledge Score
-        11: { cellWidth: 20 }, // Asking Questions Score
-        12: { cellWidth: 20 }, // Clarifying Ambiguity Score
-        13: { cellWidth: 20 }, // Summarizing Confirming Score
-        14: { cellWidth: 20 }, // Challenging Ideas Score
-        15: { cellWidth: 20 }, // Comparing Concepts Score
-        16: { cellWidth: 20 }, // Abstract Concrete Score
-        17: { cellWidth: 20 }, // 6 Facets Avg
-        18: { cellWidth: 20 }, // Understanding Skills Avg
-        19: { cellWidth: 20 }, // Final Score
-        20: { cellWidth: 20 }, // Batch Name
-        21: { cellWidth: 20 }, // Pod Name
-        22: { cellWidth: 45 }, // Updated At
+        1: { cellWidth: 40 }, // Concept Name
+        2: { cellWidth: 20 }, // Status
+        3: { cellWidth: 25 }, // Current Stage
+        4: { cellWidth: 30 }, // Explanation Score
+        5: { cellWidth: 30 }, // Interpretation Score
+        6: { cellWidth: 20 }, // Application Score
+        7: { cellWidth: 20 }, // Perspective Score
+        8: { cellWidth: 20 }, // Empathy Score
+        9: { cellWidth: 20 }, // Self-Knowledge Score
+        10: { cellWidth: 20 }, // Asking Questions Score
+        11: { cellWidth: 20 }, // Clarifying Ambiguity Score
+        12: { cellWidth: 20 }, // Summarizing Confirming Score
+        13: { cellWidth: 20 }, // Challenging Ideas Score
+        14: { cellWidth: 20 }, // Comparing Concepts Score
+        15: { cellWidth: 20 }, // Abstract Concrete Score
+        16: { cellWidth: 20 }, // 6 Facets Avg
+        17: { cellWidth: 20 }, // Understanding Skills Avg
+        18: { cellWidth: 20 }, // Final Score
+        19: { cellWidth: 20 }, // Batch Name
+        20: { cellWidth: 20 }, // Pod Name
+        21: { cellWidth: 45 }, // Updated At
       },
       didDrawPage: (data) => {
         const pageSize = doc.internal.pageSize;
@@ -394,7 +393,6 @@ const [filterPodName, setFilterPodName] = useState('');
       const d = getDateFromItem(item);
       return {
         'Full Name': displayName,
-        'Email': item.email || '',
         'Concept Name': item.concept_name || '',
         'Status': item.status || '',
         'Current Stage': item.current_stage ?? '',
@@ -641,15 +639,7 @@ const [filterPodName, setFilterPodName] = useState('');
         }}
         size="sm"
       />
-      <Form.Control
-        placeholder="Search by Email"
-        value={searchEmail}
-        onChange={(e) => {
-          setSearchEmail(e.target.value);
-          setCurrentPage(1);
-        }}
-        size="sm"
-      />
+     
     </div>
   </div>
 
@@ -837,7 +827,7 @@ const [filterPodName, setFilterPodName] = useState('');
                         <thead className="bg-primary text-white">
                           <tr style={{ backgroundColor: '#f2f2f2' }}>
                             <th style={thStyle}>Full Name</th>
-                            <th style={thStyle}>Email</th>
+                            
                             <th style={thStyle}>Concept Name</th>
                             <th style={thStyle}>Status</th>
                             <th style={thStyle}>Current Stage</th>

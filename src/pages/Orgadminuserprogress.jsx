@@ -812,10 +812,10 @@ const renderPracticeScoreCell = (conversation) => {
                   </div>
                 </Card.Header>
                 <Card.Body>
-                  <p><strong>Email:</strong> {userData.user.email}</p>
+                  
                   <p><strong>Pod:</strong> <Badge bg="info">{userData.pod?.pod_name || 'N/A'}</Badge></p>
                   <p><strong>Batch:</strong> <Badge bg="secondary">{userData.batch?.batch_name || 'N/A'}</Badge></p>
-                  <p><strong>Mentor:</strong> {userData.pod?.mentor?.first_name} {userData.pod?.mentor?.last_name} ({userData.pod?.mentor?.email})</p>
+                  <p><strong>Mentor:</strong> {userData.pod?.mentor?.first_name} {userData.pod?.mentor?.last_name}</p>
                 </Card.Body>
               </Card>
 

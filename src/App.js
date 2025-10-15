@@ -33,6 +33,7 @@ import Practicemode from './pages/Practicemode.jsx'; // Import Practicemode
 import PracticeHistory from './pages/PracticeHistory.jsx'; // Import PracticeHistory
 import { ToastContainer } from "react-toastify";
 import { AuthProvider } from "./components/AuthContext.jsx";
+import ForgotPassword from './components/Forgotpassword.jsx';
 import AutoLogout from "./components/Autologout.jsx";
 // ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
@@ -67,6 +68,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* ✅ Protected Routes by Role */}
         <Route path="/dashboard" element={

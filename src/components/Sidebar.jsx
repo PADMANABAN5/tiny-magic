@@ -9,21 +9,31 @@ import {
   FaCaretDown,
   FaHistory,
   FaChartLine,
-  FaChartBar
+  FaChartBar,
 } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
-function Sidebar({ isProcessingAssessment , isLoading }) {
+function Sidebar({ isProcessingAssessment, isLoading}) {
   const location = useLocation();
   const navigate = useNavigate();
-  const username = sessionStorage.getItem("email");
-  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+   // 🔹 CHANGED: read name sources we saved at login
+  const firstName = sessionStorage.getItem("firstName"); 
+  const username  = sessionStorage.getItem("username");  
+  const email     = sessionStorage.getItem("email");     
+ // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
+  const displayName =
+    (firstName && firstName.trim()) ||
+    (username && username.trim()) ||
+    (email && email.split("@")[0]) ||
+    "User";
+  
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98)
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
-  
+
   const handleLogout = async () => {
     try {
       const token = sessionStorage.getItem("token"); // store your login token here
@@ -53,24 +63,18 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
       navigate("/login");
     }
   };
-  // Function to shorten username
-  const getShortenedUsername = (email) => {
-    if (!email) return "User";
-    const parts = email.split("@");
-    return parts[0]; // Returns only the part before @
-  };
-
+ 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 768.98)
     };
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
- 
+
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (!event.target.closest('.dropdown')) {
+      if (!event.target.closest(".dropdown")) {
         setShowDropdown(false);
       }
     };
@@ -80,46 +84,57 @@ function Sidebar({ isProcessingAssessment , isLoading }) {
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
-      <div className="container-fluid"> 
-        <Link to="/dashboard" className={`navbar-brand d-flex align-items-center`}
+      <div className="container-fluid">
+        <Link
+          to="/dashboard"
+          className={`navbar-brand d-flex align-items-center`}
           onClick={(e) => isProcessingAssessment && e.preventDefault()}
         >
           <div className="logo-container">
-            <img src="/logo.png" alt="Logo" className="logo-image" /> 
+            <img src="/logo.png" alt="Logo" className="logo-image" />
           </div>
         </Link>
 
+      
+
         {/* <div className="page-title mx-auto">
-  {(() => {
-    switch (location.pathname) {
-      case "/dashboard":
-        return "Training Mode";
-      case "/practice":
-        return "Practice Mode";
-      case "/conversationhistory":
-        return "Training History";
-      case "/practicehistory":
-        return "Practice History";
-      default:
-        return "";
-    }
-  })()}
-</div>
-  */}
+          {(() => {
+            switch (location.pathname) {
+              case "/dashboard":
+                return "Training Mode";
+              case "/practice":
+                return "Practice Mode";
+              case "/conversationhistory":
+                return "Training History";
+              case "/practicehistory":
+                return "Practice History";
+              default:
+                return "";
+            }
+          })()}
+        </div> */}
+
         <div className="ms-auto">
           <div className="dropdown">
             <button
-              className={`btn btn-outline-secondary d-flex align-items-center login-btn ${
-                isProcessingAssessment || isLoading ? "disabled" : ""
-              }`}
+              className={`btn btn-outline-secondary d-flex align-items-center login-btn ${isProcessingAssessment || isLoading ? "disabled" : ""
+                }`}
               type="button"
-              onClick={() => !isProcessingAssessment && !isLoading && setShowDropdown(!showDropdown)}
+              onClick={() =>
+                !isProcessingAssessment &&
+                !isLoading &&
+                setShowDropdown(!showDropdown)
+              }
               aria-expanded={showDropdown}
               disabled={isProcessingAssessment || isLoading}
             >
               <FaUser className="me-2 text-white" />
-              <span className="text-white">{getShortenedUsername(username)}</span>
-              <FaCaretDown className="ms-2 text-white" />
+              <span className="text-white username-desktop">
+  {firstName
+    ? `${firstName} (${username || email.split("@")[0] || "User"})`
+    : displayName}
+</span>
+             <FaCaretDown className="ms-2 text-white" />
             </button>
             
             {showDropdown && (

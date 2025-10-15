@@ -359,7 +359,7 @@ export default function Mentor() {
                 <table className="table table-striped table-bordered table-hover">
                   <thead className="bg-primary text-white">
                     <tr>
-                      <th>Email</th>
+                      
                       <th>Username</th>
                       <th>Full Name</th>
                       <th>Action</th>
@@ -369,7 +369,7 @@ export default function Mentor() {
                     {currentMentors.length > 0 ? (
                       currentMentors.map((mentor) => (
                         <tr key={mentor.user_id}>
-                          <td>{mentor.email}</td>
+                          
                           <td>{mentor.username || "-"}</td>
                           <td>{`${mentor.first_name} ${mentor.last_name}`}</td>
                           <td>
@@ -573,18 +573,7 @@ export default function Mentor() {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h4>Update Mentor</h4>
             <form onSubmit={handleUpdateSubmit}>
-              <div className="mb-3">
-                <label className="form-label">Email</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  value={editMentor.email}
-                  onChange={(e) =>
-                    setEditMentor({ ...editMentor, email: e.target.value })
-                  }
-                  required
-                />
-              </div>
+              
               <div className="mb-3">
                 <label className="form-label">Username</label>
                 <input

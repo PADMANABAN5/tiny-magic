@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import "../styles/login.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../components/AuthContext";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -19,7 +19,7 @@ function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showPasswordChangeModal, setShowPasswordChangeModal] = useState(false);
   const [userDetails, setUserDetails] = useState(null);
-  const [isMaintenanceMode, setIsMaintenanceMode] = useState(true);
+  const [isMaintenanceMode, setIsMaintenanceMode] = useState(false);
 
   // visibility toggles
   const [showPassword, setShowPassword] = useState(false);     // login
@@ -46,7 +46,6 @@ function Login() {
     if (!hasSpecialChar) return { isValid: false, message: "🔑 Password must contain at least one special character (!@#$%^&*?)." };
     return { isValid: true, message: "" };
   };
-  // ------------------------------------
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -77,6 +76,11 @@ function Login() {
       }
 
       login(user);
+      sessionStorage.setItem("firstName", user.first_name || "");
+sessionStorage.setItem("lastName",  user.last_name  || "");
+sessionStorage.setItem("username",  user.username   || "");
+
+sessionStorage.setItem("token",     user.token || "");
 
       if (user.is_default_password) {
         setUserDetails(user);
@@ -258,6 +262,14 @@ function Login() {
                   </button>
                 </div>
               </div>
+              <div className="forgot-password-link" style={{ textAlign: 'right', marginBottom: '10px' }}>
+  <Link
+    to="/forgot-password"
+    style={{ textDecoration: 'none', color: '#085a5cff', cursor: 'pointer'}}
+  >
+    Forgot Password?
+  </Link>
+</div>
 
               <button className="login-btn" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Please Wait..." : "Login"}

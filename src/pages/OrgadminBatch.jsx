@@ -7,13 +7,13 @@ function OrgadminBatch() {
     const [batches, setBatches] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const email = sessionStorage.getItem("email");
+    const username = sessionStorage.getItem("username");
     const { token } = useAuth();
 
     useEffect(() => {
         const fetchBatches = async () => {
             try {
-                const response = await axios.get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${email}`);
+                const response = await axios.get(`${process.env.REACT_APP_API_LINK}/orgadmin/batches/${username}`);
                 if (response.data.success) {
                     setBatches(response.data.data);
                 } else {
