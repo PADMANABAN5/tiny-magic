@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Supersidebar from '../components/Supersidebar';
-import { Pagination, Form } from 'react-bootstrap';
+import { Pagination, Form, Dropdown } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import '../styles/OrgList.css';
@@ -232,20 +232,31 @@ const isValidOrgName = (name) => {
 
 <div className="d-flex justify-content-start align-items-center mb-3">
   <span className="me-2">Show entries:</span>
-  <Form.Select
-    style={{ width: '100px' }}
-    value={itemsPerPage}
-    onChange={(e) => {
-      setCurrentPage(1);
-      setItemsPerPage(Number(e.target.value));
-    }}
-  >
-    {[5, 10, 15, 20, 50].map((num) => (
-      <option key={num} value={num}>
-        {num}
-      </option>
-    ))}
-  </Form.Select>
+  <Dropdown onSelect={(eventKey) => {
+    setCurrentPage(1);
+    setItemsPerPage(Number(eventKey));
+  }}>
+    <Dropdown.Toggle 
+      variant="outline-secondary" 
+      id="entries-dropdown"
+      className="entries-dropdown-toggle d-flex justify-content-between align-items-center"
+      style={{ width: '90px' }}
+    >
+      <span>{itemsPerPage}</span>
+    </Dropdown.Toggle>
+    <Dropdown.Menu className="entries-dropdown-menu" style={{ minWidth: '90px' }}>
+      {[5, 10, 15, 20, 50].map((num) => (
+        <Dropdown.Item 
+          key={num} 
+          eventKey={num}
+          active={itemsPerPage === num}
+          className="entries-dropdown-item text-center"
+        >
+          {num}
+        </Dropdown.Item>
+      ))}
+    </Dropdown.Menu>
+  </Dropdown>
 </div>
 
 

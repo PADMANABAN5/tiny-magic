@@ -21,7 +21,7 @@ import {
   FiBarChart2
 } from "react-icons/fi";
 import axios from 'axios';
-import { Spinner, Alert, Card, Row, Col, Badge, Button, OverlayTrigger, Popover } from 'react-bootstrap';
+import { Spinner, Alert, Card, Row, Col, Badge, Button, OverlayTrigger, Popover, Dropdown } from 'react-bootstrap';
 import Mentorsidebar from '../components/Mentorsidebar';
 import PDFDownloader from '../components/PDFDownloader.jsx';
 import AssessmentDisplay, { 
@@ -1016,31 +1016,111 @@ const parseField = (field) => {
             </div>
           </div>
           <div className="filter-group">
-            <label>Status:</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="not_started">Not Started</option>
-              <option value="inprogress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
+  <label>Status:</label>
+  <Dropdown onSelect={(eventKey) => setFilterStatus(eventKey || 'all')}>
+    <Dropdown.Toggle 
+      variant="outline-secondary" 
+      id="status-dropdown"
+      className="status-dropdown-toggle d-flex justify-content-between align-items-center"
+      style={{ minWidth: '100%' }}
+    >
+      {filterStatus === 'all' ? 'All Statuses' : 
+       filterStatus === 'not_started' ? 'Not Started' :
+       filterStatus === 'inprogress' ? 'In Progress' : 'Completed'}
+    </Dropdown.Toggle>
+    <Dropdown.Menu className="status-dropdown-menu text-end" style={{ minWidth: '100%' }}>
+      <Dropdown.Item 
+        eventKey="all" 
+        active={filterStatus === 'all'}
+        className="status-dropdown-item"
+      >
+        All Statuses
+      </Dropdown.Item>
+      <Dropdown.Item 
+        eventKey="not_started" 
+        active={filterStatus === 'not_started'}
+        className="status-dropdown-item"
+      >
+        Not Started
+      </Dropdown.Item>
+      <Dropdown.Item 
+        eventKey="inprogress" 
+        active={filterStatus === 'inprogress'}
+        className="status-dropdown-item"
+      >
+        In Progress
+      </Dropdown.Item>
+      <Dropdown.Item 
+        eventKey="completed" 
+        active={filterStatus === 'completed'}
+        className="status-dropdown-item"
+      >
+        Completed
+      </Dropdown.Item>
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
           <div className="filter-group">
-            <label>Sort By:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="date_desc">Latest First</option>
-              <option value="date_asc">Oldest First</option>
-              <option value="concept_asc">Concept A-Z</option>
-              <option value="concept_desc">Concept Z-A</option>
-              <option value="status">Status</option>
-              <option value="stage">Stages</option>
-            </select>
-          </div>
+  <label>Sort By:</label>
+  <Dropdown onSelect={(eventKey) => setSortBy(eventKey || 'date_desc')}>
+    <Dropdown.Toggle 
+      variant="outline-secondary" 
+      id="sortby-dropdown"
+      className="sortby-dropdown-toggle d-flex justify-content-between align-items-center"
+      style={{ minWidth: '100%' }}
+    >
+      {sortBy === 'date_desc' ? 'Latest First' : 
+       sortBy === 'date_asc' ? 'Oldest First' :
+       sortBy === 'concept_asc' ? 'Concept A-Z' :
+       sortBy === 'concept_desc' ? 'Concept Z-A' :
+       sortBy === 'status' ? 'Status' : 'Stages'}
+    </Dropdown.Toggle>
+    <Dropdown.Menu className="sortby-dropdown-menu text-end" style={{ minWidth: '100%' }}>
+      <Dropdown.Item 
+        eventKey="date_desc" 
+        active={sortBy === 'date_desc'}
+        className="sortby-dropdown-item"
+      >
+        Latest First
+      </Dropdown.Item>
+      <Dropdown.Item 
+        eventKey="date_asc" 
+        active={sortBy === 'date_asc'}
+        className="sortby-dropdown-item"
+      >
+        Oldest First
+      </Dropdown.Item>
+      <Dropdown.Item 
+        eventKey="concept_asc" 
+        active={sortBy === 'concept_asc'}
+        className="sortby-dropdown-item"
+      >
+        Concept A-Z
+      </Dropdown.Item>
+      <Dropdown.Item 
+        eventKey="concept_desc" 
+        active={sortBy === 'concept_desc'}
+        className="sortby-dropdown-item"
+      >
+        Concept Z-A
+      </Dropdown.Item>
+      <Dropdown.Item 
+        eventKey="status" 
+        active={sortBy === 'status'}
+        className="sortby-dropdown-item"
+      >
+        Status
+      </Dropdown.Item>
+      <Dropdown.Item 
+        eventKey="stage" 
+        active={sortBy === 'stage'}
+        className="sortby-dropdown-item"
+      >
+        Stages
+      </Dropdown.Item>
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
         </div>
 
         {isConversationsLoading ? (

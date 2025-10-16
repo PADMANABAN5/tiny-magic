@@ -8,6 +8,7 @@ import Supersidebar from '../components/Supersidebar';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import '../styles/prompt.css';
+import { Dropdown } from 'react-bootstrap';
  
 export default function Prompt() {
   const navigate = useNavigate();
@@ -384,40 +385,69 @@ export default function Prompt() {
          {/* Filter Section */}
 <div className="d-flex gap-3 my-3">
   <Form.Group>
-   
-    <Form.Select
-      value={selectedOrgIdFilter}
-      onChange={(e) => {
-        setSelectedOrgIdFilter(e.target.value);
-        setSelectedBatchIdFilter(''); // Reset batch when org changes
-      }}
-    >
-      <option value="">All Organizations</option>
-      {orgList.map(org => (
-        <option key={org.organization_id} value={org.organization_id}>
-          {org.organization_name}
-        </option>
-      ))}
-    </Form.Select>
+    <Dropdown onSelect={(eventKey) => {
+      setSelectedOrgIdFilter(eventKey || '');
+      setSelectedBatchIdFilter(''); // Reset batch when org changes
+    }}>
+      <Dropdown.Toggle 
+        variant="outline-secondary" 
+        id="org-filter-dropdown"
+        className="custom-dropdown-toggle"
+      >
+        {selectedOrgIdFilter ? 
+          orgList.find(org => org.organization_id === selectedOrgIdFilter)?.organization_name : 
+          "All Organizations"
+        }
+      </Dropdown.Toggle>
+      <Dropdown.Menu className="custom-dropdown-menu">
+        <Dropdown.Item eventKey="" className="custom-dropdown-item">
+          All Organizations
+        </Dropdown.Item>
+        {orgList.map(org => (
+          <Dropdown.Item 
+            key={org.organization_id} 
+            eventKey={org.organization_id}
+            active={selectedOrgIdFilter === org.organization_id}
+            className="custom-dropdown-item"
+          >
+            {org.organization_name}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
   </Form.Group>
 
   {/* 🔹 Always show Batch Filter */}
   <Form.Group>
-    
-    <Form.Select
-      value={selectedBatchIdFilter}
-      onChange={(e) => setSelectedBatchIdFilter(e.target.value)}
-    >
-      <option value="">All Batches</option>
-      {batchListForFilter.map(batch => (
-        <option key={batch.batch_id} value={batch.batch_id}>
-          {batch.batch_name}
-        </option>
-      ))}
-    </Form.Select>
+    <Dropdown onSelect={(eventKey) => setSelectedBatchIdFilter(eventKey || '')}>
+      <Dropdown.Toggle 
+        variant="outline-secondary" 
+        id="batch-filter-dropdown"
+        className="custom-dropdown-toggle"
+      >
+        {selectedBatchIdFilter ? 
+          batchListForFilter.find(batch => batch.batch_id === selectedBatchIdFilter)?.batch_name : 
+          "All Batches"
+        }
+      </Dropdown.Toggle>
+      <Dropdown.Menu className="custom-dropdown-menu">
+        <Dropdown.Item eventKey="" className="custom-dropdown-item">
+          All Batches
+        </Dropdown.Item>
+        {batchListForFilter.map(batch => (
+          <Dropdown.Item 
+            key={batch.batch_id} 
+            eventKey={batch.batch_id}
+            active={selectedBatchIdFilter === batch.batch_id}
+            className="custom-dropdown-item"
+          >
+            {batch.batch_name}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
   </Form.Group>
 </div>
-
  
           <div className="table-responsive">
             <table className="table table-hover table-striped table-bordered">
