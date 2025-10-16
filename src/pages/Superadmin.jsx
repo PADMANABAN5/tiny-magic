@@ -234,7 +234,7 @@ function Superadmin() {
                   <div className="p-3 bg-gradient-orange rounded-circle d-inline-flex mb-3">
                     <SiOpenai className="text-white" size={32} />
                   </div>
-                  <Card.Title className="fs-5 fw-semibold text-dark mb-2">Openai Managements</Card.Title>
+                  <Card.Title className="fs-5 fw-semibold text-dark mb-2">LLM Managements</Card.Title>
                   <Card.Text className="text-secondary mb-4 fs-6">
                     Add, Update and Assign models over Global, Organization and Batch
                   </Card.Text>

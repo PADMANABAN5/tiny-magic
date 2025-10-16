@@ -158,7 +158,7 @@ function ViewOrgModels() {
                       >
                         {model.api_key}
                       </td>
-                      <td>{model.description}</td>
+                      <td>{model.description || "No description available"}</td>
                     </tr>
                   ))
                 )}

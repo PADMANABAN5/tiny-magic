@@ -347,7 +347,9 @@ const normalized = formatMarkdownResponse(lastSystemMsg, {
         userPrompt: "",
         selectedConcept: concept,
         organizationId,
-        batchId
+        batchId,
+        
+        
       });
       const mentorMessage = formatMarkdownResponse(response.apiResponseText);
       const updatedHistory = [{ user: "", system: mentorMessage }];
