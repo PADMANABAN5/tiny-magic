@@ -383,13 +383,14 @@ export default function Prompt() {
           </div>
  
 
- {/* Filter Section */}
+{/* Filter Section */}
 <div className="d-flex gap-3 my-3 filter-section align-items-center flex-wrap">
   {/* 🔹 Organization Dropdown */}
   <Form.Group className="filter-org-group">
     <Dropdown
       className="filter-org-dropdown"
       autoClose="true"
+      drop="down"
     >
       <Dropdown.Toggle
         id="org-dropdown-toggle"
@@ -409,8 +410,20 @@ export default function Prompt() {
 
       <Dropdown.Menu
         className="filter-org-menu dropdown-menu-outside"
+        flip={false}
         style={{ maxHeight: "250px", overflowY: "auto" }}
-        popperConfig={{ strategy: "fixed" }}
+        popperConfig={{
+          strategy: "absolute",
+          modifiers: [
+            { name: "flip", enabled: false },
+            { name: "preventOverflow", enabled: false },
+            { name: "hide", enabled: false },
+            {
+              name: "offset",
+              options: { offset: [0, 6] },
+            },
+          ],
+        }}
       >
         <Dropdown.Item
           className="filter-org-item"
@@ -446,6 +459,7 @@ export default function Prompt() {
     <Dropdown
       className="filter-batch-dropdown"
       autoClose="true"
+      drop="down"
     >
       <Dropdown.Toggle
         id="batch-dropdown-toggle"
@@ -465,8 +479,20 @@ export default function Prompt() {
 
       <Dropdown.Menu
         className="filter-batch-menu dropdown-menu-outside"
+        flip={false}
         style={{ maxHeight: "250px", overflowY: "auto" }}
-        popperConfig={{ strategy: "fixed" }}
+        popperConfig={{
+          strategy: "absolute",
+          modifiers: [
+            { name: "flip", enabled: false },
+            { name: "preventOverflow", enabled: false },
+            { name: "hide", enabled: false },
+            {
+              name: "offset",
+              options: { offset: [0, 6] },
+            },
+          ],
+        }}
       >
         <Dropdown.Item
           className="filter-batch-item"
@@ -491,6 +517,7 @@ export default function Prompt() {
     </Dropdown>
   </Form.Group>
 </div>
+
 
 
           <div className="table-responsive">

@@ -104,6 +104,12 @@
 
 
 
+.filter-section,
+.filter-org-dropdown,
+.filter-batch-dropdown {
+  position: static !important;
+}
+
 @media (max-width: 768px) {
   .filter-section {
     flex-direction: column !important;
