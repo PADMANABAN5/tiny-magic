@@ -42,7 +42,7 @@ function ViewAssignedModels() {
       setLoading(false);
     };
     fetchAssignments();
-  }, [BASE_URL, token]);
+  }, [token]);
 
   // Pagination logic
   const idxLast = currentPage * itemsPerPage;

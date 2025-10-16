@@ -11,7 +11,7 @@ import { FiEdit2, FiPlus } from "react-icons/fi";
 import { FaArrowLeft } from "react-icons/fa";
 import axios from "axios";
 import { useAuth } from "../components/AuthContext";
-import Supersidebar from "../components/Supersidebar";
+import Orgadminsidebar from "../components/Orgadminsidebar";
 import { useNavigate } from "react-router-dom";
 
 function AssignmentOrg() {
@@ -20,6 +20,8 @@ function AssignmentOrg() {
 
   const [assignments, setAssignments] = useState([]);
   const [models, setModels] = useState([]);
+  const [orgModels, setOrgModels] = useState([]);
+  const [orgModelIds, setOrgModelIds] = useState(new Set());
   const [batches, setBatches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,9 +33,11 @@ function AssignmentOrg() {
   const [formLoading, setFormLoading] = useState(false);
   const [formError, setFormError] = useState(null);
   const [formSuccess, setFormSuccess] = useState(null);
+  const username = sessionStorage.getItem("username");
 
   const [formData, setFormData] = useState({
     model_id: "",
+    modelSource: "",
     level: "",
     batch_id: "",
     organization_id: "",
@@ -54,19 +58,6 @@ function AssignmentOrg() {
       if (res.data.success) {
         const data = res.data.data || [];
         setAssignments(data);
-
-        // Extract unique batches
-        const uniqueBatches = [
-          ...new Map(
-            data
-              .filter((a) => a.batch_id && a.batch_name)
-              .map((a) => [
-                a.batch_id,
-                { batch_id: a.batch_id, batch_name: a.batch_name },
-              ])
-          ).values(),
-        ];
-        setBatches(uniqueBatches);
       } else {
         setError(res.data.message || "Failed to fetch assignments");
       }
@@ -74,6 +65,24 @@ function AssignmentOrg() {
       setError(err.response?.data?.message || err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // ✅ Fetch batches
+  const fetchBatches = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_LINK}/orgadmin/batches/${username}`,
+        config
+      );
+      if (res.data.success) {
+        const data = res.data.data || [];
+        setBatches(data);
+      } else {
+        console.error("Failed to fetch batches");
+      }
+    } catch (err) {
+      console.error("Error fetching batches:", err);
     }
   };
 
@@ -103,9 +112,31 @@ function AssignmentOrg() {
     }
   };
 
+  // ✅ Fetch org models
+  const fetchOrgModels = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_LINK}/llm/orgadmin/organization-models`,
+        config
+      );
+      if (res.data.success) {
+        const data = res.data.data || [];
+        setOrgModels(data);
+        const ids = new Set(data.map((m) => m.model_id));
+        setOrgModelIds(ids);
+      } else {
+        console.error("Failed to fetch org models");
+      }
+    } catch (err) {
+      console.error("Error fetching org models:", err);
+    }
+  };
+
   useEffect(() => {
     fetchAssignments();
+    fetchBatches();
     fetchModels();
+    fetchOrgModels();
   }, []);
 
   // ============ Modal Handlers ============
@@ -114,6 +145,7 @@ function AssignmentOrg() {
     setSelectedAssignment(null);
     setFormData({
       model_id: "",
+      modelSource: "",
       level: "",
       batch_id: "",
       organization_id: "",
@@ -124,10 +156,12 @@ function AssignmentOrg() {
   };
 
   const openEditModal = (assignment) => {
+    const source = orgModelIds.has(assignment.model_id) ? "org" : "global";
     setEditMode(true);
     setSelectedAssignment(assignment);
     setFormData({
       model_id: assignment.model_id || "",
+      modelSource: source,
       level: assignment.level || "",
       batch_id: assignment.batch_id || "",
       organization_id: assignment.organization_id || "",
@@ -141,6 +175,26 @@ function AssignmentOrg() {
     setShowModal(false);
     setEditMode(false);
     setSelectedAssignment(null);
+  };
+
+  // 🆕 Handle global model change
+  const handleGlobalModelChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      model_id: value,
+      modelSource: value ? "global" : "",
+    }));
+  };
+
+  // 🆕 Handle org model change
+  const handleOrgModelChange = (e) => {
+    const value = e.target.value;
+    setFormData((prev) => ({
+      ...prev,
+      model_id: value,
+      modelSource: value ? "org" : "",
+    }));
   };
 
   // 🆕 Auto-fill organization_id when user selects "organization"
@@ -208,19 +262,18 @@ function AssignmentOrg() {
   // ============ UI ============
   return (
     <div className="main-layout-container bg-light min-vh-100">
-      <Supersidebar />
+      <Orgadminsidebar />
 
       <div className="content-area">
         <div className="container py-4">
           {/* Back Button */}
           <div className="d-flex justify-content-start mb-3">
             <button
-  className="back-button text-white border-0"
-  onClick={() => navigate(-1)}
->
-  <FaArrowLeft />
-</button>
-
+              className="back-button text-white border-0"
+              onClick={() => navigate(-1)}
+            >
+              <FaArrowLeft />
+            </button>
           </div>
 
           {/* Header Section */}
@@ -250,35 +303,33 @@ function AssignmentOrg() {
                   <table className="table table-hover align-middle">
                     <thead className="bg-dark text-white">
                       <tr>
-
                         <th>Model Name</th>
                         <th>Display Name</th>
                         <th>Level</th>
                         <th>Organization</th>
                         <th>Batch</th>
-          
                         <th className="text-center">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {assignments.map((a) => (
                         <tr key={a.assignment_id}>
-                         
                           <td>{a.model_name}</td>
                           <td>{a.name || "—"}</td>
                           <td>{a.level}</td>
                           <td>{a.organization_name || "—"}</td>
                           <td>{a.batch_name || "—"}</td>
-                         
                           <td className="text-center">
-                            <Button
-                              variant="outline-success"
-                              size="sm"
-                              className="me-2"
-                              onClick={() => openEditModal(a)}
-                            >
-                              <FiEdit2 /> Edit
-                            </Button>
+                            {a.level !== "global" && (
+                              <Button
+                                variant="outline-success"
+                                size="sm"
+                                className="me-2"
+                                onClick={() => openEditModal(a)}
+                              >
+                                <FiEdit2 /> Edit
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -308,14 +359,31 @@ function AssignmentOrg() {
             <Form.Group className="mb-3">
               <Form.Label className="fw-semibold">Model</Form.Label>
               <Form.Select
-                value={formData.model_id}
-                onChange={(e) =>
-                  setFormData({ ...formData, model_id: e.target.value })
-                }
+                value={formData.modelSource === "global" ? formData.model_id : ""}
+                onChange={handleGlobalModelChange}
+                disabled={formData.modelSource === "org"}
                 required
               >
                 <option value="">Select Model</option>
                 {models.map((m) => (
+                  <option key={m.model_id} value={m.model_id}>
+                    {m.model_name}
+                  </option>
+                ))}
+              </Form.Select>
+            </Form.Group>
+
+            {/* Org Models Dropdown */}
+            <Form.Group className="mb-3">
+              <Form.Label className="fw-semibold">Org Models</Form.Label>
+              <Form.Select
+                value={formData.modelSource === "org" ? formData.model_id : ""}
+                onChange={handleOrgModelChange}
+                disabled={formData.modelSource === "global"}
+                required={formData.modelSource === "org"}
+              >
+                <option value="">Select Org Model</option>
+                {orgModels.map((m) => (
                   <option key={m.model_id} value={m.model_id}>
                     {m.model_name}
                   </option>
@@ -328,7 +396,7 @@ function AssignmentOrg() {
               <Form.Label className="fw-semibold">Level</Form.Label>
               <Form.Select
                 value={formData.level}
-                onChange={handleLevelChange} // 🆕 replaced direct handler
+                onChange={handleLevelChange}
                 required
               >
                 <option value="">Select Level</option>

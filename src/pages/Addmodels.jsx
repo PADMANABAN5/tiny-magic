@@ -214,7 +214,7 @@ const handleDelete = async (modelId, modelName) => {
       is_active: isActive
     };
 
-    console.log("Payload:", payload);
+    
     
     let response;
     if (editMode) {
@@ -499,7 +499,7 @@ const handleDelete = async (modelId, modelName) => {
     value={modelName}
     onChange={(e) => {
       const value = e.target.value;
-      const validPattern = /^[A-Za-z0-9._\- ]*$/;
+      const validPattern = /^[A-Za-z0-9._ -]*$/;
 
       // Check for invalid characters
       if (!validPattern.test(value)) {
@@ -525,10 +525,10 @@ const handleDelete = async (modelId, modelName) => {
       setModelName(value);
     }}
     placeholder="e.g., gpt-4o"
-    pattern="^[A-Za-z0-9._\\- ]*$"
+    pattern="^[A-Za-z0-9._ - ]*$"
   />
   <div className="form-text text-muted">
-    Enter the model name exactly as specified in OpenAI documentation (
+    Enter the model name exactly as specified in LLM documentation (
     <code>gpt-4o</code>, <code>gpt-4</code>, <code>gpt-3.5-turbo</code>).
   </div>
 </div>
@@ -547,7 +547,7 @@ const handleDelete = async (modelId, modelName) => {
     value={name}
     onChange={(e) => {
       const value = e.target.value;
-      const validPattern = /^[A-Za-z0-9._\- ]*$/; // same as model field
+      const validPattern = /^[A-Za-z0-9._ - ]*$/; // same as model field
 
       // Check for invalid characters
       if (!validPattern.test(value)) {
@@ -573,7 +573,7 @@ const handleDelete = async (modelId, modelName) => {
       setName(value);
     }}
     placeholder="Enter name"
-    pattern="^[A-Za-z0-9._\\- ]*$"
+    pattern="^[A-Za-z0-9._ - ]*$"
   />
 </div>
 

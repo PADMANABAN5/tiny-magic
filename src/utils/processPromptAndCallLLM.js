@@ -26,7 +26,7 @@ export const processPromptAndCallLLM = async (
       !selectedModel ||
       !selectedConcept ||
       !organizationId ||
-      !batchId
+      !batchId 
     ) {
       console.error("Missing required fields:", {
         username,
@@ -37,6 +37,7 @@ export const processPromptAndCallLLM = async (
         selectedConcept,
         organizationId,
         batchId,
+       
       });
       throw new Error("Missing required fields for LLM request");
     }
@@ -49,33 +50,52 @@ export const processPromptAndCallLLM = async (
     }
     
     let modelName = selectedModel;
+    let modelId = null; // Initialize modelId
     try {
+      console.log("🔍 Fetching fallback model info with orgId:", organizationId, "batchId:", batchId);
       const fallbackRes = await axios.get(
-        `${BASE_URL}/llm/fallback?organization_id=${organizationId}&batch_id=${batchId}`,
+        `${BASE_URL}/llm/assignments/fallback?organization_id=${organizationId}&batch_id=${batchId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (fallbackRes.data?.success && fallbackRes.data?.data?.model_name) {
-        modelName = fallbackRes.data.data.model_name;
-        console.log("✅ Resolved model_name from fallback API:", modelName);
+      console.log("📡 Full fallback response:", fallbackRes.data); // Added detailed logging
+
+      if (fallbackRes.data?.success && fallbackRes.data?.data) {
+        const fallbackData = fallbackRes.data.data;
+        console.log("📦 Fallback data object:", fallbackData); // Log the data object
+        
+        if (fallbackData.model_name) {
+          modelName = fallbackData.model_name;
+          console.log("✅ Resolved model_name from fallback API:", modelName);
+        } else {
+          console.warn("⚠️ No model_name in fallback data, using provided selectedModel");
+        }
+        
+        if (fallbackData.model_id) {
+          modelId = fallbackData.model_id;
+          console.log("✅ Resolved model_id from fallback API:", modelId);
+        } else {
+          console.warn("⚠️ No model_id in fallback data");
+        }
       } else {
-        console.warn("⚠️ Fallback API returned no model_name, using provided selectedModel");
+        console.warn("⚠️ Fallback API returned no success or data, using provided selectedModel");
       }
     } catch (err) {
-      console.error("❌ Error fetching model_name from fallback API:", err);
+      console.error("❌ Error fetching model_name or model_id from fallback API:", err.response?.data || err.message);
     }
+    
     // Prepare request data
     const requestData = {
       username,
       selectedPrompt,
       selectedModel: modelName,
+      model_id: modelId, // Use snake_case 'model_id' for backend compatibility
       sessionHistory,
       userPrompt,
       selectedConcept,
       organizationId,
       batchId,
     };
-
     // Log request for debugging
     console.log(
       `Sending request to /api/prompts/process (Prompt: ${selectedPrompt}):`,

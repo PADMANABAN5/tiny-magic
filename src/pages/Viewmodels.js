@@ -37,7 +37,7 @@ function ViewModels() {
       setLoading(false);
     }
     fetchModels();
-  }, [BASE_URL, token]);
+  }, [token]);
 
   return (
     <div className="main-layout-container">
@@ -60,7 +60,7 @@ function ViewModels() {
             </button>
           </div>
 
-          <h3 className="mb-4">OpenAI Models</h3>
+          <h3 className="mb-4">LLM Models</h3>
           {loading ? (
             <div className="text-center my-4">
               <Spinner animation="border" />
@@ -91,7 +91,7 @@ function ViewModels() {
                       <tr key={model.modelid}>
                         <td>{model.model_name}</td>
                         <td>{model.name}</td>
-                        <td>{model.description}</td>
+                        <td>{model.description || "No description available"}</td>
                         <td>{model.is_active ? "Active" : "Inactive"}</td>
                         <td>{new Date(model.created_at).toLocaleString()}</td>
                       </tr>
