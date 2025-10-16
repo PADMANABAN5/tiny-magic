@@ -4,13 +4,13 @@ import Sidebar from "../components/Sidebar.jsx";
 import "../styles/ConversationHistory.css";
 import axios from "axios";
 import PDFDownloader from "../components/PDFDownloader.jsx";
-import AssessmentDisplay, { 
-  hasAssessmentData, 
-  extractScoringData, 
-  calculateOverallScore, 
-  getScoreColor, 
-  getScoreLabel, 
-  formatCriterionName 
+import AssessmentDisplay, {
+  hasAssessmentData,
+  extractScoringData,
+  calculateOverallScore,
+  getScoreColor,
+  getScoreLabel,
+  formatCriterionName
 } from "../components/AssessmentDisplay.jsx";
 import {
   FiEye,
@@ -58,24 +58,24 @@ const ConversationHistory = () => {
   const chatEndRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
   const headerRef = useRef(null);
-const [headerHeight, setHeaderHeight] = useState(0);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
-const itemsPerPage = 10;
+  const itemsPerPage = 10;
 
 
-useEffect(() => {
-  const updateHeaderHeight = () => {
-    if (window.innerWidth >= 769 && window.innerWidth <= 1024 && headerRef.current) {
-      setHeaderHeight(headerRef.current.offsetHeight + 20);
-    } else {
-      setHeaderHeight(0); 
-    }
-  };
+  useEffect(() => {
+    const updateHeaderHeight = () => {
+      if (window.innerWidth >= 769 && window.innerWidth <= 1024 && headerRef.current) {
+        setHeaderHeight(headerRef.current.offsetHeight + 20);
+      } else {
+        setHeaderHeight(0);
+      }
+    };
 
-  updateHeaderHeight(); 
-  window.addEventListener("resize", updateHeaderHeight);
-  return () => window.removeEventListener("resize", updateHeaderHeight);
-}, []);
+    updateHeaderHeight();
+    window.addEventListener("resize", updateHeaderHeight);
+    return () => window.removeEventListener("resize", updateHeaderHeight);
+  }, []);
 
 
   // Get user data from session storage
@@ -91,18 +91,18 @@ useEffect(() => {
   // Convert conversation to format expected by PDFDownloader
   const convertConversationForPDF = (conversation) => {
     if (!conversation || !conversation.conversation) return [];
-    
+
     return conversation.conversation.map(entry => ({
       user: entry.user || "",
       system: entry.system || ""
     }));
   };
   useEffect(() => {
-  const storedUser = JSON.parse(sessionStorage.getItem("user"));
-  if (storedUser) {
-    setUserData(storedUser);
-  }
-}, []);
+    const storedUser = JSON.parse(sessionStorage.getItem("user"));
+    if (storedUser) {
+      setUserData(storedUser);
+    }
+  }, []);
 
   // Create concept object for PDFDownloader
   const createConceptObject = (conversation) => ({
@@ -114,7 +114,7 @@ useEffect(() => {
     if (!conversation) return;
 
     setIsDownloadingPDF(true);
-    
+
     try {
       // Create temporary PDF downloader instance for this specific conversation
       const tempPDFDownloader = PDFDownloader({
@@ -357,7 +357,7 @@ useEffect(() => {
       return 100;
     }
     return Math.max(currentStage - 1, 0) * progressPerStage;
-};
+  };
 
   // Filter and sort conversations
   const filteredAndSortedConversations = () => {
@@ -381,7 +381,7 @@ useEffect(() => {
         case 'status':
           return a.status.localeCompare(b.status);
         case 'stage':
-          return b.current_stage - a.current_stage;
+          return b.current_stage - a.current_stage; 
         default:
           return 0;
       }
@@ -390,17 +390,17 @@ useEffect(() => {
     return filtered;
   };
   const conversationsData = filteredAndSortedConversations();
-const indexOfLastItem = currentPage * itemsPerPage;
-const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-const currentConversations = conversationsData.slice(indexOfFirstItem, indexOfLastItem);
-const totalPages = Math.ceil(conversationsData.length / itemsPerPage);
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentConversations = conversationsData.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(conversationsData.length / itemsPerPage);
 
-// Handlers
-const goToPage = (page) => {
-  if (page >= 1 && page <= totalPages) {
-    setCurrentPage(page);
-  }
-};
+  // Handlers
+  const goToPage = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
+  };
 
   const handleViewConversation = (conversation) => {
     setSelectedConversation(conversation);
@@ -657,8 +657,8 @@ const goToPage = (page) => {
       <Sidebar />
 
       <div className="main-content" style={{
-    paddingTop: window.innerWidth >= 769 && window.innerWidth <= 1024 ? `${headerHeight}px` : "0px"
-  }}>
+        paddingTop: window.innerWidth >= 769 && window.innerWidth <= 1024 ? `${headerHeight}px` : "0px"
+      }}>
         <div className="page-header" ref={headerRef}>
           <div className="header-title">
             <div className="stats-section">
@@ -769,7 +769,7 @@ const goToPage = (page) => {
                 <option value="concept_asc">Concept A-Z</option>
                 <option value="concept_desc">Concept Z-A</option>
                 <option value="status">Status</option>
-                <option value="stage">Stage Progress</option>
+                <option value="stage">Stage Progress</option> 
               </select>
             </div>
           </div>
@@ -807,6 +807,8 @@ const goToPage = (page) => {
                 <thead>
                   <tr>
                     <th>Concept</th>
+                    <th>Batch Name</th>
+                    <th>Pod Name</th>
                     <th>Status</th>
                     <th>Progress</th>
                     <th>Stage</th>
@@ -826,6 +828,14 @@ const goToPage = (page) => {
                       <tr key={conversation.id}>
                         <td className="concept-cell">
                           <div className="concept-name">{conversation.concept_name}</div>
+                        </td>
+
+                        <td className="batch-cell">
+                          <div className="batch-name">{conversation.batch_name || 'N/A'}</div>
+                        </td>
+
+                        <td className="pod-cell">
+                          <div className="pod-name">{conversation.pod_name || 'N/A'}</div>
                         </td>
 
                         <td className="status-cell">
@@ -895,40 +905,40 @@ const goToPage = (page) => {
                   })}
                 </tbody>
               </table>
-              </div>
-              
+            </div>
+
           )}
         </div>
         {/* Pagination controls */}
-<div className="d-flex justify-content-center mt-3">
-  <ul className="pagination">
-    <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-      <button className="page-link" onClick={() => goToPage(currentPage - 1)}>
-        Prev
-      </button>
-    </li>
+        <div className="d-flex justify-content-center mt-3">
+          <ul className="pagination">
+            <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+              <button className="page-link" onClick={() => goToPage(currentPage - 1)}>
+                Prev
+              </button>
+            </li>
 
-    {[...Array(totalPages)].map((_, index) => (
-      <li
-        key={index + 1}
-        className={`page-item ${currentPage === index + 1 ? "active" : ""}`}
-      >
-        <button
-          className="page-link"
-          onClick={() => goToPage(index + 1)}
-        >
-          {index + 1}
-        </button>
-      </li>
-    ))}
+            {[...Array(totalPages)].map((_, index) => (
+              <li
+                key={index + 1}
+                className={`page-item ${currentPage === index + 1 ? "active" : ""}`}
+              >
+                <button
+                  className="page-link"
+                  onClick={() => goToPage(index + 1)}
+                >
+                  {index + 1}
+                </button>
+              </li>
+            ))}
 
-    <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-      <button className="page-link" onClick={() => goToPage(currentPage + 1)}>
-        Next
-      </button>
-    </li>
-  </ul>
-</div>
+            <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+              <button className="page-link" onClick={() => goToPage(currentPage + 1)}>
+                Next
+              </button>
+            </li>
+          </ul>
+        </div>
 
       </div>
 

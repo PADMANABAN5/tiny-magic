@@ -55,6 +55,10 @@ function Practicemode() {
   const recognitionRef = useRef(null);
   const [apiData, setApiData] = useState({});
   const apiDataRef = useRef({});
+  const [batches, setBatches] = useState([]);
+  const [selectedBatch, setSelectedBatch] = useState(null);
+  const [showBatchDropdown, setShowBatchDropdown] = useState(false);
+  const batchDropdownRef = useRef(null);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -236,11 +240,20 @@ function Practicemode() {
       ) {
         setShowConceptDropdown(false);
       }
+
+      // Add batch dropdown detection
+      if (
+        showBatchDropdown &&
+        batchDropdownRef.current &&
+        !batchDropdownRef.current.contains(event.target)
+      ) {
+        setShowBatchDropdown(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.addEventListener("mousedown", handleClickOutside);
-  }, [showSaveOptions, showConceptDropdown]);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showSaveOptions, showConceptDropdown, showBatchDropdown]);
 
   const fetchAndReturnConcepts = async () => {
     if (!username || conceptsLoading) return [];
@@ -267,6 +280,49 @@ function Practicemode() {
     }
   };
 
+  const handleBatchSelect = async (batch) => {
+    if (isProcessingAssessment) {
+      toast.warn("⚠️ Please wait, assessment is being processed.");
+      return;
+    }
+
+    console.log("🎯 Batch selected:", batch.batch_name);
+    setSelectedBatch(batch);
+    setShowBatchDropdown(false);
+
+    // Update concepts based on selected batch
+    const batchConcepts = batch.concepts || [];
+    setConcepts(batchConcepts);
+
+    // Update sessionStorage with new batch info
+    sessionStorage.setItem("batchId", batch.batch_id);
+    sessionStorage.setItem("organizationId", batch.organization_id);
+
+    toast.info(`Switched to batch: ${batch.batch_name}`);
+
+    // Auto-select first concept if available
+    if (batchConcepts.length > 0) {
+      const firstConcept = batchConcepts.find(concept => concept.is_active) || batchConcepts[0];
+      console.log("🚀 Auto-selecting first concept:", firstConcept.concept_name);
+      setSelectedConcept(firstConcept);
+
+      // Clear session data before checking for existing session
+      clearSessionData();
+      setCurrentChatStatus('not_started');
+      setApiData({});
+
+      // Check if there's an existing session for this concept
+      console.log("🔍 Checking session status for concept:", firstConcept.concept_name);
+      await checkSessionStatus(firstConcept.concept_name);
+    } else {
+      setSelectedConcept(null);
+      clearSessionData();
+      setCurrentChatStatus('not_started');
+      setApiData({});
+      toast.warn("No concepts available in this batch");
+    }
+  };
+
   const fetchConcepts = async () => {
     if (!username || conceptsLoading) return;
 
@@ -276,8 +332,21 @@ function Practicemode() {
 
       if (response.data && response.data.success && response.data.data) {
         const data = response.data.data;
-        const conceptsData = data.batch?.concepts || [];
 
+        // Fetch batches
+        const batchesData = data.batches || [];
+        setBatches(batchesData);
+
+        // Set initial batch (current batch from pod)
+        const currentBatch = batchesData.find(b => b.batch_id === data.batch?.batch_id);
+        if (currentBatch) {
+          setSelectedBatch(currentBatch);
+        } else if (batchesData.length > 0) {
+          setSelectedBatch(batchesData[0]);
+        }
+
+        // Set concepts based on selected batch
+        const conceptsData = currentBatch?.concepts || data.batch?.concepts || [];
         console.log("✅ Concepts loaded:", conceptsData.length);
         setConcepts(conceptsData);
 
@@ -295,10 +364,12 @@ function Practicemode() {
       } else {
         console.warn("⚠️ No concepts data in response");
         setConcepts([]);
+        setBatches([]);
       }
     } catch (error) {
       console.error("❌ Error fetching concepts:", error);
       setConcepts([]);
+      setBatches([]);
       if (error.response?.status !== 404) {
         toast.error("Failed to load concepts. Please try again.");
       }
@@ -1442,6 +1513,54 @@ function Practicemode() {
       <div className="dashboard-layout">
         {(isMobile ? menuOpen : true) && (
         <div className="control-panel">
+          <div className="control-section">
+            <div className="section-header">
+              <FiBook className="section-icon" />
+              <h3>Select Batch</h3>
+            </div>
+            <div className="concept-selector" ref={batchDropdownRef}>
+              <div
+                className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
+                onClick={() => !isProcessingAssessment && setShowBatchDropdown(!showBatchDropdown)}
+              >
+                <span className="concept-text">
+                  {conceptsLoading
+                    ? "Loading batches..."
+                    : selectedBatch
+                      ? selectedBatch.batch_name
+                      : batches.length > 0
+                        ? "Choose a batch"
+                        : "No batches available"
+                  }
+                </span>
+                <FiChevronDown className={`dropdown-arrow ${showBatchDropdown ? 'open' : ''}`} />
+              </div>
+              {showBatchDropdown && (
+                <div className="concept-dropdown">
+                  {conceptsLoading ? (
+                    <div className="concept-option">
+                      <div className="concept-name">Loading...</div>
+                    </div>
+                  ) : batches.length > 0 ? (
+                    batches.map((batch) => (
+                      <div
+                        key={batch.batch_id}
+                        className={`concept-option ${selectedBatch?.batch_id === batch.batch_id ? 'selected' : ''}`}
+                        onClick={() => handleBatchSelect(batch)}
+                      >
+                        <div className="concept-name">{batch.batch_name}</div> 
+                      </div>
+                    ))
+                  ) : (
+                    <div className="concept-option">
+                      <div className="concept-name">No batches available</div>
+                      <div className="concept-description">Contact your administrator</div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
           <div className="control-section">
             <div className="section-header">
               <FiTarget className="section-icon" />
