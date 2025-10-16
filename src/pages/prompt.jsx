@@ -382,33 +382,57 @@ export default function Prompt() {
             </div>
           </div>
  
-         {/* Filter Section */}
-<div className="d-flex gap-3 my-3">
-  <Form.Group>
-    <Dropdown onSelect={(eventKey) => {
-      setSelectedOrgIdFilter(eventKey || '');
-      setSelectedBatchIdFilter(''); // Reset batch when org changes
-    }}>
-      <Dropdown.Toggle 
-        variant="outline-secondary" 
-        id="org-filter-dropdown"
-        className="custom-dropdown-toggle"
+
+ {/* Filter Section */}
+<div className="d-flex gap-3 my-3 filter-section align-items-center flex-wrap">
+  {/* 🔹 Organization Dropdown */}
+  <Form.Group className="filter-org-group">
+    <Dropdown
+      className="filter-org-dropdown"
+      autoClose="true"
+    >
+      <Dropdown.Toggle
+        id="org-dropdown-toggle"
+        variant="outline-secondary"
+        className="filter-org-toggle text-truncate"
+        style={{
+          maxWidth: "220px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
       >
-        {selectedOrgIdFilter ? 
-          orgList.find(org => org.organization_id === selectedOrgIdFilter)?.organization_name : 
-          "All Organizations"
-        }
+        {selectedOrgIdFilter
+          ? orgList.find(org => org.organization_id === selectedOrgIdFilter)?.organization_name
+          : "All Organizations"}
       </Dropdown.Toggle>
-      <Dropdown.Menu className="custom-dropdown-menu">
-        <Dropdown.Item eventKey="" className="custom-dropdown-item">
+
+      <Dropdown.Menu
+        className="filter-org-menu dropdown-menu-outside"
+        style={{ maxHeight: "250px", overflowY: "auto" }}
+        popperConfig={{ strategy: "fixed" }}
+      >
+        <Dropdown.Item
+          className="filter-org-item"
+          onClick={() => {
+            setSelectedOrgIdFilter('');
+            setSelectedBatchIdFilter('');
+          }}
+          active={!selectedOrgIdFilter}
+        >
           All Organizations
         </Dropdown.Item>
+
         {orgList.map(org => (
-          <Dropdown.Item 
-            key={org.organization_id} 
-            eventKey={org.organization_id}
+          <Dropdown.Item
+            key={org.organization_id}
+            className="filter-org-item text-truncate"
+            style={{ maxWidth: "240px" }}
+            onClick={() => {
+              setSelectedOrgIdFilter(org.organization_id);
+              setSelectedBatchIdFilter('');
+            }}
             active={selectedOrgIdFilter === org.organization_id}
-            className="custom-dropdown-item"
           >
             {org.organization_name}
           </Dropdown.Item>
@@ -417,29 +441,48 @@ export default function Prompt() {
     </Dropdown>
   </Form.Group>
 
-  {/* 🔹 Always show Batch Filter */}
-  <Form.Group>
-    <Dropdown onSelect={(eventKey) => setSelectedBatchIdFilter(eventKey || '')}>
-      <Dropdown.Toggle 
-        variant="outline-secondary" 
-        id="batch-filter-dropdown"
-        className="custom-dropdown-toggle"
+  {/* 🔹 Batch Dropdown */}
+  <Form.Group className="filter-batch-group">
+    <Dropdown
+      className="filter-batch-dropdown"
+      autoClose="true"
+    >
+      <Dropdown.Toggle
+        id="batch-dropdown-toggle"
+        variant="outline-secondary"
+        className="filter-batch-toggle text-truncate"
+        style={{
+          maxWidth: "220px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
       >
-        {selectedBatchIdFilter ? 
-          batchListForFilter.find(batch => batch.batch_id === selectedBatchIdFilter)?.batch_name : 
-          "All Batches"
-        }
+        {selectedBatchIdFilter
+          ? batchListForFilter.find(batch => batch.batch_id === selectedBatchIdFilter)?.batch_name
+          : "All Batches"}
       </Dropdown.Toggle>
-      <Dropdown.Menu className="custom-dropdown-menu">
-        <Dropdown.Item eventKey="" className="custom-dropdown-item">
+
+      <Dropdown.Menu
+        className="filter-batch-menu dropdown-menu-outside"
+        style={{ maxHeight: "250px", overflowY: "auto" }}
+        popperConfig={{ strategy: "fixed" }}
+      >
+        <Dropdown.Item
+          className="filter-batch-item"
+          onClick={() => setSelectedBatchIdFilter('')}
+          active={!selectedBatchIdFilter}
+        >
           All Batches
         </Dropdown.Item>
+
         {batchListForFilter.map(batch => (
-          <Dropdown.Item 
-            key={batch.batch_id} 
-            eventKey={batch.batch_id}
+          <Dropdown.Item
+            key={batch.batch_id}
+            className="filter-batch-item text-truncate"
+            style={{ maxWidth: "240px" }}
+            onClick={() => setSelectedBatchIdFilter(batch.batch_id)}
             active={selectedBatchIdFilter === batch.batch_id}
-            className="custom-dropdown-item"
           >
             {batch.batch_name}
           </Dropdown.Item>
@@ -448,7 +491,8 @@ export default function Prompt() {
     </Dropdown>
   </Form.Group>
 </div>
- 
+
+
           <div className="table-responsive">
             <table className="table table-hover table-striped table-bordered">
               <thead className="">

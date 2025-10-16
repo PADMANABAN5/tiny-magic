@@ -101,3 +101,90 @@
   background-color: #0056b3 !important;
   color: white !important;
 }
+
+
+
+@media (max-width: 768px) {
+  .filter-section {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .filter-section .dropdown-toggle {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+.filter-section .dropdown-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left; 
+}
+
+.filter-section .dropdown-toggle {
+  background-color: #fff !important;
+  color: #000 !important;
+  border: 1px solid #ced4da !important;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: none !important;
+  transition: all 0.2s ease-in-out;
+}
+
+
+.filter-section .dropdown-toggle:hover {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-color: #bdbdbd !important;
+}
+
+
+.filter-section .dropdown-toggle.show,
+.filter-section .dropdown-toggle:focus,
+.filter-section .dropdown-toggle:active {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-color: #007bff !important; 
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2) !important;
+}
+
+
+.filter-section .dropdown-menu {
+  background-color: #fff !important;
+  border: 1px solid #ced4da !important;
+  max-height: 250px !important;
+  overflow-y: auto !important;
+  border-radius: 0.375rem !important;
+}
+
+
+.filter-section .dropdown-item {
+  color: #000 !important;
+  font-size: 0.95rem;
+}
+
+.filter-section .dropdown-item:hover,
+.filter-section .dropdown-item:focus {
+  background-color: #f8f9fa !important;
+  color: #000 !important;
+}
+
+.filter-section .dropdown-item.active {
+  background-color: #007bff !important;
+  color: #fff !important;
+}
+
+/* Optional: minimal custom scrollbar */
+.filter-section .dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.filter-section .dropdown-menu::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 3px;
+}
+.filter-section .dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a8a8;
+}
