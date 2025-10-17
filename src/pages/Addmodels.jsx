@@ -97,7 +97,7 @@ function AddModels() {
             message = "Models not found.";
             break;
           case 409:
-            message = "Conflict: Data inconsistency.";
+            message = "Conflict: Model already exists.";
             break;
           case 500:
             message = "Server error. Please try again later.";

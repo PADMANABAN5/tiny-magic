@@ -13,7 +13,7 @@ import axios from "axios";
 import { useAuth } from "../components/AuthContext";
 import Orgadminsidebar from "../components/Orgadminsidebar";
 import { useNavigate } from "react-router-dom";
-
+import { toast } from "react-toastify";
 function AssignmentOrg() {
   const { token, user } = useAuth();
   const navigate = useNavigate();
@@ -31,8 +31,6 @@ function AssignmentOrg() {
   const [selectedAssignment, setSelectedAssignment] = useState(null);
 
   const [formLoading, setFormLoading] = useState(false);
-  const [formError, setFormError] = useState(null);
-  const [formSuccess, setFormSuccess] = useState(null);
   const username = sessionStorage.getItem("username");
 
   const [formData, setFormData] = useState({
@@ -51,6 +49,7 @@ function AssignmentOrg() {
   const fetchAssignments = async () => {
     try {
       setLoading(true);
+      setError(null);
       const res = await axios.get(
         `${process.env.REACT_APP_API_LINK}/llm/orgadmin/assignments`,
         config
@@ -59,10 +58,46 @@ function AssignmentOrg() {
         const data = res.data.data || [];
         setAssignments(data);
       } else {
-        setError(res.data.message || "Failed to fetch assignments");
+        setError("Failed to fetch assignments");
+        setAssignments([]);
+        toast.warning("Unexpected data format received from server.");
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message);
+      console.error("Error fetching assignments:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.message || "Failed to load assignments.";
+        const errorType = err.response?.status;
+        let message = "";
+        switch (errorType) {
+          case 400:
+            message = `Bad request: ${errorMessage}`;
+            break;
+          case 401:
+            message = "Unauthorized. Please log in.";
+            break;
+          case 403:
+            message = "Forbidden: You do not have permission.";
+            break;
+          case 404:
+            message = "Assignments not found.";
+            break;
+          case 409:
+            message = "Conflict: Data inconsistency.";
+            break;
+          case 500:
+            message = "Server error. Please try again later.";
+            break;
+          default:
+            message = `Failed to fetch assignments. (${errorType || "Unknown error"})`;
+        }
+        setError(message);
+        toast.warn(message);
+      } else {
+        const message = "Network error. Please check your connection.";
+        setError(message);
+        toast.warn(message);
+      }
+      setAssignments([]);
     } finally {
       setLoading(false);
     }
@@ -79,36 +114,94 @@ function AssignmentOrg() {
         const data = res.data.data || [];
         setBatches(data);
       } else {
-        console.error("Failed to fetch batches");
+        setBatches([]);
+        toast.warning("Unexpected data format received from server.");
       }
     } catch (err) {
       console.error("Error fetching batches:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.message || "Failed to load batches.";
+        const errorType = err.response?.status;
+        let message = "";
+        switch (errorType) {
+          case 400:
+            message = `Bad request: ${errorMessage}`;
+            break;
+          case 401:
+            message = "Unauthorized. Please log in.";
+            break;
+          case 403:
+            message = "Forbidden: You do not have permission.";
+            break;
+          case 404:
+            message = "Batches not found.";
+            break;
+          case 409:
+            message = "Conflict: Data inconsistency.";
+            break;
+          case 500:
+            message = "Server error. Please try again later.";
+            break;
+          default:
+            message = `Failed to fetch batches. (${errorType || "Unknown error"})`;
+        }
+        toast.warn(message);
+      } else {
+        toast.warn("Network error. Please check your connection.");
+      }
+      setBatches([]);
     }
   };
 
   // ✅ Fetch models
   const fetchModels = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await axios.get(
-        `${process.env.REACT_APP_API_LINK}/llm/orgadmin/assignments`,
-        config
-      );
-      if (res.data.success) {
-        const data = res.data.data || [];
-        const uniqueModels = [
-          ...new Map(
-            data
-              .filter((m) => m.model_id && m.model_name)
-              .map((m) => [
-                m.model_id,
-                { model_id: m.model_id, model_name: m.model_name },
-              ])
-          ).values(),
-        ];
-        setModels(uniqueModels);
+      const response = await axios.get(`${process.env.REACT_APP_API_LINK}/llm/models`, config);
+      if (response.data.success) {
+        const sortedModels = (response.data.data || []).sort((a, b) => b.model_id - a.model_id);
+        setModels(sortedModels);
+      } else {
+        setError("Failed to fetch models");
+        setModels([]);
+        toast.warning("Unexpected data format received from server.");
       }
     } catch (err) {
       console.error("Error fetching models:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.message || "Failed to load models.";
+        const errorType = err.response?.status;
+        let message = "";
+        switch (errorType) {
+          case 400:
+            message = `Bad request: ${errorMessage}`;
+            break;
+          case 401:
+            message = "Unauthorized. Please log in.";
+            break;
+          case 403:
+            message = "Forbidden: You do not have permission.";
+            break;
+          case 404:
+            message = "Models not found.";
+            break;
+          case 409:
+            message = "Conflict: Data inconsistency.";
+            break;
+          case 500:
+            message = "Server error. Please try again later.";
+            break;
+          default:
+            message = `Failed to fetch models. (${errorType || "Unknown error"})`;
+        }
+        toast.warn(message);
+      } else {
+        toast.warn("Network error. Please check your connection.");
+      }
+      setModels([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,10 +218,44 @@ function AssignmentOrg() {
         const ids = new Set(data.map((m) => m.model_id));
         setOrgModelIds(ids);
       } else {
-        console.error("Failed to fetch org models");
+        setOrgModels([]);
+        setOrgModelIds(new Set());
+        toast.warning("Unexpected data format received from server.");
       }
     } catch (err) {
       console.error("Error fetching org models:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.message || "Failed to load org models.";
+        const errorType = err.response?.status;
+        let message = "";
+        switch (errorType) {
+          case 400:
+            message = `Bad request: ${errorMessage}`;
+            break;
+          case 401:
+            message = "Unauthorized. Please log in.";
+            break;
+          case 403:
+            message = "Forbidden: You do not have permission.";
+            break;
+          case 404:
+            message = "Org models not found.";
+            break;
+          case 409:
+            message = "Conflict: Data inconsistency.";
+            break;
+          case 500:
+            message = "Server error. Please try again later.";
+            break;
+          default:
+            message = `Failed to fetch org models. (${errorType || "Unknown error"})`;
+        }
+        toast.warn(message);
+      } else {
+        toast.warn("Network error. Please check your connection.");
+      }
+      setOrgModels([]);
+      setOrgModelIds(new Set());
     }
   };
 
@@ -150,8 +277,6 @@ function AssignmentOrg() {
       batch_id: "",
       organization_id: "",
     });
-    setFormError(null);
-    setFormSuccess(null);
     setShowModal(true);
   };
 
@@ -166,8 +291,6 @@ function AssignmentOrg() {
       batch_id: assignment.batch_id || "",
       organization_id: assignment.organization_id || "",
     });
-    setFormError(null);
-    setFormSuccess(null);
     setShowModal(true);
   };
 
@@ -214,8 +337,6 @@ function AssignmentOrg() {
   // ============ Submit (POST or PUT) ============
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormError(null);
-    setFormSuccess(null);
     setFormLoading(true);
 
     try {
@@ -244,16 +365,46 @@ function AssignmentOrg() {
       }
 
       if (res.data.success) {
-        setFormSuccess(res.data.message);
+        toast.success(res.data.message);
         setTimeout(() => {
           closeModal();
           fetchAssignments();
         }, 800);
       } else {
-        setFormError(res.data.message || "Operation failed.");
+        toast.warn(res.data.message || "Operation failed.");
       }
     } catch (err) {
-      setFormError(err.response?.data?.message || err.message);
+      console.error("Error submitting form:", err);
+      if (axios.isAxiosError(err)) {
+        const errorMessage = err.response?.data?.message || "Operation failed.";
+        const errorType = err.response?.status;
+        let message = "";
+        switch (errorType) {
+          case 400:
+            message = `Bad request: ${errorMessage}`;
+            break;
+          case 401:
+            message = "Unauthorized. Please log in.";
+            break;
+          case 403:
+            message = "Forbidden: You do not have permission.";
+            break;
+          case 404:
+            message = `Assignment ${editMode ? 'not found' : 'endpoint not found'}.`;
+            break;
+          case 409:
+            message = "Conflict: Assignment already exists.";
+            break;
+          case 500:
+            message = "Server error. Please try again later.";
+            break;
+          default:
+            message = `Failed to ${editMode ? 'update' : 'create'} assignment. (${errorType || "Unknown error"})`;
+        }
+        toast.warn(message);
+      } else {
+        toast.warn("Network error. Please check your connection.");
+      }
     } finally {
       setFormLoading(false);
     }
@@ -428,9 +579,6 @@ function AssignmentOrg() {
                 </Form.Select>
               </Form.Group>
             )}
-
-            {formError && <Alert variant="danger">{formError}</Alert>}
-            {formSuccess && <Alert variant="success">{formSuccess}</Alert>}
 
             <div className="d-flex justify-content-end gap-2 mt-4">
               <Button variant="secondary" onClick={closeModal}>
