@@ -1516,7 +1516,7 @@ function Practicemode() {
       <div className="dashboard-layout">
         {(isMobile ? menuOpen : true) && (
         <div className="control-panel">
-          <div className="control-section">
+          <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
             <div className="section-header">
               <FiBook className="section-icon" />
               <h3>Select Batch</h3>
@@ -1524,7 +1524,7 @@ function Practicemode() {
             <div className="concept-selector" ref={batchDropdownRef}>
               <div
                 className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
-                onClick={() => !isProcessingAssessment && setShowBatchDropdown(!showBatchDropdown)}
+                onClick={() => !(isProcessingAssessment || isLoading) && setShowBatchDropdown(!showBatchDropdown)}
               >
                 <span className="concept-text">
                   {conceptsLoading
@@ -1564,7 +1564,7 @@ function Practicemode() {
               )}
             </div>
           </div>
-          <div className="control-section">
+          <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
             <div className="section-header">
               <FiTarget className="section-icon" />
               <h3>Select Concept</h3>
@@ -1572,7 +1572,7 @@ function Practicemode() {
             <div className="concept-selector" ref={conceptDropdownRef}>
               <div
                 className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
-                onClick={() => !isProcessingAssessment && setShowConceptDropdown(!showConceptDropdown)}
+                onClick={() => !(isProcessingAssessment || isLoading) && setShowConceptDropdown(!showConceptDropdown)}
               >
                 <span className="concept-text">
                   {conceptsLoading
