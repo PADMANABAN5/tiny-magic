@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef , useCallback} from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaDownload, FaArrowLeft } from 'react-icons/fa';
+import { Dropdown } from "react-bootstrap";
 import {
   FiEye,
   FiClock,
@@ -1009,32 +1010,232 @@ const parseField = (field) => {
               />
             </div>
           </div>
-          <div className="filter-group">
-            <label>Status:</label>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="not_started">Not Started</option>
-              <option value="inprogress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-          <div className="filter-group">
-            <label>Sort By:</label>
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-            >
-              <option value="date_desc">Latest First</option>
-              <option value="date_asc">Oldest First</option>
-              <option value="concept_asc">Concept A-Z</option>
-              <option value="concept_desc">Concept Z-A</option>
-              <option value="status">Status</option>
-              <option value="stage">Stages</option>
-            </select>
-          </div>
+<div className="filter-group">
+  <style>
+    {`
+      /* Dropdown toggle: text left, caret right */
+      .dropdown-toggle {
+        background-color: #fff !important;
+        color: #000 !important;
+        border-color: #ccc !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: left !important;
+        width: 100% !important;
+        padding: 0.375rem 0.75rem !important;
+        height: 38px !important;
+      }
+
+      /* Caret positioning */
+      .dropdown-toggle::after {
+        margin-left: auto !important;
+        position: relative !important;
+        right: 0 !important;
+        top: 1px !important;
+        border-top: 0.4em solid !important;
+        border-right: 0.4em solid transparent !important;
+        border-left: 0.4em solid transparent !important;
+      }
+
+      /* Make dropdown menu match toggle width dynamically */
+      .dropdown-menu {
+        min-width: 100% !important;
+        width: auto !important;
+        box-sizing: border-box !important;
+        background-color: #fff !important;
+        max-height: 200px !important;
+        overflow-y: auto !important;
+        scrollbar-width: thin !important;
+      }
+
+      /* Thin scrollbar for Chrome/Edge/Safari */
+      .dropdown-menu::-webkit-scrollbar {
+        width: 6px;
+      }
+      .dropdown-menu::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+      }
+      .dropdown-menu::-webkit-scrollbar-thumb:hover {
+        background: #aaa;
+      }
+    `}
+  </style>
+
+  <label>Status:</label>
+
+  {/* Status Dropdown */}
+  <Dropdown>
+    <Dropdown.Toggle
+      id="status-dropdown-toggle"
+      variant="outline-secondary"
+      className="text-truncate"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {{
+        all: "All Statuses",
+        not_started: "Not Started",
+        inprogress: "In Progress",
+        completed: "Completed",
+      }[filterStatus] || "All Statuses"}
+    </Dropdown.Toggle>
+
+    <Dropdown.Menu>
+      <Dropdown.Item
+        onClick={() => setFilterStatus("all")}
+        active={filterStatus === "all"}
+      >
+        All Statuses
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setFilterStatus("not_started")}
+        active={filterStatus === "not_started"}
+      >
+        Not Started
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setFilterStatus("inprogress")}
+        active={filterStatus === "inprogress"}
+      >
+        In Progress
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setFilterStatus("completed")}
+        active={filterStatus === "completed"}
+      >
+        Completed
+      </Dropdown.Item>
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+
+<div className="filter-group">
+  <style>
+    {`
+      /* Align text left and caret right */
+      .dropdown-toggle {
+        background-color: #fff !important;
+        color: #000 !important;
+        border-color: #ccc !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: left !important;
+        width: 100% !important;
+        padding: 0.375rem 0.75rem !important;
+        height: 38px !important;
+      }
+
+      /* Proper caret alignment */
+      .dropdown-toggle::after {
+        margin-left: auto !important;
+        position: relative !important;
+        right: 0 !important;
+        top: 1px !important;
+        border-top: 0.4em solid !important;
+        border-right: 0.4em solid transparent !important;
+        border-left: 0.4em solid transparent !important;
+      }
+
+      /* Make dropdown menu same width as toggle */
+      .dropdown-menu {
+        min-width: 100% !important;
+        width: auto !important;
+        box-sizing: border-box !important;
+        background-color: #fff !important;
+        max-height: 200px !important;
+        overflow-y: auto !important;
+        scrollbar-width: thin !important;
+      }
+
+      /* Scrollbar styling */
+      .dropdown-menu::-webkit-scrollbar {
+        width: 6px;
+      }
+      .dropdown-menu::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+      }
+      .dropdown-menu::-webkit-scrollbar-thumb:hover {
+        background: #aaa;
+      }
+    `}
+  </style>
+
+  <label>Sort By:</label>
+
+  {/* Sort Dropdown */}
+  <Dropdown>
+    <Dropdown.Toggle
+      id="sort-dropdown-toggle"
+      variant="outline-secondary"
+      className="text-truncate"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {{
+        date_desc: "Latest First",
+        date_asc: "Oldest First",
+        concept_asc: "Concept A-Z",
+        concept_desc: "Concept Z-A",
+        status: "Status",
+        stage: "Stages",
+      }[sortBy] || "Latest First"}
+    </Dropdown.Toggle>
+
+    <Dropdown.Menu>
+      <Dropdown.Item
+        onClick={() => setSortBy("date_desc")}
+        active={sortBy === "date_desc"}
+      >
+        Latest First
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setSortBy("date_asc")}
+        active={sortBy === "date_asc"}
+      >
+        Oldest First
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setSortBy("concept_asc")}
+        active={sortBy === "concept_asc"}
+      >
+        Concept A-Z
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setSortBy("concept_desc")}
+        active={sortBy === "concept_desc"}
+      >
+        Concept Z-A
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setSortBy("status")}
+        active={sortBy === "status"}
+      >
+        Status
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setSortBy("stage")}
+        active={sortBy === "stage"}
+      >
+        Stages
+      </Dropdown.Item>
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+
         </div>
 
         {isConversationsLoading ? (
@@ -1163,39 +1364,182 @@ const parseField = (field) => {
               <input
                 type="text"
                 placeholder="Search by concept name..."
-                defaultValue={practiceSearchTerm}  // Optional: Comment out
+                defaultValue={practiceSearchTerm}
                 onChange={(e) => debouncedSetPracticeSearchTerm(e.target.value)}
               />
             </div>
           </div>
 
           <div className="filter-group">
-            <label>Status:</label>
-            <select
-              value={practiceFilterStatus}
-              onChange={(e) => setPracticeFilterStatus(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="not_started">Not Started</option>
-              <option value="inprogress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
+  <style>
+    {`
+      /* Text left, arrow right */
+      .dropdown-toggle {
+        background-color: #fff !important;
+        color: #000 !important;
+        border-color: #ccc !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        text-align: left !important;
+        width: 100% !important;
+        padding: 0.375rem 0.75rem !important;
+        height: 38px !important;
+      }
 
-          <div className="filter-group">
-            <label>Sort By:</label>
-            <select
-              value={practiceSortBy}
-              onChange={(e) => setPracticeSortBy(e.target.value)}
-            >
-              <option value="date_desc">Latest First</option>
-              <option value="date_asc">Oldest First</option>
-              <option value="concept_asc">Concept A-Z</option>
-              <option value="concept_desc">Concept Z-A</option>
-              <option value="status">Status</option>
-              <option value="stage">Levels</option>
-            </select>
-          </div>
+      /* Arrow position fix */
+      .dropdown-toggle::after {
+        margin-left: auto !important;
+        position: relative !important;
+        right: 0 !important;
+        top: 1px !important;
+        border-top: 0.4em solid !important;
+        border-right: 0.4em solid transparent !important;
+        border-left: 0.4em solid transparent !important;
+      }
+
+      /* Match menu width dynamically with toggle */
+      .dropdown-menu {
+        min-width: 100% !important;
+        width: auto !important;
+        box-sizing: border-box !important;
+        background-color: #fff !important;
+        max-height: 200px !important;
+        overflow-y: auto !important;
+        scrollbar-width: thin !important;
+      }
+
+      /* Thin scrollbar for Chrome/Edge/Safari */
+      .dropdown-menu::-webkit-scrollbar {
+        width: 6px;
+      }
+      .dropdown-menu::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 4px;
+      }
+      .dropdown-menu::-webkit-scrollbar-thumb:hover {
+        background: #aaa;
+      }
+    `}
+  </style>
+
+  {/* Status Dropdown */}
+  <label>Status:</label>
+  <Dropdown>
+    <Dropdown.Toggle
+      id="practice-status-dropdown"
+      variant="outline-secondary"
+      className="text-truncate"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {{
+        all: "All Statuses",
+        not_started: "Not Started",
+        inprogress: "In Progress",
+        completed: "Completed",
+      }[practiceFilterStatus] || "All Statuses"}
+    </Dropdown.Toggle>
+
+    <Dropdown.Menu>
+      <Dropdown.Item
+        onClick={() => setPracticeFilterStatus("all")}
+        active={practiceFilterStatus === "all"}
+      >
+        All Statuses
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setPracticeFilterStatus("not_started")}
+        active={practiceFilterStatus === "not_started"}
+      >
+        Not Started
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setPracticeFilterStatus("inprogress")}
+        active={practiceFilterStatus === "inprogress"}
+      >
+        In Progress
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setPracticeFilterStatus("completed")}
+        active={practiceFilterStatus === "completed"}
+      >
+        Completed
+      </Dropdown.Item>
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+<div className="filter-group">
+  {/* Sort By Dropdown */}
+  <label>Sort By:</label>
+  <Dropdown>
+    <Dropdown.Toggle
+      id="practice-sort-dropdown"
+      variant="outline-secondary"
+      className="text-truncate"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {{
+        date_desc: "Latest First",
+        date_asc: "Oldest First",
+        concept_asc: "Concept A-Z",
+        concept_desc: "Concept Z-A",
+        status: "Status",
+        stage: "Levels",
+      }[practiceSortBy] || "Latest First"}
+    </Dropdown.Toggle>
+
+    <Dropdown.Menu>
+      <Dropdown.Item
+        onClick={() => setPracticeSortBy("date_desc")}
+        active={practiceSortBy === "date_desc"}
+      >
+        Latest First
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setPracticeSortBy("date_asc")}
+        active={practiceSortBy === "date_asc"}
+      >
+        Oldest First
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setPracticeSortBy("concept_asc")}
+        active={practiceSortBy === "concept_asc"}
+      >
+        Concept A-Z
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setPracticeSortBy("concept_desc")}
+        active={practiceSortBy === "concept_desc"}
+      >
+        Concept Z-A
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setPracticeSortBy("status")}
+        active={practiceSortBy === "status"}
+      >
+        Status
+      </Dropdown.Item>
+      <Dropdown.Item
+        onClick={() => setPracticeSortBy("stage")}
+        active={practiceSortBy === "stage"}
+      >
+        Levels
+      </Dropdown.Item>
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
         </div>
 
         {isPracticeLoading ? (

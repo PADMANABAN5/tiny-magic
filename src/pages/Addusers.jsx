@@ -8,6 +8,8 @@ import "../styles/OrgList.css";
 import { useAuth } from "../components/AuthContext";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import { Dropdown } from "react-bootstrap";
+
 
 export default function Addusers() {
   const [orgUsers, setOrgUsers] = useState([]);
@@ -379,61 +381,104 @@ export default function Addusers() {
               <FaPlus />
             </button>
           </div>
+
+          
           <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
-            <div className="d-flex align-items-center">
-              <span className="me-2">Show entries:</span>
-              <Form.Select
-                style={{ width: "100px" }}
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setCurrentPage(1);
-                  setItemsPerPage(Number(e.target.value));
-                }}
-              >
-                {[5, 10, 15, 20, 50].map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </Form.Select>
-            </div>
+  <div className="d-flex align-items-center">
+    <span className="me-2">Show entries:</span>
+    <Dropdown className="filter-batch-dropdown"
+          autoClose="true"
+          drop="down">
+      <Dropdown.Toggle
+       id="batch-dropdown-toggle"
+               variant="outline-secondary"
+               className="filter-batch-toggle text-truncate"
+               style={{
+                 maxWidth: "220px",
+                 overflow: "hidden",
+                 textOverflow: "ellipsis",
+                 whiteSpace: "nowrap",
+               }}
+      >
+        {itemsPerPage}
+      </Dropdown.Toggle>
 
-            <div className="d-flex gap-3 mb-3">
-              {/* Full Name Filter */}
-              <input
-                type="text"
-                className="form-control"
-                style={{ maxWidth: "250px" }}
-                placeholder="Search by Full Name..."
-                value={searchTerm}
-                onChange={(e) => {
-                  setSearchTerm(e.target.value);
-                  setCurrentPage(1); // reset pagination
-                }}
-              />
+      <Dropdown.Menu>
+        {[5, 10, 15, 20, 50].map((num) => (
+          <Dropdown.Item
+            key={num}
+            onClick={() => {
+              setCurrentPage(1);
+              setItemsPerPage(num);
+            }}
+            active={itemsPerPage === num}
+          >
+            {num}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
+  </div>
 
-              {/* Organization Filter */}
-              <select
-                className="form-select"
-                style={{ maxWidth: "200px" }}
-                value={selectedOrganization}
-                onChange={(e) => {
-                  setSelectedOrganization(e.target.value);
-                  setCurrentPage(1); // reset pagination
-                }}
-              >
-                <option value="">All Organizations</option>
-                {organizations.map((org) => (
-                  <option
-                    key={org.organization_id}
-                    value={org.organization_name}
-                  >
-                    {org.organization_name}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
+  <div className="d-flex gap-3 mb-3">
+    {/* Full Name Filter */}
+    <input
+      type="text"
+      className="form-control"
+      style={{ maxWidth: "250px" }}
+      placeholder="Search by Full Name..."
+      value={searchTerm}
+      onChange={(e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1); // reset pagination
+      }}
+    />
+
+    {/* Organization Filter */}
+    <Dropdown className="filter-batch-dropdown"
+          autoClose="true"
+          drop="down">
+      <Dropdown.Toggle
+       id="batch-dropdown-toggle"
+               variant="outline-secondary"
+               className="filter-batch-toggle text-truncate"
+               style={{
+                 maxWidth: "220px",
+                 overflow: "hidden",
+                 textOverflow: "ellipsis",
+                 whiteSpace: "nowrap",
+               }}
+      >
+        {selectedOrganization || "All Organizations"}
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu>
+        <Dropdown.Item
+          onClick={() => {
+            setSelectedOrganization("");
+            setCurrentPage(1);
+          }}
+          active={selectedOrganization === ""}
+        >
+          All Organizations
+        </Dropdown.Item>
+
+        {organizations.map((org) => (
+          <Dropdown.Item
+            key={org.organization_id}
+            onClick={() => {
+              setSelectedOrganization(org.organization_name);
+              setCurrentPage(1);
+            }}
+            active={selectedOrganization === org.organization_name}
+          >
+            {org.organization_name}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
+  </div>
+</div>
 
           {loading ? (
             <p>Loading users...</p>

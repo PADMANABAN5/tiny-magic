@@ -338,3 +338,82 @@ table,tr,th,td{
 .entries-dropdown-menu::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8 !important;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ /* Thin scrollbar for Chrome, Edge, Safari */
+    .dropdown-menu {
+      max-height: 180px !important;
+      overflow-y: auto !important;
+      background-color: #fff !important;
+      scrollbar-width: thin !important; /* Firefox */
+    }
+
+    .dropdown-menu::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .dropdown-menu::-webkit-scrollbar-thumb {
+      background: #ccc;
+      border-radius: 4px;
+    }
+
+    .dropdown-menu::-webkit-scrollbar-thumb:hover {
+      background: #aaa;
+    }
+
+    /* Highlight open dropdown with subtle shadow */
+    .dropdown-toggle.show {
+      box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
+      transition: box-shadow 0.2s ease-in-out;
+    }
+
+    .dropdown-toggle {
+      background-color: #fff !important;
+      color: #000 !important;
+      border-color: #ccc !important;
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
