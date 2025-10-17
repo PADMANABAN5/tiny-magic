@@ -1094,3 +1094,61 @@ input::-webkit-contacts-auto-fill-button {
   }
  
 }
+
+
+
+.login-page-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  position: relative;
+}
+
+.login-container {
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  z-index: 10;
+}
+
+.login-card {
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 2;
+}
+
+
+.sphere {
+  pointer-events: none;
+}
+
+
+@media (max-width: 768px) {
+  .login-page-wrapper {
+    transform: translateZ(0); 
+    -webkit-overflow-scrolling: touch; 
+  }
+  
+  .login-container {
+    position: static; 
+    transform: none;
+  }
+  
+  .login-card {
+    margin-top: env(safe-area-inset-top); 
+    margin-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+
+
+
+
+
+
+
