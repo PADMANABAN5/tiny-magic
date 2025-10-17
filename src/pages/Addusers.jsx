@@ -3,13 +3,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
 import Supersidebar from "../components/Supersidebar";
-import { Pagination, Form } from "react-bootstrap";
+import { Pagination, Form, Dropdown } from "react-bootstrap";
 import "../styles/OrgList.css";
 import { useAuth } from "../components/AuthContext";
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { Dropdown } from "react-bootstrap";
-
 
 export default function Addusers() {
   const [orgUsers, setOrgUsers] = useState([]);
@@ -381,9 +379,7 @@ export default function Addusers() {
               <FaPlus />
             </button>
           </div>
-
-          
-          <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
+            <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
   <div className="d-flex align-items-center">
     <span className="me-2">Show entries:</span>
     <Dropdown className="filter-batch-dropdown"
@@ -459,6 +455,11 @@ export default function Addusers() {
             setCurrentPage(1);
           }}
           active={selectedOrganization === ""}
+          style={{
+            overflowX: "auto",
+            whiteSpace: "nowrap",
+            maxWidth: "220px"
+          }}
         >
           All Organizations
         </Dropdown.Item>
@@ -471,6 +472,11 @@ export default function Addusers() {
               setCurrentPage(1);
             }}
             active={selectedOrganization === org.organization_name}
+            style={{
+              overflowX: "auto",
+              whiteSpace: "nowrap",
+              maxWidth: "220px"
+            }}
           >
             {org.organization_name}
           </Dropdown.Item>
@@ -479,6 +485,7 @@ export default function Addusers() {
     </Dropdown>
   </div>
 </div>
+
 
           {loading ? (
             <p>Loading users...</p>
