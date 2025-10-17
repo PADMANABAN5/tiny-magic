@@ -231,15 +231,14 @@ function AddOrgModels() {
           <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap">
             <h3 className="mb-0">Add Models</h3>
            <button
-  className="btn btn-primary d-flex align-items-center justify-content-center gap-2"
-  style={{ minWidth: "120px" }}
+              className="create-btn btn btn-primary"
+              style={{ minWidth: "120px" }}
   onClick={() => {
     resetForm();
     setShowForm(true);
   }}
 >
-  <FaPlus />
-  <span>New Model</span>
+  <FaPlus size={32}/>
 </button>
 
           </div>
@@ -305,8 +304,8 @@ function AddOrgModels() {
           <tr key={m.model_id}>
             <td>{m.model_name}</td>
             <td>{m.name || "—"}</td>
-            
-            <td title={m.description}>{m.description || "—"}</td>
+
+            <td title={m.description}>{m.description || "No description available"}</td>
             <td>
               <span
                 className={`badge ${
@@ -489,20 +488,7 @@ function AddOrgModels() {
 
       {/* ✅ NEW FIELD ADDED BELOW — Activate / Deactivate toggle */}
       {/* ✅ ONLY show the toggle during Edit mode */}
-{editMode && (
-  <div className="form-check form-switch mb-3">
-    <input
-      className="form-check-input"
-      type="checkbox"
-      id="isActiveSwitch"
-      checked={isActive}
-      onChange={(e) => setIsActive(e.target.checked)}
-    />
-    <label className="form-check-label" htmlFor="isActiveSwitch">
-      {isActive ? "Active" : "Inactive"}
-    </label>
-  </div>
-)}
+
 {/* ✅ END toggle */}
 
       {/* ✅ END OF NEW FIELD */}
