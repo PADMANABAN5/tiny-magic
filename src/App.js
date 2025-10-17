@@ -32,6 +32,7 @@ import ArchivedConcepts from './pages/Archivedconcepts.jsx';
 import Practicemode from './pages/Practicemode.jsx'; // Import Practicemode
 import PracticeHistory from './pages/PracticeHistory.jsx'; // Import PracticeHistory
 import { ToastContainer } from "react-toastify";
+import PageProtection from './components/Pageprotection.jsx';
 import { AuthProvider } from "./components/AuthContext.jsx";
 import AutoLogout from "./components/Autologout.jsx";
 // ✅ Import the PrivateRoute component
@@ -70,59 +71,7 @@ function getRedirectPath() {
  
 
 function App() {
-  const [isProtectionEnabled, setIsProtectionEnabled] = useState(true);
-
-  useEffect(() => {
-    if (!isProtectionEnabled) return;
-  // Prevent right-click (context menu)
-  const handleContextMenu = (e) => {
-    if (isProtectionEnabled) {
-      e.preventDefault();
-      toast.error('Right-click is disabled.');
-    }
-  };
-
-  // Prevent copy, cut, and paste
-  const handleCopyCutPaste = (e) => {
-    if (isProtectionEnabled) {
-      e.preventDefault();
-      toast.error('Copying, cutting, and pasting are disabled.');
-    }
-  };
-
-  // Prevent text selection
-  const handleSelectStart = (e) => {
-    if (isProtectionEnabled) {
-      e.preventDefault();
-    }
-  };
-
-  // Prevent keyboard shortcuts (Ctrl+C, Ctrl+V, Ctrl+X, Ctrl+A)
-  const handleKeyDown = (e) => {
-    if (
-      isProtectionEnabled &&
-      e.ctrlKey &&
-      (e.key === 'c' || e.key === 'v' || e.key === 'x' || e.key === 'a')
-    ) {
-      e.preventDefault();
-      toast.error('Keyboard shortcuts for copying, pasting, or selecting are disabled.');
-    }
-  };
-    // ✅ Attach globally
-    document.addEventListener("contextmenu", handleContextMenu);
-    document.addEventListener("copy", handleCopyCutPaste);
-    document.addEventListener("cut", handleCopyCutPaste);
-    document.addEventListener("paste", handleCopyCutPaste);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("contextmenu", handleContextMenu);
-      document.removeEventListener("copy", handleCopyCutPaste);
-      document.removeEventListener("cut", handleCopyCutPaste);
-      document.removeEventListener("paste", handleCopyCutPaste);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isProtectionEnabled]);
+  
   return (
     <>
      <AutoLogout timeout={10 * 60 * 1000} />
@@ -134,16 +83,16 @@ function App() {
 
         {/* ✅ Protected Routes by Role */}
         <Route path="/dashboard" element={
-          <PrivateRoute roles={["orguser"]}><Dashboard /></PrivateRoute>
+          <PrivateRoute roles={["orguser"]}><PageProtection /><Dashboard /></PrivateRoute>
         } />
         <Route path="/conversationhistory" element={
-          <PrivateRoute roles={["orguser"]}><ConversationHistory /></PrivateRoute>
+          <PrivateRoute roles={["orguser"]}><PageProtection /><ConversationHistory /></PrivateRoute>
         } />
         <Route path="/practicehistory" element={
-          <PrivateRoute roles={["orguser"]}><PracticeHistory /></PrivateRoute>
+          <PrivateRoute roles={["orguser"]}><PageProtection /><PracticeHistory /></PrivateRoute>
         } />
         <Route path="/variables" element={
-          <PrivateRoute roles={["orguser"]}><Variables /></PrivateRoute>
+          <PrivateRoute roles={["orguser"]}><PageProtection /><Variables /></PrivateRoute>
         } />
         <Route path="/prompt" element={
           <PrivateRoute roles={["superadmin"]}><Prompt /></PrivateRoute>
@@ -242,6 +191,7 @@ function App() {
         } />
         <Route path="/practice" element={
           <PrivateRoute roles={["orguser"]}>
+            <PageProtection />
             <Practicemode />
           </PrivateRoute>
         } />

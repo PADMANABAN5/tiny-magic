@@ -975,97 +975,79 @@ function Orgadmin() {
             </Card.Body>
           </Card>
 
-          {/*Show Models, Assignment*/}
-          <Row className="mb-4 g-4">
-            <Col xs={12} md={4}>
-              <Card className="shadow-sm rounded-4 border-0 h-100">
-                <Card.Body>
-                  <div className="d-flex align-items-center mb-2">
-                    <FaRobot size={38} className="me-3" style={{ color: "#00b2d7" }} />
-                    <div>
-                      <span className="fw-bold fs-5">Show Models</span>
-                      <p className="mb-2 small text-muted">View all available OpenAI models.</p>
-                      <Button variant="primary" size="sm" onClick={() => navigate('/orgadmin/models')}>View Models</Button>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={12} md={4}>
-              <Card className="shadow-sm rounded-4 border-0 h-100">
-                <Card.Body>
-                  <div className="d-flex align-items-center mb-2">
-                    <FaTasks size={38} className="me-3" style={{ color: "#43e97b" }} />
-                    <div>
-                      <span className="fw-bold fs-5">Show Assignments</span>
-                      <p className="mb-2 small text-muted">Check all model assignments within your org.</p>
-                      <Button variant="primary" size="sm" onClick={() => navigate('/orgadmin/assignments')}>View Assignments</Button>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={12} md={4}>
-              <Card className="shadow-sm rounded-4 border-0 h-100">
-                <Card.Body>
-                  <div className="d-flex align-items-center mb-2">
-                    <FaUsers size={38} className="me-3" style={{ color: "#f7971e" }} />
-                    <div>
-                      <span className="fw-bold fs-5">Org Specific Models</span>
-                      <p className="mb-2 small text-muted">Explore models created only for your org.</p>
-                      <Button variant="primary" size="sm" onClick={() => navigate('/orgadmin/organization-models')}>View Org Models</Button>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-            <Col xs={12} md={4}>
-              <Card className="shadow-sm rounded-4 border-0 h-100">
-                <Card.Body>
-                  <div className="d-flex align-items-center mb-2">
-                    <FaDatabase size={38} className="me-3" style={{ color: "#388e3c" }} />
-                    <div>
-                      <span className="fw-bold fs-5">Add Models</span>
-                      <p className="mb-2 small text-muted">
-                        Add a new Model for your org.
-                      </p>
-                      <Button variant="primary" size="sm" onClick={() => navigate('/orgadmin/add-orgmodels')}>
-                        Add Org Models
-                      </Button>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-
-            <Col xs={12} md={4}>
-              <Card className="shadow-sm rounded-4 border-0 h-100">
-                <Card.Body>
-                  <div className="d-flex align-items-center mb-3">
-                    <div className="me-3 d-flex justify-content-center align-items-center rounded-circle bg-primary bg-opacity-10" style={{ width: "56px", height: "56px" }}>
-                      <FiPlus size={28} style={{ color: "#0d6efd" }} />
-                    </div>
-                    <div>
-                      <span className="fw-bold fs-5 text-dark">Manage Assignments</span>
-                      <p className="mb-2 small text-muted">
-                        Assign organization or batch-level models easily.
-                      </p>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        className=" px-3"
-                        onClick={() => navigate("/orgadmin/org-assignment")}
-                      >
-                        Go to Assignments
-                      </Button>
-                    </div>
-                  </div>
-                </Card.Body>
-              </Card>
-            </Col>
-
-          </Row>
-
+          <Row className="mb-4 g-4 justify-content-center">
+  <Col xs={12} md={4}>
+    <Card className="shadow-sm rounded-4 border-0 h-100 transition-all" style={{ background: 'linear-gradient(145deg, #ffffff, #f8f9fa)', border: '1px solid #e9ecef' }}>
+      <Card.Body className="p-4">
+        <div className="d-flex align-items-start mb-3">
+          <div className="me-3" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', background: 'rgba(67, 233, 123, 0.1)', borderRadius: '12px' }}>
+            <FaTasks size={40} style={{ color: '#43e97b' }} />
+          </div>
+          <div className="flex-grow-1">
+            <h5 className="fw-bold text-dark mb-2 fs-5">Show Assignments</h5>
+            <p className="text-muted mb-3 small">Check all model assignments within your org.</p>
+            <Button 
+              variant="outline-info" 
+              size="sm" 
+              className="rounded-pill px-4 py-2 fw-semibold border-info"
+              onClick={() => navigate('/orgadmin/assignments')}
+            >
+              View Assignments
+            </Button>
+          </div>
+        </div>
+      </Card.Body>
+    </Card>
+  </Col>
+  <Col xs={12} md={4}>
+    <Card className="shadow-sm rounded-4 border-0 h-100 transition-all" style={{ background: 'linear-gradient(145deg, #ffffff, #f8f9fa)', border: '1px solid #e9ecef' }}>
+      <Card.Body className="p-4">
+        <div className="d-flex align-items-start mb-3">
+          <div className="me-3" style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', background: 'rgba(56, 142, 60, 0.1)', borderRadius: '12px' }}>
+            <FaDatabase size={40} style={{ color: '#388e3c' }} />
+          </div>
+          <div className="flex-grow-1">
+            <h5 className="fw-bold text-dark mb-2 fs-5">Add Models</h5>
+            <p className="text-muted mb-3 small">Add a new Model for your org.</p>
+            <Button 
+              variant="outline-info" 
+              size="sm" 
+              className="rounded-pill px-4 py-2 fw-semibold border-info"
+              onClick={() => navigate('/orgadmin/add-orgmodels')}
+            >
+              Organization Models
+            </Button>
+          </div>
+        </div>
+      </Card.Body>
+    </Card>
+  </Col>
+  <Col xs={12} md={4}>
+    <Card className="shadow-sm rounded-4 border-0 h-100 transition-all" style={{ background: 'linear-gradient(145deg, #ffffff, #f8f9fa)', border: '1px solid #e9ecef' }}>
+      <Card.Body className="p-4">
+        <div className="d-flex align-items-start mb-3">
+          <div className="me-3" style={{ flexShrink: 0 }}>
+            <div className="d-flex justify-content-center align-items-center rounded-circle bg-primary bg-opacity-10" style={{ width: '56px', height: '56px', border: '1px solid rgba(13, 110, 253, 0.2)' }}>
+              <FiPlus size={32} style={{ color: '#0d6efd' }} />
+            </div>
+          </div>
+          <div className="flex-grow-1">
+            <h5 className="fw-bold text-dark mb-2 fs-5">Manage Assignments</h5>
+            <p className="text-muted mb-3 small">Assign organization or batch-level models easily.</p>
+            <Button 
+              variant="outline-info" 
+              size="sm" 
+              className="rounded-pill px-4 py-2 fw-semibold"
+              onClick={() => navigate("/orgadmin/org-assignment")}
+            >
+              Assignments
+            </Button>
+          </div>
+        </div>
+      </Card.Body>
+    </Card>
+  </Col>
+</Row>
           {/* Batch Cards */}
           {!pageLoading && !batchesError && (
             <>
