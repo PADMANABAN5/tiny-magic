@@ -313,7 +313,7 @@ function Practicemode() {
 
       // Check if there's an existing session for this concept
       console.log("🔍 Checking session status for concept:", firstConcept.concept_name);
-      await checkSessionStatus(firstConcept.concept_name);
+      await checkSessionStatus(firstConcept.concept_name, batchConcepts);
     } else {
       setSelectedConcept(null);
       clearSessionData();
@@ -1113,13 +1113,16 @@ function Practicemode() {
     }
   };
 
-  const checkSessionStatus = async (conceptName = null) => {
+  const checkSessionStatus = async (conceptName = null, conceptsList = null) => {
     if (!username || !userId) {
       setIsInitializing(false);
       return;
     }
 
     setIsLoading(true);
+
+    const availableConcepts = conceptsList || concepts;
+
     try {
       let apiUrl = `${BASE_URL}/practicemode/session-status/${userId}`;
       if (conceptName) {
@@ -1135,7 +1138,7 @@ function Practicemode() {
           clearSessionData();
           setCurrentChatStatus('not_started');
 
-          const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+          const currentConcepts = availableConcepts.length > 0 ? availableConcepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             const conceptToUse = currentConcepts.find(c => c.concept_name === chat.concept_name) || currentConcepts[0];
             setSelectedConcept(conceptToUse);
@@ -1190,20 +1193,20 @@ function Practicemode() {
           sessionStorage.setItem("currentPracticeChatId", chat.id.toString());
           sessionStorage.setItem("PracSessionType", "resume");
 
-          if (chat.concept_name && concepts.length > 0) {
-            const matchingConcept = concepts.find(c => c.concept_name === chat.concept_name);
+          if (chat.concept_name && availableConcepts.length > 0) {
+            const matchingConcept = availableConcepts.find(c => c.concept_name === chat.concept_name);
             if (matchingConcept) {
               setSelectedConcept(matchingConcept);
               console.log("✅ Concept restored from session:", matchingConcept.concept_name);
             } else if (conceptName) {
-              const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+              const providedConcept = availableConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
               if (providedConcept) {
                 setSelectedConcept(providedConcept);
                 console.log("🔄 Using provided concept:", providedConcept.concept_name);
               }
             }
-          } else if (conceptName && concepts.length > 0) {
-            const providedConcept = concepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+          } else if (conceptName && availableConcepts.length > 0) {
+            const providedConcept = availableConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
             if (providedConcept) {
               setSelectedConcept(providedConcept);
               console.log("🔄 Using provided concept for fresh session:", providedConcept.concept_name);
@@ -1214,7 +1217,7 @@ function Practicemode() {
           clearSessionData();
           setCurrentChatStatus('not_started');
 
-          const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+          const currentConcepts = availableConcepts.length > 0 ? availableConcepts : await fetchAndReturnConcepts();
           if (currentConcepts.length > 0) {
             let conceptToUse;
 
@@ -1236,7 +1239,7 @@ function Practicemode() {
         clearSessionData();
         setCurrentChatStatus('not_started');
 
-        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+        const currentConcepts = availableConcepts.length > 0 ? availableConcepts : await fetchAndReturnConcepts();
         if (currentConcepts.length > 0) {
           let conceptToUse;
 
@@ -1262,7 +1265,7 @@ function Practicemode() {
       clearSessionData();
       setCurrentChatStatus('not_started');
 
-      const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+      const currentConcepts = availableConcepts.length > 0 ? availableConcepts : await fetchAndReturnConcepts();
       if (currentConcepts.length > 0) {
         let conceptToUse;
 
@@ -1513,7 +1516,7 @@ function Practicemode() {
       <div className="dashboard-layout">
         {(isMobile ? menuOpen : true) && (
         <div className="control-panel">
-          <div className="control-section">
+          <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
             <div className="section-header">
               <FiBook className="section-icon" />
               <h3>Select Batch</h3>
@@ -1521,7 +1524,7 @@ function Practicemode() {
             <div className="concept-selector" ref={batchDropdownRef}>
               <div
                 className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
-                onClick={() => !isProcessingAssessment && setShowBatchDropdown(!showBatchDropdown)}
+                onClick={() => !(isProcessingAssessment || isLoading) && setShowBatchDropdown(!showBatchDropdown)}
               >
                 <span className="concept-text">
                   {conceptsLoading
@@ -1561,7 +1564,7 @@ function Practicemode() {
               )}
             </div>
           </div>
-          <div className="control-section">
+          <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
             <div className="section-header">
               <FiTarget className="section-icon" />
               <h3>Select Concept</h3>
@@ -1569,7 +1572,7 @@ function Practicemode() {
             <div className="concept-selector" ref={conceptDropdownRef}>
               <div
                 className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
-                onClick={() => !isProcessingAssessment && setShowConceptDropdown(!showConceptDropdown)}
+                onClick={() => !(isProcessingAssessment || isLoading) && setShowConceptDropdown(!showConceptDropdown)}
               >
                 <span className="concept-text">
                   {conceptsLoading

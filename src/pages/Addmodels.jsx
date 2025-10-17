@@ -122,8 +122,7 @@ function AddModels() {
     fetchModels();
   }, []);
 
-  // Delete model (soft delete: sets is_active to false)
-const handleDelete = async (modelId, modelName) => {
+ const handleDelete = async (modelId, modelName) => {
   if (!window.confirm(`Are you sure you want to deactivate the model "${modelName}"? This action cannot be undone.`)) {
     return;  // User canceled
   }
@@ -151,6 +150,19 @@ const handleDelete = async (modelId, modelName) => {
           break;
         case 403:
           message = "Forbidden: You do not have permission.";
+          break;
+        case 409:
+          const assignedScopes = error.response.data?.assigned_scopes || [];
+          let scopeDetails = [];
+          assignedScopes.forEach(scope => {
+            if (scope.level === "organization") {
+              scopeDetails.push(`organization "${scope.organization_name}"`);
+            } else if (scope.level === "batch") {
+              scopeDetails.push(`batch "${scope.batch_name}" in organization "${scope.organization_name}"`);
+            }
+          });
+          const scopesList = scopeDetails.length > 0 ? scopeDetails.join(", ") : "unknown scopes";
+          message = `Cannot delete model as it is assigned to the following scopes. Please re-assign or remove these assignments first: ${scopesList}.`;
           break;
         case 404:
           message = "Model not found.";
@@ -316,7 +328,7 @@ const handleDelete = async (modelId, modelName) => {
                 setShowForm(true);
               }}
             >
-              <FaPlus />
+              <FaPlus/>
             </button>
           </div>
 

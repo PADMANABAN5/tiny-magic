@@ -3,7 +3,6 @@ import {
   Spinner,
   Alert,
   Button,
-  Modal,
   Form,
   Card,
 } from "react-bootstrap";
@@ -428,15 +427,15 @@ function AssignmentOrg() {
           </div>
 
           {/* Header Section */}
-          <div className="d-flex justify-content-between align-items-center flex-wrap mb-3">
-            <h3 className="fw-bold mb-0 text-dark">LLM Model Assignments</h3>
-            <Button
-              variant="primary"
-              className="px-3 d-flex align-items-center gap-2"
+          <div className="d-flex justify-content-between align-items-center mb-2 flex-wrap">
+            <h3 className=" mb-0">Model Assignments</h3>
+            <button
+              className="create-btn btn btn-primary"
+              style={{ minWidth: "120px" }}
               onClick={openCreateModal}
             >
-              <FiPlus /> <span>New Assignment</span>
-            </Button>
+              <FiPlus />
+            </button>
           </div>
 
           {/* Table Card */}
@@ -497,108 +496,133 @@ function AssignmentOrg() {
         </div>
       </div>
 
-      {/* Modal for Create/Edit */}
-      <Modal show={showModal} onHide={closeModal} centered size="md">
-        <Modal.Header closeButton>
-          <Modal.Title className="fw-bold">
-            {editMode ? "Edit Assignment" : "Create New Assignment"}
-          </Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form onSubmit={handleSubmit}>
-            {/* Model Dropdown */}
-            <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold">Model</Form.Label>
-              <Form.Select
-                value={formData.modelSource === "global" ? formData.model_id : ""}
-                onChange={handleGlobalModelChange}
-                disabled={formData.modelSource === "org"}
-                required
-              >
-                <option value="">Select Model</option>
-                {models.map((m) => (
-                  <option key={m.model_id} value={m.model_id}>
-                    {m.model_name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+      {/* Custom Modal for Create/Edit */}
+      {showModal && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center"
+            style={{ zIndex: 1050 }}
+            onClick={closeModal}
+          >
+            {/* Modal Dialog */}
+            <div
+              className="bg-white rounded shadow-lg"
+              style={{
+                width: "90%",
+                maxWidth: "500px",
+                maxHeight: "90vh",
+                overflowY: "auto"
+              }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Modal Header */}
+              <div className="d-flex align-items-center p-3 position-relative">
+                <h5 className="position-absolute start-50 translate-middle-x mt-2 mb-0">
+                  {editMode ? "Edit Assignment" : " Assign models"}
+                </h5>
+               
+              </div>
 
-            {/* Org Models Dropdown */}
-            <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold">Org Models</Form.Label>
-              <Form.Select
-                value={formData.modelSource === "org" ? formData.model_id : ""}
-                onChange={handleOrgModelChange}
-                disabled={formData.modelSource === "global"}
-                required={formData.modelSource === "org"}
-              >
-                <option value="">Select Org Model</option>
-                {orgModels.map((m) => (
-                  <option key={m.model_id} value={m.model_id}>
-                    {m.model_name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group>
+              {/* Modal Body */}
+              <div className="p-3">
+                <Form onSubmit={handleSubmit}>
+                  {/* Model Dropdown */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Model</Form.Label>
+                    <Form.Select
+                      value={formData.modelSource === "global" ? formData.model_id : ""}
+                      onChange={handleGlobalModelChange}
+                      disabled={formData.modelSource === "org"}
+                      required
+                    >
+                      <option value="">Select Model</option>
+                      {models.map((m) => (
+                        <option key={m.model_id} value={m.model_id}>
+                          {m.model_name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
 
-            {/* Level Dropdown */}
-            <Form.Group className="mb-3">
-              <Form.Label className="fw-semibold">Level</Form.Label>
-              <Form.Select
-                value={formData.level}
-                onChange={handleLevelChange}
-                required
-              >
-                <option value="">Select Level</option>
-                <option value="organization">Organization</option>
-                <option value="batch">Batch</option>
-              </Form.Select>
-            </Form.Group>
+                  {/* Org Models Dropdown */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Org Models</Form.Label>
+                    <Form.Select
+                      value={formData.modelSource === "org" ? formData.model_id : ""}
+                      onChange={handleOrgModelChange}
+                      disabled={formData.modelSource === "global"}
+                      required={formData.modelSource === "org"}
+                    >
+                      <option value="">Select Org Model</option>
+                      {orgModels.map((m) => (
+                        <option key={m.model_id} value={m.model_id}>
+                          {m.model_name}
+                        </option>
+                      ))}
+                    </Form.Select>
+                  </Form.Group>
 
-            {/* Batch Dropdown */}
-            {formData.level === "batch" && (
-              <Form.Group className="mb-3">
-                <Form.Label className="fw-semibold">Batch</Form.Label>
-                <Form.Select
-                  value={formData.batch_id}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      batch_id: e.target.value,
-                    })
-                  }
-                  required
-                >
-                  <option value="">Select Batch</option>
-                  {batches.map((b) => (
-                    <option key={b.batch_id} value={b.batch_id}>
-                      {b.batch_name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-            )}
+                  {/* Level Dropdown */}
+                  <Form.Group className="mb-3">
+                    <Form.Label className="fw-semibold">Level</Form.Label>
+                    <Form.Select
+                      value={formData.level}
+                      onChange={handleLevelChange}
+                      required
+                    >
+                      <option value="">Select Level</option>
+                      <option value="organization">Organization</option>
+                      <option value="batch">Batch</option>
+                    </Form.Select>
+                  </Form.Group>
 
-            <div className="d-flex justify-content-end gap-2 mt-4">
-              <Button variant="secondary" onClick={closeModal}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="success" disabled={formLoading}>
-                {formLoading ? (
-                  <>
-                    <Spinner animation="border" size="sm" /> Saving...
-                  </>
-                ) : editMode ? (
-                  "Update"
-                ) : (
-                  "Create"
-                )}
-              </Button>
+                  {/* Batch Dropdown */}
+                  {formData.level === "batch" && (
+                    <Form.Group className="mb-3">
+                      <Form.Label className="fw-semibold">Batch</Form.Label>
+                      <Form.Select
+                        value={formData.batch_id}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            batch_id: e.target.value,
+                          })
+                        }
+                        required
+                      >
+                        <option value="">Select Batch</option>
+                        {batches.map((b) => (
+                          <option key={b.batch_id} value={b.batch_id}>
+                            {b.batch_name}
+                          </option>
+                        ))}
+                      </Form.Select>
+                    </Form.Group>
+                  )}
+
+                  <div className="d-flex justify-content-end gap-2 mt-4">
+                    <Button variant="secondary" onClick={closeModal}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" variant="success" disabled={formLoading}>
+                      {formLoading ? (
+                        <>
+                          <Spinner animation="border" size="sm" /> Saving...
+                        </>
+                      ) : editMode ? (
+                        "Update"
+                      ) : (
+                        "Create"
+                      )}
+                    </Button>
+                  </div>
+                </Form>
+              </div>
             </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
+          </div>
+        </>
+      )}
     </div>
   );
 }
