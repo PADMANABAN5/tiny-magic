@@ -18,6 +18,8 @@ export default function Prompt() {
   const [showEditor, setShowEditor] = useState(false);
   const [editPrompt, setEditPrompt] = useState(null);
   const [updatedUserContent, setUpdatedUserContent] = useState('');
+  const [updatedJsonContent, setUpdatedJsonContent] = useState(''); // NEW: State for json_content
+  const [updatedAdditionalContent, setUpdatedAdditionalContent] = useState(''); // NEW: State for additional_content
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedPromptId, setSelectedPromptId] = useState(null);
  
@@ -37,6 +39,10 @@ export default function Prompt() {
   const [filteredPrompts, setFilteredPrompts] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const promptsPerPage = 10;
+
+  // Resizable states
+  const [editorWidth, setEditorWidth] = useState(800);
+  const [assignWidth, setAssignWidth] = useState(500);
  
   const storedToken = sessionStorage.getItem("token");
   const config = {
@@ -196,40 +202,31 @@ export default function Prompt() {
   const handleEditClick = (prompt) => {
     setEditPrompt(prompt);
     setOriginalPrompt(prompt); // NEW
-    setUpdatedUserContent(prompt.user_content);
+    setUpdatedUserContent(prompt.user_content || '');
+    setUpdatedJsonContent(prompt.json_content || ''); // NEW: Set initial json_content
+    setUpdatedAdditionalContent(prompt.additional_content || ''); // NEW: Set initial additional_content
     setShowEditor(true);
   };
-  useEffect(() => {
-  if (!selectedOrgIdFilter) {
-    setBatchListForFilter([]);
-    setSelectedBatchIdFilter('');
-    return;
-  }
-
-  axios
-    .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgIdFilter}`, config)
-    .then((res) => {
-      setBatchListForFilter(res.data.data || []);
-    })
-    .catch((err) => {
-      console.error('Failed to fetch batches for filter:', err);
-      setBatchListForFilter([]);
-    });
-}, [selectedOrgIdFilter]);
  
   const handleSave = () => {
+  // UPDATED: Check all three fields for changes
   if (
-    updatedUserContent.trim() === originalPrompt?.user_content?.trim()
+    updatedUserContent.trim() === originalPrompt?.user_content?.trim() &&
+    updatedJsonContent.trim() === originalPrompt?.json_content?.trim() &&
+    updatedAdditionalContent.trim() === originalPrompt?.additional_content?.trim()
   ) {
     showToastMsg('No changes detected', 'warning');
-
     return;
   }
  
-  axios.put(`${process.env.REACT_APP_API_LINK}/prompts/${editPrompt.prompt_id}`, {
+  // Prepare the payload with only changed fields (but send all for simplicity, as backend handles partial)
+  const payload = {
     user_content: updatedUserContent,
-    json_content: editPrompt.json_content // Keep json_content as is
-  }, config)
+    json_content: updatedJsonContent,
+    additional_content: updatedAdditionalContent
+  };
+ 
+  axios.put(`${process.env.REACT_APP_API_LINK}/prompts/${editPrompt.prompt_id}`, payload, config)
     .then(() => {
       setShowEditor(false);
       showToastMsg("Prompt updated successfully!", "primary");
@@ -271,28 +268,76 @@ export default function Prompt() {
       }
     });
 };
+
+  // Editor resize handlers
+  let editorStartX;
+  let editorStartWidth;
+
+  const handleEditorResizeStart = (e) => {
+    e.preventDefault();
+    editorStartX = e.clientX;
+    const box = e.currentTarget.parentElement.parentElement.getBoundingClientRect();
+    editorStartWidth = box.width;
+    document.addEventListener('mousemove', handleEditorResize);
+    document.addEventListener('mouseup', handleEditorResizeEnd);
+  };
+
+  const handleEditorResize = (e) => {
+    const newWidth = editorStartWidth + (e.clientX - editorStartX);
+    setEditorWidth(Math.max(400, newWidth));
+  };
+
+  const handleEditorResizeEnd = () => {
+    document.removeEventListener('mousemove', handleEditorResize);
+    document.removeEventListener('mouseup', handleEditorResizeEnd);
+  };
+
+  // Assign resize handlers
+  let assignStartX;
+  let assignStartWidth;
+
+  const handleAssignResizeStart = (e) => {
+    e.preventDefault();
+    assignStartX = e.clientX;
+    const box = e.currentTarget.parentElement.parentElement.getBoundingClientRect();
+    assignStartWidth = box.width;
+    document.addEventListener('mousemove', handleAssignResize);
+    document.addEventListener('mouseup', handleAssignResizeEnd);
+  };
+
+  const handleAssignResize = (e) => {
+    const newWidth = assignStartWidth + (e.clientX - assignStartX);
+    setAssignWidth(Math.max(300, newWidth));
+  };
+
+  const handleAssignResizeEnd = () => {
+    document.removeEventListener('mousemove', handleAssignResize);
+    document.removeEventListener('mouseup', handleAssignResizeEnd);
+  };
  
- useEffect(() => {
-  // If an org is selected, load its batches
-  if (selectedOrgIdFilter) {
-    axios
-      .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgIdFilter}`, config)
-      .then((res) => setBatchListForFilter(res.data.data || []))
-      .catch((err) => {
-        console.error('Failed to fetch batches:', err);
-        setBatchListForFilter([]);
-      });
-  } else {
-    // If no org selected, load all batches
-    axios
-      .get(`${process.env.REACT_APP_API_LINK}/batches`, config)
-      .then((res) => setBatchListForFilter(res.data.data || []))
-      .catch((err) => {
-        console.error('Failed to fetch all batches:', err);
-        setBatchListForFilter([]);
-      });
-  }
-}, [selectedOrgIdFilter]);
+  // Consolidated useEffect for fetching batches for filter (removed duplication)
+  useEffect(() => {
+    if (selectedOrgIdFilter) {
+      // If an org is selected, load its batches
+      axios
+        .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgIdFilter}`, config)
+        .then((res) => setBatchListForFilter(res.data.data || []))
+        .catch((err) => {
+          console.error('Failed to fetch batches:', err);
+          setBatchListForFilter([]);
+        });
+    } else {
+      // If no org selected, load all batches and reset batch filter
+      setSelectedBatchIdFilter('');
+      axios
+        .get(`${process.env.REACT_APP_API_LINK}/batches`, config)
+        .then((res) => setBatchListForFilter(res.data.data || []))
+        .catch((err) => {
+          console.error('Failed to fetch all batches:', err);
+          setBatchListForFilter([]);
+        });
+    }
+  }, [selectedOrgIdFilter]);
  
   const handleAssignPrompt = () => {
     // Use modal-specific state variables for assignment
@@ -573,26 +618,75 @@ export default function Prompt() {
  
  
           {showEditor && (
-  <div className="popup-overlay" >
-    <div className="popup-box" onClick={(e) => e.stopPropagation()}>
-      <h4 className="mb-3 text-center">Edit Prompt</h4>
+  <div className="popup-overlay">
+    <div 
+      className="popup-box editor-popup-box" 
+      style={{ width: `${editorWidth}px` }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ display: 'flex', width: '100%' }}>
+        <div style={{ flex: 1 }}>
+          <h4 className="mb-3 text-center">Edit Prompt</h4>
 
-      <EditablePromptEditor
-        initialContent={editPrompt?.user_content || ''}
-        onSave={(updatedText) => setUpdatedUserContent(updatedText)}
-      />
+<Form.Group className="mb-3">
+  <Form.Label>User Content</Form.Label>
+  <EditablePromptEditor
+    initialContent={editPrompt?.user_content || ''}
+    onSave={(updatedText) => setUpdatedUserContent(updatedText)}
+  />
+</Form.Group>
+
+{/* JSON Content Editor (UPDATED: Now uses EditablePromptEditor) */}
+<Form.Group className="mb-3">
+  <Form.Label>JSON Content</Form.Label>
+  <EditablePromptEditor
+    initialContent={editPrompt?.json_content || ''}
+    onSave={(updatedText) => setUpdatedJsonContent(updatedText)}
+  />
+</Form.Group>
+
+{/* Additional Content Editor (UPDATED: Now uses EditablePromptEditor) */}
+<Form.Group className="mb-3">
+  <Form.Label>Additional Content</Form.Label>
+  <EditablePromptEditor
+    initialContent={editPrompt?.additional_content || ''}
+    onSave={(updatedText) => setUpdatedAdditionalContent(updatedText)}
+  />
+</Form.Group>
 
       <div className="d-flex justify-content-end gap-2 mt-3">
         <Button variant="secondary" onClick={() => setShowEditor(false)}>Cancel</Button>
         <Button variant="success" onClick={handleSave}>Save</Button>
       </div>
+        </div>
+        <div 
+          className="resize-handle"
+          style={{
+            width: '10px',
+            cursor: 'col-resize',
+            backgroundColor: '#7f7e7eff',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: '5px'
+          }}
+          onMouseDown={handleEditorResizeStart}
+        />
+      </div>
     </div>
   </div>
 )}
          {showAssignModal && (
-  <div className="popup-overlay" >
-    <div className="popup-box" onClick={(e) => e.stopPropagation()}>
-      <h4 className="mb-3 text-center">Assign Prompt to Batch</h4>
+  <div className="popup-overlay">
+    <div 
+      className="popup-box" 
+      style={{ width: `${assignWidth}px` }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ display: 'flex' }}>
+        <div style={{ flex: 1 }}>
+          <h4 className="mb-3 text-center">Assign Prompt to Batch</h4>
 
       <Form.Group className="mb-3">
         <Form.Label>Select Prompt <span className="text-danger">*</span></Form.Label>
@@ -647,6 +741,8 @@ export default function Prompt() {
       <div className="d-flex justify-content-end gap-2">
         <Button variant="secondary" onClick={() => setShowAssignModal(false)}>Cancel</Button>
         <Button variant="success" onClick={handleAssignPrompt}>Assign</Button>
+      </div>
+        </div>
       </div>
     </div>
   </div>

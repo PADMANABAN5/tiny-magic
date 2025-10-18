@@ -63,7 +63,7 @@ function Assignmodels() {
       // Handle HTTP status codes
       switch (status) {
         case 400:
-          errorMsg = data?.message || 'Bad request - Please check your input.';
+          errorMsg = 'Bad request - Please check your input.';
           break;
         case 401:
           errorMsg = 'Unauthorized - Please log in again.';
@@ -216,12 +216,16 @@ function Assignmodels() {
       level: selectedLevel
     };
 
-    if (selectedLevel === 'organization') {
+    if (selectedLevel === 'global') {
+      payload.organization_id = null;
+      payload.batch_id = null;
+    } else if (selectedLevel === 'organization') {
       if (!selectedOrg) {
         showToastMsg('Please select an organization.', 'warning');
         return;
       }
       payload.organization_id = parseInt(selectedOrg);
+      payload.batch_id = null;
     } else if (selectedLevel === 'batch') {
       if (!selectedOrg) {
         showToastMsg('Please select an organization.', 'warning');
@@ -238,7 +242,9 @@ function Assignmodels() {
     try {
       let response;
       if (isEditMode && selectedAssignmentId) {
-        response = await axios.put(`${BASE_URL}/llm/assignments/${selectedAssignmentId}`, payload ,config);
+        // For update, only send model_id, let the backend keep the rest
+        const updatePayload = { model_id: parseInt(selectedModel) };
+        response = await axios.put(`${BASE_URL}/llm/assignments/${selectedAssignmentId}`, updatePayload ,config);
         showToastMsg('Assignment updated successfully!', 'primary');
       } else {
         response = await axios.post(`${BASE_URL}/llm/assignments`, payload ,config);
@@ -457,6 +463,7 @@ function Assignmodels() {
                 className="form-select"
                 value={selectedLevel}
                 onChange={handleLevelChange}
+                disabled={isEditMode}
               >
                 <option value="global">Global</option>
                 <option value="organization">Organization</option>
@@ -493,6 +500,7 @@ function Assignmodels() {
                   className="form-select"
                   value={selectedOrg}
                   onChange={handleOrgChange}
+                  disabled={isEditMode}
                 >
                   <option value="">Select Organization</option>
                   {organizations.map((org) => (
@@ -517,6 +525,7 @@ function Assignmodels() {
                   className="form-select"
                   value={selectedBatch}
                   onChange={(e) => setSelectedBatch(e.target.value)}
+                  disabled={isEditMode}
                 >
                   <option value="">Select Batch</option>
                   {batches

@@ -1,28 +1,29 @@
-/* Overlay behind popup */
 .popup-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 9999; /* Ensures it sits above everything */
+  justify-content: center;
+  z-index: 1050;
 }
 
-/* The popup box itself */
 .popup-box {
-  background: #fff;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 700px;
+  background: white;
+  border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
-  animation: popupFade 0.25s ease-in-out;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  max-width: 90vw;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: auto;
+}
+
+.resize-handle:hover {
+  background-color: #ccc !important;
 }
 
 /* Optional entry animation */

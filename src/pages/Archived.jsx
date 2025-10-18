@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Button, Table, Spinner, Alert, Modal, Pagination } from 'react-bootstrap';
+import { Button, Table, Spinner, Alert, Pagination } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css'; 
@@ -195,31 +195,80 @@ function Archived() {
           )}
 
           {showViewModal && (
-  <div className="popup-overlay" >
+  <div className="popup-overlay" onClick={() => setShowViewModal(false)}>
     <div className="popup-box" onClick={(e) => e.stopPropagation()}>
       <h4 className="mb-3 text-center">View Archived Prompt</h4>
 
-      <div
-        className="p-4 bg-light border rounded shadow-sm"
-        style={{
-          minHeight: '120px',
-          maxHeight: '400px',
-          overflowY: 'auto',
-          fontFamily: 'Arial, sans-serif',
-          fontSize: '1rem',
-          lineHeight: '1.6',
-          color: '#333',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-word',
-        }}
-      >
-        {viewPrompt && viewPrompt.user_content ? (
-          <p className="mb-0">{viewPrompt.user_content}</p>
-        ) : (
-          <p className="text-muted fst-italic mb-0">
-            No content available for this prompt.
-          </p>
-        )}
+      <div className="mb-3">
+        <div
+          className="p-3 bg-light border rounded shadow-sm"
+          style={{
+            minHeight: '60px',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '0.9rem',
+            lineHeight: '1.5',
+            color: '#333',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          <strong>User Content:</strong>
+          {viewPrompt && viewPrompt.user_content ? (
+            <p className="mb-0 mt-1">{viewPrompt.user_content}</p>
+          ) : (
+            <p className="text-muted fst-italic mb-0 mt-1">
+              No user content available.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div
+          className="p-3 bg-light border rounded shadow-sm"
+          style={{
+            minHeight: '60px',
+            fontFamily: 'monospace',
+            fontSize: '0.8rem',
+            lineHeight: '1.4',
+            color: '#333',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+          }}
+        >
+          <strong>JSON Content:</strong>
+          {viewPrompt && viewPrompt.json_content ? (
+            <pre className="mb-0 mt-1"><code>{viewPrompt.json_content}</code></pre>
+          ) : (
+            <p className="text-muted fst-italic mb-0 mt-1">
+              No JSON content available.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div
+          className="p-3 bg-light border rounded shadow-sm"
+          style={{
+            minHeight: '60px',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '0.9rem',
+            lineHeight: '1.5',
+            color: '#333',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          <strong>Additional Content:</strong>
+          {viewPrompt && viewPrompt.additional_content ? (
+            <p className="mb-0 mt-1">{viewPrompt.additional_content}</p>
+          ) : (
+            <p className="text-muted fst-italic mb-0 mt-1">
+              No additional content available.
+            </p>
+          )}
+        </div>
       </div>
 
       <div className="d-flex justify-content-end mt-3">
