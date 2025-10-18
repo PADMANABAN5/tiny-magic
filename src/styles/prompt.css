@@ -1,28 +1,29 @@
-/* Overlay behind popup */
 .popup-overlay {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 9999; /* Ensures it sits above everything */
+  justify-content: center;
+  z-index: 1050;
 }
 
-/* The popup box itself */
 .popup-box {
-  background: #fff;
-  border-radius: 10px;
-  width: 90%;
-  max-width: 700px;
+  background: white;
+  border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
-  animation: popupFade 0.25s ease-in-out;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  max-width: 90vw;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: auto;
+}
+
+.resize-handle:hover {
+  background-color: #ccc !important;
 }
 
 /* Optional entry animation */
@@ -37,3 +38,160 @@
   }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+/* Custom dropdown styles */
+.custom-dropdown-toggle {
+  color: #000 !important; 
+  background-color: white !important; 
+  border-color: #ced4da !important; 
+}
+
+.custom-dropdown-toggle:hover,
+.custom-dropdown-toggle:focus,
+.custom-dropdown-toggle:active {
+  background-color: white !important; 
+  color: #000 !important; 
+  border-color: #ced4da !important; 
+  box-shadow: none !important; 
+}
+
+.custom-dropdown-toggle.show {
+  background-color: white !important; 
+  color: #000 !important; 
+  border-color: #007bff !important; 
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25) !important; 
+}
+
+.custom-dropdown-toggle::after {
+  filter: invert(0%) !important; 
+  border-top-color: #000 !important; 
+}
+
+.custom-dropdown-menu {
+  max-height: 200px !important; 
+  overflow-y: auto !important; 
+  background-color: white !important;
+}
+
+.custom-dropdown-item {
+  color: #000 !important; 
+}
+
+.custom-dropdown-item:hover,
+.custom-dropdown-item:focus {
+  background-color: #f8f9fa !important;
+  color: #000 !important;
+}
+
+.custom-dropdown-item.active {
+  background-color: #007bff !important;
+  color: white !important;
+}
+
+.custom-dropdown-item.active:hover {
+  background-color: #0056b3 !important;
+  color: white !important;
+}
+
+
+
+.filter-section,
+.filter-org-dropdown,
+.filter-batch-dropdown {
+  position: static !important;
+}
+
+@media (max-width: 768px) {
+  .filter-section {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .filter-section .dropdown-toggle {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+.filter-section .dropdown-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  text-align: left; 
+}
+
+.filter-section .dropdown-toggle {
+  background-color: #fff !important;
+  color: #000 !important;
+  border: 1px solid #ced4da !important;
+  text-align: left;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: none !important;
+  transition: all 0.2s ease-in-out;
+}
+
+
+.filter-section .dropdown-toggle:hover {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-color: #bdbdbd !important;
+}
+
+
+.filter-section .dropdown-toggle.show,
+.filter-section .dropdown-toggle:focus,
+.filter-section .dropdown-toggle:active {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-color: #007bff !important; 
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.2) !important;
+}
+
+
+.filter-section .dropdown-menu {
+  background-color: #fff !important;
+  border: 1px solid #ced4da !important;
+  max-height: 250px !important;
+  overflow-y: auto !important;
+  border-radius: 0.375rem !important;
+}
+
+
+.filter-section .dropdown-item {
+  color: #000 !important;
+  font-size: 0.95rem;
+}
+
+.filter-section .dropdown-item:hover,
+.filter-section .dropdown-item:focus {
+  background-color: #f8f9fa !important;
+  color: #000 !important;
+}
+
+.filter-section .dropdown-item.active {
+  background-color: #007bff !important;
+  color: #fff !important;
+}
+
+/* Optional: minimal custom scrollbar */
+.filter-section .dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+.filter-section .dropdown-menu::-webkit-scrollbar-thumb {
+  background-color: #c1c1c1;
+  border-radius: 3px;
+}
+.filter-section .dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background-color: #a8a8a8;
+}
