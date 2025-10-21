@@ -215,36 +215,35 @@ function Assignmodels() {
       model_id: parseInt(selectedModel),
       level: selectedLevel
     };
+if (selectedLevel === 'organization') {
+  if (!selectedOrg) {
+    showToastMsg('Please select an organization.', 'warning');
+    return;
+  }
+  payload.organization_id = parseInt(selectedOrg);
+  payload.batch_id = null;
+} else if (selectedLevel === 'batch') {
+  if (!selectedOrg) {
+    showToastMsg('Please select an organization.', 'warning');
+    return;
+  }
+  if (!selectedBatch) {
+    showToastMsg('Please select a batch.', 'warning');
+    return;
+  }
+  payload.organization_id = parseInt(selectedOrg);
+  payload.batch_id = parseInt(selectedBatch);
+} else if (selectedLevel === 'global') {
+  // 👇 Ensure both are null when level is global
+  payload.organization_id = null;
+  payload.batch_id = null;
+}
 
-    if (selectedLevel === 'global') {
-      payload.organization_id = null;
-      payload.batch_id = null;
-    } else if (selectedLevel === 'organization') {
-      if (!selectedOrg) {
-        showToastMsg('Please select an organization.', 'warning');
-        return;
-      }
-      payload.organization_id = parseInt(selectedOrg);
-      payload.batch_id = null;
-    } else if (selectedLevel === 'batch') {
-      if (!selectedOrg) {
-        showToastMsg('Please select an organization.', 'warning');
-        return;
-      }
-      if (!selectedBatch) {
-        showToastMsg('Please select a batch.', 'warning');
-        return;
-      }
-      payload.organization_id = parseInt(selectedOrg);
-      payload.batch_id = parseInt(selectedBatch);
-    }
 
     try {
       let response;
       if (isEditMode && selectedAssignmentId) {
-        // For update, only send model_id, let the backend keep the rest
-        const updatePayload = { model_id: parseInt(selectedModel) };
-        response = await axios.put(`${BASE_URL}/llm/assignments/${selectedAssignmentId}`, updatePayload ,config);
+        response = await axios.put(`${BASE_URL}/llm/assignments/${selectedAssignmentId}`, payload ,config);
         showToastMsg('Assignment updated successfully!', 'primary');
       } else {
         response = await axios.post(`${BASE_URL}/llm/assignments`, payload ,config);
@@ -463,7 +462,6 @@ function Assignmodels() {
                 className="form-select"
                 value={selectedLevel}
                 onChange={handleLevelChange}
-                disabled={isEditMode}
               >
                 <option value="global">Global</option>
                 <option value="organization">Organization</option>
@@ -500,7 +498,6 @@ function Assignmodels() {
                   className="form-select"
                   value={selectedOrg}
                   onChange={handleOrgChange}
-                  disabled={isEditMode}
                 >
                   <option value="">Select Organization</option>
                   {organizations.map((org) => (
@@ -525,7 +522,6 @@ function Assignmodels() {
                   className="form-select"
                   value={selectedBatch}
                   onChange={(e) => setSelectedBatch(e.target.value)}
-                  disabled={isEditMode}
                 >
                   <option value="">Select Batch</option>
                   {batches

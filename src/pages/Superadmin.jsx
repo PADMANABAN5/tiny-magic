@@ -3,8 +3,8 @@ import { BrowserRouter as Router, useNavigate } from 'react-router-dom'; // Impo
 import {
   Building2, User, Users, LineChart, Settings, LayoutGrid, Key, Database, ShieldCheck,
   Monitor, BookOpen, Clock
-} from 'lucide-react'; 
-import { SiOpenai } from "react-icons/si";
+} from 'lucide-react';
+import { FaBrain } from 'react-icons/fa';
 import Supersidebar from '../components/Supersidebar'; // Import the sidebar component
 import { Container, Row, Col, Card, Button, Nav, Navbar } from 'react-bootstrap'; // React-Bootstrap components
 import '../styles/superadmin.css';
@@ -232,7 +232,7 @@ function Superadmin() {
               <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
                 <Card.Body className="">
                   <div className="p-3 bg-gradient-orange rounded-circle d-inline-flex mb-3">
-                    <SiOpenai className="text-white" size={32} />
+                    <FaBrain className="text-white" size={32} />
                   </div>
                   <Card.Title className="fs-5 fw-semibold text-dark mb-2">LLM Managements</Card.Title>
                   <Card.Text className="text-secondary mb-4 fs-6">
