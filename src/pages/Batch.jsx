@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Select from "react-select";
-import { Pagination, Badge, OverlayTrigger, Tooltip } from "react-bootstrap";
+import { Pagination, Badge, OverlayTrigger, Tooltip, Dropdown } from "react-bootstrap";
 import Supersidebar from "../components/Supersidebar";
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
@@ -315,61 +315,206 @@ export default function Batch() {
             </button>
           </div>
           <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
-            <div className="d-flex align-items-center">
-              <span className="me-2">Show entries:</span>
-              <select
-                className="form-select"
-                style={{ width: "100px" }}
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(parseInt(e.target.value));
-                  setCurrentPage(1);
-                }}
-              >
-                {[5, 10, 20, 50, 100].map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </select>
-            </div>
+             <div className="d-flex align-items-center">
+                <span className="me-2">Show entries:</span>
+                <Dropdown className="entries-dropdown" autoClose="true">
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    id="entries-dropdown"
+                    className="d-flex justify-content-between align-items-center"
+                    style={{
+                      width: "80px",
+                      textAlign: "left",
+                      backgroundColor: "#fff",
+                      color: "#000",
+                      borderColor: "#ccc",
+                      boxShadow: "none",
+                      padding: "6px 10px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {itemsPerPage}
+                  </Dropdown.Toggle>
+            
+                  <Dropdown.Menu
+                    style={{
+                      minWidth: "80px",
+                      maxWidth: "100px",
+                      backgroundColor: "#fff",
+                      maxHeight: "130px",
+                      overflowY: "auto",
+                      border: "1px solid #ccc",
+                      marginTop: "0px",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
+                      padding: "0",
+                      scrollbarWidth: "thin", 
+                      scrollbarColor: "#ccc transparent",
+                    }}
+                  >
+                   
+                    <style>
+                      {`
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar {
+                          width: 5px;
+                        }
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar-thumb {
+                          background-color: #bbb;
+                          border-radius: 4px;
+                        }
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar-thumb:hover {
+                          background-color: #999;
+                        }
+                      `}
+                    </style>
+            
+                    {[5, 10, 15, 20, 50].map((num) => (
+                      <Dropdown.Item
+                        key={num}
+                        onClick={() => {
+                          setCurrentPage(1);
+                          setItemsPerPage(num);
+                        }}
+                        active={itemsPerPage === num}
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          padding: "6px 0",
+                          fontSize: "14px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {num}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
 
             {/* Filters in single line */}
             <div
-              className="d-flex align-items-center gap-3 flex-grow-1"
-              style={{ flexWrap: "nowrap" }}
-            >
-              <input
-                type="text"
-                className="form-control"
-                style={{ maxWidth: "220px" }}
-                placeholder="Search by Batch Name"
-                value={searchBatchName}
-                onChange={(e) => {
-                  setSearchBatchName(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
-              <select
-                className="form-select"
-                style={{ maxWidth: "200px" }}
-                value={selectedOrganization}
-                onChange={(e) => {
-                  setSelectedOrganization(e.target.value);
-                  setCurrentPage(1); // reset pagination
-                }}
-              >
-                <option value="">All Organizations</option>
-                {organizations.map((org) => (
-                  <option
-                    key={org.organization_id}
-                    value={org.organization_name}
-                  >
-                    {org.organization_name}
-                  </option>
-                ))}
-              </select>
-            </div>
+  className="d-flex align-items-center gap-3 flex-grow-1"
+  style={{ flexWrap: "nowrap" }}
+>
+  {/* Search Input */}
+  <input
+    type="text"
+    className="form-control"
+    style={{ maxWidth: "220px" }}
+    placeholder="Search by Batch Name"
+    value={searchBatchName}
+    onChange={(e) => {
+      setSearchBatchName(e.target.value);
+      setCurrentPage(1);
+    }}
+  />
+
+  {/* Organization Filter */}
+  <Dropdown
+    className="batch-organization-dropdown"
+    autoClose="true"
+    drop="down"
+  >
+    <Dropdown.Toggle
+      id="batch-organization-dropdown-toggle"
+      variant="outline-secondary"
+      className="text-truncate d-flex justify-content-between align-items-center"
+      style={{
+        maxWidth: "200px",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        backgroundColor: "#fff",
+        color: "#000",
+        borderColor: "#ccc",
+        boxShadow: "none",
+        padding: "6px 10px",
+        fontSize: "14px",
+      }}
+    >
+      {selectedOrganization || "All Organizations"}
+    </Dropdown.Toggle>
+
+    <Dropdown.Menu
+      style={{
+        maxHeight: "160px",
+        overflowY: "auto",
+        backgroundColor: "#fff",
+        border: "1px solid #ccc",
+        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
+        scrollbarWidth: "thin", 
+        scrollbarColor: "#ccc transparent",
+      }}
+    >
+      
+      <style>
+        {`
+          /* Normal dropdown scrollbar */
+          .batch-organization-dropdown .dropdown-menu::-webkit-scrollbar {
+            width: 5px;
+          }
+          .batch-organization-dropdown .dropdown-menu::-webkit-scrollbar-thumb {
+            background-color: #bbb;
+            border-radius: 4px;
+          }
+          .batch-organization-dropdown .dropdown-menu::-webkit-scrollbar-thumb:hover {
+            background-color: #999;
+          }
+
+          /* Horizontal scroll per item, no visible scrollbar */
+          .batch-organization-dropdown .dropdown-item {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+            max-width: 200px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox hides scrollbar */
+          }
+          .batch-organization-dropdown .dropdown-item::-webkit-scrollbar {
+            display: none; /* Chrome/Safari/Edge hides scrollbar */
+          }
+        `}
+      </style>
+
+      {/* All Organizations */}
+      <Dropdown.Item
+        onClick={() => {
+          setSelectedOrganization("");
+          setCurrentPage(1);
+        }}
+        active={selectedOrganization === ""}
+        style={{
+          overflowX: "auto",
+          whiteSpace: "nowrap",
+          maxWidth: "200px",
+        }}
+      >
+        All Organizations
+      </Dropdown.Item>
+
+   
+      {organizations.map((org) => (
+        <Dropdown.Item
+          key={org.organization_id}
+          onClick={() => {
+            setSelectedOrganization(org.organization_name);
+            setCurrentPage(1);
+          }}
+          active={selectedOrganization === org.organization_name}
+          style={{
+            overflowX: "auto",
+            whiteSpace: "nowrap",
+            maxWidth: "200px",
+          }}
+        >
+          {org.organization_name}
+        </Dropdown.Item>
+      ))}
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+
           </div>
 
           {loading ? (

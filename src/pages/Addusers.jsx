@@ -379,112 +379,183 @@ export default function Addusers() {
               <FaPlus />
             </button>
           </div>
-            <div className="custom-filter-dropdown">
+            <div className="">
+              {/* <div className="custom-filter-dropdown"> */}
   <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
-    <div className="d-flex align-items-center">
-      <span className="me-2">Show entries:</span>
-      <Dropdown className="filter-batch-dropdown"
-            autoClose="true"
-            drop="down">
-        <Dropdown.Toggle
-         id="batch-dropdown-toggle"
-                 variant="outline-secondary"
-                 className="filter-batch-toggle text-truncate"
-                 style={{
-                   maxWidth: "220px",
-                   overflow: "hidden",
-                   textOverflow: "ellipsis",
-                   whiteSpace: "nowrap",
-                 }}
-        >
-          {itemsPerPage}
-        </Dropdown.Toggle>
 
-        <Dropdown.Menu>
-          {[5, 10, 15, 20, 50].map((num) => (
-            <Dropdown.Item
-              key={num}
-              onClick={() => {
-                setCurrentPage(1);
-                setItemsPerPage(num);
-              }}
-              active={itemsPerPage === num}
-            >
-              {num}
-            </Dropdown.Item>
-          ))}
-        </Dropdown.Menu>
-      </Dropdown>
-    </div>
-
-    <div className="d-flex gap-3 mb-3">
-      {/* Full Name Filter */}
-      <input
-        type="text"
-        className="form-control"
-        style={{ maxWidth: "250px" }}
-        placeholder="Search by Full Name..."
-        value={searchTerm}
-        onChange={(e) => {
-          setSearchTerm(e.target.value);
-          setCurrentPage(1); // reset pagination
-        }}
-      />
-
-      {/* Organization Filter */}
-      <Dropdown className="filter-batch-dropdown"
-            autoClose="true"
-            drop="down">
-        <Dropdown.Toggle
-         id="batch-dropdown-toggle"
-                 variant="outline-secondary"
-                 className="filter-batch-toggle text-truncate"
-                 style={{
-                   maxWidth: "220px",
-                   overflow: "hidden",
-                   textOverflow: "ellipsis",
-                   whiteSpace: "nowrap",
-                 }}
-        >
-          {selectedOrganization || "All Organizations"}
-        </Dropdown.Toggle>
-
-        <Dropdown.Menu>
-          <Dropdown.Item
-            onClick={() => {
-              setSelectedOrganization("");
-              setCurrentPage(1);
-            }}
-            active={selectedOrganization === ""}
+     <div className="d-flex align-items-center">
+        <span className="me-2">Show entries:</span>
+        <Dropdown className="entries-dropdown" autoClose="true">
+          <Dropdown.Toggle
+            variant="outline-secondary"
+            id="entries-dropdown"
+            className="d-flex justify-content-between align-items-center"
             style={{
-              overflowX: "auto",
-              whiteSpace: "nowrap",
-              maxWidth: "220px"
+              width: "80px",
+              textAlign: "left",
+              backgroundColor: "#fff",
+              color: "#000",
+              borderColor: "#ccc",
+              boxShadow: "none",
+              padding: "6px 10px",
+              fontSize: "14px",
             }}
           >
-            All Organizations
-          </Dropdown.Item>
+            {itemsPerPage}
+          </Dropdown.Toggle>
+    
+          <Dropdown.Menu
+            style={{
+              minWidth: "80px",
+              maxWidth: "100px",
+              backgroundColor: "#fff",
+              maxHeight: "130px",
+              overflowY: "auto",
+              border: "1px solid #ccc",
+              marginTop: "0px",
+              boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
+              padding: "0",
+              scrollbarWidth: "thin", 
+              scrollbarColor: "#ccc transparent", 
+            }}
+          >
+            
+            <style>
+              {`
+                .entries-dropdown .dropdown-menu::-webkit-scrollbar {
+                  width: 5px;
+                }
+                .entries-dropdown .dropdown-menu::-webkit-scrollbar-thumb {
+                  background-color: #bbb;
+                  border-radius: 4px;
+                }
+                .entries-dropdown .dropdown-menu::-webkit-scrollbar-thumb:hover {
+                  background-color: #999;
+                }
+              `}
+            </style>
+    
+            {[5, 10, 15, 20, 50].map((num) => (
+              <Dropdown.Item
+                key={num}
+                onClick={() => {
+                  setCurrentPage(1);
+                  setItemsPerPage(num);
+                }}
+                active={itemsPerPage === num}
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                  padding: "6px 0",
+                  fontSize: "14px",
+                  textAlign: "center",
+                }}
+              >
+                {num}
+              </Dropdown.Item>
+            ))}
+          </Dropdown.Menu>
+        </Dropdown>
+      </div>
 
-          {organizations.map((org) => (
-            <Dropdown.Item
-              key={org.organization_id}
-              onClick={() => {
-                setSelectedOrganization(org.organization_name);
-                setCurrentPage(1);
-              }}
-              active={selectedOrganization === org.organization_name}
-              style={{
-                overflowX: "auto",
-                whiteSpace: "nowrap",
-                maxWidth: "220px"
-              }}
-            >
-              {org.organization_name}
-            </Dropdown.Item>
-          ))}
-        </Dropdown.Menu>
-      </Dropdown>
-    </div>
+    <div className="d-flex gap-3 mb-3">
+  {/* Search Input */}
+  <input
+    type="text"
+    className="form-control"
+    style={{ maxWidth: "250px" }}
+    placeholder="Search by Full Name..."
+    value={searchTerm}
+    onChange={(e) => {
+      setSearchTerm(e.target.value);
+      setCurrentPage(1);
+    }}
+  />
+
+  {/* Organization Filter Dropdown */}
+  <Dropdown
+    className="organization-dropdown"
+    autoClose="true"
+    drop="down"
+  >
+    <Dropdown.Toggle
+      id="organization-dropdown-toggle"
+      variant="outline-secondary"
+      className="text-truncate d-flex justify-content-between align-items-center"
+      style={{
+        maxWidth: "200px",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        backgroundColor: "#fff",
+        color: "#000",
+        borderColor: "#ccc",
+        boxShadow: "none",
+        padding: "6px 10px",
+        fontSize: "14px",
+      }}
+    >
+      {selectedOrganization || "All Organizations"}
+    </Dropdown.Toggle>
+
+    <Dropdown.Menu
+      style={{
+        maxHeight: "160px",
+        overflowY: "auto",
+        backgroundColor: "#fff",
+        border: "1px solid #ccc",
+        boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
+        scrollbarWidth: "thin", 
+        scrollbarColor: "#ccc transparent",
+      }}
+    >
+      
+      <style>
+        {`
+          .organization-dropdown .dropdown-item {
+            display: block;
+            overflow-x: auto;
+            white-space: nowrap;
+            max-width: 200px;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none; /* Firefox */
+          }
+          .organization-dropdown .dropdown-item::-webkit-scrollbar {
+            display: none; /* Chrome, Safari, Edge */
+          }
+        `}
+      </style>
+
+      {/* All Organizations option */}
+      <Dropdown.Item
+        onClick={() => {
+          setSelectedOrganization("");
+          setCurrentPage(1);
+        }}
+        active={selectedOrganization === ""}
+      >
+        All Organizations
+      </Dropdown.Item>
+
+      {/* Organization */}
+      {organizations.map((org) => (
+        <Dropdown.Item
+          key={org.organization_id}
+          onClick={() => {
+            setSelectedOrganization(org.organization_name);
+            setCurrentPage(1);
+          }}
+          active={selectedOrganization === org.organization_name}
+        >
+          {org.organization_name}
+        </Dropdown.Item>
+      ))}
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+    
   </div>
 </div>
 

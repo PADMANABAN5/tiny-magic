@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Select from "react-select";  // New import for multi-select
 import Supersidebar from "../components/Supersidebar";
-import { Pagination, Badge, OverlayTrigger, Popover } from "react-bootstrap";  // Changed Tooltip to Popover
+import { Pagination, Badge, OverlayTrigger, Popover, Dropdown } from "react-bootstrap";  // Changed Tooltip to Popover
 import "../styles/OrgList.css";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeft, FaPlus, FaEdit } from "react-icons/fa";
@@ -386,24 +386,81 @@ export default function Pods() {
           </div>
           <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
             {/* Show Entries */}
-            <div className="d-flex align-items-center">
-              <span className="me-2">Show entries:</span>
-              <select
-                className="form-select"
-                style={{ width: "100px" }}
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(parseInt(e.target.value));
-                  setCurrentPage(1);
-                }}
-              >
-                {[5, 6, 10, 20, 50].map((num) => (
-                  <option key={num} value={num}>
-                    {num}
-                  </option>
-                ))}
-              </select>
-            </div>
+             <div className="d-flex align-items-center">
+                <span className="me-2">Show entries:</span>
+                <Dropdown className="entries-dropdown" autoClose="true">
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    id="entries-dropdown"
+                    className="d-flex justify-content-between align-items-center"
+                    style={{
+                      width: "80px",
+                      textAlign: "left",
+                      backgroundColor: "#fff",
+                      color: "#000",
+                      borderColor: "#ccc",
+                      boxShadow: "none",
+                      padding: "6px 10px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {itemsPerPage}
+                  </Dropdown.Toggle>
+            
+                  <Dropdown.Menu
+                    style={{
+                      minWidth: "80px",
+                      maxWidth: "100px",
+                      backgroundColor: "#fff",
+                      maxHeight: "130px",
+                      overflowY: "auto",
+                      border: "1px solid #ccc",
+                      marginTop: "0px",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
+                      padding: "0",
+                      scrollbarWidth: "thin", 
+                      scrollbarColor: "#ccc transparent", 
+                    }}
+                  >
+ 
+                    <style>
+                      {`
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar {
+                          width: 5px;
+                        }
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar-thumb {
+                          background-color: #bbb;
+                          border-radius: 4px;
+                        }
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar-thumb:hover {
+                          background-color: #999;
+                        }
+                      `}
+                    </style>
+            
+                    {[5, 10, 15, 20, 50].map((num) => (
+                      <Dropdown.Item
+                        key={num}
+                        onClick={() => {
+                          setCurrentPage(1);
+                          setItemsPerPage(num);
+                        }}
+                        active={itemsPerPage === num}
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          padding: "6px 0",
+                          fontSize: "14px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {num}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
 
            
               <input
@@ -431,39 +488,145 @@ export default function Pods() {
                 }}
               />
 
-              <select
-                className="form-select"
-                style={{ maxWidth: "200px" }}
-                value={selectedOrganization}
-                onChange={(e) => {
-                  setSelectedOrganization(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">All Organizations</option>
-                {organizations.map((org) => (
-                  <option key={org.organization_id} value={org.organization_id}>
-                    {org.organization_name}
-                  </option>
-                ))}
-              </select>
+              {/* Organization Dropdown */}
+<Dropdown className="organization-dropdown" autoClose="true" drop="down">
+  <Dropdown.Toggle
+    id="organization-dropdown"
+    variant="outline-secondary"
+    className="d-flex justify-content-between align-items-center text-truncate"
+    style={{
+      maxWidth: "200px",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      backgroundColor: "#fff",
+      color: "#000",
+      borderColor: "#ccc",
+      boxShadow: "none",
+      padding: "6px 10px",
+      fontSize: "14px",
+    }}
+  >
+    {selectedOrganization
+      ? organizations.find((o) => o.organization_id === selectedOrganization)?.organization_name
+      : "All Organizations"}
+  </Dropdown.Toggle>
 
-              <select
-                className="form-select"
-                style={{ maxWidth: "250px" }}
-                value={searchMentorName}
-                onChange={(e) => {
-                  setSearchMentorName(e.target.value);
-                  setCurrentPage(1);
-                }}
-              >
-                <option value="">All Mentors</option>
-                {mentors.map((mentor) => (
-                  <option key={mentor.user_id} value={mentor.user_id}>
-                    {`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()}
-                  </option>
-                ))}
-              </select>
+  <Dropdown.Menu
+    style={{
+      maxHeight: "150px",
+      overflowY: "auto",
+      backgroundColor: "#fff",
+      border: "1px solid #ccc",
+      boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+      padding: 0,
+    }}
+  >
+    {/* ✅ Enable horizontal scroll per item, hide scrollbar */}
+    <style>
+      {`
+        .organization-dropdown .dropdown-item {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+          max-width: 200px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none; /* Firefox hides scrollbar */
+        }
+        .organization-dropdown .dropdown-item::-webkit-scrollbar {
+          display: none; /* Chrome/Safari/Edge hides scrollbar */
+        }
+      `}
+    </style>
+
+    <Dropdown.Item
+      onClick={() => {
+        setSelectedOrganization("");
+        setCurrentPage(1);
+      }}
+      active={selectedOrganization === ""}
+    >
+      All Organizations
+    </Dropdown.Item>
+
+    {organizations.map((org) => (
+      <Dropdown.Item
+        key={org.organization_id}
+        onClick={() => {
+          setSelectedOrganization(org.organization_id);
+          setCurrentPage(1);
+        }}
+        active={selectedOrganization === org.organization_id}
+      >
+        {org.organization_name}
+      </Dropdown.Item>
+    ))}
+  </Dropdown.Menu>
+</Dropdown>
+
+
+             <Dropdown className="mentor-dropdown" autoClose="true" drop="down">
+  <Dropdown.Toggle
+    id="mentor-dropdown"
+    variant="outline-secondary"
+    className="d-flex justify-content-between align-items-center text-truncate"
+    style={{
+      maxWidth: "250px",
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      backgroundColor: "#fff",
+      color: "#000",
+      borderColor: "#ccc",
+      boxShadow: "none",
+      padding: "6px 10px",
+      fontSize: "14px",
+    }}
+  >
+    {searchMentorName
+      ? mentors.find((m) => String(m.user_id) === String(searchMentorName))
+        ? `${mentors.find((m) => String(m.user_id) === String(searchMentorName)).first_name || ""} ${
+            mentors.find((m) => String(m.user_id) === String(searchMentorName)).last_name || ""
+          }`.trim()
+        : "Select Mentor"
+      : "All Mentors"}
+  </Dropdown.Toggle>
+
+  <Dropdown.Menu
+    style={{
+      maxHeight: "150px",
+      overflowY: "auto",
+      backgroundColor: "#fff",
+      border: "1px solid #ccc",
+      boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+      padding: 0,
+    }}
+  >
+    <Dropdown.Item
+      onClick={() => {
+        setSearchMentorName("");
+        setCurrentPage(1);
+      }}
+      active={searchMentorName === ""}
+    >
+      All Mentors
+    </Dropdown.Item>
+
+    {mentors.map((mentor) => (
+      <Dropdown.Item
+        key={mentor.user_id}
+        onClick={() => {
+          setSearchMentorName(String(mentor.user_id)); // 👈 convert to string
+          setCurrentPage(1);
+        }}
+        active={String(searchMentorName) === String(mentor.user_id)}
+      >
+        {`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()}
+      </Dropdown.Item>
+    ))}
+  </Dropdown.Menu>
+</Dropdown>
+
 
             
           </div>

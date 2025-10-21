@@ -3,7 +3,7 @@ import Supersidebar from "../components/Supersidebar";
 import "../styles/superadmin.css";
 import { useNavigate } from 'react-router-dom';
 import { FaPlus, FaArrowLeft, FaEdit } from 'react-icons/fa';
-import { Modal, Button, Form, Pagination } from "react-bootstrap";
+import { Modal, Button, Form, Pagination, Dropdown } from "react-bootstrap";
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -319,19 +319,81 @@ function Assignmodels() {
           </div>
 
           <div className="d-flex justify-content-between align-items-center flex-wrap mb-3 gap-3">
-            <div className="d-flex align-items-center">
-              <span className="me-2">Show entries:</span>
-              <select
-                className="form-select"
-                style={{ width: "100px" }}
-                value={itemsPerPage}
-                onChange={(e) => setItemsPerPage(parseInt(e.target.value))}
-              >
-                {[5, 10, 20, 50, 100].map((num) => (
-                  <option key={num} value={num}>{num}</option>
-                ))}
-              </select>
-            </div>
+             <div className="d-flex align-items-center">
+                <span className="me-2">Show entries:</span>
+                <Dropdown className="entries-dropdown" autoClose="true">
+                  <Dropdown.Toggle
+                    variant="outline-secondary"
+                    id="entries-dropdown"
+                    className="d-flex justify-content-between align-items-center"
+                    style={{
+                      width: "80px",
+                      textAlign: "left",
+                      backgroundColor: "#fff",
+                      color: "#000",
+                      borderColor: "#ccc",
+                      boxShadow: "none",
+                      padding: "6px 10px",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {itemsPerPage}
+                  </Dropdown.Toggle>
+            
+                  <Dropdown.Menu
+                    style={{
+                      minWidth: "80px",
+                      maxWidth: "100px",
+                      backgroundColor: "#fff",
+                      maxHeight: "130px",
+                      overflowY: "auto",
+                      border: "1px solid #ccc",
+                      marginTop: "0px",
+                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
+                      padding: "0",
+                      scrollbarWidth: "thin", 
+                      scrollbarColor: "#ccc transparent",
+                    }}
+                  >
+                    
+                    <style>
+                      {`
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar {
+                          width: 5px;
+                        }
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar-thumb {
+                          background-color: #bbb;
+                          border-radius: 4px;
+                        }
+                        .entries-dropdown .dropdown-menu::-webkit-scrollbar-thumb:hover {
+                          background-color: #999;
+                        }
+                      `}
+                    </style>
+            
+                    {[5, 10, 15, 20, 50].map((num) => (
+                      <Dropdown.Item
+                        key={num}
+                        onClick={() => {
+                          setCurrentPage(1);
+                          setItemsPerPage(num);
+                        }}
+                        active={itemsPerPage === num}
+                        style={{
+                          display: "flex",
+                          justifyContent: "center",
+                          alignItems: "center",
+                          padding: "6px 0",
+                          fontSize: "14px",
+                          textAlign: "center",
+                        }}
+                      >
+                        {num}
+                      </Dropdown.Item>
+                    ))}
+                  </Dropdown.Menu>
+                </Dropdown>
+              </div>
 
             <div className="d-flex gap-3 mb-3">
               <input
