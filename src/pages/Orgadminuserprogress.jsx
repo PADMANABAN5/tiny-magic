@@ -37,6 +37,8 @@ import '../styles/orgadminusers.css';
 import { Accordion } from 'react-bootstrap';
 import { useAuth } from '../components/AuthContext.jsx';
 import { debounce } from 'lodash';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from "remark-gfm";
 function Orgadminuserprogress() {
   const navigate = useNavigate();
   const { userId } = useParams();
@@ -793,8 +795,14 @@ const parseField = (field) => {
                         <span className="message-author" style={{ fontWeight: 'bold', color: '#28a745' }}>AI Mentor</span>
                       </div>
                       <div className="message-text">
-                        <AssessmentDisplay content={message.system} />
-                      </div>
+  {hasAssessmentData(message.system) ? (
+    <AssessmentDisplay content={message.system} />
+  ) : (
+    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+      {message.system}
+    </ReactMarkdown>
+  )}
+</div>
                     </div>
                   </div>
                 </div>

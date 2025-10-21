@@ -31,6 +31,8 @@ import {
   FiChevronUp
 } from "react-icons/fi";
 import { Pagination, Dropdown } from "react-bootstrap";
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from "remark-gfm";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -516,8 +518,14 @@ useEffect(() => {
                         <span className="message-author">AI Mentor</span>
                       </div>
                       <div className="message-text">
+                      {hasAssessmentData(message.system) ? (
                         <AssessmentDisplay content={message.system} />
-                      </div>
+                      ) : (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {message.system}
+                        </ReactMarkdown>
+                      )}
+                    </div>
                     </div>
                   </div>
                 </div>

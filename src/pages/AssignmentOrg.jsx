@@ -572,7 +572,10 @@ function AssignmentOrg() {
                       required
                     >
                       <option value="">Select Level</option>
-                      <option value="organization">Organization</option>
+                      {!assignments.some((a) => a.level === "organization") && (
+      <option value="organization">Organization</option>
+    )}
+
                       <option value="batch">Batch</option>
                     </Form.Select>
                   </Form.Group>
