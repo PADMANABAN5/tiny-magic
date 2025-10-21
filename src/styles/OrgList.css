@@ -356,12 +356,12 @@ table,tr,th,td{
 
 
 
- /* Thin scrollbar for Chrome, Edge, Safari */
+/* 
     .dropdown-menu {
       max-height: 180px !important;
       overflow-y: auto !important;
       background-color: #fff !important;
-      scrollbar-width: thin !important; /* Firefox */
+      scrollbar-width: thin !important;
     }
 
     .dropdown-menu::-webkit-scrollbar {
@@ -377,7 +377,7 @@ table,tr,th,td{
       background: #aaa;
     }
 
-    /* Highlight open dropdown with subtle shadow */
+    
     .dropdown-toggle.show {
       box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
       transition: box-shadow 0.2s ease-in-out;
@@ -387,13 +387,45 @@ table,tr,th,td{
       background-color: #fff !important;
       color: #000 !important;
       border-color: #ccc !important;
-    }
+    } */
 
 
 
 
 
 
+/* Scoped dropdown styling — only for this component */
+.custom-filter-dropdown .dropdown-menu {
+  max-height: 180px !important;
+  overflow-y: auto !important;
+  background-color: #fff !important;
+  scrollbar-width: thin !important; /* Firefox */
+}
+
+.custom-filter-dropdown .dropdown-menu::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-filter-dropdown .dropdown-menu::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 4px;
+}
+
+.custom-filter-dropdown .dropdown-menu::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* Highlight open dropdown with subtle shadow */
+.custom-filter-dropdown .dropdown-toggle.show {
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25) !important;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.custom-filter-dropdown .dropdown-toggle {
+  background-color: #fff !important;
+  color: #000 !important;
+  border-color: #ccc !important;
+}
 
 
 

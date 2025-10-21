@@ -1520,3 +1520,70 @@ table thead tr {
     gap: 0.7rem;
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Scoped only to this filters area */
+.custom-simple-dropdowns .dropdown-toggle {
+  color: #000 !important; /* make text black */
+  border-color: #ccc !important;
+  background-color: transparent !important;
+}
+
+/* Highlight dropdown only when open */
+.custom-simple-dropdowns .dropdown-toggle.show {
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Dropdown menu stays clean — no extra background styling */
+.custom-simple-dropdowns .dropdown-menu {
+  background-color: #fff !important;
+  color: #000 !important;
+  border: 1px solid #ddd !important;
+}
+/* Only apply to dropdowns in this filter area */
+.custom-simple-dropdowns .dropdown-toggle {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  text-align: left !important;
+  width: 100% !important;
+  color: #000 !important;
+  border-color: #ccc !important;
+  background-color: transparent !important;
+  padding: 8px 12px !important;
+}
+
+/* Prevent arrow from shrinking */
+.custom-simple-dropdowns .dropdown-toggle::after {
+  margin-left: auto !important;
+  margin-right: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+/* When dropdown is open, highlight border */
+.custom-simple-dropdowns .dropdown-toggle.show {
+  border-color: #007bff !important;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+}
+
+/* Dropdown menu remains clean */
+.custom-simple-dropdowns .dropdown-menu {
+  width: 100% !important;
+  background: #fff !important;
+  color: #000 !important;
+  border: 1px solid #ddd !important;
+}

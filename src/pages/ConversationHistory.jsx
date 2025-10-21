@@ -30,7 +30,7 @@ import {
   FiChevronDown,
   FiChevronUp
 } from "react-icons/fi";
-import { Pagination } from "react-bootstrap";
+import { Pagination, Dropdown } from "react-bootstrap";
 
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
@@ -59,6 +59,28 @@ const ConversationHistory = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const headerRef = useRef(null);
   const [headerHeight, setHeaderHeight] = useState(0);
+
+  const statusDropdownRef = useRef(null);
+const sortDropdownRef = useRef(null);
+
+useEffect(() => {
+  const handleScroll = () => {
+    // Close Status dropdown if open
+    if (statusDropdownRef.current) {
+      const toggle = statusDropdownRef.current.querySelector(".dropdown-toggle.show");
+      if (toggle) toggle.click();
+    }
+
+    // Close Sort dropdown if open
+    if (sortDropdownRef.current) {
+      const toggle = sortDropdownRef.current.querySelector(".dropdown-toggle.show");
+      if (toggle) toggle.click();
+    }
+  };
+
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
 
   const itemsPerPage = 10;
 
@@ -730,50 +752,129 @@ const ConversationHistory = () => {
         </div>
 
         {/* Filters Section */}
-        {showFilters && (
-          <div className="filters-section">
-            <div className="filter-group">
-              <label>Search Concepts:</label>
-              <div className="search-input">
-                <FiSearch />
-                <input
-                  type="text"
-                  placeholder="Search by concept name..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-            </div>
+{showFilters && (
+  <div className="filters-section custom-simple-dropdowns">
+    {/* Search Input */}
+    <div className="filter-group full-width-group">
+      <label>Search Concepts:</label>
+      <div className="search-input full-width-input">
+        <FiSearch />
+        <input
+          type="text"
+          placeholder="Search by concept name..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+    </div>
 
-            <div className="filter-group">
-              <label>Status:</label>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-              >
-                <option value="all">All Statuses</option>
-                <option value="not_started">Not Started</option>
-                <option value="inprogress">In Progress</option>
-                <option value="completed">Completed</option>
-              </select>
-            </div>
+    {/* Status Filter (Dropdown) */}
+<div className="filter-group full-width-group">
+  <label>Status:</label>
+  <Dropdown ref={statusDropdownRef} className="filter-dropdown" autoClose="true" drop="down">
+    <Dropdown.Toggle
+      id="status-dropdown"
+      variant="outline-secondary"
+      className="filter-toggle text-truncate"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {(() => {
+        switch (filterStatus) {
+          case "not_started":
+            return "Not Started";
+          case "inprogress":
+            return "In Progress";
+          case "completed":
+            return "Completed";
+          default:
+            return "All Statuses";
+        }
+      })()}
+    </Dropdown.Toggle>
 
-            <div className="filter-group">
-              <label>Sort By:</label>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-              >
-                <option value="date_desc">Latest First</option>
-                <option value="date_asc">Oldest First</option>
-                <option value="concept_asc">Concept A-Z</option>
-                <option value="concept_desc">Concept Z-A</option>
-                <option value="status">Status</option>
-                <option value="stage">Stage Progress</option> 
-              </select>
-            </div>
-          </div>
-        )}
+    <Dropdown.Menu>
+      {[
+        { label: "All Statuses", value: "all" },
+        { label: "Not Started", value: "not_started" },
+        { label: "In Progress", value: "inprogress" },
+        { label: "Completed", value: "completed" },
+      ].map((opt) => (
+        <Dropdown.Item
+          key={opt.value}
+          onClick={() => setFilterStatus(opt.value)}
+          active={filterStatus === opt.value}
+        >
+          {opt.label}
+        </Dropdown.Item>
+      ))}
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+{/* Sort By Filter (Dropdown) */}
+<div className="filter-group full-width-group">
+  <label>Sort By:</label>
+  <Dropdown ref={sortDropdownRef} className="filter-dropdown" autoClose="true" drop="down">
+    <Dropdown.Toggle
+      id="sortby-dropdown"
+      variant="outline-secondary"
+      className="filter-toggle text-truncate"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      }}
+    >
+      {(() => {
+        switch (sortBy) {
+          case "date_desc":
+            return "Latest First";
+          case "date_asc":
+            return "Oldest First";
+          case "concept_asc":
+            return "Concept A-Z";
+          case "concept_desc":
+            return "Concept Z-A";
+          case "status":
+            return "Status";
+          case "stage":
+            return "Stage Progress";
+          default:
+            return "Sort By";
+        }
+      })()}
+    </Dropdown.Toggle>
+
+    <Dropdown.Menu>
+      {[
+        { label: "Latest First", value: "date_desc" },
+        { label: "Oldest First", value: "date_asc" },
+        { label: "Concept A-Z", value: "concept_asc" },
+        { label: "Concept Z-A", value: "concept_desc" },
+        { label: "Status", value: "status" },
+        { label: "Stage Progress", value: "stage" },
+      ].map((opt) => (
+        <Dropdown.Item
+          key={opt.value}
+          onClick={() => setSortBy(opt.value)}
+          active={sortBy === opt.value}
+        >
+          {opt.label}
+        </Dropdown.Item>
+      ))}
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+  </div>
+)}
+
 
         {/* Conversations Table */}
         <div className="conversations-section">

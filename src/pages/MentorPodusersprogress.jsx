@@ -64,6 +64,54 @@ function MentorPodusersprogress(){
   const [showPracticeScoreModal, setShowPracticeScoreModal] = useState(false);
 const [selectedPracticeScoreData, setSelectedPracticeScoreData] = useState(null);
 
+const trainingStatusDropdownRef = useRef(null);
+const trainingSortDropdownRef = useRef(null);
+
+
+const practiceStatusDropdownRef = useRef(null);
+const practiceSortDropdownRef = useRef(null);
+
+
+useEffect(() => {
+  const handleScroll = () => {
+    // Close Training Status dropdown if open
+    if (trainingStatusDropdownRef.current) {
+      const toggle = trainingStatusDropdownRef.current.querySelector(".dropdown-toggle.show");
+      if (toggle) toggle.click();
+    }
+
+    // Close Training Sort dropdown if open
+    if (trainingSortDropdownRef.current) {
+      const toggle = trainingSortDropdownRef.current.querySelector(".dropdown-toggle.show");
+      if (toggle) toggle.click();
+    }
+  };
+
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+
+
+
+useEffect(() => {
+  const handleScroll = () => {
+    // Close Practice Status dropdown if open
+    if (practiceStatusDropdownRef.current) {
+      const toggle = practiceStatusDropdownRef.current.querySelector(".dropdown-toggle.show");
+      if (toggle) toggle.click();
+    }
+    // Close Practice Sort dropdown if open
+    if (practiceSortDropdownRef.current) {
+      const toggle = practiceSortDropdownRef.current.querySelector(".dropdown-toggle.show");
+      if (toggle) toggle.click();
+    }
+  };
+
+  window.addEventListener("scroll", handleScroll, { passive: true });
+  return () => window.removeEventListener("scroll", handleScroll);
+}, []);
+
+
  
    const storedToken = sessionStorage.getItem("token");
    const { token } = useAuth();
@@ -1017,7 +1065,7 @@ const parseField = (field) => {
           </div>
           <div className="filter-group">
   <label>Status:</label>
-  <Dropdown onSelect={(eventKey) => setFilterStatus(eventKey || 'all')}>
+  <Dropdown  ref={trainingStatusDropdownRef} onSelect={(eventKey) => setFilterStatus(eventKey || 'all')}>
     <Dropdown.Toggle 
       variant="outline-secondary" 
       id="status-dropdown"
@@ -1062,7 +1110,7 @@ const parseField = (field) => {
 </div>
           <div className="filter-group">
   <label>Sort By:</label>
-  <Dropdown onSelect={(eventKey) => setSortBy(eventKey || 'date_desc')}>
+  <Dropdown ref={trainingSortDropdownRef} onSelect={(eventKey) => setSortBy(eventKey || 'date_desc')}>
     <Dropdown.Toggle 
       variant="outline-secondary" 
       id="sortby-dropdown"
@@ -1255,33 +1303,165 @@ const parseField = (field) => {
             </div>
           </div>
 
-          <div className="filter-group">
-            <label>Status:</label>
-            <select
-              value={practiceFilterStatus}
-              onChange={(e) => setPracticeFilterStatus(e.target.value)}
-            >
-              <option value="all">All Statuses</option>
-              <option value="not_started">Not Started</option>
-              <option value="inprogress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
+          {/* Practice Status Filter (Dropdown) */}
+<div className="filter-group full-width-group">
+  <label>Status:</label>
+  <Dropdown
+    ref={practiceStatusDropdownRef}
+    className="filter-dropdown"
+    autoClose="true"
+    drop="down"
+  >
+    <Dropdown.Toggle
+      id="practice-status-dropdown"
+      variant="outline-secondary"
+      className="filter-toggle text-truncate"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        color: "#000",
+        borderColor: "#ccc",
+        backgroundColor: "transparent",
+        padding: "8px 12px",
+        textAlign: "left",
+      }}
+    >
+      <span style={{ flexGrow: 1, textAlign: "left" }}>
+        {(() => {
+          switch (practiceFilterStatus) {
+            case "not_started":
+              return "Not Started";
+            case "inprogress":
+              return "In Progress";
+            case "completed":
+              return "Completed";
+            default:
+              return "All Statuses";
+          }
+        })()}
+      </span>
+    </Dropdown.Toggle>
 
-          <div className="filter-group">
-            <label>Sort By:</label>
-            <select
-              value={practiceSortBy}
-              onChange={(e) => setPracticeSortBy(e.target.value)}
-            >
-              <option value="date_desc">Latest First</option>
-              <option value="date_asc">Oldest First</option>
-              <option value="concept_asc">Concept A-Z</option>
-              <option value="concept_desc">Concept Z-A</option>
-              <option value="status">Status</option>
-              <option value="stage">Levels</option>
-            </select>
-          </div>
+    <Dropdown.Menu>
+      {[
+        { label: "All Statuses", value: "all" },
+        { label: "Not Started", value: "not_started" },
+        { label: "In Progress", value: "inprogress" },
+        { label: "Completed", value: "completed" },
+      ].map((opt) => (
+        <Dropdown.Item
+          key={opt.value}
+          onClick={() => setPracticeFilterStatus(opt.value)}
+          active={practiceFilterStatus === opt.value}
+        >
+          {opt.label}
+        </Dropdown.Item>
+      ))}
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+{/* Practice Sort By Filter (Dropdown) */}
+<div className="filter-group full-width-group">
+  <label>Sort By:</label>
+  <Dropdown
+    ref={practiceSortDropdownRef}
+    className="filter-dropdown"
+    autoClose="true"
+    drop="down"
+  >
+    <Dropdown.Toggle
+      id="practice-sort-dropdown"
+      variant="outline-secondary"
+      className="filter-toggle text-truncate"
+      style={{
+        width: "100%",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        color: "#000",
+        borderColor: "#ccc",
+        backgroundColor: "transparent",
+        padding: "8px 12px",
+        textAlign: "left",
+      }}
+    >
+      <span style={{ flexGrow: 1, textAlign: "left" }}>
+        {(() => {
+          switch (practiceSortBy) {
+            case "date_desc":
+              return "Latest First";
+            case "date_asc":
+              return "Oldest First";
+            case "concept_asc":
+              return "Concept A-Z";
+            case "concept_desc":
+              return "Concept Z-A";
+            case "status":
+              return "Status";
+            case "stage":
+              return "Levels";
+            default:
+              return "Sort By";
+          }
+        })()}
+      </span>
+    </Dropdown.Toggle>
+
+    <Dropdown.Menu>
+      {[
+        { label: "Latest First", value: "date_desc" },
+        { label: "Oldest First", value: "date_asc" },
+        { label: "Concept A-Z", value: "concept_asc" },
+        { label: "Concept Z-A", value: "concept_desc" },
+        { label: "Status", value: "status" },
+        { label: "Levels", value: "stage" },
+      ].map((opt) => (
+        <Dropdown.Item
+          key={opt.value}
+          onClick={() => setPracticeSortBy(opt.value)}
+          active={practiceSortBy === opt.value}
+        >
+          {opt.label}
+        </Dropdown.Item>
+      ))}
+    </Dropdown.Menu>
+  </Dropdown>
+</div>
+
+<style>
+  {`
+    .filter-dropdown .dropdown-toggle::after {
+      margin-left: auto !important;
+      margin-right: 0 !important;
+      flex-shrink: 0 !important;
+      position: relative;
+      right: 0;
+    }
+
+    .filter-dropdown .dropdown-toggle.show {
+      border-color: #007bff !important;
+      box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25) !important;
+    }
+
+    .filter-dropdown .dropdown-menu {
+      width: 100% !important;
+      border: 1px solid #ddd !important;
+      background: #fff !important;
+      color: #000 !important;
+    }
+  `}
+</style>
+
+
         </div>
 
         {isPracticeLoading ? (
