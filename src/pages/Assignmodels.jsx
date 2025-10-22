@@ -525,7 +525,9 @@ if (selectedLevel === 'organization') {
                 value={selectedLevel}
                 onChange={handleLevelChange}
               >
-                <option value="global">Global</option>
+                {!assignments.some((a) => a.level === "global") && (
+    <option value="global">Global</option>
+  )}
                 <option value="organization">Organization</option>
                 <option value="batch">Batch</option>
               </select>
