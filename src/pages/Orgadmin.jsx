@@ -278,7 +278,7 @@ function Orgadmin() {
         item.last_name
       )}`.trim();
       const updated = getDateFromItem(item)?.toLocaleString() || "";
-      const key = `${item.user_id}-${item.id || idx}`; // Unique key for each row
+      const key = `${item.user_id}-${item.id}-${idx}`;// Unique key for each row
 
       return (
         <tr key={key}>

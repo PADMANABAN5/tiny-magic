@@ -548,7 +548,7 @@ function AddModels() {
 
      {/* ✅ Custom Add/Edit Model Popup */}
 {showForm && (
-  <div className="popup-overlay" onClick={handleCloseModal}>
+  <div className="popup-overlay">
     <div
       className="popup-box"
       onClick={(e) => e.stopPropagation()} // prevent closing on inner click

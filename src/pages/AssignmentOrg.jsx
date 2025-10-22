@@ -6,8 +6,7 @@ import {
   Form,
   Card,
 } from "react-bootstrap";
-import { FiEdit2, FiPlus } from "react-icons/fi";
-import { FaArrowLeft } from "react-icons/fa";
+import { FaArrowLeft,FaEdit,FaPlus } from "react-icons/fa";
 import axios from "axios";
 import { useAuth } from "../components/AuthContext";
 import Orgadminsidebar from "../components/Orgadminsidebar";
@@ -434,7 +433,7 @@ function AssignmentOrg() {
               style={{ minWidth: "120px" }}
               onClick={openCreateModal}
             >
-              <FiPlus />
+              <FaPlus />
             </button>
           </div>
 
@@ -477,7 +476,7 @@ function AssignmentOrg() {
                                 className="me-2"
                                 onClick={() => openEditModal(a)}
                               >
-                                <FiEdit2 /> Edit
+                                <FaEdit /> Edit
                               </Button>
                             )}
                           </td>
@@ -503,7 +502,7 @@ function AssignmentOrg() {
           <div
             className="position-fixed top-0 start-0 w-100 h-100 bg-dark bg-opacity-50 d-flex justify-content-center align-items-center"
             style={{ zIndex: 1050 }}
-            onClick={closeModal}
+            
           >
             {/* Modal Dialog */}
             <div

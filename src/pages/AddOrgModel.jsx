@@ -358,8 +358,8 @@ function AddOrgModels() {
 
       {/* ADD / EDIT POPUP */}
       {showForm && (
-  <div className="popup-overlay" onClick={handleCloseModal}>
-    <div className="popup-box" onClick={(e) => e.stopPropagation()}>
+  <div className="popup-overlay" >
+    <div className="popup-box" onClick={(e) => e.stopPropagation()} style={{ width: "40rem" }}>
       <h5 className="mb-3 text-center">
         {editMode ? "Edit Model" : "Add New Model"}
       </h5>
@@ -486,12 +486,7 @@ function AddOrgModels() {
         ></textarea>
       </div>
 
-      {/* ✅ NEW FIELD ADDED BELOW — Activate / Deactivate toggle */}
-      {/* ✅ ONLY show the toggle during Edit mode */}
-
-{/* ✅ END toggle */}
-
-      {/* ✅ END OF NEW FIELD */}
+    
 
       <div className="d-flex justify-content-end gap-2 mt-3">
         <button
