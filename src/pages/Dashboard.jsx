@@ -422,7 +422,7 @@ const normalized = formatMarkdownResponse(lastSystemMsg, {
       });
       const cleaned = response.apiResponseText.replace(/\*\*(.*?)\*\*/g, '$1');
 const mentorMessage = formatMarkdownResponse(cleaned, {
-  boldHeadings: false,
+  boldHeadings: true,
   numberDashLists: true,
   normalizeBullets: true,
   normalizeNumbers: true,
@@ -605,7 +605,7 @@ const mentorMessage = formatMarkdownResponse(cleaned, {
       const updated = [...prev];
      const cleaned = initialResponse.apiResponseText.replace(/\*\*(.*?)\*\*/g, '$1');
 updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
-  boldHeadings: false,
+  boldHeadings: true,
   numberDashLists: true,
   normalizeBullets: true,
   normalizeNumbers: true,
@@ -1456,8 +1456,15 @@ updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
                               <AssessmentDisplay content={item.system} />
                             ) : (
                               // Normal mentor text → Markdown
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-  {item.system}
+                     <ReactMarkdown remarkPlugins={[remarkGfm]}>
+  {(() => {
+    try {
+      const parsed = JSON.parse(item.system);
+      return parsed.userText || item.system;
+    } catch {
+      return item.system;
+    }
+  })()}
 </ReactMarkdown>
                             )}
                           </div>

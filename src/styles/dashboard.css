@@ -3209,3 +3209,18 @@ html, body {
   }
 }
 
+
+.markdown-content h1,
+.markdown-content h2,
+.markdown-content h3,
+.markdown-content strong {
+  font-weight: bold;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  line-height: 1.6;
+}
+
+
