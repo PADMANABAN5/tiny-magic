@@ -27,7 +27,7 @@ import axios from "axios";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
 import Tesseract from 'tesseract.js';
-import {toast } from 'react-toastify';
+import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PDFDownloader from "../components/PDFDownloader.jsx";
 import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
@@ -61,17 +61,19 @@ function Dashboard() {
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
   const voiceRecorderRef = useRef(null);
+  const [isMicActive, setIsMicActive] = useState(false);
+
   const [menuOpen, setMenuOpen] = useState(false);
-const lastSystemMsg = chatHistory.length
-  ? chatHistory[chatHistory.length - 1].system || ""
-  : "";
-const normalized = formatMarkdownResponse(lastSystemMsg, {
-  splitInlineEmojiBullets: true,
-  normalizeBullets: true,
-  normalizeNumbers: true,
-  numberDashLists: true,
-  boldHeadings: true,
-});
+  const lastSystemMsg = chatHistory.length
+    ? chatHistory[chatHistory.length - 1].system || ""
+    : "";
+  const normalized = formatMarkdownResponse(lastSystemMsg, {
+    splitInlineEmojiBullets: true,
+    normalizeBullets: true,
+    normalizeNumbers: true,
+    numberDashLists: true,
+    boldHeadings: true,
+  });
   const [batches, setBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [showBatchDropdown, setShowBatchDropdown] = useState(false);
@@ -130,7 +132,7 @@ const normalized = formatMarkdownResponse(lastSystemMsg, {
   // Lock for initialization to prevent race conditions
   const isInitializingRef = useRef(false);
   const previousStage = currentStage;
-   const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98);
   // Responsive handler
   useEffect(() => {
     const handleResize = () => {
@@ -139,6 +141,7 @@ const normalized = formatMarkdownResponse(lastSystemMsg, {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
@@ -348,8 +351,8 @@ const normalized = formatMarkdownResponse(lastSystemMsg, {
         selectedConcept: concept,
         organizationId,
         batchId,
-        
-        
+
+
       });
       const mentorMessage = formatMarkdownResponse(response.apiResponseText);
       const updatedHistory = [{ user: "", system: mentorMessage }];
@@ -421,13 +424,13 @@ const normalized = formatMarkdownResponse(lastSystemMsg, {
         batchId
       });
       const cleaned = response.apiResponseText.replace(/\*\*(.*?)\*\*/g, '$1');
-const mentorMessage = formatMarkdownResponse(cleaned, {
-  boldHeadings: false,
-  numberDashLists: true,
-  normalizeBullets: true,
-  normalizeNumbers: true,
-  splitInlineEmojiBullets: true,
-});
+      const mentorMessage = formatMarkdownResponse(cleaned, {
+        boldHeadings: false,
+        numberDashLists: true,
+        normalizeBullets: true,
+        normalizeNumbers: true,
+        splitInlineEmojiBullets: true,
+      });
       const updatedHistory = [{ user: "", system: mentorMessage }];
       setChatHistory(updatedHistory);
       setSessionHistory([{ Mentee: "", Mentor: mentorMessage }]);
@@ -567,14 +570,14 @@ const mentorMessage = formatMarkdownResponse(cleaned, {
       setTimeout(() => setIsTransitioning(false), 800);
     }
     setIsLoading(true);
-     const userPrompt = prompt.trim();
-  setPrompt("");
-  // Step 1: Add only user message first
-  setChatHistory((prev) => {
-    const updated = [...prev, { user: userPrompt, system: "" }];
-    sessionStorage.setItem("chatHistory", JSON.stringify(updated));
-    return updated;
-  });
+    const userPrompt = prompt.trim();
+    setPrompt("");
+    // Step 1: Add only user message first
+    setChatHistory((prev) => {
+      const updated = [...prev, { user: userPrompt, system: "" }];
+      sessionStorage.setItem("chatHistory", JSON.stringify(updated));
+      return updated;
+    });
     console.log("🚀 handleSendClick: Setting isLoading to true");
     try {
       // const userPrompt = prompt.trim();
@@ -592,7 +595,7 @@ const mentorMessage = formatMarkdownResponse(cleaned, {
         batchId
       });
       console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-      
+
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
       let newEndRequested = initialResponse.endRequested || false;
@@ -601,19 +604,19 @@ const mentorMessage = formatMarkdownResponse(cleaned, {
         setCurrentStage(newProgressStage);
         setCurrentChatStatus('inprogress');
       }
-       setChatHistory((prev) => {
-      const updated = [...prev];
-     const cleaned = initialResponse.apiResponseText.replace(/\*\*(.*?)\*\*/g, '$1');
-updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
-  boldHeadings: false,
-  numberDashLists: true,
-  normalizeBullets: true,
-  normalizeNumbers: true,
-  splitInlineEmojiBullets: true,
-});
-      sessionStorage.setItem("chatHistory", JSON.stringify(updated));
-      return updated;
-    });
+      setChatHistory((prev) => {
+        const updated = [...prev];
+        const cleaned = initialResponse.apiResponseText.replace(/\*\*(.*?)\*\*/g, '$1');
+        updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
+          boldHeadings: false,
+          numberDashLists: true,
+          normalizeBullets: true,
+          normalizeNumbers: true,
+          splitInlineEmojiBullets: true,
+        });
+        sessionStorage.setItem("chatHistory", JSON.stringify(updated));
+        return updated;
+      });
 
       setSessionHistory((prev) => [
         ...prev,
@@ -653,7 +656,7 @@ updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
         console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
-        
+
         setCurrentChatStatus('completed');
         if (newInteractionCompleted) {
           setEndReason('interactionCompleted');
@@ -1116,8 +1119,8 @@ updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
   return (
     <div className="learning-dashboard">
       <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} menuOpen={menuOpen}
-        setMenuOpen={setMenuOpen} showMobileMenu={true}/>
-      
+        setMenuOpen={setMenuOpen} showMobileMenu={true} />
+
       {showRestartDialog && (
         <div className="restart-dialog-overlay">
           <div className="restart-dialog">
@@ -1186,192 +1189,192 @@ updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
         </div>
       )}
       {(currentStage > 1 && currentStage <= 6) && (
-      <StageCompletionToast stage={currentStage - 1} />
-    )}
+        <StageCompletionToast stage={currentStage - 1} />
+      )}
       <div className="dashboard-layout">
         {(isMobile ? menuOpen : true) && (
-        <div className="control-panel">
-          <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
-            <div className="section-header">
-              <FiBook className="section-icon" />
-              <h3>Select Batch</h3>
-            </div>
-            <div className="concept-selector" ref={batchDropdownRef}>
-              <div
-                className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
-                onClick={() => !(isProcessingAssessment || isLoading) && setShowBatchDropdown(!showBatchDropdown)}
-              >
-                <span className="concept-text">
-                  {conceptsLoading
-                    ? "Loading batches..."
-                    : selectedBatch
-                      ? selectedBatch.batch_name
-                      : batches.length > 0
-                        ? "Choose a batch"
-                        : "No batches available"
-                  }
-                </span>
-                <FiChevronDown className={`dropdown-arrow ${showBatchDropdown ? 'open' : ''}`} />
+          <div className="control-panel">
+            <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
+              <div className="section-header">
+                <FiBook className="section-icon" />
+                <h3>Select Batch</h3>
               </div>
-              {showBatchDropdown && (
-                <div className="concept-dropdown">
-                  {conceptsLoading ? (
-                    <div className="concept-option">
-                      <div className="concept-name">Loading...</div>
-                    </div>
-                  ) : batches.length > 0 ? (
-                    batches.map((batch) => (
-                      <div
-                        key={batch.batch_id}
-                        className={`concept-option ${selectedBatch?.batch_id === batch.batch_id ? 'selected' : ''}`}
-                        onClick={() => handleBatchSelect(batch)}
-                      >
-                        <div className="concept-name">{batch.batch_name}</div>
+              <div className="concept-selector" ref={batchDropdownRef}>
+                <div
+                  className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
+                  onClick={() => !(isProcessingAssessment || isLoading) && setShowBatchDropdown(!showBatchDropdown)}
+                >
+                  <span className="concept-text">
+                    {conceptsLoading
+                      ? "Loading batches..."
+                      : selectedBatch
+                        ? selectedBatch.batch_name
+                        : batches.length > 0
+                          ? "Choose a batch"
+                          : "No batches available"
+                    }
+                  </span>
+                  <FiChevronDown className={`dropdown-arrow ${showBatchDropdown ? 'open' : ''}`} />
+                </div>
+                {showBatchDropdown && (
+                  <div className="concept-dropdown">
+                    {conceptsLoading ? (
+                      <div className="concept-option">
+                        <div className="concept-name">Loading...</div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="concept-option">
-                      <div className="concept-name">No batches available</div>
-                      <div className="concept-description">Contact your administrator</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
-            <div className="section-header">
-              <FiTarget className="section-icon" />
-              <h3>Select Concept</h3>
-            </div>
-            <div className="concept-selector" ref={conceptDropdownRef}>
-              <div
-                className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
-                onClick={() => !(isProcessingAssessment || isLoading) && setShowConceptDropdown(!showConceptDropdown)}
-              >
-                <span className="concept-text">
-                  {conceptsLoading
-                    ? "Loading concepts..."
-                    : selectedConcept
-                      ? selectedConcept.concept_name
-                      : concepts.length > 0
-                        ? "Choose a concept to learn"
-                        : "No concepts available"
-                  }
-                </span>
-                <FiChevronDown className={`dropdown-arrow ${showConceptDropdown ? 'open' : ''}`} />
-              </div>
-              {showConceptDropdown && (
-                <div className="concept-dropdown">
-                  {conceptsLoading ? (
-                    <div className="concept-option">
-                      <div className="concept-name">Loading...</div>
-                    </div>
-                  ) : concepts.length > 0 ? (
-                    concepts.map((concept) => (
-                      <div
-                        key={concept.concept_id}
-                        className="concept-option flex items-center justify-between cursor-pointer"
-                        onClick={() => handleConceptSelect(concept)}
-                      >
-                        <div className="concept-name">{concept.concept_name}</div>
-                        {concept.download_link && (
-                          <button
-                            className="download-btn1 relative group"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadConcept(concept.download_link, concept.concept_name);
-                            }}
-                            data-tooltip="Download concept material"
-                            aria-label={`Download ${concept.concept_name} material`}
-                          >
-                            <FiDownload className="w-5 h-5" />
-                            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                              Download
-                            </span>
-                          </button>
-                        )}
+                    ) : batches.length > 0 ? (
+                      batches.map((batch) => (
+                        <div
+                          key={batch.batch_id}
+                          className={`concept-option ${selectedBatch?.batch_id === batch.batch_id ? 'selected' : ''}`}
+                          onClick={() => handleBatchSelect(batch)}
+                        >
+                          <div className="concept-name">{batch.batch_name}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="concept-option">
+                        <div className="concept-name">No batches available</div>
+                        <div className="concept-description">Contact your administrator</div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="concept-option">
-                      <div className="concept-name">No concepts available</div>
-                      <div className="concept-description">Contact your administrator</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="control-section">
-            <div className="section-header"
-              style={{
-                cursor: isMobile ? 'pointer' : 'default',
-                userSelect: 'none'
-              }}>
-              <FiTrendingUp className="section-icon" />
-              <h3>Learning Progress</h3>
-            </div>
-            <div className="stage-cards">
-              <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
-                <div className="stage-icon not-started">
-                  <FiClock />
-                </div>
-                <div className="stage-content">
-                  <h4>Not Started</h4>
-                </div>
-              </div>
-              <div className={`stage-card ${getStageStatus() === 'in-progress' ? 'active' : ''} ${isTransitioning ? 'transitioning' : ''}`}>
-                <div className="stage-icon in-progress">
-                  <FiPlay />
-                </div>
-                <div className="stage-content">
-                  <div className="stage-header">
-                    <h4>In Progress</h4>
+                    )}
                   </div>
-                  {getStageStatus() === 'in-progress' && (
-                    <div className="stage-progress-content">
-                      <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
-                        <div className="progress-info">
-                          <span>
-                            {currentStage <= 1 ? "Starting..." :
-                              currentStage === 7 ? "Completed" :
-                                `Stage ${currentStage - 1}/5`}
-                          </span>
-                          <span>
-                            {(() => {
-                              const completed = Math.max(currentStage - 2, 0);
-                              return `${Math.round((completed / 5) * 100)}%`;
-                            })()}
-                          </span>
+                )}
+              </div>
+            </div>
+            <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
+              <div className="section-header">
+                <FiTarget className="section-icon" />
+                <h3>Select Concept</h3>
+              </div>
+              <div className="concept-selector" ref={conceptDropdownRef}>
+                <div
+                  className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
+                  onClick={() => !(isProcessingAssessment || isLoading) && setShowConceptDropdown(!showConceptDropdown)}
+                >
+                  <span className="concept-text">
+                    {conceptsLoading
+                      ? "Loading concepts..."
+                      : selectedConcept
+                        ? selectedConcept.concept_name
+                        : concepts.length > 0
+                          ? "Choose a concept to learn"
+                          : "No concepts available"
+                    }
+                  </span>
+                  <FiChevronDown className={`dropdown-arrow ${showConceptDropdown ? 'open' : ''}`} />
+                </div>
+                {showConceptDropdown && (
+                  <div className="concept-dropdown">
+                    {conceptsLoading ? (
+                      <div className="concept-option">
+                        <div className="concept-name">Loading...</div>
+                      </div>
+                    ) : concepts.length > 0 ? (
+                      concepts.map((concept) => (
+                        <div
+                          key={concept.concept_id}
+                          className="concept-option flex items-center justify-between cursor-pointer"
+                          onClick={() => handleConceptSelect(concept)}
+                        >
+                          <div className="concept-name">{concept.concept_name}</div>
+                          {concept.download_link && (
+                            <button
+                              className="download-btn1 relative group"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadConcept(concept.download_link, concept.concept_name);
+                              }}
+                              data-tooltip="Download concept material"
+                              aria-label={`Download ${concept.concept_name} material`}
+                            >
+                              <FiDownload className="w-5 h-5" />
+                              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                                Download
+                              </span>
+                            </button>
+                          )}
                         </div>
-                        <div className="progress-bar">
-                          <div
-                            className="progress-fill"
-                            style={{
-                              width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
-                            }}
-                          ></div>
-                        </div>
-                        <div className="substages">
-                          <Progressbar currentStage={currentStage} showOnlyStages={true} />
+                      ))
+                    ) : (
+                      <div className="concept-option">
+                        <div className="concept-name">No concepts available</div>
+                        <div className="concept-description">Contact your administrator</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="control-section">
+              <div className="section-header"
+                style={{
+                  cursor: isMobile ? 'pointer' : 'default',
+                  userSelect: 'none'
+                }}>
+                <FiTrendingUp className="section-icon" />
+                <h3>Learning Progress</h3>
+              </div>
+              <div className="stage-cards">
+                <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
+                  <div className="stage-icon not-started">
+                    <FiClock />
+                  </div>
+                  <div className="stage-content">
+                    <h4>Not Started</h4>
+                  </div>
+                </div>
+                <div className={`stage-card ${getStageStatus() === 'in-progress' ? 'active' : ''} ${isTransitioning ? 'transitioning' : ''}`}>
+                  <div className="stage-icon in-progress">
+                    <FiPlay />
+                  </div>
+                  <div className="stage-content">
+                    <div className="stage-header">
+                      <h4>In Progress</h4>
+                    </div>
+                    {getStageStatus() === 'in-progress' && (
+                      <div className="stage-progress-content">
+                        <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
+                          <div className="progress-info">
+                            <span>
+                              {currentStage <= 1 ? "Starting..." :
+                                currentStage === 7 ? "Completed" :
+                                  `Stage ${currentStage - 1}/5`}
+                            </span>
+                            <span>
+                              {(() => {
+                                const completed = Math.max(currentStage - 2, 0);
+                                return `${Math.round((completed / 5) * 100)}%`;
+                              })()}
+                            </span>
+                          </div>
+                          <div className="progress-bar">
+                            <div
+                              className="progress-fill"
+                              style={{
+                                width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
+                              }}
+                            ></div>
+                          </div>
+                          <div className="substages">
+                            <Progressbar currentStage={currentStage} showOnlyStages={true} />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className={`stage-card ${getStageStatus() === 'completed' ? 'active' : ''}`}>
-                <div className="stage-icon completed">
-                  <FiCheckCircle />
-                </div>
-                <div className="stage-content">
-                  <h4>Completed</h4>
+                <div className={`stage-card ${getStageStatus() === 'completed' ? 'active' : ''}`}>
+                  <div className="stage-icon completed">
+                    <FiCheckCircle />
+                  </div>
+                  <div className="stage-content">
+                    <h4>Completed</h4>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
         )}
         <div className="chat-panel">
           <div className="top-right-actions">
@@ -1456,9 +1459,9 @@ updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
                               <AssessmentDisplay content={item.system} />
                             ) : (
                               // Normal mentor text → Markdown
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
-  {item.system}
-</ReactMarkdown>
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {item.system}
+                              </ReactMarkdown>
                             )}
                           </div>
                         </div>
@@ -1528,27 +1531,31 @@ updated[updated.length - 1].system = formatMarkdownResponse(cleaned, {
                   placeholder={
                     isChatEnded
                       ? "This conversation has ended. Please restart to begin a new session."
-                      : isInitializing
-                        ? "Initializing..."
-                        : selectedConcept
-                          ? "Ask your mentor anything..."
-                          : conceptsLoading
-                            ? "Loading concepts..."
-                            : "Please select a concept first..."
+                      : isMicActive
+                        ? "🎙 Listening... (voice input active)"
+                        : isInitializing
+                          ? "Initializing..."
+                          : selectedConcept
+                            ? "Ask your mentor anything..."
+                            : conceptsLoading
+                              ? "Loading concepts..."
+                              : "Please select a concept first..."
                   }
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isMicActive}  // ✅ add isMicActive
                   rows="1"
                 />
+
                 <VoiceRecorder
                   ref={voiceRecorderRef}
-                  onTranscription={(text) => {
-                    setPrompt((prev) => (prev ? prev + " " : "") + text);
-                  }}
+                  onTranscription={(text) => setPrompt((prev) => (prev ? prev + " " : "") + text)}
+                  onRecordingStart={() => setIsMicActive(true)}     // ✅ new
+                  onRecordingStop={() => setIsMicActive(false)}     // ✅ new
                   disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
                 />
+
                 <button
                   className="send-button"
                   onClick={handleSendClick}
