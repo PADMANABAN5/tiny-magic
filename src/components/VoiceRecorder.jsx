@@ -30,15 +30,19 @@ const VoiceRecorder = forwardRef(
     const speechStartRef = useRef(null);
     const hasSpokenRef = useRef(false);
     const autoStoppedRef = useRef(false);
+    const cumulativeSpeechMsRef = useRef(0);
+    const lastRmsAboveRef = useRef(null);
 
-    // ✅ Notify parent whenever recording state changes
+    // PARAMETERS TO TUNE
+    const SILENCE_THRESHOLD = 0.018; // try 0.015/0.018/0.02 depending on your mic
+    const MIN_SPEECH_MS = 500;
+    const MAX_SILENCE_MS = 10000;
+    const MAX_SPEECH_MS = 10000;
+
     useEffect(() => {
       onRecordingChange && onRecordingChange(isRecording);
-      if (isRecording) {
-        onRecordingStart && onRecordingStart();
-      } else {
-        onRecordingStop && onRecordingStop();
-      }
+      if (isRecording) onRecordingStart && onRecordingStart();
+      else onRecordingStop && onRecordingStop();
     }, [isRecording, onRecordingStart, onRecordingStop, onRecordingChange]);
 
     const checkSilence = () => {
@@ -54,37 +58,33 @@ const VoiceRecorder = forwardRef(
         sum += val * val;
       }
       const rms = Math.sqrt(sum / bufferLength);
-
-      const SILENCE_THRESHOLD = 0.015;
-      const MAX_SILENCE_MS = 10000;
-      const MAX_SPEECH_MS = 10000;
       const now = Date.now();
 
       if (rms < SILENCE_THRESHOLD) {
-        if (!silenceStartRef.current) {
-          silenceStartRef.current = now;
-        } else {
-          const elapsed = now - silenceStartRef.current;
-          if (elapsed > MAX_SILENCE_MS) {
-            autoStoppedRef.current = true;
-            stopRecording();
-            toast.info("🎤 No speech detected — recording stopped.");
-            return;
-          }
+        if (!silenceStartRef.current) silenceStartRef.current = now;
+        else if (now - silenceStartRef.current > MAX_SILENCE_MS) {
+          autoStoppedRef.current = true;
+          stopRecording();
+          toast.info("🎤 No speech detected — recording stopped.");
+          return;
         }
         speechStartRef.current = null;
+        lastRmsAboveRef.current = null;
       } else {
-        hasSpokenRef.current = true;
-        if (!speechStartRef.current) {
-          speechStartRef.current = now;
+        if (!speechStartRef.current) speechStartRef.current = now;
+        if (!lastRmsAboveRef.current) {
+          lastRmsAboveRef.current = now;
         } else {
-          const speakingTime = now - speechStartRef.current;
-          if (speakingTime > MAX_SPEECH_MS) {
-            autoStoppedRef.current = false;
-            stopRecording();
-            toast.success("🗣️ Recording stopped after 10s of continuous speech.");
-            return;
-          }
+          const delta = now - lastRmsAboveRef.current;
+          cumulativeSpeechMsRef.current += Math.max(0, delta);
+          lastRmsAboveRef.current = now;
+        }
+        hasSpokenRef.current = true;
+        if (now - speechStartRef.current > MAX_SPEECH_MS) {
+          autoStoppedRef.current = false;
+          stopRecording();
+          toast.success("🗣️ Recording stopped after 10s of continuous speech.");
+          return;
         }
         silenceStartRef.current = null;
       }
@@ -101,7 +101,8 @@ const VoiceRecorder = forwardRef(
         chunksRef.current = [];
         hasSpokenRef.current = false;
         autoStoppedRef.current = false;
-
+        cumulativeSpeechMsRef.current = 0;
+        lastRmsAboveRef.current = null;
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) chunksRef.current.push(event.data);
         };
@@ -112,23 +113,20 @@ const VoiceRecorder = forwardRef(
             audioContextRef.current.close();
             audioContextRef.current = null;
           }
-
-          // Case 1: Auto stop (no/long silence)
+          // 1. Auto stop (no/long silence)
           if (autoStoppedRef.current) {
-            setIsRecording(false);         // ✅ triggers onRecordingStop
+            setIsRecording(false);
             mediaRecorderRef.current = null;
             return;
           }
-
-          // Case 2: Manual stop but no speech detected
-          if (chunksRef.current.length === 0 || !hasSpokenRef.current) {
-            toast.info("🎤 No speech detected — recording stopped.");
-            setIsRecording(false);         // ✅ triggers onRecordingStop
+          // 2. Manual stop but not enough speech
+          if (!hasSpokenRef.current || cumulativeSpeechMsRef.current < MIN_SPEECH_MS) {
+            toast.info("🎤 No clear speech detected — recording stopped.");
+            setIsRecording(false);
             mediaRecorderRef.current = null;
             return;
           }
-
-          // Case 3: Manual stop after speaking or auto stop after long speech
+          // 3. We have enough speech energy, send to backend
           const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
           const formData = new FormData();
           formData.append("audio", audioBlob, "recording.webm");
@@ -137,19 +135,20 @@ const VoiceRecorder = forwardRef(
             toast.info("⏳ Transcribing your voice...");
             const res = await axios.post(`${BASE_URL}/transcribe`, formData, {
               headers: { "Content-Type": "multipart/form-data" },
+              timeout: 120000,
             });
-
-            if (res.data.success && res.data.data.transcription?.trim()) {
-              toast.success(" Transcription complete!");
-              onTranscription(res.data.data.transcription);
+            const text = res?.data?.data?.transcription || "";
+            if (text && text.trim()) {
+              toast.success("✅ Transcription complete!");
+              onTranscription(text.trim());
             } else {
-              toast.error(" Transcription failed. Please try again.");
+              toast.error("⚠️ No clear English speech detected.");
             }
           } catch (err) {
             console.error("Upload error:", err);
-            toast.error(" Error uploading audio.");
+            toast.error("❌ Error uploading audio.");
           } finally {
-            setIsRecording(false);         // ✅ triggers onRecordingStop
+            setIsRecording(false);
             mediaRecorderRef.current = null;
           }
         };
