@@ -27,7 +27,7 @@ import Progressbar from "../components/PracticeProgress.jsx";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PDFDownloader from "../components/PDFDownloader.jsx";
-import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
+import PracticeAssessmentDisplay,{hasPracticeAssessmentData} from "../components/PracticeAssessmentDisplay.jsx";
 import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 import { useAuth } from "../components/AuthContext.jsx";
 import VoiceRecorder from "../components/VoiceRecorder.jsx";
@@ -153,7 +153,7 @@ function Practicemode() {
   // Lock for initialization to prevent race conditions
   const isInitializingRef = useRef(false);
   const voiceRecorderRef = useRef(null);
-
+  const [justSavedAssessment, setJustSavedAssessment] = useState(false);
   // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
@@ -542,6 +542,57 @@ function Practicemode() {
   const handleRestartChat = () => {
     setShowRestartDialog(true);
   };
+ const extractAssessmentScores = (assessmentData) => {
+  if (!assessmentData) return {};
+
+  try {
+    // Extract facet assessment object
+    const facets = assessmentData?.facet_assessments || {};
+
+    // Safely extract numeric scores for each facet
+    const explanation = Number(facets.explanation?.score || 0);
+    const interpretation = Number(facets.interpretation?.score || 0);
+    const application = Number(facets.application?.score || 0);
+    const perspective = Number(facets.perspective?.score || 0);
+    const empathy = Number(facets.empathy?.score || 0);
+    const self_knowledge = Number(facets.self_knowledge?.score || 0);
+
+    // Compute average
+    const scores = [explanation, interpretation, application, perspective, empathy, self_knowledge];
+    const validScores = scores.filter((s) => s > 0);
+    const average =
+      validScores.length > 0
+        ? (validScores.reduce((sum, v) => sum + v, 0) / validScores.length).toFixed(2)
+        : "0.00";
+
+    // Construct clean extracted structure
+    const extracted = {
+      six_facets: {
+        explanation,
+        interpretation,
+        application,
+        perspective,
+        empathy,
+        self_knowledge,
+        average,
+      },
+      overall_performance_score: Number(
+        assessmentData?.overall_assessment?.composite_score || 0
+      ),
+      overall_rating: assessmentData?.overall_assessment?.overall_rating || "",
+      summary: assessmentData?.overall_assessment?.summary || "",
+      scoring_data: assessmentData, // include full JSON for backend storage
+    };
+
+    console.log("🧩 Extracted assessment summary:", extracted);
+    return extracted;
+  } catch (err) {
+    console.error("❌ Error extracting assessment scores:", err);
+    return {};
+  }
+};
+
+
 
   const handleEndSession = async () => {
     setShowEndSessionDialog(false);
@@ -553,7 +604,7 @@ function Practicemode() {
       const batchId = sessionStorage.getItem("batchId");
       const assessmentResponse = await processPromptAndCallLLM({
         username,
-        selectedPrompt: "practicePrompt",
+        selectedPrompt: "practiceAssessment",
         selectedModel: "gpt-4o",
         sessionHistory,
         userPrompt: "",
@@ -563,25 +614,30 @@ function Practicemode() {
       });
 
       setLlmContent(assessmentResponse.apiResponseText);
-      let parsedAssessment = null;
+      let assessmentData = null;
+      let extractedScores = {};
       try {
         const cleanedAssessmentText = assessmentResponse.apiResponseText
           .replace(/```json\s*/i, "")
           .replace(/```$/, "")
           .trim();
-        parsedAssessment = JSON.parse(cleanedAssessmentText);
+        assessmentData = JSON.parse(cleanedAssessmentText);
 
         // Update apiData with the latest assessment
-        setApiData(prev => ({
-          ...prev,
-          final_assessment: parsedAssessment.final_assessment || prev.final_assessment
-        }));
+        extractedScores = extractAssessmentScores(assessmentData);
 
-        if (selectedConcept?.concept_name) {
-          sessionStorage.setItem(
-            `scenarioProgress_${selectedConcept.concept_name}`,
-            JSON.stringify(parsedAssessment)
-          );
+      // Update apiData
+      setApiData(prev => ({
+        ...prev,
+        assessmentData,  // Full structure
+        assessment_scores: extractedScores
+      }));
+
+       if (selectedConcept?.concept_name) {
+        sessionStorage.setItem(
+          `scenarioProgress_${selectedConcept.concept_name}`,
+          JSON.stringify({ ...assessmentData, assessment_scores: extractedScores })
+        );
         }
       } catch (err) {
         console.warn("⚠️ Could not parse assessment response", err);
@@ -589,26 +645,26 @@ function Practicemode() {
 
       const assessmentChatEntry = {
         user: "",
-        system: parseApiResponseText(assessmentResponse.apiResponseText),
+        system: assessmentResponse.apiResponseText,
       };
 
       const finalHistory = [...practiceChatHistory, assessmentChatEntry];
-
-      // Update state and sessionStorage
+      // update both state and storage
       setPracticeChatHistory(finalHistory);
       sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
 
-      setSessionHistory((prev) => [
-        ...prev,
-        { Mentee: "", Mentor: parseApiResponseText(assessmentResponse.apiResponseText) },
-      ]);
+       const updatedSessionHistory = [
+         ...sessionHistory,
+         { Mentee: "", Mentor: assessmentResponse.apiResponseText }
+       ];
+       setSessionHistory(updatedSessionHistory);
 
       setCurrentChatStatus("completed");
       setIsChatEnded(true);
       setEndReason("endRequested");
 
       // Pass the parsed assessment to handleSaveChat
-      await handleSaveChat("completed", true, finalHistory, parsedAssessment?.final_assessment);
+      await handleSaveChat("completed", true, finalHistory, assessmentData, extractedScores);
 
     } catch (error) {
       toast.error("❌ Failed to end session and load assessment.");
@@ -757,29 +813,6 @@ function Practicemode() {
 
       const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
 
-      if (newStatus === "complete" || newStatus === "exit") {
-        setIsChatEnded(true);
-        setEndReason("interactionCompleted");
-        setCurrentChatStatus("completed");
-
-        const finalHistory = [...practiceChatHistory, {
-          user: userPrompt,
-          system: parseApiResponseText(initialResponse.apiResponseText)
-        }];
-
-        // Pass the parsed final_assessment to handleSaveChat
-        await handleSaveChat('completed', true, finalHistory, parsedResponse.final_assessment);
-
-        setCurrentStage(7);
-        console.log("🎯 Session completed, moved to Completed card");
-      } else {
-        if (isFirstUserMessage || newProgressStage >= currentStage) {
-          setCurrentStage(newProgressStage);
-          setCurrentChatStatus("inprogress");
-          console.log("➡️ Progressing to stage:", newProgressStage);
-        }
-      }
-
       setPracticeChatHistory((prev) => {
         const updated = [...prev];
         updated[updated.length - 1].system = parseApiResponseText(initialResponse.apiResponseText);
@@ -792,12 +825,12 @@ function Practicemode() {
         { Mentee: userPrompt, Mentor: parseApiResponseText(initialResponse.apiResponseText) },
       ]);
 
-      if (parsedResponse.endRequested || parsedResponse.interactionCompleted) {
-        console.log("🎯 handleSendClick: Triggering assessment due to", parsedResponse.interactionCompleted ? "interactionCompleted" : "endRequested");
+      if (newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested || parsedResponse.interactionCompleted) {
+        console.log("🎯 handleSendClick: Triggering assessment due to", newStatus === "complete" || newStatus === "exit" ? "status complete/exit" : parsedResponse.interactionCompleted ? "interactionCompleted" : "endRequested");
         setIsProcessingAssessment(true);
         const assessmentResponse = await processPromptAndCallLLM({
           username,
-          selectedPrompt: "practicePrompt",
+          selectedPrompt: "practiceAssessment",
           selectedModel: "gpt-4o",
           sessionHistory: [
             ...sessionHistory,
@@ -811,25 +844,28 @@ function Practicemode() {
 
         setLlmContent(assessmentResponse.apiResponseText);
 
-        let parsedAssessment = null;
+        let assessmentData = null;
+        let extractedScores = {};
         try {
           const cleanedAssessmentText = assessmentResponse.apiResponseText
             .replace(/```json\s*/i, "")
             .replace(/```$/, "")
             .trim();
-          parsedAssessment = JSON.parse(cleanedAssessmentText);
+          assessmentData = JSON.parse(cleanedAssessmentText);
 
-          // Update apiData with the latest assessment
-          setApiData(prev => ({
-            ...prev,
-            final_assessment: parsedAssessment.final_assessment || prev.final_assessment
-          }));
+          extractedScores = extractAssessmentScores(assessmentData);
+
+    setApiData(prev => ({
+      ...prev,
+      assessmentData,
+      assessment_scores: extractedScores
+    }));
 
           if (selectedConcept?.concept_name) {
-            sessionStorage.setItem(
-              `scenarioProgress_${selectedConcept.concept_name}`,
-              JSON.stringify(parsedAssessment)
-            );
+      sessionStorage.setItem(
+        `scenarioProgress_${selectedConcept.concept_name}`,
+        JSON.stringify({ ...assessmentData, assessment_scores: extractedScores })
+      );
           }
         } catch (err) {
           console.warn("⚠️ Could not parse assessment response", err);
@@ -837,26 +873,33 @@ function Practicemode() {
 
         const assessmentChatEntry = {
           user: "",
-          system: parseApiResponseText(assessmentResponse.apiResponseText),
+          system: assessmentResponse.apiResponseText,
         };
 
-        const finalChatHistory = [...practiceChatHistory, assessmentChatEntry];
+        const updatedHistory = [...practiceChatHistory, assessmentChatEntry];
+        setPracticeChatHistory(updatedHistory);
+        sessionStorage.setItem("practiceChatHistory", JSON.stringify(updatedHistory));
 
-        setPracticeChatHistory(finalChatHistory);
-        sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalChatHistory));
-
-        setSessionHistory((prev) => [
-          ...prev,
-          { Mentee: "", Mentor: parseApiResponseText(assessmentResponse.apiResponseText) },
-        ]);
-
+        const updatedSessionHistory = [
+          ...sessionHistory,
+          { Mentee: "", Mentor: assessmentResponse.apiResponseText }
+        ];
+        setSessionHistory(updatedSessionHistory);
         setCurrentChatStatus('completed');
         // Pass the parsed assessment to handleSaveChat
-        await handleSaveChat("completed", true, finalChatHistory, parsedAssessment?.final_assessment);
+        await handleSaveChat("completed", true, updatedHistory, assessmentData, extractedScores);
+        setJustSavedAssessment(true);
+        setTimeout(() => setJustSavedAssessment(false), 1000);
 
-        setEndReason(parsedResponse.interactionCompleted ? 'interactionCompleted' : 'endRequested');
+        setEndReason((newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested) ? 'endRequested' : 'interactionCompleted');
         setIsChatEnded(true);
         console.log("🔒 handleSendClick: Chat ended, input restricted");
+      } else {
+        if (isFirstUserMessage || newProgressStage >= currentStage) {
+          setCurrentStage(newProgressStage);
+          setCurrentChatStatus("inprogress");
+          console.log("➡️ Progressing to stage:", newProgressStage);
+        }
       }
     } catch (error) {
       console.error("❌ handleSendClick: Error in API request:", error);
@@ -905,8 +948,8 @@ function Practicemode() {
       return 'inprogress';
     }
   };
-
-  const handleSaveChat = async (requestedStatus = null, showLoader = true, historyOverride = null, finalAssessmentOverride = null) => {
+  
+  const handleSaveChat = async (requestedStatus = null, showLoader = true, historyOverride = null, finalAssessmentOverride = null, extractedScores = {}) => {
     console.log("🐞 handleSaveChat: Starting with apiData:", apiData, "finalAssessmentOverride:", finalAssessmentOverride);
 
     const historyToSave = historyOverride || practiceChatHistory;
@@ -934,11 +977,20 @@ function Practicemode() {
     const stageToSave = getCurrentStageForAPI(statusToSave);
     const conceptNameToSave = selectedConcept?.concept_name;
 
-    let scoring_data = null;
-    if (statusToSave === 'completed' && llmContent) {
-      scoring_data = extractScoringData(llmContent);
-      console.log("📊 Extracted scoring data for save:", scoring_data);
-    }
+   
+    // if (statusToSave === 'completed' && llmContent) {
+    //   scoring_data = extractScoringData(llmContent);
+    //   console.log("📊 Extracted scoring data for save:", scoring_data);
+    // }
+   let scoring_data = null;
+
+if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
+  const assessmentToExtract = finalAssessmentOverride || apiData?.assessmentData || apiData?.final_assessment;
+  if (assessmentToExtract) {
+    extractedScores = extractAssessmentScores(assessmentToExtract);
+    console.log('🔄 Fallback: Re-extracted scores directly into extractedScores');
+  }
+}
 
     console.log("💾 Saving chat with:", {
       requestedStatus,
@@ -958,48 +1010,20 @@ function Practicemode() {
       let response;
       let actionMessage = "";
 
-      // Prioritize finalAssessmentOverride, then apiData, then llmContent
-      let finalAssessment = finalAssessmentOverride || {};
-      if (!finalAssessmentOverride && statusToSave === "completed") {
-        if (apiData?.final_assessment) {
-          finalAssessment = apiData.final_assessment;
-          console.log("✅ Using final_assessment from apiData:", finalAssessment);
-        } else if (llmContent) {
-          try {
-            const cleaned = llmContent.replace(/```json\s*/i, "").replace(/```$/, "").trim();
-            const parsed = JSON.parse(cleaned);
-            if (parsed.final_assessment) {
-              finalAssessment = parsed.final_assessment;
-              console.log("✅ Parsed final_assessment from llmContent:", finalAssessment);
-            } else {
-              console.warn("⚠️ No final_assessment in llmContent");
-            }
-          } catch (err) {
-            console.warn("⚠️ Could not parse final_assessment from llmContent:", err);
-          }
-        }
-      }
-
-      const facetRatings = finalAssessment.facet_ratings || {};
-
       // Build requestData with actual values
       const requestData = {
         conversation: historyToSave,
         status: statusToSave,
         current_stage: stageToSave,
         concept_name: conceptNameToSave,
-        overall_performance: finalAssessment.overall_performance || "Not rated",
-        facet_ratings_explanation: facetRatings.explanation || "Not rated",
-        facet_ratings_interpretation: facetRatings.interpretation || "Not rated",
-        facet_ratings_application: facetRatings.application || "Not rated",
-        facet_ratings_perspective: facetRatings.perspective || "Not rated",
-        facet_ratings_empathy: facetRatings.empathy || "Not rated",
-        facet_ratings_self_knowledge: facetRatings.self_knowledge || "Not rated",
-        key_patterns: finalAssessment.key_patterns || [],
-        recommended_focus_areas: finalAssessment.recommended_focus_areas || [],
-        personalized_next_steps: finalAssessment.personalized_next_steps || [],
-        session_summary: finalAssessment.session_summary || "",
-        ...(statusToSave === "completed" && scoring_data ? { scoring_data } : {})
+        ...(statusToSave === 'completed' && Object.keys(extractedScores).length > 0 && {
+          ...extractedScores  // overall_performance_score, explanation_score, etc.
+
+      }),
+      scoring_data:
+  (statusToSave === 'completed' && (finalAssessmentOverride || apiData?.assessmentData || apiData?.final_assessment))
+    ? (finalAssessmentOverride || apiData?.assessmentData || apiData?.final_assessment)
+    : {}
       };
 
       console.log("📤 requestData for save:", requestData);
@@ -1404,9 +1428,9 @@ function Practicemode() {
   useEffect(() => {
     if (practiceChatHistory.length > 0 && !isInitializing && !isLoading) {
       const lastEntry = practiceChatHistory[practiceChatHistory.length - 1];
-      const isAssessmentEntry = lastEntry?.user === "" && hasAssessmentData(lastEntry?.system);
+      const isAssessmentEntry = lastEntry?.user === "" && hasPracticeAssessmentData(lastEntry?.system);
 
-      if (isAssessmentEntry && currentChatStatus === 'completed') {
+      if (isAssessmentEntry && currentChatStatus === 'completed' && !justSavedAssessment) {
         console.log("💾 Detected assessment response, auto-saving as completed...");
         handleSaveChat('completed', false);
       } else if (
@@ -1776,7 +1800,7 @@ function Practicemode() {
                             <span className="message-author">AI Mentor</span>
                           </div>
                           <div className="message-text">
-                            <AssessmentDisplay content={item.system} />
+                            <PracticeAssessmentDisplay content={item.system} />
                           </div>
                         </div>
                       </div>

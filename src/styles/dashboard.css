@@ -1948,6 +1948,7 @@ html, body {
 
 .score-evidence {
   background: white;
+  margin-bottom: 12px;
   padding: 12px;
   border-radius: 6px;
   border: 1px solid #e2e8f0;
@@ -2651,6 +2652,7 @@ html, body {
 }
 
 /* Score Details */
+.score-strengths,
 .score-justification,
 .score-example,
 .score-improvement {
@@ -2664,6 +2666,10 @@ html, body {
 .score-justification {
   background: #f0f9ff;
   border-left: 4px solid #0ea5e9;
+}
+.score-strengths {
+  background: #b7f22c5d;
+  border-left: 4px solid #e2f50b;
 }
 
 .score-example {
