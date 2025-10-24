@@ -139,10 +139,10 @@ const VoiceRecorder = forwardRef(
             });
             const text = res?.data?.data?.transcription || "";
             if (text && text.trim()) {
-              toast.success("✅ Transcription complete!");
+              toast.success("Transcription complete!");
               onTranscription(text.trim());
             } else {
-              toast.error("⚠️ No clear English speech detected.");
+              toast.error("No clear English speech detected.");
             }
           } catch (err) {
             console.error("Upload error:", err);
