@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Button, Table, Spinner, Alert, Modal, Pagination, Toast,ToastContainer } from 'react-bootstrap';
+import { Button, Table, Spinner, Alert, Pagination,Toast,ToastContainer } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import Supersidebar from '../components/Supersidebar';
 import '../styles/OrgList.css'; 
+import '../styles/prompt.css';
+
 function Archived() {
   const [archivedPrompts, setArchivedPrompts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,7 +17,7 @@ function Archived() {
   const navigate = useNavigate();
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastBg, setToastBg] = useState('primary'); // 'success', 'warning', 'danger', etc.
+  const [toastBg, setToastBg] = useState('primary');
   
   const storedToken = sessionStorage.getItem("token");
   const config = {
@@ -36,26 +38,26 @@ function Archived() {
 
       if (axios.isAxiosError(err) && err.response) {
         const status = err.response.status;
-        let errorMsg = '❌ Failed to load archived prompts.';
+        let errorMsg = 'Failed to load archived prompts.';
 
         switch (status) {
           case 400:
-            errorMsg = '⚠️ Bad request. Something is wrong with the request.';
+            errorMsg = 'Bad request. Something is wrong with the request.';
             break;
           case 401:
-            errorMsg = '⚠️ Unauthorized. Please log in.';
+            errorMsg = 'Unauthorized. Please log in.';
             break;
           case 403:
-            errorMsg = '⚠️ Forbidden. Access denied.';
+            errorMsg = 'Forbidden. Access denied.';
             break;
           case 404:
-            errorMsg = '⚠️ Archived prompts not found.';
+            errorMsg = 'Archived prompts not found.';
             break;
           case 500:
-            errorMsg = '⚠️ Server error while fetching prompts.';
+            errorMsg = 'Server error while fetching prompts.';
             break;
           default:
-            errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+            errorMsg = `Error ${status}: ${err.response.data?.message || err.message}`;
         }
 
         setError(errorMsg);
@@ -63,8 +65,8 @@ function Archived() {
         setToastBg('warning');
         setShowToast(true);
       } else {
-        setError('❌ Network error. Please check your connection.');
-        setToastMessage('❌ Network error. Please check your connection.');
+        setError('Network error. Please check your connection.');
+        setToastMessage('Network error. Please check your connection.');
         setToastBg('danger');
         setShowToast(true);
       }
@@ -130,8 +132,8 @@ function Archived() {
                 <tr>
                   <th scope="col">Prompt Type</th>
                   <th scope="col">Prompt Level</th>
-                  {/* <th scope="col">Organization Name</th>
-                  <th scope="col">Batch Name</th> */}
+                  <th scope="col">Organization Name</th>
+                  <th scope="col">Batch Name</th> 
                   <th scope="col">Version</th>
                   <th scope="col">Action</th>
                 </tr>
@@ -141,8 +143,8 @@ function Archived() {
                   <tr key={prompt.prompt_id} aria-label={`Prompt ${prompt.prompt_type}`}>
                     <td>{prompt.prompt_type}</td>
                     <td>{prompt.prompt_level}</td>
-                    {/* <td>{prompt.organization_name || '—'}</td>
-                    <td>{prompt.batch_name || '—'}</td> */}
+                     <td>{prompt.organization_name || '—'}</td>
+                    <td>{prompt.batch_name || '—'}</td> 
                     <td>{prompt.version}</td>
                     <td>
                       <Button
@@ -180,45 +182,91 @@ function Archived() {
             </div>
           )}
 
-          <Modal
-            show={showViewModal}
-            onHide={() => setShowViewModal(false)}
-            size="lg"
-            key={viewPrompt?.prompt_id || 'modal'}
-          >
-            <Modal.Header closeButton>
-              <Modal.Title>View Archived Prompt</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <div
-                className="p-4 bg-light border rounded shadow-sm"
-                style={{
-                  minHeight: '120px',
-                  maxHeight: '400px',
-                  overflowY: 'auto',
-                  fontFamily: 'Arial, sans-serif',
-                  fontSize: '1rem',
-                  lineHeight: '1.6',
-                  color: '#333',
-                  whiteSpace: 'pre-wrap',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {viewPrompt && viewPrompt.user_content ? (
-                  <p className="mb-0">{viewPrompt.user_content}</p>
-                ) : (
-                  <p className="text-muted fst-italic mb-0">
-                    No content available for this prompt.
-                  </p>
-                )}
-              </div>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowViewModal(false)}>
-                Close
-              </Button>
-            </Modal.Footer>
-          </Modal>
+          {showViewModal && (
+  <div className="popup-overlay" onClick={() => setShowViewModal(false)}>
+    <div className="popup-box" onClick={(e) => e.stopPropagation()}>
+      <h4 className="mb-3 text-center">View Archived Prompt</h4>
+
+      <div className="mb-3">
+        <div
+          className="p-3 bg-light border rounded shadow-sm"
+          style={{
+            minHeight: '60px',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '0.9rem',
+            lineHeight: '1.5',
+            color: '#333',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          <strong>User Content:</strong>
+          {viewPrompt && viewPrompt.user_content ? (
+            <p className="mb-0 mt-1">{viewPrompt.user_content}</p>
+          ) : (
+            <p className="text-muted fst-italic mb-0 mt-1">
+              No user content available.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div
+          className="p-3 bg-light border rounded shadow-sm"
+          style={{
+            minHeight: '60px',
+            fontFamily: 'monospace',
+            fontSize: '0.8rem',
+            lineHeight: '1.4',
+            color: '#333',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-all',
+          }}
+        >
+          <strong>JSON Content:</strong>
+          {viewPrompt && viewPrompt.json_content ? (
+            <pre className="mb-0 mt-1"><code>{viewPrompt.json_content}</code></pre>
+          ) : (
+            <p className="text-muted fst-italic mb-0 mt-1">
+              No JSON content available.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="mb-3">
+        <div
+          className="p-3 bg-light border rounded shadow-sm"
+          style={{
+            minHeight: '60px',
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '0.9rem',
+            lineHeight: '1.5',
+            color: '#333',
+            whiteSpace: 'pre-wrap',
+            wordBreak: 'break-word',
+          }}
+        >
+          <strong>Additional Content:</strong>
+          {viewPrompt && viewPrompt.additional_content ? (
+            <p className="mb-0 mt-1">{viewPrompt.additional_content}</p>
+          ) : (
+            <p className="text-muted fst-italic mb-0 mt-1">
+              No additional content available.
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="d-flex justify-content-end mt-3">
+        <Button variant="secondary" onClick={() => setShowViewModal(false)}>
+          Close
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
         </div>
       </div>
       <ToastContainer position="top-end" className="p-3">
