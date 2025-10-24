@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
       const storedToken = sessionStorage.getItem("token");
 
       // 🚨 Skip verifying if we're already calling /users/verify
-      if (config.url.includes("/users/verify") || config.url.includes("/chat/counts")) {
+      if (config.url.includes("/users/verify")) {
         return config;
       }
 

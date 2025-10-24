@@ -46,7 +46,48 @@ function Login() {
     if (!hasSpecialChar) return { isValid: false, message: "🔑 Password must contain at least one special character (!@#$%^&*?)." };
     return { isValid: true, message: "" };
   };
+  const encryptPayload = async (identifier, password) => {
+  try {
+    // Convert your base64 key from .env to ArrayBuffer
+    const keyBase64 = process.env.REACT_APP_JWT_ENCRYPTION_KEY; // store key in .env
+    if (!keyBase64) throw new Error("Encryption key missing in env");
 
+    const keyBytes = Uint8Array.from(atob(keyBase64), c => c.charCodeAt(0));
+    const key = await crypto.subtle.importKey(
+      "raw",
+      keyBytes,
+      { name: "AES-GCM" },
+      false,
+      ["encrypt"]
+    );
+
+    const iv = crypto.getRandomValues(new Uint8Array(12)); // 12-byte IV
+    const encoder = new TextEncoder();
+    const data = encoder.encode(JSON.stringify({ identifier, password }));
+
+    const encryptedBuffer = await crypto.subtle.encrypt(
+      { name: "AES-GCM", iv },
+      key,
+      data
+    );
+
+    // CHANGED: Extract TAG (last 16 bytes) and CT, then concat IV + TAG + CT to match backend
+    const encryptedBytes = new Uint8Array(encryptedBuffer);
+    const tag = encryptedBytes.slice(-16); // Auth tag (16 bytes)
+    const ct = encryptedBytes.slice(0, -16); // Ciphertext
+
+    const combined = new Uint8Array(iv.length + tag.length + ct.length);
+    combined.set(iv, 0);
+    combined.set(tag, iv.length);
+    combined.set(ct, iv.length + tag.length);
+
+    // Base64 encode
+    return btoa(String.fromCharCode(...combined));
+  } catch (err) {
+    console.error("Encryption failed:", err);
+    throw err;
+  }
+};
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -62,58 +103,45 @@ function Login() {
     }
 
     try {
-      const response = await axios.post(
-        `${BASE_URL}/users/login`,
-        { identifier: sanitizedIdentifier, password: sanitizedPassword },
-        { headers: { "Content-Type": "application/json" } }
-      );
+    const encryptedPayload = await encryptPayload(sanitizedIdentifier, sanitizedPassword);
 
-      const { data: user } = response.data || {};
-      if (!user) {
-        setError("Unexpected response from server.");
-        setIsSubmitting(false);
-        return;
-      }
+    const response = await axios.post(
+      `${BASE_URL}/users/login`,
+      { encryptedPayload },
+      { headers: { "Content-Type": "application/json" } }
+    );
 
-      login(user);
-      sessionStorage.setItem("firstName", user.first_name || "");
-sessionStorage.setItem("lastName",  user.last_name  || "");
-sessionStorage.setItem("username",  user.username   || "");
+      const user = response.data?.data;
+    if (!user) throw new Error("Unexpected response from server.");
 
-sessionStorage.setItem("token",     user.token || "");
+    login(user);
+    sessionStorage.setItem("token", user.token || "");
+    sessionStorage.setItem("firstName", user.first_name || "");
+    sessionStorage.setItem("lastName", user.last_name || "");
+    sessionStorage.setItem("username", user.username || "");
 
-      if (user.is_default_password) {
-        setUserDetails(user);
-        setShowPasswordChangeModal(true);
-        setIsSubmitting(false);
-        return;
-      }
+    if (user.is_default_password) {
+      setUserDetails(user);
+      setShowPasswordChangeModal(true);
+      setIsSubmitting(false);
+      return;
+    }
 
       redirectBasedOnRole(user);
-      setIsSubmitting(false);
-    } catch (err) {
-      const status = err.response?.status;
-      const message = err.response?.data?.message;
+  } catch (err) {
+    const status = err.response?.status;
+    const message = err.response?.data?.message;
 
-      if (status === 401) {
-        setError(`❌ ${message || "Invalid credentials."}`);
-      } else if (status === 403) {
-        const msg = err.response?.data?.message || "Access denied.";
-        if (msg.includes("Account is inactive")) setError("❌ Your account is inactive. Contact admin.");
-        else if (msg.includes("Organization is inactive")) setError("❌ Your organization is inactive. Contact support.");
-        else setError("❌ Access denied.");
-      } else if (status === 429) {
-        setError(`🔒 ${message || "Too many attempts. Try later."}`);
-      } else if (status === 400) {
-        setError("❗ Missing credentials. Fill in all fields.");
-      } else {
-        setError(err.response?.data?.error || "⚠️ Login failed. Try again.");
-      }
+    if (status === 401) setError(`❌ ${message || "Invalid credentials."}`);
+    else if (status === 403) setError("🚫 Access denied.");
+    else if (status === 429) setError(`🔒 ${message || "Too many attempts. Try later."}`);
+    else if (status === 400) setError("❗ Invalid or missing credentials.");
+    else setError("⚠️ Login failed. Try again.");
 
-      setIsLoggedIn(false);
-      setIsSubmitting(false);
-    }
-  };
+    setIsLoggedIn(false);
+    setIsSubmitting(false);
+  }
+};
 
   const redirectBasedOnRole = (user) => {
     setIsLoggedIn(true);

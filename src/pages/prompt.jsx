@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import axios  from 'axios';
 import { FaPlus, FaHistory, FaEdit } from 'react-icons/fa';
-import { Button, Table, Spinner, Alert, Modal, Form, Pagination, Toast, ToastContainer } from 'react-bootstrap';
+import { Button, Table, Spinner, Alert, Modal, Form, Pagination, Toast,ToastContainer  } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import EditablePromptEditor from '../components/EditablePromptEditor.jsx';
 import Supersidebar from '../components/Supersidebar';
+import 'react-toastify/dist/ReactToastify.css';
+import '../styles/prompt.css';
+import { Dropdown } from 'react-bootstrap';
  
 export default function Prompt() {
   const navigate = useNavigate();
@@ -14,12 +17,17 @@ export default function Prompt() {
   const [showEditor, setShowEditor] = useState(false);
   const [editPrompt, setEditPrompt] = useState(null);
   const [updatedUserContent, setUpdatedUserContent] = useState('');
+  const [updatedJsonContent, setUpdatedJsonContent] = useState(''); // NEW: State for json_content
+  const [updatedAdditionalContent, setUpdatedAdditionalContent] = useState(''); // NEW: State for additional_content
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [selectedPromptId, setSelectedPromptId] = useState(null);
  
   // Filter states
   const [selectedOrgIdFilter, setSelectedOrgIdFilter] = useState(''); // New state for filter
   const [selectedBatchIdFilter, setSelectedBatchIdFilter] = useState(''); // New state for filter
+  const [batchListForFilter, setBatchListForFilter] = useState([]);
+  
+
  
   // Modal states
   const [modalSelectedOrgId, setModalSelectedOrgId] = useState(''); // New state for modal
@@ -31,9 +39,12 @@ export default function Prompt() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
-  const [toastBg, setToastBg] = useState('primary'); // 'success', 'warning', 'danger', etc.
- 
+  const [toastBg, setToastBg] = useState('primary');
   const promptsPerPage = 10;
+
+  // Resizable states
+  const [editorWidth, setEditorWidth] = useState(800);
+  const [assignWidth, setAssignWidth] = useState(500);
  
   const storedToken = sessionStorage.getItem("token");
   const config = {
@@ -71,7 +82,6 @@ export default function Prompt() {
     }
     return items;
   };
- 
   // Effect for filtering prompts based on filter dropdowns
   useEffect(() => {
     const filtered = allPrompts.filter(prompt => {
@@ -108,33 +118,31 @@ export default function Prompt() {
  
         switch (errorType) {
           case 400:
-            setToastMessage(`⚠️ Bad request: ${errorMessage}`);
+            setToastMessage(`Bad request: ${errorMessage}`);
             break;
           case 401:
-            setToastMessage("⚠️ Unauthorized. Please log in.");
+            setToastMessage("Unauthorized. Please log in.");
             break;
           case 403:
-            setToastMessage("⚠️ Forbidden: You do not have permission.");
+            setToastMessage("Forbidden: You do not have permission.");
             break;
           case 404:
-            setToastMessage("⚠️ Prompts not found.");
+            setToastMessage("Prompts not found.");
             break;
           case 409:
-            setToastMessage("⚠️ Conflict: A similar prompt may already exist.");
+            setToastMessage("Conflict: A similar prompt may already exist.");
             break;
           case 500:
-            setToastMessage("❌ Server error. Please try again later.");
+            setToastMessage("Server error. Please try again later.");
             break;
           default:
-            setToastMessage(`⚠️ Failed to fetch prompts. (${errorType || "Unknown error"})`);
+            setToastMessage(`Failed to fetch prompts. (${errorType || "Unknown error"})`);
         }
- 
         setToastBg("warning");
       } else {
-        setToastMessage("⚠️ Network error. Please check your connection.");
+        setToastMessage("Network error. Please check your connection.");
         setToastBg("danger");
       }
- 
       setShowToast(true);
       setAllPrompts([]);
       setError("Failed to load prompts.");
@@ -178,25 +186,33 @@ export default function Prompt() {
   const handleEditClick = (prompt) => {
     setEditPrompt(prompt);
     setOriginalPrompt(prompt); // NEW
-    setUpdatedUserContent(prompt.user_content);
+    setUpdatedUserContent(prompt.user_content || '');
+    setUpdatedJsonContent(prompt.json_content || ''); // NEW: Set initial json_content
+    setUpdatedAdditionalContent(prompt.additional_content || ''); // NEW: Set initial additional_content
     setShowEditor(true);
   };
  
   const handleSave = () => {
+  // UPDATED: Check all three fields for changes
   if (
-    updatedUserContent.trim() === originalPrompt?.user_content?.trim()
+    updatedUserContent.trim() === originalPrompt?.user_content?.trim() &&
+    updatedJsonContent.trim() === originalPrompt?.json_content?.trim() &&
+    updatedAdditionalContent.trim() === originalPrompt?.additional_content?.trim()
   ) {
     setToastMessage('ℹ️ No changes detected');
     setToastBg('warning');
     setShowToast(true);
- 
     return;
   }
  
-  axios.put(`${process.env.REACT_APP_API_LINK}/prompts/${editPrompt.prompt_id}`, {
+  // Prepare the payload with only changed fields (but send all for simplicity, as backend handles partial)
+  const payload = {
     user_content: updatedUserContent,
-    json_content: editPrompt.json_content // Keep json_content as is
-  }, config)
+    json_content: updatedJsonContent,
+    additional_content: updatedAdditionalContent
+  };
+ 
+  axios.put(`${process.env.REACT_APP_API_LINK}/prompts/${editPrompt.prompt_id}`, payload, config)
     .then(() => {
       setShowEditor(false);
       setToastMessage("✅ Prompt updated successfully!");
@@ -209,43 +225,111 @@ export default function Prompt() {
  
       if (axios.isAxiosError(err) && err.response) {
         const status = err.response.status;
-        let errorMsg = '❌ Something went wrong.';
- 
+        let errorMsg = 'Something went wrong.';
+
         switch (status) {
           case 400:
-            errorMsg = '⚠️ Bad request. Please check your input.';
+            errorMsg = 'Bad request. Please check your input.';
             break;
           case 401:
-            errorMsg = '⚠️ Unauthorized. Please log in.';
+            errorMsg = 'Unauthorized. Please log in.';
             break;
           case 403:
-            errorMsg = '⚠️ Forbidden. You don’t have permission.';
+            errorMsg = 'Forbidden. You don’t have permission.';
             break;
           case 404:
-            errorMsg = '⚠️ Prompt not found.';
+            errorMsg = 'Prompt not found.';
             break;
           case 409:
-            errorMsg = '⚠️ Conflict. This prompt might already exist.';
+            errorMsg = 'Conflict. This prompt might already exist.';
             break;
           case 500:
-            errorMsg = '⚠️ Server error. Please try again later.';
+            errorMsg = 'Server error. Please try again later.';
             break;
           default:
-            errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+            errorMsg = `Error ${status}: ${err.response.data?.message || err.message}`;
         }
- 
+
         setToastMessage(errorMsg);
         setToastBg("warning");
         setShowToast(true);
       } else {
-        setToastMessage("❌ Network error. Please check your connection.");
+        setToastMessage("Network error. Please check your connection.");
         setToastBg("danger");
         setShowToast(true);
       }
     });
 };
+
+  // Editor resize handlers
+  let editorStartX;
+  let editorStartWidth;
+
+  const handleEditorResizeStart = (e) => {
+    e.preventDefault();
+    editorStartX = e.clientX;
+    const box = e.currentTarget.parentElement.parentElement.getBoundingClientRect();
+    editorStartWidth = box.width;
+    document.addEventListener('mousemove', handleEditorResize);
+    document.addEventListener('mouseup', handleEditorResizeEnd);
+  };
+
+  const handleEditorResize = (e) => {
+    const newWidth = editorStartWidth + (e.clientX - editorStartX);
+    setEditorWidth(Math.max(400, newWidth));
+  };
+
+  const handleEditorResizeEnd = () => {
+    document.removeEventListener('mousemove', handleEditorResize);
+    document.removeEventListener('mouseup', handleEditorResizeEnd);
+  };
+
+  // Assign resize handlers
+  let assignStartX;
+  let assignStartWidth;
+
+  const handleAssignResizeStart = (e) => {
+    e.preventDefault();
+    assignStartX = e.clientX;
+    const box = e.currentTarget.parentElement.parentElement.getBoundingClientRect();
+    assignStartWidth = box.width;
+    document.addEventListener('mousemove', handleAssignResize);
+    document.addEventListener('mouseup', handleAssignResizeEnd);
+  };
+
+  const handleAssignResize = (e) => {
+    const newWidth = assignStartWidth + (e.clientX - assignStartX);
+    setAssignWidth(Math.max(300, newWidth));
+  };
+
+  const handleAssignResizeEnd = () => {
+    document.removeEventListener('mousemove', handleAssignResize);
+    document.removeEventListener('mouseup', handleAssignResizeEnd);
+  };
  
- 
+  // Consolidated useEffect for fetching batches for filter (removed duplication)
+  useEffect(() => {
+    if (selectedOrgIdFilter) {
+      // If an org is selected, load its batches
+      axios
+        .get(`${process.env.REACT_APP_API_LINK}/batches?organization_id=${selectedOrgIdFilter}`, config)
+        .then((res) => setBatchListForFilter(res.data.data || []))
+        .catch((err) => {
+          console.error('Failed to fetch batches:', err);
+          setBatchListForFilter([]);
+        });
+    } else {
+      // If no org selected, load all batches and reset batch filter
+      setSelectedBatchIdFilter('');
+      axios
+        .get(`${process.env.REACT_APP_API_LINK}/batches`, config)
+        .then((res) => setBatchListForFilter(res.data.data || []))
+        .catch((err) => {
+          console.error('Failed to fetch all batches:', err);
+          setBatchListForFilter([]);
+        });
+    }
+  }, [selectedOrgIdFilter]);
  
   const handleAssignPrompt = () => {
     // Use modal-specific state variables for assignment
@@ -278,36 +362,36 @@ export default function Prompt() {
  
         if (axios.isAxiosError(err) && err.response) {
           const status = err.response.status;
-          let errorMsg = '❌ Something went wrong.';
- 
+          let errorMsg = 'Something went wrong.';
+
           switch (status) {
             case 400:
-              errorMsg = '⚠️ Selected prompt type already exists for this batch.';
+              errorMsg = 'Selected prompt type already exists for this batch.';
               break;
             case 401:
-              errorMsg = '⚠️ Unauthorized. Please log in.';
+              errorMsg = 'Unauthorized. Please log in.';
               break;
             case 403:
-              errorMsg = '⚠️ Forbidden. You do not have access.';
+              errorMsg = 'Forbidden. You do not have access.';
               break;
             case 404:
-              errorMsg = '⚠️ Resource not found.';
+              errorMsg = 'Resource not found.';
               break;
             case 409:
-              errorMsg = '⚠️ Prompt already assigned to this batch.';
+              errorMsg = 'Prompt already assigned to this batch.';
               break;
             case 500:
-              errorMsg = '⚠️ Server error. Try again later.';
+              errorMsg = 'Server error. Try again later.';
               break;
             default:
-              errorMsg = `❌ Error ${status}: ${err.response.data?.message || err.message}`;
+              errorMsg = `Error ${status}: ${err.response.data?.message || err.message}`;
           }
- 
+
           setToastMessage(errorMsg);
           setToastBg("warning");
           setShowToast(true);
         } else {
-          setToastMessage("❌ Network error. Please check your connection.");
+          setToastMessage("Network error. Please check your connection.");
           setToastBg("danger");
           setShowToast(true);
         }
@@ -321,80 +405,177 @@ export default function Prompt() {
     <div className="main-layout-container">
       <Supersidebar />
       <div className="content-area">
-        <div className="container mt-4">
-          <div className="d-flex justify-content-between align-items-center mb-3">
+        <div className="container">
+          <div className="mb-3 global-promt-container">
             <h3>Global & Assigned Prompts</h3>
  
-            <div className="d-flex justify-content-between " style={{ width: '26%' }}>
-              <Button
-                variant="secondary"
-                onClick={() => navigate('/archived')}
-                style={{ width: '49%' }}
-              >
-                <FaHistory />
-              </Button>
-              {/* <Button
-                variant="primary"
-                onClick={() => setShowAssignModal(true)}
-                style={{ width: '49%' }}
-              >
-                <FaPlus />
-              </Button> */}
-            </div>
+            <div
+  className="d-flex justify-content-between align-items-right mb-3"
+  style={{ width: "26%", marginLeft: "auto" }}
+>
+  <Button
+    variant="secondary"
+    onClick={() => navigate('/archived')}
+    style={{ width: '49%', marginRight: '2%' }}
+  >
+    <FaHistory />
+  </Button>
+  <Button
+    variant="primary"
+    onClick={() => setShowAssignModal(true)}
+    style={{ width: '49%' }}
+  >
+    <FaPlus />
+  </Button>
+</div>
           </div>
  
-          {/* Filter Section */}
-          {/* <div className="d-flex gap-3 my-3">
-            <Form.Group>
-              <Form.Label>Filter by Organization</Form.Label>
-              <Form.Select
-                value={selectedOrgIdFilter} // Use filter-specific state
-                onChange={(e) => {
-                  setSelectedOrgIdFilter(e.target.value);
-                  setSelectedBatchIdFilter(''); // Reset batch filter when org filter changes
-                }}
-              >
-                <option value="">All Organizations</option>
-                {orgList.map(org => (
-                  <option key={org.organization_id} value={org.organization_id}>
-                    {org.organization_name}
-                  </option>
-                ))}
-              </Form.Select>
-            </Form.Group> */}
-            {/* You can add a batch filter dropdown here if needed for the main table */}
-            {/* {selectedOrgIdFilter && (
-                            <Form.Group>
-                                <Form.Label>Filter by Batch</Form.Label>
-                                <Form.Select
-                                    value={selectedBatchIdFilter}
-                                    onChange={(e) => setSelectedBatchIdFilter(e.target.value)}
-                                >
-                                    <option value="">All Batches</option>
-                                    {/* You'll need another useEffect to fetch batches specific to the filter's selectedOrgIdFilter */}
-            {/* For now, assuming batchList is global or you'll fetch it here */}
-            {/* You need to add a fetch for filter batches here, similar to modal's batch fetch */}
-            {/* Example: */}
-            {/* {batchListForModal // Re-using for simplicity, but ideally a separate state/fetch
-                                        .filter(batch => batch.organization_id?.toString() === selectedOrgIdFilter?.toString())
-                                        .map(batch => (
-                                            <option key={batch.batch_id} value={batch.batch_id}>
-                                                {batch.batch_name}
-                                            </option>
-                                        ))}
-                                </Form.Select>
-                            </Form.Group>
-                        )} */}
-         {/* </div>*/}
- 
+
+{/* Filter Section */}
+<div className="d-flex gap-3 my-3 filter-section align-items-center flex-wrap">
+  {/* 🔹 Organization Dropdown */}
+  <Form.Group className="filter-org-group">
+    <Dropdown
+      className="filter-org-dropdown"
+      autoClose="true"
+      drop="down"
+    >
+      <Dropdown.Toggle
+        id="org-dropdown-toggle"
+        variant="outline-secondary"
+        className="filter-org-toggle text-truncate"
+        style={{
+          maxWidth: "220px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {selectedOrgIdFilter
+          ? orgList.find(org => org.organization_id === selectedOrgIdFilter)?.organization_name
+          : "All Organizations"}
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu
+        className="filter-org-menu dropdown-menu-outside"
+        flip={false}
+        style={{ maxHeight: "250px", overflowY: "auto" }}
+        popperConfig={{
+          strategy: "absolute",
+          modifiers: [
+            { name: "flip", enabled: false },
+            { name: "preventOverflow", enabled: false },
+            { name: "hide", enabled: false },
+            {
+              name: "offset",
+              options: { offset: [0, 6] },
+            },
+          ],
+        }}
+      >
+        <Dropdown.Item
+          className="filter-org-item"
+          onClick={() => {
+            setSelectedOrgIdFilter('');
+            setSelectedBatchIdFilter('');
+          }}
+          active={!selectedOrgIdFilter}
+        >
+          All Organizations
+        </Dropdown.Item>
+
+        {orgList.map(org => (
+          <Dropdown.Item
+            key={org.organization_id}
+            className="filter-org-item text-truncate"
+            style={{ maxWidth: "240px" }}
+            onClick={() => {
+              setSelectedOrgIdFilter(org.organization_id);
+              setSelectedBatchIdFilter('');
+            }}
+            active={selectedOrgIdFilter === org.organization_id}
+          >
+            {org.organization_name}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
+  </Form.Group>
+
+  {/* 🔹 Batch Dropdown */}
+  <Form.Group className="filter-batch-group">
+    <Dropdown
+      className="filter-batch-dropdown"
+      autoClose="true"
+      drop="down"
+    >
+      <Dropdown.Toggle
+        id="batch-dropdown-toggle"
+        variant="outline-secondary"
+        className="filter-batch-toggle text-truncate"
+        style={{
+          maxWidth: "220px",
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
+        {selectedBatchIdFilter
+          ? batchListForFilter.find(batch => batch.batch_id === selectedBatchIdFilter)?.batch_name
+          : "All Batches"}
+      </Dropdown.Toggle>
+
+      <Dropdown.Menu
+        className="filter-batch-menu dropdown-menu-outside"
+        flip={false}
+        style={{ maxHeight: "250px", overflowY: "auto" }}
+        popperConfig={{
+          strategy: "absolute",
+          modifiers: [
+            { name: "flip", enabled: false },
+            { name: "preventOverflow", enabled: false },
+            { name: "hide", enabled: false },
+            {
+              name: "offset",
+              options: { offset: [0, 6] },
+            },
+          ],
+        }}
+      >
+        <Dropdown.Item
+          className="filter-batch-item"
+          onClick={() => setSelectedBatchIdFilter('')}
+          active={!selectedBatchIdFilter}
+        >
+          All Batches
+        </Dropdown.Item>
+
+        {batchListForFilter.map(batch => (
+          <Dropdown.Item
+            key={batch.batch_id}
+            className="filter-batch-item text-truncate"
+            style={{ maxWidth: "240px" }}
+            onClick={() => setSelectedBatchIdFilter(batch.batch_id)}
+            active={selectedBatchIdFilter === batch.batch_id}
+          >
+            {batch.batch_name}
+          </Dropdown.Item>
+        ))}
+      </Dropdown.Menu>
+    </Dropdown>
+  </Form.Group>
+</div>
+
+
+
           <div className="table-responsive">
-            <table className="table table-striped table-bordered table-hover">
+            <table className="table table-hover table-striped table-bordered">
               <thead className="bg-primary text-white">
                 <tr>
                   <th>Prompt Type</th>
                   <th>Prompt Level</th>
-                  {/* <th>Organization Name</th>
-                  <th>Batch Name</th> */}
+                   <th>Organization Name</th>
+                  <th>Batch Name</th>
                   <th>Version</th>
                   <th>Action</th>
                 </tr>
@@ -404,8 +585,8 @@ export default function Prompt() {
                   <tr key={prompt.prompt_id}>
                     <td>{prompt.prompt_type}</td>
                     <td>{prompt.prompt_level}</td>
-                    {/* <td>{prompt.organization_name || '—'}</td>
-                    <td>{prompt.batch_name || '—'}</td> */}
+                     <td>{prompt.organization_name || '—'}</td>
+                    <td>{prompt.batch_name || '—'}</td> 
                     <td>{prompt.version}</td>
                     <td>
                       <Button
@@ -439,108 +620,136 @@ export default function Prompt() {
           )}
  
  
-          {/* Edit Prompt Modal */}
-          <Modal show={showEditor} onHide={() => setShowEditor(false)} size="lg" backdrop="static" >
-            <Modal.Header closeButton>
-              <Modal.Title>Edit Prompt</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <EditablePromptEditor
-                initialContent={editPrompt?.user_content || ''}
-                onSave={(updatedText) => setUpdatedUserContent(updatedText)}
-              />
-            </Modal.Body>
-            <Modal.Footer>
-              <Button variant="secondary" onClick={() => setShowEditor(false)}>Cancel</Button>
-              <Button variant="success" onClick={handleSave}>Save Changes</Button>
-            </Modal.Footer>
-          </Modal>
- 
-          {/* Assign Prompt Modal */}
-          <Modal
-            show={showAssignModal}
-            onHide={() => {
-              setShowAssignModal(false);
-              // Reset modal states when closing
-              setSelectedPromptId(null);
-              setModalSelectedOrgId('');
-              setModalSelectedBatchId('');
-              setBatchListForModal([]);
-            }}
-            backdrop="static"
-          >
-            <Modal.Header closeButton>
-              <Modal.Title>Assign Prompt to Batch</Modal.Title>
-            </Modal.Header>
-            <Modal.Body>
-              <Form.Group className="mb-3">
-                <Form.Label>Select Prompt</Form.Label>
-                <Form.Select
-                  value={selectedPromptId || ''}
-                  onChange={(e) => setSelectedPromptId(e.target.value)}
-                >
-                  <option value="">-- Select --</option>
-                  {allPrompts
-                    .filter(p => p.source === 'Global') // Only global prompts can be reassigned
-                    .map((prompt) => (
-                      <option key={prompt.prompt_id} value={prompt.prompt_id}>
-                        {prompt.prompt_type} - v{prompt.version}
-                      </option>
-                    ))}
-                </Form.Select>
-              </Form.Group>
- 
-              <Form.Group className="mb-3">
-                <Form.Label>Select Organization</Form.Label>
-                <Form.Select
-                  value={modalSelectedOrgId} // Use modal's specific organization state
-                  onChange={(e) => setModalSelectedOrgId(e.target.value)}
-                >
-                  <option value="">-- Select --</option>
-                  {orgList.map((org) => (
-                    <option key={org.organization_id} value={org.organization_id}>
-                      {org.organization_name}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
- 
-              <Form.Group className="mb-3">
-                <Form.Label>Select Batch</Form.Label>
-                <Form.Select
-                  value={modalSelectedBatchId} // Use modal's specific batch state
-                  onChange={(e) => setModalSelectedBatchId(e.target.value)}
-                  disabled={!modalSelectedOrgId} // Disable based on modal's org selection
-                >
-                  <option value="">-- Select --</option>
-                  {batchListForModal // Use the separate batch list for the modal
-                    .filter(batch => batch.organization_id?.toString() === modalSelectedOrgId?.toString())
-                    .map(batch => (
-                      <option key={batch.batch_id} value={batch.batch_id}>
-                        {batch.batch_name}
-                      </option>
-                    ))}
-                </Form.Select>
-              </Form.Group>
-            </Modal.Body>
-            <Modal.Footer>
-              <Button
-                variant="secondary"
-                onClick={() => {
-                  setShowAssignModal(false);
-                  setSelectedPromptId(null);
-                  setModalSelectedOrgId('');
-                  setModalSelectedBatchId('');
-                  setBatchListForModal([]);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button variant="success" onClick={handleAssignPrompt}>
-                Assign
-              </Button>
-            </Modal.Footer>
-          </Modal>
+          {showEditor && (
+  <div className="popup-overlay">
+    <div 
+      className="popup-box editor-popup-box" 
+      style={{ width: `${editorWidth}px` }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ display: 'flex', width: '100%' }}>
+        <div style={{ flex: 1 }}>
+          <h4 className="mb-3 text-center">Edit Prompt</h4>
+
+<Form.Group className="mb-3">
+  <Form.Label>User Content</Form.Label>
+  <EditablePromptEditor
+    initialContent={editPrompt?.user_content || ''}
+    onSave={(updatedText) => setUpdatedUserContent(updatedText)}
+  />
+</Form.Group>
+
+{/* JSON Content Editor (UPDATED: Now uses EditablePromptEditor) */}
+<Form.Group className="mb-3">
+  <Form.Label>JSON Content</Form.Label>
+  <EditablePromptEditor
+    initialContent={editPrompt?.json_content || ''}
+    onSave={(updatedText) => setUpdatedJsonContent(updatedText)}
+  />
+</Form.Group>
+
+{/* Additional Content Editor (UPDATED: Now uses EditablePromptEditor) */}
+<Form.Group className="mb-3">
+  <Form.Label>Additional Content</Form.Label>
+  <EditablePromptEditor
+    initialContent={editPrompt?.additional_content || ''}
+    onSave={(updatedText) => setUpdatedAdditionalContent(updatedText)}
+  />
+</Form.Group>
+
+      <div className="d-flex justify-content-end gap-2 mt-3">
+        <Button variant="secondary" onClick={() => setShowEditor(false)}>Cancel</Button>
+        <Button variant="success" onClick={handleSave}>Save</Button>
+      </div>
+        </div>
+        <div 
+          className="resize-handle"
+          style={{
+            width: '10px',
+            cursor: 'col-resize',
+            backgroundColor: '#7f7e7eff',
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginLeft: '5px'
+          }}
+          onMouseDown={handleEditorResizeStart}
+        />
+      </div>
+    </div>
+  </div>
+)}
+         {showAssignModal && (
+  <div className="popup-overlay">
+    <div 
+      className="popup-box" 
+      style={{ width: `${assignWidth}px` }}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div style={{ display: 'flex' }}>
+        <div style={{ flex: 1 }}>
+          <h4 className="mb-3 text-center">Assign Prompt to Batch</h4>
+
+      <Form.Group className="mb-3">
+        <Form.Label>Select Prompt <span className="text-danger">*</span></Form.Label>
+        <Form.Select
+          value={selectedPromptId || ''}
+          onChange={(e) => setSelectedPromptId(e.target.value)}
+        >
+          <option value="">-- Select --</option>
+          {allPrompts
+            .filter(p => p.source === 'Global')
+            .map((p) => (
+              <option key={p.prompt_id} value={p.prompt_id}>
+                {p.prompt_type} - v{p.version}
+              </option>
+            ))}
+        </Form.Select>
+      </Form.Group>
+
+      <Form.Group className="mb-3">
+        <Form.Label>Select Organization <span className="text-danger">*</span></Form.Label>
+        <Form.Select
+          value={modalSelectedOrgId}
+          onChange={(e) => setModalSelectedOrgId(e.target.value)}
+        >
+          <option value="">-- Select --</option>
+          {orgList.map(org => (
+            <option key={org.organization_id} value={org.organization_id}>
+              {org.organization_name}
+            </option>
+          ))}
+        </Form.Select>
+      </Form.Group>
+
+      <Form.Group className="mb-3">
+        <Form.Label>Select Batch <span className="text-danger">*</span></Form.Label>
+        <Form.Select
+          value={modalSelectedBatchId}
+          onChange={(e) => setModalSelectedBatchId(e.target.value)}
+          disabled={!modalSelectedOrgId}
+        >
+          <option value="">-- Select --</option>
+          {batchListForModal
+            .filter(batch => batch.organization_id?.toString() === modalSelectedOrgId?.toString())
+            .map(batch => (
+              <option key={batch.batch_id} value={batch.batch_id}>
+                {batch.batch_name}
+              </option>
+            ))}
+        </Form.Select>
+      </Form.Group>
+
+      <div className="d-flex justify-content-end gap-2">
+        <Button variant="secondary" onClick={() => setShowAssignModal(false)}>Cancel</Button>
+        <Button variant="success" onClick={handleAssignPrompt}>Assign</Button>
+      </div>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
         </div>
       </div>
       <ToastContainer position="top-end" className="p-3">
