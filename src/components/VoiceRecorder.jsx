@@ -65,7 +65,7 @@ const VoiceRecorder = forwardRef(
         else if (now - silenceStartRef.current > MAX_SILENCE_MS) {
           autoStoppedRef.current = true;
           stopRecording();
-          toast.info("🎤 No speech detected — recording stopped.");
+          toast.info("No speech detected — recording stopped.");
           return;
         }
         speechStartRef.current = null;
@@ -83,7 +83,7 @@ const VoiceRecorder = forwardRef(
         if (now - speechStartRef.current > MAX_SPEECH_MS) {
           autoStoppedRef.current = false;
           stopRecording();
-          toast.success("🗣️ Recording stopped after 10s of continuous speech.");
+          toast.success("Recording stopped after 10s of continuous speech.");
           return;
         }
         silenceStartRef.current = null;
@@ -121,7 +121,7 @@ const VoiceRecorder = forwardRef(
           }
           // 2. Manual stop but not enough speech
           if (!hasSpokenRef.current || cumulativeSpeechMsRef.current < MIN_SPEECH_MS) {
-            toast.info("🎤 No clear speech detected — recording stopped.");
+            toast.info("No clear speech detected — recording stopped.");
             setIsRecording(false);
             mediaRecorderRef.current = null;
             return;
@@ -132,21 +132,21 @@ const VoiceRecorder = forwardRef(
           formData.append("audio", audioBlob, "recording.webm");
 
           try {
-            toast.info("⏳ Transcribing your voice...");
+            toast.info("Transcribing your voice...");
             const res = await axios.post(`${BASE_URL}/transcribe`, formData, {
               headers: { "Content-Type": "multipart/form-data" },
               timeout: 120000,
             });
             const text = res?.data?.data?.transcription || "";
             if (text && text.trim()) {
-              toast.success("✅ Transcription complete!");
+              toast.success("Transcription complete!");
               onTranscription(text.trim());
             } else {
-              toast.error("⚠️ No clear English speech detected.");
+              toast.error("No clear English speech detected.");
             }
           } catch (err) {
             console.error("Upload error:", err);
-            toast.error("❌ Error uploading audio.");
+            toast.error("Error uploading audio.");
           } finally {
             setIsRecording(false);
             mediaRecorderRef.current = null;
@@ -156,7 +156,7 @@ const VoiceRecorder = forwardRef(
         mediaRecorder.start();
         mediaRecorderRef.current = mediaRecorder;
         setIsRecording(true);              // ✅ triggers onRecordingStart
-        toast.success("🎙️ Recording started. Speak now!");
+        toast.success("Recording started. Speak now!");
 
         // Audio setup
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -183,7 +183,7 @@ const VoiceRecorder = forwardRef(
         rafRef.current = requestAnimationFrame(checkSilence);
       } catch (err) {
         console.error("Recording error:", err);
-        toast.error("🎤 Microphone access denied or unavailable.");
+        toast.error("Microphone access denied or unavailable.");
       }
     };
 
