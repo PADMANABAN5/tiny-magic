@@ -738,177 +738,185 @@ function Practicemode() {
     setPrompt(event.target.value);
   };
 
-  const handleSendClick = async () => {
-    if (voiceRecorderRef.current) {
-      await voiceRecorderRef.current.stopRecording(); // 🔴 auto-stop recording
-    }
-    if (!prompt.trim() || !selectedConcept || isChatEnded) {
-      if (isChatEnded) {
-        toast.warn("This conversation has ended. Please restart to begin a new session.");
-        return;
-      }
-      toast.warn("Please enter a prompt and select a concept.");
+ const handleSendClick = async () => {
+  if (voiceRecorderRef.current) {
+    await voiceRecorderRef.current.stopRecording();
+  }
+  if (!prompt.trim() || !selectedConcept || isChatEnded) {
+    if (isChatEnded) {
+      toast.warn("This conversation has ended. Please restart to begin a new session.");
       return;
     }
+    toast.warn("Please enter a prompt and select a concept.");
+    return;
+  }
 
-    const isFirstUserMessage = currentStage === 0;
+  const isFirstUserMessage = currentStage === 0;
 
-    if (isFirstUserMessage) {
-      setIsTransitioning(true);
-      setCurrentStage(1);
-      setTimeout(() => setIsTransitioning(false), 800);
-    }
+  if (isFirstUserMessage) {
+    setIsTransitioning(true);
+    setCurrentStage(1);
+    setTimeout(() => setIsTransitioning(false), 800);
+  }
 
-    setIsLoading(true);
-    const userPrompt = prompt.trim();
-    setPrompt("");
+  setIsLoading(true);
+  const userPrompt = prompt.trim();
+  setPrompt("");
 
-    // Step 1: Add only user message first
-    setPracticeChatHistory((prev) => {
-      const updated = [...prev, { user: userPrompt, system: "" }];
-      sessionStorage.setItem("practiceChatHistory", JSON.stringify(updated));
-      return updated;
+  // Step 1: Add ONLY user message first (immediate UI feedback)
+  const userMessageEntry = { user: userPrompt, system: "" };
+  const historyWithUserMsg = [...practiceChatHistory, userMessageEntry];
+  setPracticeChatHistory(historyWithUserMsg);
+  sessionStorage.setItem("practiceChatHistory", JSON.stringify(historyWithUserMsg));
+
+  try {
+    const organizationId = sessionStorage.getItem("organizationId");
+    const batchId = sessionStorage.getItem("batchId");
+
+    // Step 2: Process the user's message and get mentor response
+    const initialResponse = await processPromptAndCallLLM({
+      username,
+      selectedPrompt,
+      selectedModel: "gpt-4o",
+      sessionHistory,
+      userPrompt: userPrompt,
+      selectedConcept,
+      organizationId,
+      batchId
     });
 
-    try {
-      const organizationId = sessionStorage.getItem("organizationId");
-      const batchId = sessionStorage.getItem("batchId");
+    console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
 
-      const initialResponse = await processPromptAndCallLLM({
+    const parsedResponse = (() => {
+      try {
+        const cleanedText = initialResponse.apiResponseText
+          .replace(/```json\s*/i, "")
+          .replace(/```$/, "")
+          .trim();
+        return JSON.parse(cleanedText);
+      } catch (e) {
+        return {};
+      }
+    })();
+
+    // Update apiData with the latest response
+    setApiData(parsedResponse);
+    if (selectedConcept?.concept_name) {
+      sessionStorage.setItem(
+        `scenarioProgress_${selectedConcept.concept_name}`,
+        JSON.stringify(parsedResponse)
+      );
+    }
+
+    const apiCurrentLevel = Number(parsedResponse.current_level) || 0;
+    const newStatus = parsedResponse.status || "";
+    const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
+
+    const mentorMessage = parseApiResponseText(initialResponse.apiResponseText);
+
+    // Step 3: Create complete conversation with mentor response
+    const completeEntry = { user: userPrompt, system: mentorMessage };
+    const historyComplete = [...practiceChatHistory, completeEntry];
+    
+    // Update both state and storage with complete conversation
+    setPracticeChatHistory(historyComplete);
+    sessionStorage.setItem("practiceChatHistory", JSON.stringify(historyComplete));
+
+    // Step 4: Update session history
+    const updatedSessionHistory = [
+      ...sessionHistory,
+      { Mentee: userPrompt, Mentor: mentorMessage },
+    ];
+    setSessionHistory(updatedSessionHistory);
+
+    // Step 5: Check if assessment is needed
+    if (newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested || parsedResponse.interactionCompleted) {
+      console.log("🎯 handleSendClick: Triggering assessment due to", newStatus === "complete" || newStatus === "exit" ? "status complete/exit" : parsedResponse.interactionCompleted ? "interactionCompleted" : "endRequested");
+      setIsProcessingAssessment(true);
+      
+      const assessmentResponse = await processPromptAndCallLLM({
         username,
-        selectedPrompt,
+        selectedPrompt: "practiceAssessment",
         selectedModel: "gpt-4o",
-        sessionHistory,
+        sessionHistory: updatedSessionHistory,
         userPrompt: userPrompt,
         selectedConcept,
         organizationId,
         batchId
       });
 
-      console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
+      setLlmContent(assessmentResponse.apiResponseText);
 
-      const parsedResponse = (() => {
-        try {
-          const cleanedText = initialResponse.apiResponseText
-            .replace(/```json\s*/i, "")
-            .replace(/```$/, "")
-            .trim();
-          return JSON.parse(cleanedText);
-        } catch (e) {
-          return {};
+      let assessmentData = null;
+      let extractedScores = {};
+      try {
+        const cleanedAssessmentText = assessmentResponse.apiResponseText
+          .replace(/```json\s*/i, "")
+          .replace(/```$/, "")
+          .trim();
+        assessmentData = JSON.parse(cleanedAssessmentText);
+
+        extractedScores = extractAssessmentScores(assessmentData);
+
+        setApiData(prev => ({
+          ...prev,
+          assessmentData,
+          assessment_scores: extractedScores
+        }));
+
+        if (selectedConcept?.concept_name) {
+          sessionStorage.setItem(
+            `scenarioProgress_${selectedConcept.concept_name}`,
+            JSON.stringify({ ...assessmentData, assessment_scores: extractedScores })
+          );
         }
-      })();
-
-      // Update apiData with the latest response
-      setApiData(parsedResponse);
-      if (selectedConcept?.concept_name) {
-        sessionStorage.setItem(
-          `scenarioProgress_${selectedConcept.concept_name}`,
-          JSON.stringify(parsedResponse)
-        );
+      } catch (err) {
+        console.warn("⚠️ Could not parse assessment response", err);
       }
 
-      const apiCurrentLevel = Number(parsedResponse.current_level) || 0;
-      const newStatus = parsedResponse.status || "";
+      // Step 6: Add assessment to the complete conversation history
+      const assessmentChatEntry = {
+        user: "",
+        system: assessmentResponse.apiResponseText,
+      };
 
-      const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
+      const finalHistory = [...historyComplete, assessmentChatEntry];
+      setPracticeChatHistory(finalHistory);
+      sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
 
-      setPracticeChatHistory((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1].system = parseApiResponseText(initialResponse.apiResponseText);
-        sessionStorage.setItem("practiceChatHistory", JSON.stringify(updated));
-        return updated;
-      });
+      const finalSessionHistory = [
+        ...updatedSessionHistory,
+        { Mentee: "", Mentor: assessmentResponse.apiResponseText }
+      ];
+      setSessionHistory(finalSessionHistory);
+      
+      setCurrentChatStatus('completed');
+      
+      // Pass the parsed assessment to handleSaveChat with the complete history
+      await handleSaveChat("completed", true, finalHistory, assessmentData, extractedScores);
+      setJustSavedAssessment(true);
+      setTimeout(() => setJustSavedAssessment(false), 1000);
 
-      setSessionHistory((prev) => [
-        ...prev,
-        { Mentee: userPrompt, Mentor: parseApiResponseText(initialResponse.apiResponseText) },
-      ]);
-
-      if (newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested || parsedResponse.interactionCompleted) {
-        console.log("🎯 handleSendClick: Triggering assessment due to", newStatus === "complete" || newStatus === "exit" ? "status complete/exit" : parsedResponse.interactionCompleted ? "interactionCompleted" : "endRequested");
-        setIsProcessingAssessment(true);
-        const assessmentResponse = await processPromptAndCallLLM({
-          username,
-          selectedPrompt: "practiceAssessment",
-          selectedModel: "gpt-4o",
-          sessionHistory: [
-            ...sessionHistory,
-            { Mentee: userPrompt, Mentor: parseApiResponseText(initialResponse.apiResponseText) },
-          ],
-          userPrompt: userPrompt,
-          selectedConcept,
-          organizationId,
-          batchId
-        });
-
-        setLlmContent(assessmentResponse.apiResponseText);
-
-        let assessmentData = null;
-        let extractedScores = {};
-        try {
-          const cleanedAssessmentText = assessmentResponse.apiResponseText
-            .replace(/```json\s*/i, "")
-            .replace(/```$/, "")
-            .trim();
-          assessmentData = JSON.parse(cleanedAssessmentText);
-
-          extractedScores = extractAssessmentScores(assessmentData);
-
-    setApiData(prev => ({
-      ...prev,
-      assessmentData,
-      assessment_scores: extractedScores
-    }));
-
-          if (selectedConcept?.concept_name) {
-      sessionStorage.setItem(
-        `scenarioProgress_${selectedConcept.concept_name}`,
-        JSON.stringify({ ...assessmentData, assessment_scores: extractedScores })
-      );
-          }
-        } catch (err) {
-          console.warn("⚠️ Could not parse assessment response", err);
-        }
-
-        const assessmentChatEntry = {
-          user: "",
-          system: assessmentResponse.apiResponseText,
-        };
-
-        const updatedHistory = [...practiceChatHistory, assessmentChatEntry];
-        setPracticeChatHistory(updatedHistory);
-        sessionStorage.setItem("practiceChatHistory", JSON.stringify(updatedHistory));
-
-        const updatedSessionHistory = [
-          ...sessionHistory,
-          { Mentee: "", Mentor: assessmentResponse.apiResponseText }
-        ];
-        setSessionHistory(updatedSessionHistory);
-        setCurrentChatStatus('completed');
-        // Pass the parsed assessment to handleSaveChat
-        await handleSaveChat("completed", true, updatedHistory, assessmentData, extractedScores);
-        setJustSavedAssessment(true);
-        setTimeout(() => setJustSavedAssessment(false), 1000);
-
-        setEndReason((newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested) ? 'endRequested' : 'interactionCompleted');
-        setIsChatEnded(true);
-        console.log("🔒 handleSendClick: Chat ended, input restricted");
-      } else {
-        if (isFirstUserMessage || newProgressStage >= currentStage) {
-          setCurrentStage(newProgressStage);
-          setCurrentChatStatus("inprogress");
-          console.log("➡️ Progressing to stage:", newProgressStage);
-        }
+      setEndReason((newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested) ? 'endRequested' : 'interactionCompleted');
+      setIsChatEnded(true);
+      console.log("🔒 handleSendClick: Chat ended, input restricted");
+    } else {
+      if (isFirstUserMessage || newProgressStage >= currentStage) {
+        setCurrentStage(newProgressStage);
+        setCurrentChatStatus("inprogress");
+        console.log("➡️ Progressing to stage:", newProgressStage);
       }
-    } catch (error) {
-      console.error("❌ handleSendClick: Error in API request:", error);
-      toast.error("Failed to process request. Please try again.");
-    } finally {
-      setIsLoading(false);
-      setIsProcessingAssessment(false);
+      
+      // No auto-save here - let the useEffect handle it
     }
-  };
+  } catch (error) {
+    console.error("❌ handleSendClick: Error in API request:", error);
+    toast.error("Failed to process request. Please try again.");
+  } finally {
+    setIsLoading(false);
+    setIsProcessingAssessment(false);
+  }
+};
 
   const handleDownloadConcept = (downloadLink, conceptName) => {
     if (!downloadLink) {
@@ -1012,19 +1020,15 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
 
       // Build requestData with actual values
       const requestData = {
-        conversation: historyToSave,
-        status: statusToSave,
-        current_stage: stageToSave,
-        concept_name: conceptNameToSave,
-        ...(statusToSave === 'completed' && Object.keys(extractedScores).length > 0 && {
-          ...extractedScores  // overall_performance_score, explanation_score, etc.
-
-      }),
-      scoring_data:
-  (statusToSave === 'completed' && (finalAssessmentOverride || apiData?.assessmentData || apiData?.final_assessment))
-    ? (finalAssessmentOverride || apiData?.assessmentData || apiData?.final_assessment)
-    : {}
-      };
+  conversation: historyToSave,
+  status: statusToSave,
+  current_stage: stageToSave,
+  concept_name: conceptNameToSave,
+  // Only include scores if we have them and status is completed
+  ...(statusToSave === 'completed' && Object.keys(extractedScores).length > 0 && {
+    scoring_data: extractedScores 
+  })
+};
 
       console.log("📤 requestData for save:", requestData);
 
