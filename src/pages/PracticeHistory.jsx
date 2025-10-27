@@ -4,7 +4,7 @@ import Sidebar from "../components/Sidebar.jsx";
 import { toast } from 'react-toastify';
 import "../styles/ConversationHistory.css";
 import axios from "axios";
-import PDFDownloader from "../components/PDFDownloader.jsx";
+import PracticePDFDownloader from "../components/PracticePDFDownloader.jsx";
 import PracticeAssessmentDisplay,{getPracticeScoreColor,getPracticeScoreLabel} from "../components/PracticeAssessmentDisplay.jsx";
 import {
   FiEye,
@@ -119,8 +119,8 @@ const PracticeHistory = () => {
         conversation.scoring : null;
 
       // Create temporary PDF downloader instance for this specific conversation
-      const tempPDFDownloader = PDFDownloader({
-        chatHistory: convertConversationForPDF(conversation),
+      const tempPDFDownloader = PracticePDFDownloader({
+        practiceChatHistory: convertConversationForPDF(conversation),
         selectedConcept: createConceptObject(conversation),
         first_name: userData?.first_name || sessionStorage.getItem("firstname"),
         last_name: userData?.last_name || sessionStorage.getItem("lastname"),

@@ -26,7 +26,7 @@ import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/PracticeProgress.jsx";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import PDFDownloader from "../components/PDFDownloader.jsx";
+import PracticePDFDownloader from "../components/PracticePDFDownloader.jsx";
 import PracticeAssessmentDisplay,{hasPracticeAssessmentData} from "../components/PracticeAssessmentDisplay.jsx";
 import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 import { useAuth } from "../components/AuthContext.jsx";
@@ -186,27 +186,12 @@ function Practicemode() {
     archived: 0,
   });
 
-  // In Practicemode.jsx
-  // 1. build finalAssessment first
-  let finalAssessment = null;
-  try {
-    let parsed =
-      typeof apiData === "string"
-        ? JSON.parse(apiData)
-        : apiData?.apiResponseText
-        ? JSON.parse(apiData.apiResponseText)
-        : apiData;
 
-    finalAssessment = parsed?.final_assessment || null;
-  } catch (err) {
-    console.error("❌ Failed to parse apiData for PDF:", err);
-  }
-
-  // ✅ Pass this into PDFDownloader
-  const { handleDownloadPDF } = PDFDownloader({
-    chatHistory: practiceChatHistory,
+  // ✅ Pass this into PracticePDFDownloader
+  const { handleDownloadPDF } = PracticePDFDownloader({
+    practiceChatHistory,
     selectedConcept,
-    finalAssessment: apiData?.final_assessment
+    
   });
 
   useEffect(() => {
