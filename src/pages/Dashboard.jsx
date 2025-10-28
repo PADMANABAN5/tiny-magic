@@ -28,7 +28,7 @@ import Tesseract from 'tesseract.js';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PDFDownloader from "../components/PDFDownloader.jsx";
-import AssessmentDisplay, { hasAssessmentData, extractScoringData } from "../components/AssessmentDisplay.jsx";
+import AssessmentDisplay, { hasAssessmentData, extractScoringData, calculateOverallScore } from "../components/AssessmentDisplay.jsx";
 import usePreventBack from "../utils/usePreventBack.js";
 import { useAuth } from "../components/AuthContext.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK;
@@ -692,6 +692,13 @@ function Dashboard() {
     if (statusToSave === 'completed' && llmContent) {
       scoring_data = extractScoringData(llmContent);
       console.log("📊 Extracted scoring data for save:", scoring_data);
+
+      if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) {
+        // Calculate the final weighted score manually and update only the final score
+        const finalWeightedScore = calculateOverallScore(scoring_data);
+        scoring_data.FinalWeightedScore = finalWeightedScore;
+        console.log("📊 Calculated final score:", finalWeightedScore);
+      }
     }
 
     console.log("💾 Saving chat with:", {

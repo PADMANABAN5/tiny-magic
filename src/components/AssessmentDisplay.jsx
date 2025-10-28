@@ -29,7 +29,7 @@ export const extractScoringData = (content) => {
 
         if (facetScores.length > 0) {
           const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
-          parsedData.SixFacets.OverallScore = Math.round(average * 1000) / 1000;
+          parsedData.SixFacets.OverallScore = average;
         }
       }
 
@@ -46,7 +46,7 @@ export const extractScoringData = (content) => {
 
         if (skillScores.length > 0) {
           const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
-          parsedData.UnderstandingSkills.OverallScore = Math.round(average * 1000) / 1000;
+          parsedData.UnderstandingSkills.OverallScore = average;
         }
       }
 
@@ -56,7 +56,43 @@ export const extractScoringData = (content) => {
     // Fallback: try to find JSON-like structure with new format
     const possibleJson = content.match(/\{[\s\S]*"FinalWeightedScore"[\s\S]*\}/);
     if (possibleJson) {
-      return JSON.parse(possibleJson[0]);
+      const parsedData = JSON.parse(possibleJson[0]);
+
+      // Calculate proper averages for Six Facets if not present or incorrect
+      if (parsedData.SixFacets && !parsedData.SixFacets.OverallScore) {
+        const facetScores = [
+          parsedData.SixFacets.Explanation?.score,
+          parsedData.SixFacets.Interpretation?.score,
+          parsedData.SixFacets.Application?.score,
+          parsedData.SixFacets.Perspective?.score,
+          parsedData.SixFacets.Empathy?.score,
+          parsedData.SixFacets['Self-Knowledge']?.score
+        ].filter(score => score != null);
+
+        if (facetScores.length > 0) {
+          const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
+          parsedData.SixFacets.OverallScore = average;
+        }
+      }
+
+      // Calculate proper averages for Understanding Skills if not present or incorrect
+      if (parsedData.UnderstandingSkills && !parsedData.UnderstandingSkills.OverallScore) {
+        const skillScores = [
+          parsedData.UnderstandingSkills.AskingQuestions?.score,
+          parsedData.UnderstandingSkills.ClarifyingAmbiguity?.score,
+          parsedData.UnderstandingSkills.SummarizingConfirming?.score,
+          parsedData.UnderstandingSkills.ChallengingIdeas?.score,
+          parsedData.UnderstandingSkills.ComparingConcepts?.score,
+          parsedData.UnderstandingSkills.AbstractConcrete?.score
+        ].filter(score => score != null);
+
+        if (skillScores.length > 0) {
+          const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
+          parsedData.UnderstandingSkills.OverallScore = average;
+        }
+      }
+
+      return parsedData;
     }
     return {};
   } catch (e) {
@@ -65,18 +101,14 @@ export const extractScoringData = (content) => {
   }
 };
 
-// Calculate overall score with better precision
+// Calculate overall score manually with better precision
 export const calculateOverallScore = (scoringData) => {
-  if (scoringData.FinalWeightedScore && typeof scoringData.FinalWeightedScore === 'number') {
-    return Math.round(scoringData.FinalWeightedScore * 100) / 100;
-  }
-
   const sixFacetsScore = scoringData.SixFacets?.OverallScore || 0;
   const understandingSkillsScore = scoringData.UnderstandingSkills?.OverallScore || 0;
 
   const finalWeightedScore = (0.6 * sixFacetsScore) + (0.4 * understandingSkillsScore);
 
-  return Math.round(finalWeightedScore * 100) / 100;
+  return finalWeightedScore;
 };
 
 // Get score color based on score value
@@ -265,7 +297,7 @@ export const OverallScoreAndSummary = ({ content }) => {
             className="overall-score-badge"
             style={{ backgroundColor: overallColor }}
           >
-            <span className="score-value">{calculatedOverallScore.toFixed(1)}/5</span>
+            <span className="score-value">{calculatedOverallScore}/5</span>
             <span className="score-label">{overallLabel}</span>
           </div>
         </div>
@@ -306,7 +338,7 @@ export const OverallScoreAndSummary = ({ content }) => {
                     className="breakdown-score"
                     style={{ color: getScoreColor(sixFacetsAvg), fontWeight: 'bold' }}
                   >
-                    {sixFacetsAvg ? sixFacetsAvg.toFixed(1) : '0'}/5
+                    {sixFacetsAvg ? sixFacetsAvg : '0'}/5
                   </span>
                 </div>
               </div>
@@ -340,7 +372,7 @@ export const OverallScoreAndSummary = ({ content }) => {
                     className="breakdown-score"
                     style={{ color: getScoreColor(skillsAvg), fontWeight: 'bold' }}
                   >
-                    {skillsAvg ? skillsAvg.toFixed(1) : '0'}/5
+                    {skillsAvg ? skillsAvg : '0'}/5
                   </span>
                 </div>
               </div>
@@ -354,7 +386,7 @@ export const OverallScoreAndSummary = ({ content }) => {
               className="breakdown-score"
               style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.2em' }}
             >
-              {calculatedOverallScore.toFixed(1)}/5
+              {calculatedOverallScore}/5
             </span>
           </div>
         </div>

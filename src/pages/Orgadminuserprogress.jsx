@@ -526,13 +526,13 @@ const renderPracticeScoreCell = (conversation) => {
             className="score-badge-large"
             style={{ backgroundColor: getScoreColor(finalScore) }}
           >
-            <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
+            <span className="score-value">{finalScore ? finalScore : 'N/A'}</span>
             <span className="score-max">/5</span>
           </div>
 
           <div className="score-tooltip">
             <div className="tooltip-section">
-              <strong>📊 Six Facets of Understanding: {sixFacetsAvg?.toFixed(1) || 'N/A'}</strong>
+              <strong>📊 Six Facets of Understanding: {sixFacetsAvg?.toFixed(2) || 'N/A'}</strong>
               <div className="mini-breakdown">
                 {Object.entries({
                   'Explanation': conversation.scoring.six_facets.explanation,
@@ -556,7 +556,7 @@ const renderPracticeScoreCell = (conversation) => {
             </div>
 
             <div className="tooltip-section">
-              <strong>🎯 Understanding Skills: {skillsAvg?.toFixed(1) || 'N/A'}</strong>
+              <strong>🎯 Understanding Skills: {skillsAvg?.toFixed(2) || 'N/A'}</strong>
               <div className="mini-breakdown">
                 {Object.entries({
                   'Asking Questions': conversation.scoring.understanding_skills.asking_questions,
@@ -588,7 +588,7 @@ const renderPracticeScoreCell = (conversation) => {
                 marginTop: '8px'
               }}>
                 <strong style={{ color: getScoreColor(finalScore) }}>
-                  Overall Score: {finalScore?.toFixed(1) || 'N/A'}/5
+                  Overall Score: {finalScore || 'N/A'}/5
                 </strong>
               </div>
             </div>
