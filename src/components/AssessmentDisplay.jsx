@@ -101,14 +101,26 @@ export const extractScoringData = (content) => {
   }
 };
 
-// Calculate overall score manually with better precision
+// Helper to truncate score to 2 decimal places using slice (no rounding)
+const truncateScore = (score) => {
+  // Convert to string with high precision to avoid float artifacts
+  const strScore = score.toString();
+  if (!strScore.includes('.')) {
+    return `${strScore}.00`;
+  }
+  const [integerPart, decimalPart] = strScore.split('.');
+  const truncatedDecimal = (decimalPart || '').slice(0, 2).padEnd(2, '0');
+  return `${integerPart}.${truncatedDecimal}`;
+};
+
+// Calculate overall score manually with better precision, truncated to 2 decimals
 export const calculateOverallScore = (scoringData) => {
   const sixFacetsScore = scoringData.SixFacets?.OverallScore || 0;
   const understandingSkillsScore = scoringData.UnderstandingSkills?.OverallScore || 0;
 
   const finalWeightedScore = (0.6 * sixFacetsScore) + (0.4 * understandingSkillsScore);
-
-  return finalWeightedScore;
+  // Truncate to 2 decimal places without rounding
+  return parseFloat(truncateScore(finalWeightedScore));
 };
 
 // Get score color based on score value
@@ -297,7 +309,7 @@ export const OverallScoreAndSummary = ({ content }) => {
             className="overall-score-badge"
             style={{ backgroundColor: overallColor }}
           >
-            <span className="score-value">{calculatedOverallScore}/5</span>
+            <span className="score-value">{truncateScore(calculatedOverallScore)}/5</span>
             <span className="score-label">{overallLabel}</span>
           </div>
         </div>
@@ -338,7 +350,7 @@ export const OverallScoreAndSummary = ({ content }) => {
                     className="breakdown-score"
                     style={{ color: getScoreColor(sixFacetsAvg), fontWeight: 'bold' }}
                   >
-                    {sixFacetsAvg ? sixFacetsAvg : '0'}/5
+                    {sixFacetsAvg ? truncateScore(sixFacetsAvg) : '0.00'}/5
                   </span>
                 </div>
               </div>
@@ -372,7 +384,7 @@ export const OverallScoreAndSummary = ({ content }) => {
                     className="breakdown-score"
                     style={{ color: getScoreColor(skillsAvg), fontWeight: 'bold' }}
                   >
-                    {skillsAvg ? skillsAvg : '0'}/5
+                    {skillsAvg ? truncateScore(skillsAvg) : '0.00'}/5
                   </span>
                 </div>
               </div>
@@ -386,7 +398,7 @@ export const OverallScoreAndSummary = ({ content }) => {
               className="breakdown-score"
               style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.2em' }}
             >
-              {calculatedOverallScore}/5
+              {truncateScore(calculatedOverallScore)}/5
             </span>
           </div>
         </div>
