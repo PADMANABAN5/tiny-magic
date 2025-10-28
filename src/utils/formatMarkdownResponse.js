@@ -217,19 +217,19 @@ export function formatMarkdownResponse(responseText, opts = {}) {
         }
 
         // C) Force line-breaks before inline numbered items like "… are: 1. A 2. B 3. C"
+        // Updated: Capture spaces, guard against math operators, preserve post-number spacing
         t = t.replace(
-          /([^\n])\s+(\d+)\.\s/g,
-          (_, prev, n) => `${prev}\n${n}. `
+          /([^\n])(\s+)(\d+)\.(\s)/gu,
+          (_, prevChar, spacesBefore, n, spacesAfter) => {
+            if (/[=+\-*/><]/.test(prevChar)) {
+              // Math/equation: keep inline
+              return `${prevChar}${spacesBefore}${n}.${spacesAfter}`;
+            } else {
+              // List item: break to new line
+              return `${prevChar}\n${n}.${spacesAfter}`;
+            }
+          }
         );
-
-        // C1) Also handle "1.Title 2.Next" (no space after dot, typical in 3.5)
-        t = t.replace(
-          /([^\n])(\d+)\.(?=[A-Za-z])/g,
-          (_, prev, n) => `${prev}\n${n}. `
-        );
-
-        // Ensure a blank line before a list for Markdown
-        t = t.replace(/([^\n])\n(\d+\.\s)/g, "$1\n\n$2");
 
         // D) Normalize numbering styles
         if (normalizeNumbers) {
@@ -294,8 +294,24 @@ export function formatMarkdownResponse(responseText, opts = {}) {
           });
         }
 
+        // Ensure a blank line before a list for Markdown (updated: conditional double newline only for new lists)
+        t = t.replace(
+          /([^\n])\n(\d+\.\s)/gu,
+          (_, prev, liststart) => {
+            // Double newline only if starting a new list (after punctuation)
+            if (/[:;.!?–—]/.test(prev)) {
+              return `${prev}\n\n${liststart}`;
+            } else {
+              // Continuation: single newline
+              return `${prev}\n${liststart}`;
+            }
+          }
+        );
+
         // H) Fix broken list breaks: "1.\n  Text" -> "1. Text"
-        t = t.replace(/(^|\n)(\d+)\.\s*\n\s+/g, "$1$2. ");
+        t = t.replace(/(^|\n)(\d+)\.\s*\n\s+/gu, "$1$2. ");
+
+        
 
         // Cleanup
         t = t.replace(/\n{3,}/g, "\n\n");
