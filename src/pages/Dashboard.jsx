@@ -693,12 +693,55 @@ function Dashboard() {
       scoring_data = extractScoringData(llmContent);
       console.log("📊 Extracted scoring data for save:", scoring_data);
 
-      if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) {
-        // Calculate the final weighted score manually and update only the final score
-        const finalWeightedScore = calculateOverallScore(scoring_data);
-        scoring_data.FinalWeightedScore = finalWeightedScore;
-        console.log("📊 Calculated final score:", finalWeightedScore);
-      }
+      const truncateToTwoDecimals = (num) => {
+  if (typeof num !== 'number' || isNaN(num)) return 0;
+  return Math.floor(num * 100) / 100;
+};
+
+// ✅ Calculate and attach all averages and weighted score
+if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) {
+  // Six Facets average
+  const sixFacetScores = [
+    scoring_data.SixFacets.Explanation?.score,
+    scoring_data.SixFacets.Interpretation?.score,
+    scoring_data.SixFacets.Application?.score,
+    scoring_data.SixFacets.Perspective?.score,
+    scoring_data.SixFacets.Empathy?.score,
+    scoring_data.SixFacets["Self-Knowledge"]?.score
+  ].filter(score => typeof score === 'number');
+
+  const sixFacetsAvg =
+    sixFacetScores.length > 0
+      ? sixFacetScores.reduce((sum, s) => sum + s, 0) / sixFacetScores.length
+      : 0;
+
+  // Understanding Skills average
+  const skillScores = [
+    scoring_data.UnderstandingSkills.AskingQuestions?.score,
+    scoring_data.UnderstandingSkills.ClarifyingAmbiguity?.score,
+    scoring_data.UnderstandingSkills.SummarizingConfirming?.score,
+    scoring_data.UnderstandingSkills.ChallengingIdeas?.score,
+    scoring_data.UnderstandingSkills.ComparingConcepts?.score,
+    scoring_data.UnderstandingSkills.AbstractConcrete?.score
+  ].filter(score => typeof score === 'number');
+
+  const understandingSkillsAvg =
+    skillScores.length > 0
+      ? skillScores.reduce((sum, s) => sum + s, 0) / skillScores.length
+      : 0;
+
+  // Final weighted score (60% facets + 40% skills)
+  const finalWeightedScore = (0.6 * sixFacetsAvg) + (0.4 * understandingSkillsAvg);
+
+  // ✅ Attach all calculated averages and weighted score (truncated, not rounded)
+  scoring_data.SixFacets.OverallScore = truncateToTwoDecimals(sixFacetsAvg);
+  scoring_data.UnderstandingSkills.OverallScore = truncateToTwoDecimals(understandingSkillsAvg);
+  scoring_data.FinalWeightedScore = truncateToTwoDecimals(finalWeightedScore);
+
+  console.log("✅ Six Facets Avg:", scoring_data.SixFacets.OverallScore);
+  console.log("✅ Understanding Skills Avg:", scoring_data.UnderstandingSkills.OverallScore);
+  console.log("✅ Final Weighted Score:", scoring_data.FinalWeightedScore);
+}
     }
 
     console.log("💾 Saving chat with:", {
