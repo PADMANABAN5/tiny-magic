@@ -1,19 +1,11 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Sidebar from "../components/Sidebar.jsx";
 import { toast } from 'react-toastify';
 import "../styles/ConversationHistory.css";
 import axios from "axios";
-import PDFDownloader from "../components/PDFDownloader.jsx";
-import AssessmentDisplay, {
-  hasAssessmentData,
-  extractScoringData,
-  calculateOverallScore,
-  getScoreColor,
-  getScoreLabel,
-  formatCriterionName
-} from "../components/AssessmentDisplay.jsx";
+import PracticePDFDownloader from "../components/PracticePDFDownloader.jsx";
+import PracticeAssessmentDisplay,{getPracticeScoreColor,getPracticeScoreLabel} from "../components/PracticeAssessmentDisplay.jsx";
 import {
   FiEye,
   FiClock,
@@ -61,11 +53,9 @@ const PracticeHistory = () => {
   const practicemodeEndRef = useRef(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  const [showScoreModal, setShowScoreModal] = useState(false);
-  const [selectedScoreData, setSelectedScoreData] = useState(null);
 
   const statusDropdownRef = useRef(null);
-const sortDropdownRef = useRef(null);
+  const sortDropdownRef = useRef(null);
 
   // Get user data from session storage
   const userId = sessionStorage.getItem("userId");
@@ -129,8 +119,8 @@ const sortDropdownRef = useRef(null);
         conversation.scoring : null;
 
       // Create temporary PDF downloader instance for this specific conversation
-      const tempPDFDownloader = PDFDownloader({
-        chatHistory: convertConversationForPDF(conversation),
+      const tempPDFDownloader = PracticePDFDownloader({
+        practiceChatHistory: convertConversationForPDF(conversation),
         selectedConcept: createConceptObject(conversation),
         first_name: userData?.first_name || sessionStorage.getItem("firstname"),
         last_name: userData?.last_name || sessionStorage.getItem("lastname"),
@@ -440,8 +430,6 @@ const sortDropdownRef = useRef(null);
     if (!selectedConversation) return null;
 
     const { date, time } = formatDate(selectedConversation.updated_at);
-    // Safely parse JSON-like fields or treat as strings, ensuring array output for lists
-    // Simple parser for malformed JSON arrays like {"item1","item2"}
 
     return (
       <div className="conversation-modal-overlay" onClick={closeModal}>
@@ -511,7 +499,7 @@ const sortDropdownRef = useRef(null);
                         <span className="message-author">AI Mentor</span>
                       </div>
                       <div className="message-text">
-                        <AssessmentDisplay content={message.system} />
+                        <PracticeAssessmentDisplay content={message.system} />
                       </div>
                     </div>
                   </div>
@@ -535,189 +523,113 @@ const sortDropdownRef = useRef(null);
     setExpandedScores(newExpanded);
   };
 
-  const handleScoreClick = (conversation) => {
-    if (
-      conversation.status === 'completed' &&
-      conversation.overall_performance &&
-      conversation.overall_performance !== 'Not Available' &&
-      parseFloat(conversation.overall_performance.split(' - ')[0]) > 0 &&
-      (conversation.facet_ratings_explanation ||
-        conversation.facet_ratings_interpretation ||
-        conversation.facet_ratings_application ||
-        conversation.facet_ratings_perspective ||
-        conversation.facet_ratings_empathy ||
-        conversation.facet_ratings_self_knowledge)
-    ) {
-      setSelectedScoreData(conversation);
-      setShowScoreModal(true);
-    }
-  };
-
-  const closeScoreModal = () => {
-    setShowScoreModal(false);
-    setSelectedScoreData(null);
-  };
-
-  // Modified to ensure scrollable content and maintain content visibility
-  const renderScoreDetailsModal = () => {
-    if (!selectedScoreData) return null;
-
-    // Safely parse JSON-like fields or treat as strings, ensuring array output for lists
-    const parseField = (field) => {
-      if (!field || field === 'Not Available') return ['Not Available'];
-
-      // Handle the specific malformed format: {"item1","item2","item3"}
-      if (field.trim().startsWith('{') && field.trim().endsWith('}')) {
-        // Remove outer braces
-        let content = field.slice(1, -1);
-
-        // If there are comma-separated items with quotes, split them
-        if (content.includes('","')) {
-          return content
-            .split('","')  // Split by "," 
-            .map(item => item.trim()) // Clean up whitespace
-            .filter(item => item.length > 0); // Remove empty items
-        }
-
-        // If it's a single item, just return it (remove outer quotes if present)
-        const singleItem = content.replace(/^"/, '').replace(/"$/, '').trim();
-        return [singleItem];
-      }
-
-      // Fallback for other formats - just return as single item
-      return [field.replace(/^"|"$/g, '').trim()];
-    };
-    return (
-      <div className="conversation-modal-overlay" onClick={closeScoreModal}>
-        <div className="conversation-modal score-modal" onClick={(e) => e.stopPropagation()}>
-          <div className="modal-header">
-            <div className="modal-title-section">
-              <h3>Score Details: {selectedScoreData.concept_name}</h3>
-              <div className="modal-meta">
-                <span className="modal-date">
-                  <FiCalendar /> {formatDate(selectedScoreData.updated_at).date} at {formatDate(selectedScoreData.updated_at).time}
-                </span>
-                <span
-                  className="modal-status"
-                  style={{ color: getStatusColor(selectedScoreData.status) }}
-                >
-                  {getStatusIcon(selectedScoreData.status)}
-                  {getStatusLabel(selectedScoreData.status)}
-                </span>
-              </div>
-            </div>
-
-            <div className="modal-actions">
-              <button className="modal-close" onClick={closeScoreModal}>
-                <FiX />
-              </button>
-            </div>
-          </div>
-
-          <div className="modal-content score-details-content">
-            <div className="score-section">
-              <h4>Overall Performance</h4>
-              <p className="score-text">{selectedScoreData.overall_performance || 'Not Available'}</p>
-            </div>
-
-            <div className="score-section">
-              <h4>Facet Ratings</h4>
-              <div className="facet-grid">
-                <div className="facet-item">
-                  <strong>Explanation:</strong> <span>{selectedScoreData.facet_ratings_explanation || 'Not Available'}</span>
-                </div>
-                <div className="facet-item">
-                  <strong>Interpretation:</strong> <span>{selectedScoreData.facet_ratings_interpretation || 'Not Available'}</span>
-                </div>
-                <div className="facet-item">
-                  <strong>Application:</strong> <span>{selectedScoreData.facet_ratings_application || 'Not Available'}</span>
-                </div>
-                <div className="facet-item">
-                  <strong>Perspective:</strong> <span>{selectedScoreData.facet_ratings_perspective || 'Not Available'}</span>
-                </div>
-                <div className="facet-item">
-                  <strong>Empathy:</strong> <span>{selectedScoreData.facet_ratings_empathy || 'Not Available'}</span>
-                </div>
-                <div className="facet-item">
-                  <strong>Self-Knowledge:</strong> <span>{selectedScoreData.facet_ratings_self_knowledge || 'Not Available'}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="score-section">
-              <h4>Key Patterns</h4>
-              <ul className="score-list">
-                {(() => {
-                  const patterns = parseField(selectedScoreData.key_patterns);
-                  return patterns.length > 0 && patterns[0] !== 'Not Available'
-                    ? patterns.map((item, index) => (
-                      <li key={index} className="score-list-item">{item}</li>
-                    ))
-                    : <li className="score-list-item">No patterns identified</li>;
-                })()}
-              </ul>
-            </div>
-
-            <div className="score-section">
-              <h4>Recommended Focus Areas</h4>
-              <ul className="score-list">
-                {(() => {
-                  const focusAreas = parseField(selectedScoreData.recommended_focus_areas);
-                  return focusAreas.length > 0 && focusAreas[0] !== 'Not Available'
-                    ? focusAreas.map((item, index) => (
-                      <li key={index} className="score-list-item">{item}</li>
-                    ))
-                    : <li className="score-list-item">No focus areas identified</li>;
-                })()}
-              </ul>
-            </div>
-
-            <div className="score-section">
-              <h4>Personalized Next Steps</h4>
-              <ul className="score-list">
-                {(() => {
-                  const nextSteps = parseField(selectedScoreData.personalized_next_steps);
-                  return nextSteps.length > 0 && nextSteps[0] !== 'Not Available'
-                    ? nextSteps.map((item, index) => (
-                      <li key={index} className="score-list-item">{item}</li>
-                    ))
-                    : <li className="score-list-item">No next steps available</li>;
-                })()}
-              </ul>
-            </div>
-            <div className="score-section">
-              <h4>Session Summary</h4>
-              <p className="score-text">{selectedScoreData.session_summary || 'Not Available'}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderScoreCell = (conversation) => {
-    const hasScoring = conversation.status === 'completed';
+    const hasScoring = conversation.status === 'completed' && conversation.scoring;
 
     if (!hasScoring) {
       return <div className="score-cell-content"><span className="no-score">-</span></div>;
     }
 
-    const finalScore = parseFloat(conversation.overall_performance?.split(' - ')[0]) || null;
+    const finalScore = parseFloat(conversation.scoring.final_score) || null;
+    const sixFacets = conversation.scoring.six_facets || {};
+    const sixFacetsAvg = parseFloat(sixFacets.average) || null;
+    const skillsAvg = parseFloat(conversation.scoring.understanding_skills?.average) || null;
+
+    // Dynamic positioning function
+    const handleMouseEnter = (e) => {
+      const tooltip = e.currentTarget.querySelector('.score-tooltip');
+      if (!tooltip) return;
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const tooltipRect = tooltip.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+
+      // Calculate position
+      let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+      let top = rect.top - tooltipRect.height - 10;
+
+      // Adjust if tooltip goes off-screen horizontally
+      if (left < 10) {
+        left = 10;
+      } else if (left + tooltipRect.width > viewportWidth - 10) {
+        left = viewportWidth - tooltipRect.width - 10;
+      }
+
+      // Adjust if tooltip goes off-screen vertically (show below instead)
+      if (top < 10) {
+        top = rect.bottom + 10;
+        tooltip.classList.add('tooltip-below');
+      } else {
+        tooltip.classList.remove('tooltip-below');
+      }
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+    };
+
+    const handleMouseLeave = (e) => {
+      const tooltip = e.currentTarget.querySelector('.score-tooltip');
+      if (tooltip) {
+        tooltip.classList.remove('tooltip-below');
+      }
+    };
 
     return (
       <div className="score-cell-content">
         <div
-          className="score-badge-large clickable-score"
-          style={{
-            backgroundColor: getScoreColor(finalScore),
-            cursor: 'pointer'
-          }}
-          onClick={() => handleScoreClick(conversation)}
-          title="Click to view detailed score breakdown"
+          className="score-tooltip-container"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
         >
-          {/* <FiCheck /> */}
-          <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
-          <span className="score-max">/5</span>
+          <div
+            className="score-badge-large"
+            style={{ backgroundColor: getPracticeScoreColor(finalScore) }}
+          >
+            <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
+            <span className="score-max">/5</span>
+          </div>
+
+          <div className="score-tooltip">
+            <div className="tooltip-section">
+              <strong>📊 Six Facets of Understanding: {sixFacetsAvg?.toFixed(2) || 'N/A'}</strong>
+              <div className="mini-breakdown">
+                {Object.entries({
+                  'Explanation': sixFacets.explanation,
+                  'Interpretation': sixFacets.interpretation,
+                  'Application': sixFacets.application,
+                  'Perspective': sixFacets.perspective,
+                  'Empathy': sixFacets.empathy,
+                  'Self-Knowledge': sixFacets.self_knowledge
+                }).map(([key, value]) => (
+                  <div key={key} className="mini-item">
+                    <span>{key}</span>
+                    <span style={{
+                      color: getPracticeScoreColor(value),
+                      fontWeight: 'bold'
+                    }}>
+                      {value !== null ? value.toFixed(2) : 'N/A'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            
+            <div className="tooltip-footer">
+              <div style={{
+                textAlign: 'center',
+                padding: '8px',
+                backgroundColor: '#f3f4f6',
+                borderRadius: '4px',
+                marginTop: '8px'
+              }}>
+                <strong style={{ color: getPracticeScoreColor(finalScore) }}>
+                  Overall Score: {finalScore?.toFixed(1) || 'N/A'}/5
+                </strong>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -1090,8 +1002,6 @@ const sortDropdownRef = useRef(null);
 
       {/* Conversation Modal */}
       {showConversationModal && renderConversationModal()}
-      {/* Score Details Modal */}
-      {showScoreModal && renderScoreDetailsModal()}
     </div>
   );
 };

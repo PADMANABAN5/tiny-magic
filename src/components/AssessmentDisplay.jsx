@@ -16,8 +16,8 @@ export const extractScoringData = (content) => {
     if (jsonMatch && jsonMatch[1]) {
       const parsedData = JSON.parse(jsonMatch[1]);
 
-      // Calculate proper averages for Six Facets if not present or incorrect
-      if (parsedData.SixFacets && !parsedData.SixFacets.OverallScore) {
+      // ✅ Always calculate averages fresh for Six Facets
+      if (parsedData.SixFacets) {
         const facetScores = [
           parsedData.SixFacets.Explanation?.score,
           parsedData.SixFacets.Interpretation?.score,
@@ -29,12 +29,12 @@ export const extractScoringData = (content) => {
 
         if (facetScores.length > 0) {
           const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
-          parsedData.SixFacets.OverallScore = Math.round(average * 1000) / 1000;
+          parsedData.SixFacets.OverallScore = average;
         }
       }
 
-      // Calculate proper averages for Understanding Skills if not present or incorrect
-      if (parsedData.UnderstandingSkills && !parsedData.UnderstandingSkills.OverallScore) {
+      // ✅ Always calculate averages fresh for Understanding Skills
+      if (parsedData.UnderstandingSkills) {
         const skillScores = [
           parsedData.UnderstandingSkills.AskingQuestions?.score,
           parsedData.UnderstandingSkills.ClarifyingAmbiguity?.score,
@@ -46,18 +46,55 @@ export const extractScoringData = (content) => {
 
         if (skillScores.length > 0) {
           const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
-          parsedData.UnderstandingSkills.OverallScore = Math.round(average * 1000) / 1000;
+          parsedData.UnderstandingSkills.OverallScore = average;
         }
       }
 
       return parsedData;
     }
 
-    // Fallback: try to find JSON-like structure with new format
+    // Fallback for inline JSON
     const possibleJson = content.match(/\{[\s\S]*"FinalWeightedScore"[\s\S]*\}/);
     if (possibleJson) {
-      return JSON.parse(possibleJson[0]);
+      const parsedData = JSON.parse(possibleJson[0]);
+
+      // ✅ Always recalc Six Facets
+      if (parsedData.SixFacets) {
+        const facetScores = [
+          parsedData.SixFacets.Explanation?.score,
+          parsedData.SixFacets.Interpretation?.score,
+          parsedData.SixFacets.Application?.score,
+          parsedData.SixFacets.Perspective?.score,
+          parsedData.SixFacets.Empathy?.score,
+          parsedData.SixFacets['Self-Knowledge']?.score
+        ].filter(score => score != null);
+
+        if (facetScores.length > 0) {
+          const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
+          parsedData.SixFacets.OverallScore = average;
+        }
+      }
+
+      // ✅ Always recalc Understanding Skills
+      if (parsedData.UnderstandingSkills) {
+        const skillScores = [
+          parsedData.UnderstandingSkills.AskingQuestions?.score,
+          parsedData.UnderstandingSkills.ClarifyingAmbiguity?.score,
+          parsedData.UnderstandingSkills.SummarizingConfirming?.score,
+          parsedData.UnderstandingSkills.ChallengingIdeas?.score,
+          parsedData.UnderstandingSkills.ComparingConcepts?.score,
+          parsedData.UnderstandingSkills.AbstractConcrete?.score
+        ].filter(score => score != null);
+
+        if (skillScores.length > 0) {
+          const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
+          parsedData.UnderstandingSkills.OverallScore = average;
+        }
+      }
+
+      return parsedData;
     }
+
     return {};
   } catch (e) {
     console.error("Error parsing scoring JSON:", e);
@@ -65,18 +102,55 @@ export const extractScoringData = (content) => {
   }
 };
 
-// Calculate overall score with better precision
-export const calculateOverallScore = (scoringData) => {
-  if (scoringData.FinalWeightedScore && typeof scoringData.FinalWeightedScore === 'number') {
-    return Math.round(scoringData.FinalWeightedScore * 100) / 100;
+
+// Helper to truncate score to 2 decimal places using slice (no rounding)
+const truncateScore = (score) => {
+  // Convert to string with high precision to avoid float artifacts
+  const strScore = score.toString();
+  if (!strScore.includes('.')) {
+    return `${strScore}.00`;
   }
+  const [integerPart, decimalPart] = strScore.split('.');
+  const truncatedDecimal = (decimalPart || '').slice(0, 2).padEnd(2, '0');
+  return `${integerPart}.${truncatedDecimal}`;
+};
 
-  const sixFacetsScore = scoringData.SixFacets?.OverallScore || 0;
-  const understandingSkillsScore = scoringData.UnderstandingSkills?.OverallScore || 0;
+export const calculateOverallScore = (scoringData) => {
+  // Compute Six Facets average manually
+  const sixFacetScores = [
+    scoringData?.SixFacets?.Explanation?.score,
+    scoringData?.SixFacets?.Interpretation?.score,
+    scoringData?.SixFacets?.Application?.score,
+    scoringData?.SixFacets?.Perspective?.score,
+    scoringData?.SixFacets?.Empathy?.score,
+    scoringData?.SixFacets?.["Self-Knowledge"]?.score
+  ].filter(score => typeof score === 'number');
 
-  const finalWeightedScore = (0.6 * sixFacetsScore) + (0.4 * understandingSkillsScore);
+  const sixFacetsAvg =
+    sixFacetScores.length > 0
+      ? sixFacetScores.reduce((sum, s) => sum + s, 0) / sixFacetScores.length
+      : 0;
 
-  return Math.round(finalWeightedScore * 100) / 100;
+  // Compute Understanding Skills average manually
+  const skillScores = [
+    scoringData?.UnderstandingSkills?.AskingQuestions?.score,
+    scoringData?.UnderstandingSkills?.ClarifyingAmbiguity?.score,
+    scoringData?.UnderstandingSkills?.SummarizingConfirming?.score,
+    scoringData?.UnderstandingSkills?.ChallengingIdeas?.score,
+    scoringData?.UnderstandingSkills?.ComparingConcepts?.score,
+    scoringData?.UnderstandingSkills?.AbstractConcrete?.score
+  ].filter(score => typeof score === 'number');
+
+  const understandingSkillsAvg =
+    skillScores.length > 0
+      ? skillScores.reduce((sum, s) => sum + s, 0) / skillScores.length
+      : 0;
+
+  // Weighted formula (60% facets + 40% skills)
+  const finalWeightedScore = (0.6 * sixFacetsAvg) + (0.4 * understandingSkillsAvg);
+
+  // Truncate to 2 decimal places without rounding
+  return parseFloat(truncateScore(finalWeightedScore));
 };
 
 // Get score color based on score value
@@ -265,7 +339,7 @@ export const OverallScoreAndSummary = ({ content }) => {
             className="overall-score-badge"
             style={{ backgroundColor: overallColor }}
           >
-            <span className="score-value">{calculatedOverallScore.toFixed(1)}/5</span>
+            <span className="score-value">{truncateScore(calculatedOverallScore)}/5</span>
             <span className="score-label">{overallLabel}</span>
           </div>
         </div>
@@ -306,7 +380,7 @@ export const OverallScoreAndSummary = ({ content }) => {
                     className="breakdown-score"
                     style={{ color: getScoreColor(sixFacetsAvg), fontWeight: 'bold' }}
                   >
-                    {sixFacetsAvg ? sixFacetsAvg.toFixed(1) : '0'}/5
+                    {sixFacetsAvg ? truncateScore(sixFacetsAvg) : '0.00'}/5
                   </span>
                 </div>
               </div>
@@ -340,7 +414,7 @@ export const OverallScoreAndSummary = ({ content }) => {
                     className="breakdown-score"
                     style={{ color: getScoreColor(skillsAvg), fontWeight: 'bold' }}
                   >
-                    {skillsAvg ? skillsAvg.toFixed(1) : '0'}/5
+                    {skillsAvg ? truncateScore(skillsAvg) : '0.00'}/5
                   </span>
                 </div>
               </div>
@@ -354,7 +428,7 @@ export const OverallScoreAndSummary = ({ content }) => {
               className="breakdown-score"
               style={{ color: overallColor, fontWeight: 'bold', fontSize: '1.2em' }}
             >
-              {calculatedOverallScore.toFixed(1)}/5
+              {truncateScore(calculatedOverallScore)}/5
             </span>
           </div>
         </div>

@@ -25,6 +25,7 @@ import axios from 'axios';
 import { Spinner, Alert, Card, Row, Col, Badge, Button, OverlayTrigger, Popover } from 'react-bootstrap';
 import Orgadminsidebar from '../components/Orgadminsidebar';
 import PDFDownloader from '../components/PDFDownloader.jsx';
+import PracticePDFDownloader from '../components/PracticePDFDownloader.jsx';
 import AssessmentDisplay, { 
   hasAssessmentData, 
   extractScoringData, 
@@ -33,6 +34,7 @@ import AssessmentDisplay, {
   getScoreLabel, 
   formatCriterionName 
 } from '../components/AssessmentDisplay.jsx';
+import PracticeAssessmentDisplay from "../components/PracticeAssessmentDisplay.jsx";
 import '../styles/orgadminusers.css';
 import { Accordion } from 'react-bootstrap';
 import { useAuth } from '../components/AuthContext.jsx';
@@ -113,6 +115,31 @@ const [selectedPracticeScoreData, setSelectedPracticeScoreData] = useState(null)
       await tempPDFDownloader.handleDownloadPDF();
     } catch (error) {
       console.error("❌ Error generating PDF:", error);
+      alert("Error generating PDF. Please try again.");
+    } finally {
+      setIsDownloadingPDF(false);
+    }
+  };
+
+  const downloadPracticePDF = async (practiceSession) => {
+    if (!practiceSession) return;
+
+    setIsDownloadingPDF(true);
+    
+    try {
+      // Create temporary PDF downloader instance for this specific practice session
+      const tempPDFDownloader = PracticePDFDownloader({
+        practiceChatHistory: convertConversationForPDF(practiceSession),
+        selectedConcept: createConceptObject(practiceSession),
+        first_name: userData?.user?.first_name,
+        last_name: userData?.user?.last_name,
+        updated_at: practiceSession.updated_at
+      });
+
+      // Call the PDF generation
+      await tempPDFDownloader.handleDownloadPDF();
+    } catch (error) {
+      console.error("❌ Error generating Practice PDF:", error);
       alert("Error generating PDF. Please try again.");
     } finally {
       setIsDownloadingPDF(false);
@@ -487,8 +514,8 @@ const parseField = (field) => {
   return filtered;
 };
 
-  const handleViewConversation = (conversation) => {
-    setSelectedConversation(conversation);
+  const handleViewConversation = (conversation, isPractice = false) => {
+    setSelectedConversation({ ...conversation, isPractice });
     setShowConversationModal(true);
   };
 
@@ -507,7 +534,7 @@ const parseField = (field) => {
   }, [showConversationModal]);
 
   // Render score cell for table - EXACTLY like conversation history
-  const renderScoreCell = (conversation) => {
+  const renderScoreCell = (conversation,isPractice = false) => {
     const hasScoring = conversation.status === 'completed' && conversation.scoring;
 
     if (!hasScoring) {
@@ -599,7 +626,7 @@ const parseField = (field) => {
                 ))}
               </div>
             </div>
-
+            {!isPractice && (
             <div className="tooltip-section">
               <strong>🎯 Understanding Skills: {skillsAvg?.toFixed(1) || 'N/A'}</strong>
               <div className="mini-breakdown">
@@ -623,7 +650,7 @@ const parseField = (field) => {
                 ))}
               </div>
             </div>
-
+            )}
             <div className="tooltip-footer">
               <div style={{
                 textAlign: 'center',
@@ -700,7 +727,7 @@ const parseField = (field) => {
             <div className="modal-actions" style={{ display: 'flex', gap: '10px' }}>
               <button
                 className="download-pdf-btn"
-                onClick={() => downloadConversationPDF(selectedConversation)}
+                onClick={() => selectedConversation.isPractice ? downloadPracticePDF(selectedConversation) : downloadConversationPDF(selectedConversation)}
                 disabled={isDownloadingPDF}
                 title="Download as PDF"
                 style={{
@@ -795,13 +822,15 @@ const parseField = (field) => {
                         <span className="message-author" style={{ fontWeight: 'bold', color: '#28a745' }}>AI Mentor</span>
                       </div>
                       <div className="message-text">
-  {hasAssessmentData(message.system) ? (
-    <AssessmentDisplay content={message.system} />
-  ) : (
-    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-      {message.system}
-    </ReactMarkdown>
-  )}
+  {selectedConversation?.isPractice ? (
+  <PracticeAssessmentDisplay content={message.system} />
+) : hasAssessmentData(message.system) ? (
+  <AssessmentDisplay content={message.system} />
+) : (
+  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+    {message.system}
+  </ReactMarkdown>
+)}
 </div>
                     </div>
                   </div>
@@ -1597,12 +1626,12 @@ const parseField = (field) => {
                       </td>
                       <td>{progress}%</td>
                       <td>{conversation.current_stage}/5</td>
-                      <td className="score-cell">{renderPracticeScoreCell(conversation)}</td>
+                      <td className="score-cell">{renderScoreCell(conversation,true)}</td>
 
                       <td>{createdDate}</td>
                       <td>{updatedDate}</td>
                       <td>
-                        <button className="view-btn" onClick={() => handleViewConversation(conversation)}>
+                        <button className="view-btn" onClick={() => handleViewConversation(conversation, true)}>
                           <FiEye /> View
                         </button>
                       </td>
