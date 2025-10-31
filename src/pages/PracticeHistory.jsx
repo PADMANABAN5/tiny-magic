@@ -586,13 +586,13 @@ const PracticeHistory = () => {
             className="score-badge-large"
             style={{ backgroundColor: getPracticeScoreColor(finalScore) }}
           >
-            <span className="score-value">{finalScore ? finalScore.toFixed(1) : 'N/A'}</span>
+            <span className="score-value">{finalScore ? finalScore : 'N/A'}</span>
             <span className="score-max">/5</span>
           </div>
 
           <div className="score-tooltip">
             <div className="tooltip-section">
-              <strong>📊 Six Facets of Understanding: {sixFacetsAvg?.toFixed(2) || 'N/A'}</strong>
+              <strong>📊 Six Facets of Understanding: {finalScore || 'N/A'}</strong>
               <div className="mini-breakdown">
                 {Object.entries({
                   'Explanation': sixFacets.explanation,
@@ -625,7 +625,7 @@ const PracticeHistory = () => {
                 marginTop: '8px'
               }}>
                 <strong style={{ color: getPracticeScoreColor(finalScore) }}>
-                  Overall Score: {finalScore?.toFixed(1) || 'N/A'}/5
+                  Overall Score: {finalScore || 'N/A'}/5
                 </strong>
               </div>
             </div>

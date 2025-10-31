@@ -53,12 +53,41 @@ export const extractPracticeAssessmentData = (content) => {
   }
 };
 
-// Calculate overall score from composite_score
-export const calculatePracticeOverallScore = (assessmentData) => {
-  const compositeScore = parseFloat(assessmentData.overall_assessment?.composite_score || 0);
-  return Math.round(compositeScore * 10) / 10; // Round to 1 decimal
+// Truncate number to 2 decimal places without rounding
+export const truncateToTwoDecimals = (num) => {
+  return Math.floor(num * 100) / 100;
 };
 
+// Calculate overall score as average of facet scores
+// Calculate overall score as average of all six facet scores (insufficient data = 0)
+export const calculatePracticeOverallScore = (assessmentData) => {
+  const facets = assessmentData.facet_assessments || {};
+  
+  // All six facets that should contribute to the weighted average
+  const facetKeys = ['explanation', 'interpretation', 'application', 'perspective', 'empathy', 'self_knowledge'];
+  
+  let totalScore = 0;
+
+  facetKeys.forEach(key => {
+    const facet = facets[key];
+    let score = 0; // Default to 0 if insufficient data
+    
+    // Only use the facet score if it exists and is valid
+    if (facet && facet.score !== undefined && facet.score !== null) {
+      const parsedScore = parseFloat(facet.score);
+      if (!isNaN(parsedScore)) {
+        score = parsedScore;
+      }
+    }
+    // If insufficient data, score remains 0
+    
+    totalScore += score;
+  });
+
+  // Always divide by 6 to get the proper weighted average
+  // This ensures each missing facet contributes 0 to the average
+  return totalScore / 6;
+};
 // Get score color based on score (1-5 scale)
 export const getPracticeScoreColor = (score) => {
   if (score >= 4) return '#10b981'; // Green
@@ -111,6 +140,7 @@ export const PracticeFacetAssessmentsTable = ({ assessmentData }) => {
       <div className="scoring-grid">
         {Object.entries(facets).map(([key, facet]) => {
           const scoreValue = parseFloat(facet.score || 0);
+          const truncatedScore = truncateToTwoDecimals(scoreValue);
           const scoreColor = getPracticeScoreColor(scoreValue);
           const label = facet.rating_label || getPracticeScoreLabel(scoreValue);
 
@@ -119,7 +149,7 @@ export const PracticeFacetAssessmentsTable = ({ assessmentData }) => {
               <div className="score-card-header">
                 <h6 className="criterion-name">{formatPracticeFacetName(key)}</h6>
                 <div className="score-badge" style={{ backgroundColor: scoreColor }}>
-                  <span>{scoreValue}/5</span>
+                  <span>{truncatedScore}/5</span>
                   
                 </div>
               </div>
@@ -170,8 +200,8 @@ export const PracticeOverallAssessmentSummary = ({ assessmentData }) => {
   const metadata = assessmentData.session_metadata || {};
 
   const calculatedOverallScore = calculatePracticeOverallScore(assessmentData);
+  const truncatedOverallScore = truncateToTwoDecimals(calculatedOverallScore);
   const overallColor = getPracticeScoreColor(calculatedOverallScore);
-  const overallLabel = overall.overall_rating || getPracticeScoreLabel(calculatedOverallScore);
 
   return (
     <div className="practice-overall-assessment">
@@ -179,8 +209,7 @@ export const PracticeOverallAssessmentSummary = ({ assessmentData }) => {
         <div className="overall-header">
           <h4>🎯 Overall Assessment</h4>
           <div className="overall-score-badge" style={{ backgroundColor: overallColor }}>
-            <span className="score-value">{calculatedOverallScore.toFixed(1)}/5</span>
-            <span className="score-label">{overallLabel}</span>
+            <span className="score-value">{truncatedOverallScore}/5</span>
           </div>
         </div>
         <div className="overall-summary">

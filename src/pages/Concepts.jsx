@@ -64,7 +64,7 @@ export default function Concepts() {
     level_4_description: "",
     level_5_name: "",
     level_5_description: "",
-    number_of_scenarios: "",
+    
     facet_focus: "",
     introduction_context:"",
     progression_description:"",
@@ -207,7 +207,7 @@ const validateCleanText = (value, key) => {
     level_4_description: "",
     level_5_name: "",
     level_5_description: "",
-    number_of_scenarios: "",
+    
     facet_focus: "",
     introduction_context:"",
     progression_description:"",
@@ -610,7 +610,7 @@ const validateCleanText = (value, key) => {
         >
           <div
             className="modal-content modal-lg"
-            style={{ maxHeight: "90vh", overflowY: "auto" }}
+            style={{ maxHeight: "90vh", overflowY: "auto" ,maxWidth: '90%'}}
           >
             <h4 id="modal-title">
               {isEditMode ? "Update Concept" : "Create New Concept"}
@@ -651,7 +651,7 @@ const validateCleanText = (value, key) => {
                   level_4_description: "Level 4 Description",
                   level_5_name: "Level 5 Name",
                   level_5_description: "Level 5 Description",
-                  number_of_scenarios: "Number of Scenarios",
+                  
                   facet_focus: "Facet Focus",
                   introduction_context: "Introduction Context",
                   progression_description: "Progression Description",

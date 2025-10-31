@@ -27,7 +27,7 @@ import Progressbar from "../components/PracticeProgress.jsx";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PracticePDFDownloader from "../components/PracticePDFDownloader.jsx";
-import PracticeAssessmentDisplay,{hasPracticeAssessmentData} from "../components/PracticeAssessmentDisplay.jsx";
+import PracticeAssessmentDisplay,{hasPracticeAssessmentData, calculatePracticeOverallScore } from "../components/PracticeAssessmentDisplay.jsx";
 import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 import { useAuth } from "../components/AuthContext.jsx";
 import VoiceRecorder from "../components/VoiceRecorder.jsx";
@@ -551,6 +551,20 @@ function Practicemode() {
         : "0.00";
 
     // Construct clean extracted structure
+    // Calculate overall performance score first (cannot declare inside object literal)
+    let uiScore = calculatePracticeOverallScore(assessmentData);
+
+// Convert to string for slicing
+uiScore = String(uiScore);
+
+// Slice to 2 decimals if decimal exists (NO rounding)
+if (uiScore.includes(".")) {
+  uiScore = uiScore.slice(0, uiScore.indexOf(".") + 3);
+}
+
+// Convert back to Number
+uiScore = Number(uiScore);
+
     const extracted = {
       six_facets: {
         explanation,
@@ -561,9 +575,7 @@ function Practicemode() {
         self_knowledge,
         average,
       },
-      overall_performance_score: Number(
-        assessmentData?.overall_assessment?.composite_score || 0
-      ),
+      overall_performance_score: uiScore,
       overall_rating: assessmentData?.overall_assessment?.overall_rating || "",
       summary: assessmentData?.overall_assessment?.summary || "",
       scoring_data: assessmentData, // include full JSON for backend storage
