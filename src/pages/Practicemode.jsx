@@ -266,48 +266,49 @@ function Practicemode() {
   };
 
   const handleBatchSelect = async (batch) => {
-    if (isProcessingAssessment) {
-      toast.warn("⚠️ Please wait, assessment is being processed.");
-      return;
-    }
+  if (isProcessingAssessment) {
+    toast.warn("⚠️ Please wait, assessment is being processed.");
+    return;
+  }
 
-    console.log("🎯 Batch selected:", batch.batch_name);
-    setSelectedBatch(batch);
-    setShowBatchDropdown(false);
+  console.log("🎯 Batch selected:", batch.batch_name);
+  setSelectedBatch(batch);
+  setShowBatchDropdown(false);
 
-    // Update concepts based on selected batch
-    const batchConcepts = batch.concepts || [];
-    setConcepts(batchConcepts);
+  // Update concepts based on selected batch
+  const batchConcepts = batch.concepts || [];
+  setConcepts(batchConcepts);
 
-    // Update sessionStorage with new batch info
-    sessionStorage.setItem("batchId", batch.batch_id);
-    sessionStorage.setItem("organizationId", batch.organization_id);
+  // Update sessionStorage with new batch info
+  sessionStorage.setItem("batchId", batch.batch_id);
+  sessionStorage.setItem("organizationId", batch.organization_id);
 
-    toast.info(`Switched to batch: ${batch.batch_name}`);
+  toast.info(`Switched to batch: ${batch.batch_name}`);
 
-    // Auto-select first concept if available
-    if (batchConcepts.length > 0) {
-      const firstConcept = batchConcepts.find(concept => concept.is_active) || batchConcepts[0];
-      console.log("🚀 Auto-selecting first concept:", firstConcept.concept_name);
-      setSelectedConcept(firstConcept);
+  clearSessionData();
+  setCurrentChatStatus('not_started');
+  setApiData({});
 
-      // Clear session data before checking for existing session
-      clearSessionData();
-      setCurrentChatStatus('not_started');
-      setApiData({});
+  // Auto-select first concept if available
+  if (batchConcepts.length > 0) {
+    const firstConcept = batchConcepts.find(concept => concept.is_active) || batchConcepts[0];
+    console.log("🚀 Auto-selecting first concept:", firstConcept.concept_name);
+    
+    // ✅ Set the selected concept
+    setSelectedConcept(firstConcept);
 
-      // Check if there's an existing session for this concept
-      console.log("🔍 Checking session status for concept:", firstConcept.concept_name);
-      await checkSessionStatus(firstConcept.concept_name, batchConcepts);
-    } else {
-      setSelectedConcept(null);
-      clearSessionData();
-      setCurrentChatStatus('not_started');
-      setApiData({});
-      toast.warn("No concepts available in this batch");
-    }
-  };
-
+    console.log("🔍 Checking session status for concept:", firstConcept.concept_name, "with batch_id:", batch.batch_id);
+    
+    // ✅ FIXED: Pass the concept object as third parameter
+    await checkSessionStatus(firstConcept.concept_name, batch.batch_id, firstConcept);
+  } else {
+    setSelectedConcept(null);
+    clearSessionData();
+    setCurrentChatStatus('not_started');
+    setApiData({});
+    toast.warn("No concepts available in this batch");
+  }
+};
   const fetchConcepts = async () => {
     if (!username || conceptsLoading) return;
 
@@ -384,6 +385,9 @@ function Practicemode() {
         organizationId,
         batchId
       });
+
+      // ✅ Logging for verification
+      console.log("📡 Initial mentor API response:", response.apiResponseText.substring(0, 100) + "...");
 
       const mentorMessage = parseApiResponseText(response.apiResponseText);
       // Try parsing response for scenario progress
@@ -843,7 +847,6 @@ uiScore = Number(uiScore);
       });
 
       setLlmContent(assessmentResponse.apiResponseText);
-
       let assessmentData = null;
       let extractedScores = {};
       try {
@@ -871,12 +874,7 @@ uiScore = Number(uiScore);
         console.warn("⚠️ Could not parse assessment response", err);
       }
 
-      // Step 6: Add assessment to the complete conversation history
-      const assessmentChatEntry = {
-        user: "",
-        system: assessmentResponse.apiResponseText,
-      };
-
+      const assessmentChatEntry = { user: "", system: assessmentResponse.apiResponseText };
       const finalHistory = [...historyComplete, assessmentChatEntry];
       setPracticeChatHistory(finalHistory);
       sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
@@ -886,7 +884,6 @@ uiScore = Number(uiScore);
         { Mentee: "", Mentor: assessmentResponse.apiResponseText }
       ];
       setSessionHistory(finalSessionHistory);
-      
       setCurrentChatStatus('completed');
       
       // Pass the parsed assessment to handleSaveChat with the complete history
@@ -946,14 +943,13 @@ uiScore = Number(uiScore);
     if (isChatEnded) {
       return 'completed';
     }
-
     if (currentStage === 0 && practiceChatHistory.length <= 1) {
       return 'not_started';
     } else {
       return 'inprogress';
     }
   };
-  
+
   const handleSaveChat = async (requestedStatus = null, showLoader = true, historyOverride = null, finalAssessmentOverride = null, extractedScores = {}) => {
     console.log("🐞 handleSaveChat: Starting with apiData:", apiData, "finalAssessmentOverride:", finalAssessmentOverride);
 
@@ -967,7 +963,6 @@ uiScore = Number(uiScore);
       toast.warn("No chat history to save.");
       return;
     }
-
     if (!selectedConcept || !selectedConcept.concept_name) {
       const concepts = await fetchAndReturnConcepts();
       if (concepts.length > 0) {
@@ -977,18 +972,10 @@ uiScore = Number(uiScore);
         return;
       }
     }
-
     const statusToSave = requestedStatus || getFrontendStatusForSave();
     const stageToSave = getCurrentStageForAPI(statusToSave);
     const conceptNameToSave = selectedConcept?.concept_name;
-
-   
-    // if (statusToSave === 'completed' && llmContent) {
-    //   scoring_data = extractScoringData(llmContent);
-    //   console.log("📊 Extracted scoring data for save:", scoring_data);
-    // }
    let scoring_data = null;
-
 if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
   const assessmentToExtract = finalAssessmentOverride || apiData?.assessmentData || apiData?.final_assessment;
   if (assessmentToExtract) {
@@ -996,7 +983,6 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
     console.log('🔄 Fallback: Re-extracted scores directly into extractedScores');
   }
 }
-
     console.log("💾 Saving chat with:", {
       requestedStatus,
       statusToSave,
@@ -1008,16 +994,14 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
       conceptName: conceptNameToSave,
       hasScoring: !!scoring_data
     });
-
     if (showLoader) setIsLoading(true);
-
     try {
       let response;
       let actionMessage = "";
-
-      // Build requestData with actual values
+      const batchId = selectedBatch?.batch_id ?? sessionStorage.getItem("batchId");
       const requestData = {
-  conversation: historyToSave,
+        batch_id: batchId,
+         conversation: historyToSave,
   status: statusToSave,
   current_stage: stageToSave,
   concept_name: conceptNameToSave,
@@ -1028,24 +1012,21 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
 };
 
       console.log("📤 requestData for save:", requestData);
-
       if (currentPracticeChatId && PracSessionType === "resume") {
-        response = await axios.put(
-          `${BASE_URL}/practicemode/conversation/${currentPracticeChatId}`,
-          requestData,
-          config
-        );
+        response = await axios.put(`${BASE_URL}/practicemode/conversation/${currentPracticeChatId}`, {
+          batch_id: batchId,
+          ...requestData
+        }, config);
         actionMessage = `Updated existing chat (ID: ${currentPracticeChatId})`;
       } else {
         response = await axios.post(`${BASE_URL}/practicemode`, {
           user_id: userId,
+          batch_id: batchId,
           ...requestData
-        }, config);
+        });
         actionMessage = "Created new chat";
       }
-
       setShowSaveOptions(false);
-
       console.log("✅ Chat saved successfully:", {
         status: statusToSave,
         stage: stageToSave,
@@ -1053,7 +1034,6 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
         chatId: response.data.data.id,
         hasScoring: !!response.data.data.scoring
       });
-
       if (response.data.data.scoring) {
         console.log("📊 Scoring data saved:", {
           sixFacetsAverage: response.data.data.scoring.six_facets.average,
@@ -1061,7 +1041,6 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
           finalScore: response.data.data.scoring.final_score
         });
       }
-
       toast.success(`Chat saved as ${statusToSave}!`, {
         position: "top-right",
         autoClose: 3000,
@@ -1070,7 +1049,6 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
         pauseOnHover: true,
         draggable: true,
       });
-
       if (response.data.data.shouldStartFresh) {
         clearSessionData();
         if (statusToSave === "completed") {
@@ -1090,7 +1068,6 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
         setResumedFromStatus(statusToSave);
         setCurrentChatStatus(statusToSave);
       }
-
       sessionStorage.setItem("practiceChatHistory", JSON.stringify(historyToSave));
       await fetchChatCounts();
     } catch (error) {
@@ -1115,11 +1092,9 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
     if (!userId) {
       return;
     }
-
     setIsCountsLoading(true);
     try {
       const response = await axios.get(`${BASE_URL}/practicemode/counts/${userId}`, config);
-
       if (
         response.data &&
         response.data.success &&
@@ -1138,183 +1113,203 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
     }
   };
 
-  const checkSessionStatus = async (conceptName = null, conceptsList = null) => {
-    if (!username || !userId) {
+ const checkSessionStatus = async (conceptName = null, providedBatchId = null, conceptObj = null) => {
+  if (!username || !userId) {
+    setIsInitializing(false);
+    return;
+  }
+
+  setIsLoading(true);
+
+  // ✅ FIX: Ensure we always have a valid array for concepts
+  const availableConcepts = Array.isArray(concepts) ? concepts : [];
+
+  try {
+    // Use the provided batchId, or fallback to selectedBatch or sessionStorage
+    const finalBatchId = providedBatchId || selectedBatch?.batch_id || sessionStorage.getItem("batchId");
+    
+    if (!finalBatchId) {
+      console.error("❌ No batchId available for session check");
+      toast.error("No batch selected. Please select a batch first.");
+      setIsLoading(false);
       setIsInitializing(false);
       return;
     }
 
-    setIsLoading(true);
+    // Build URL with ALL required parameters
+    let apiUrl = `${BASE_URL}/practicemode/session-status/${userId}?batch_id=${finalBatchId}`;
+    
+    if (conceptName) {
+      apiUrl += `&concept_name=${encodeURIComponent(conceptName)}`;
+    }
 
-    const availableConcepts = conceptsList || concepts;
+    console.log("🔍 Checking session with:", { userId, finalBatchId, conceptName });
 
-    try {
-      let apiUrl = `${BASE_URL}/practicemode/session-status/${userId}`;
-      if (conceptName) {
-        apiUrl += `?concept_name=${encodeURIComponent(conceptName)}`;
-      }
+    const response = await axios.get(apiUrl, config);
 
-      const response = await axios.get(apiUrl, config);
+    console.log("📡 Session status response:", response.data);
 
-      if (response.data && response.data.success) {
-        const { PracSessionType, hasActiveSession, shouldStartFresh, practicemode: chat } = response.data.data;
-        if (chat && chat.status === 'completed') {
-          console.log("🎯 Resumed session is completed, starting fresh conversation instead");
-          clearSessionData();
-          setCurrentChatStatus('not_started');
+    if (response.data && response.data.success) {
+      const { 
+        PracSessionType, 
+        hasActiveSession, 
+        shouldStartFresh, 
+        practicemode: chat
+      } = response.data.data;
 
-          const currentConcepts = availableConcepts.length > 0 ? availableConcepts : await fetchAndReturnConcepts();
-          if (currentConcepts.length > 0) {
-            const conceptToUse = currentConcepts.find(c => c.concept_name === chat.concept_name) || currentConcepts[0];
-            setSelectedConcept(conceptToUse);
-            await initiateFirstMentorMessageWithConcept(conceptToUse);
+      // ✅ Check if we should resume the session
+      if (PracSessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
+        console.log("🔄 Resuming existing session:", chat);
+
+        // Resume the session with the chat data
+        setPracticeChatHistory(chat.conversation || []);
+
+        const loadedSessionHistory = (chat.conversation || [])
+          .filter((item) => item.user !== undefined && item.system !== undefined)
+          .map((item) => ({ Mentee: item.user, Mentor: item.system }));
+        setSessionHistory(loadedSessionHistory);
+
+        setCurrentPracticeChatId(chat.id);
+        setPracSessionType("resume");
+        setResumedFromStatus(chat.status);
+        setCurrentChatStatus(chat.status);
+
+        // Map the stage correctly
+        const progressStage = mapApiStageToProgressbarIndex(
+          chat.current_stage,
+          chat.status,
+          false
+        );
+        setCurrentStage(progressStage);
+
+        // Set API data from the resumed session
+        setApiData(prev => ({
+          ...prev,
+          current_scenario_number: chat.current_scenario_number,
+          scenarios_completed: chat.scenarios_completed,
+          session_progress: {
+            ...(prev.session_progress || {}),
+            total_scenarios: chat.total_scenarios
           }
-          return;
-        }
+        }));
 
-        if (PracSessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
-          console.log("🔄 Resuming existing session:", chat);
+        console.log("✅ Session resumed with stage:", {
+          apiStage: chat.current_stage,
+          status: chat.status,
+          progressStage: progressStage,
+          conceptName: chat.concept_name
+        });
 
-          setPracticeChatHistory(chat.conversation);
+        // Update session storage
+        sessionStorage.setItem("practiceChatHistory", JSON.stringify(chat.conversation || []));
+        console.log("💾 Setting currentPracticeChatId:", chat.id);
+        sessionStorage.setItem("currentPracticeChatId", chat.id.toString());
+        sessionStorage.setItem("PracSessionType", "resume");
 
-          const loadedSessionHistory = chat.conversation
-            .filter((item) => item.user !== undefined && item.system !== undefined)
-            .map((item) => ({ Mentee: item.user, Mentor: item.system }));
-          setSessionHistory(loadedSessionHistory);
-
-          setCurrentPracticeChatId(chat.id);
-          setPracSessionType("resume");
-          setResumedFromStatus(chat.status);
-          setCurrentChatStatus(chat.status);
-
-          const progressStage = mapApiStageToProgressbarIndex(
-            chat.current_stage,
-            chat.status,
-            false
-          );
-          setCurrentStage(progressStage);
-
-          if (chat) {
-            setApiData(prev => ({
-              ...prev,
-              current_scenario_number: chat.current_scenario_number,
-              scenarios_completed: chat.scenarios_completed,
-              session_progress: {
-                ...(prev.session_progress || {}),
-                total_scenarios: chat.total_scenarios
-              }
-            }));
-          }
-
-          console.log("✅ Session resumed with stage:", {
-            apiStage: chat.current_stage,
-            status: chat.status,
-            progressStage: progressStage,
-            conceptName: chat.concept_name
-          });
-
-          sessionStorage.setItem("practiceChatHistory", JSON.stringify(chat.conversation));
-          console.log("💾 Setting currentPracticeChatId:", chat.id);
-          sessionStorage.setItem("currentPracticeChatId", chat.id.toString());
-          sessionStorage.setItem("PracSessionType", "resume");
-
-          if (chat.concept_name && availableConcepts.length > 0) {
-            const matchingConcept = availableConcepts.find(c => c.concept_name === chat.concept_name);
-            if (matchingConcept) {
-              setSelectedConcept(matchingConcept);
-              console.log("✅ Concept restored from session:", matchingConcept.concept_name);
-            } else if (conceptName) {
-              const providedConcept = availableConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
-              if (providedConcept) {
-                setSelectedConcept(providedConcept);
-                console.log("🔄 Using provided concept:", providedConcept.concept_name);
-              }
-            }
-          } else if (conceptName && availableConcepts.length > 0) {
-            const providedConcept = availableConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+        // Set the correct concept - with proper array checks
+        if (chat.concept_name && Array.isArray(availableConcepts) && availableConcepts.length > 0) {
+          const matchingConcept = availableConcepts.find(c => c.concept_name === chat.concept_name);
+          if (matchingConcept) {
+            setSelectedConcept(matchingConcept);
+            console.log("✅ Concept restored from session:", matchingConcept.concept_name);
+          } else if (conceptName) {
+            const providedConcept = availableConcepts.find(c => 
+              c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
+            );
             if (providedConcept) {
               setSelectedConcept(providedConcept);
-              console.log("🔄 Using provided concept for fresh session:", providedConcept.concept_name);
+              console.log("🔄 Using provided concept:", providedConcept.concept_name);
             }
-          }
-        } else {
-          console.log("🆕 Starting fresh session");
-          clearSessionData();
-          setCurrentChatStatus('not_started');
-
-          const currentConcepts = availableConcepts.length > 0 ? availableConcepts : await fetchAndReturnConcepts();
-          if (currentConcepts.length > 0) {
-            let conceptToUse;
-
-            if (conceptName) {
-              conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
-            }
-
-            if (!conceptToUse) {
-              conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
-            }
-
-            console.log("🚀 Auto-starting fresh conversation with concept:", conceptToUse.concept_name);
-            setSelectedConcept(conceptToUse);
-            await initiateFirstMentorMessageWithConcept(conceptToUse);
           }
         }
+
       } else {
-        console.log("⚠️ No session data, starting fresh");
+        // ✅ Start fresh session
+        console.log("🆕 Starting fresh session - conditions not met for resume");
         clearSessionData();
         setCurrentChatStatus('not_started');
 
-        const currentConcepts = availableConcepts.length > 0 ? availableConcepts : await fetchAndReturnConcepts();
-        if (currentConcepts.length > 0) {
-          let conceptToUse;
-
+        // ✅ FIX: Use the passed conceptObj or find from available concepts
+        let conceptToUse = conceptObj;
+        if (!conceptToUse && Array.isArray(availableConcepts) && availableConcepts.length > 0) {
           if (conceptName) {
-            conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+            conceptToUse = availableConcepts.find(c => 
+              c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
+            );
           }
-
           if (!conceptToUse) {
-            conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
+            conceptToUse = availableConcepts.find(concept => concept.is_active) || availableConcepts[0];
           }
+        }
 
-          console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
+        if (conceptToUse) {
+          console.log("🚀 Starting fresh conversation with concept:", conceptToUse.concept_name);
           setSelectedConcept(conceptToUse);
           await initiateFirstMentorMessageWithConcept(conceptToUse);
         } else {
-          console.error("❌ No concepts available for fresh conversation");
+          console.error("❌ No valid concept found");
+          toast.warn("No valid concept available to start session.");
         }
       }
-
-      await fetchChatCounts();
-    } catch (error) {
-      console.error("❌ Error checking session status:", error);
+    } else {
+      console.log("⚠️ No session data or API not successful, starting fresh");
       clearSessionData();
       setCurrentChatStatus('not_started');
 
-      const currentConcepts = availableConcepts.length > 0 ? availableConcepts : await fetchAndReturnConcepts();
-      if (currentConcepts.length > 0) {
-        let conceptToUse;
-
+      // ✅ FIX: Use the passed conceptObj or find from available concepts
+      let conceptToUse = conceptObj;
+      if (!conceptToUse && Array.isArray(availableConcepts) && availableConcepts.length > 0) {
         if (conceptName) {
-          conceptToUse = currentConcepts.find(c => c.concept_name.toLowerCase().includes(conceptName.toLowerCase()));
+          conceptToUse = availableConcepts.find(c => 
+            c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
+          );
         }
-
         if (!conceptToUse) {
-          conceptToUse = selectedConcept || currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
+          conceptToUse = availableConcepts.find(concept => concept.is_active) || availableConcepts[0];
         }
+      }
 
-        console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
+      if (conceptToUse) {
+        console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
         setSelectedConcept(conceptToUse);
         await initiateFirstMentorMessageWithConcept(conceptToUse);
       } else {
-        console.error("❌ No concepts available for error recovery");
+        console.error("❌ No valid concept found for fresh start");
       }
-    } finally {
-      setIsLoading(false);
-      setIsInitializing(false);
-      isInitializingRef.current = false;
     }
-  };
 
+    await fetchChatCounts();
+  } catch (error) {
+    console.error("❌ Error checking session status:", error);
+    clearSessionData();
+    setCurrentChatStatus('not_started');
+
+    // ✅ FIX: Error recovery with proper concept handling
+    let conceptToUse = conceptObj;
+    if (!conceptToUse && Array.isArray(concepts) && concepts.length > 0) {
+      if (conceptName) {
+        conceptToUse = concepts.find(c => 
+          c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
+        );
+      }
+      if (!conceptToUse) {
+        conceptToUse = concepts.find(concept => concept.is_active) || concepts[0];
+      }
+    }
+
+    if (conceptToUse) {
+      console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
+      setSelectedConcept(conceptToUse);
+      await initiateFirstMentorMessageWithConcept(conceptToUse);
+    } else {
+      console.error("❌ No concepts available for error recovery");
+    }
+  } finally {
+    setIsLoading(false);
+    setIsInitializing(false);
+    isInitializingRef.current = false;
+  }
+};
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -1325,20 +1320,23 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
   };
 
   const handleConceptSelect = async (concept) => {
-    if (isProcessingAssessment) {
-      toast.warn("⚠️ Please wait, assessment is being processed.");
-      return;
-    }
-    console.log("🎯 Concept selected:", concept.concept_name);
-    setSelectedConcept(concept);
-    setShowConceptDropdown(false);
-    setApiData({}); 
-    clearSessionData();
-    setCurrentChatStatus('not_started');
+  if (isProcessingAssessment) {
+    toast.warn("⚠️ Please wait, assessment is being processed.");
+    return;
+  }
+  console.log("🎯 Concept selected:", concept.concept_name);
+  setSelectedConcept(concept);
+  setShowConceptDropdown(false);
+  setApiData({}); 
+  clearSessionData();
+  setCurrentChatStatus('not_started');
 
-    console.log("🔍 Checking session status for concept:", concept.concept_name);
-    await checkSessionStatus(concept.concept_name);
-  };
+  console.log("🔍 Checking session status for concept:", concept.concept_name);
+  const currentBatchId = sessionStorage.getItem("batchId");
+  
+  // ✅ FIXED: Pass the concept object as third parameter
+  await checkSessionStatus(concept.concept_name, currentBatchId, concept);
+};
 
   const getStageStatus = () => {
     if (currentChatStatus === 'completed') return 'completed';
@@ -1367,7 +1365,10 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
             const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
             console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
             setSelectedConcept(initialConcept); // Set initial concept before checking session
-            await checkSessionStatus(initialConcept.concept_name);
+            const batchId = selectedBatch?.batch_id ?? sessionStorage.getItem("batchId");
+            
+            // ✅ Pass initialConcept to checkSessionStatus
+            await checkSessionStatus(initialConcept.concept_name, batchId, initialConcept);
           } else {
             console.log("⚠️ No concepts available, checking session without concept_name");
             await checkSessionStatus();

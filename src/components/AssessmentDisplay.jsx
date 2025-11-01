@@ -150,7 +150,7 @@ export const calculateOverallScore = (scoringData) => {
   const finalWeightedScore = (0.6 * sixFacetsAvg) + (0.4 * understandingSkillsAvg);
 
   // Truncate to 2 decimal places without rounding
-  return parseFloat(truncateScore(finalWeightedScore));
+  return truncateScore(finalWeightedScore);
 };
 
 // Get score color based on score value
@@ -339,7 +339,7 @@ export const OverallScoreAndSummary = ({ content }) => {
             className="overall-score-badge"
             style={{ backgroundColor: overallColor }}
           >
-            <span className="score-value">{truncateScore(calculatedOverallScore)}/5</span>
+            <span className="score-value">{calculatedOverallScore}/5</span>
             <span className="score-label">{overallLabel}</span>
           </div>
         </div>

@@ -142,7 +142,7 @@ export const PracticeFacetAssessmentsTable = ({ assessmentData }) => {
           const scoreValue = parseFloat(facet.score || 0);
           const truncatedScore = truncateToTwoDecimals(scoreValue);
           const scoreColor = getPracticeScoreColor(scoreValue);
-          const label = facet.rating_label || getPracticeScoreLabel(scoreValue);
+          const label = getPracticeScoreLabel(scoreValue);
 
           return (
             <div key={key} className="score-card">
@@ -210,6 +210,7 @@ export const PracticeOverallAssessmentSummary = ({ assessmentData }) => {
           <h4>🎯 Overall Assessment</h4>
           <div className="overall-score-badge" style={{ backgroundColor: overallColor }}>
             <span className="score-value">{truncatedOverallScore}/5</span>
+            <span className="score-label">{getPracticeScoreLabel(calculatedOverallScore)}</span>
           </div>
         </div>
         <div className="overall-summary">

@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 const PageProtection = () => {
-  const [isActive, setIsActive] = useState(true); 
+  const [isActive, setIsActive] = useState(false); 
 
   useEffect(() => {
     if (!isActive) return; 

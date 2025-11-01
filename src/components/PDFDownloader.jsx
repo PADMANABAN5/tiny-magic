@@ -6,6 +6,53 @@ import pdfFonts from "pdfmake/build/vfs_fonts";
 pdfMake.vfs = pdfFonts.vfs;
 
 const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, first_name, last_name, updated_at, finalAssessment }) => {
+  // Helper function to truncate score to 2 decimal places without rounding
+ const truncateScore = (score) => {
+  // String-based truncation: Handles JS FP by using toString() for clean decimal rep
+  const strScore = score.toString();
+  if (!strScore.includes('.')) {
+    return `${strScore}.00`;
+  }
+  const [integerPart, decimalPart] = strScore.split('.');
+  const truncatedDecimal = (decimalPart || '').slice(0, 2).padEnd(2, '0');
+  return `${integerPart}.${truncatedDecimal}`;
+};
+const calculateOverallScore = (scoringData) => {
+  // Recalc Six Facets avg from full-precision individual scores (ignore JSON's truncated OverallScore)
+  const sixFacetScores = [
+    scoringData?.SixFacets?.Explanation?.score,
+    scoringData?.SixFacets?.Interpretation?.score,
+    scoringData?.SixFacets?.Application?.score,
+    scoringData?.SixFacets?.Perspective?.score,
+    scoringData?.SixFacets?.Empathy?.score,
+    scoringData?.SixFacets?.["Self-Knowledge"]?.score
+  ].filter(score => typeof score === 'number');
+
+  const sixFacetsAvg = sixFacetScores.length > 0
+    ? sixFacetScores.reduce((sum, s) => sum + s, 0) / sixFacetScores.length
+    : 0;
+
+  // Recalc Understanding Skills avg from full-precision individual scores
+  const skillScores = [
+    scoringData?.UnderstandingSkills?.AskingQuestions?.score,
+    scoringData?.UnderstandingSkills?.ClarifyingAmbiguity?.score,
+    scoringData?.UnderstandingSkills?.SummarizingConfirming?.score,
+    scoringData?.UnderstandingSkills?.ChallengingIdeas?.score,
+    scoringData?.UnderstandingSkills?.ComparingConcepts?.score,
+    scoringData?.UnderstandingSkills?.AbstractConcrete?.score
+  ].filter(score => typeof score === 'number');
+
+  const understandingSkillsAvg = skillScores.length > 0
+    ? skillScores.reduce((sum, s) => sum + s, 0) / skillScores.length
+    : 0;
+
+  // Weighted formula (full precision)
+  const finalWeightedScore = (0.6 * sixFacetsAvg) + (0.4 * understandingSkillsAvg);
+
+  // Apply string truncation
+  return truncateScore(finalWeightedScore);  // Yields "3.30" for your data
+};
+
   // Helper function to remove emojis
   const removeEmojis = (text) =>
     text.replace(
@@ -60,15 +107,15 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
     return text.replace(regex, (_, label) => label.replace(/\s+/g, " "));
   };
 
-  // Extract scoring data from content (same as dashboard)
+  // Extract scoring data from content (updated to match display: always recalculate exact averages)
   const extractScoringData = (content) => {
     try {
       const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonMatch && jsonMatch[1]) {
         const parsedData = JSON.parse(jsonMatch[1]);
 
-        // Calculate proper averages for Six Facets if not present or incorrect
-        if (parsedData.SixFacets && !parsedData.SixFacets.OverallScore) {
+        // Always calculate exact averages for Six Facets
+        if (parsedData.SixFacets) {
           const facetScores = [
             parsedData.SixFacets.Explanation?.score,
             parsedData.SixFacets.Interpretation?.score,
@@ -80,12 +127,12 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
 
           if (facetScores.length > 0) {
             const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
-            parsedData.SixFacets.OverallScore = Math.round(average * 1000) / 1000;
+            parsedData.SixFacets.OverallScore = average;
           }
         }
 
-        // Calculate proper averages for Understanding Skills if not present or incorrect
-        if (parsedData.UnderstandingSkills && !parsedData.UnderstandingSkills.OverallScore) {
+        // Always calculate exact averages for Understanding Skills
+        if (parsedData.UnderstandingSkills) {
           const skillScores = [
             parsedData.UnderstandingSkills.AskingQuestions?.score,
             parsedData.UnderstandingSkills.ClarifyingAmbiguity?.score,
@@ -97,7 +144,7 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
 
           if (skillScores.length > 0) {
             const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
-            parsedData.UnderstandingSkills.OverallScore = Math.round(average * 1000) / 1000;
+            parsedData.UnderstandingSkills.OverallScore = average;
           }
         }
 
@@ -107,7 +154,43 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
       // Fallback: try to find JSON-like structure with new format
       const possibleJson = content.match(/\{[\s\S]*"FinalWeightedScore"[\s\S]*\}/);
       if (possibleJson) {
-        return JSON.parse(possibleJson[0]);
+        const parsedData = JSON.parse(possibleJson[0]);
+
+        // Always calculate exact averages for Six Facets
+        if (parsedData.SixFacets) {
+          const facetScores = [
+            parsedData.SixFacets.Explanation?.score,
+            parsedData.SixFacets.Interpretation?.score,
+            parsedData.SixFacets.Application?.score,
+            parsedData.SixFacets.Perspective?.score,
+            parsedData.SixFacets.Empathy?.score,
+            parsedData.SixFacets['Self-Knowledge']?.score
+          ].filter(score => score != null);
+
+          if (facetScores.length > 0) {
+            const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
+            parsedData.SixFacets.OverallScore = average;
+          }
+        }
+
+        // Always calculate exact averages for Understanding Skills
+        if (parsedData.UnderstandingSkills) {
+          const skillScores = [
+            parsedData.UnderstandingSkills.AskingQuestions?.score,
+            parsedData.UnderstandingSkills.ClarifyingAmbiguity?.score,
+            parsedData.UnderstandingSkills.SummarizingConfirming?.score,
+            parsedData.UnderstandingSkills.ChallengingIdeas?.score,
+            parsedData.UnderstandingSkills.ComparingConcepts?.score,
+            parsedData.UnderstandingSkills.AbstractConcrete?.score
+          ].filter(score => score != null);
+
+          if (skillScores.length > 0) {
+            const average = skillScores.reduce((sum, score) => sum + score, 0) / skillScores.length;
+            parsedData.UnderstandingSkills.OverallScore = average;
+          }
+        }
+
+        return parsedData;
       }
       return {};
     } catch (e) {
@@ -116,19 +199,7 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
     }
   };
 
-  // Calculate overall score (same logic as dashboard)
-  const calculateOverallScore = (scoringData) => {
-    if (scoringData.FinalWeightedScore && typeof scoringData.FinalWeightedScore === 'number') {
-      return Math.round(scoringData.FinalWeightedScore * 100) / 100;
-    }
-
-    const sixFacetsScore = scoringData.SixFacets?.OverallScore || 0;
-    const understandingSkillsScore = scoringData.UnderstandingSkills?.OverallScore || 0;
-
-    const finalWeightedScore = (0.6 * sixFacetsScore) + (0.4 * understandingSkillsScore);
-
-    return Math.round(finalWeightedScore * 100) / 100;
-  };
+  // Calculate overall score (updated to match display: always recalculate and truncate)
 
   // Check if content has assessment data
   const hasAssessmentData = (content) => {
@@ -253,7 +324,7 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
       // Overall Score FIRST
       const overallScore = calculateOverallScore(assessmentScoringData);
       content.push({
-        text: `Overall Score: ${overallScore.toFixed(1)}/5`,
+        text: `Overall Score: ${overallScore}/5`,
         style: "overallScore",
         margin: [0, 0, 0, 15],
       });
@@ -319,11 +390,11 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
           }
         });
 
-        // Six Facets Average
+        // Six Facets Average (truncated)
         const sixFacetsAvg = assessmentScoringData.SixFacets.OverallScore;
         if (sixFacetsAvg) {
           content.push({
-            text: `Six Facets Average: ${sixFacetsAvg.toFixed(1)}/5`,
+            text: `Six Facets Average: ${truncateScore(sixFacetsAvg)}/5`,
             style: "averageScore",
             margin: [0, 8, 0, 15],
           });
@@ -386,11 +457,11 @@ const PDFDownloader = ({ chatHistory, practiceChatHistory, selectedConcept, firs
           }
         });
 
-        // Understanding Skills Average - FINAL ITEM
+        // Understanding Skills Average - FINAL ITEM (truncated)
         const skillsAvg = assessmentScoringData.UnderstandingSkills.OverallScore;
         if (skillsAvg) {
           content.push({
-            text: `Understanding Skills Average: ${skillsAvg.toFixed(1)}/5`,
+            text: `Understanding Skills Average: ${truncateScore(skillsAvg)}/5`,
             style: "averageScore",
             margin: [0, 8, 0, 0],
           });

@@ -57,6 +57,74 @@ const PracticePDFDownloader = ({ practiceChatHistory, selectedConcept, first_nam
     }
   };
 
+  // Truncate number to 2 decimal places without rounding (same as PracticeAssessmentDisplay)
+  const truncateToTwoDecimals = (num) => {
+    return Math.floor(num * 100) / 100;
+  };
+
+  // Calculate overall score as average of all six facet scores (insufficient data = 0) - SAME AS PracticeAssessmentDisplay
+  const calculatePracticeOverallScore = (assessmentData) => {
+  const facets = assessmentData?.facet_assessments || {};
+
+  const facetKeys = ["explanation","interpretation","application","perspective","empathy","self_knowledge"];
+
+  let total = 0;
+
+  facetKeys.forEach(key => {
+    const facetScore = parseFloat(facets[key]?.score);
+    if (!isNaN(facetScore)) {
+      total += facetScore;
+    }
+  });
+
+  // Always divide by 6 (missing facets = 0)
+  return truncateToTwoDecimals(total / 6);
+};
+
+
+  // Calculate individual facet score (using same truncation logic)
+  const calculateFacetScore = (facetData) => {
+  if (!facetData || facetData.score == null) return 0;
+  const parsedScore = parseFloat(facetData.score);
+  return isNaN(parsedScore) ? 0 : truncateToTwoDecimals(parsedScore);
+};
+
+  // Format score for display (with truncation)
+  const formatScore = (score) => {
+    const truncated = truncateToTwoDecimals(score);
+    return truncated.toFixed(2); // Always show 2 decimal places
+  };
+
+  // Get score color based on score (1-5 scale) - same as PracticeAssessmentDisplay
+  const getPracticeScoreColor = (score) => {
+    if (score >= 4) return '#10b981'; // Green
+    if (score >= 3) return '#3b82f6'; // Blue
+    if (score >= 2) return '#f59e0b'; // Yellow
+    return '#ef4444'; // Red
+  };
+
+  // Get score label based on score - same as PracticeAssessmentDisplay
+  const getPracticeScoreLabel = (score) => {
+    if (score === 5) return 'Masterful';
+    if (score >= 4) return 'Strong';
+    if (score >= 3) return 'Developing';
+    if (score >= 2) return 'Emerging';
+    return 'Absent/Minimal';
+  };
+
+  // Format facet name to readable format - same as PracticeAssessmentDisplay
+  const formatPracticeFacetName = (name) => {
+    const nameMap = {
+      explanation: 'Explanation',
+      interpretation: 'Interpretation',
+      application: 'Application',
+      perspective: 'Perspective',
+      empathy: 'Empathy',
+      self_knowledge: 'Self-Knowledge'
+    };
+    return nameMap[name] || name.charAt(0).toUpperCase() + name.slice(1);
+  };
+
   // Normalize score - always ensure string input
   const normalizeScore = (input) => {
     if (input == null) return '';
@@ -104,65 +172,57 @@ const PracticePDFDownloader = ({ practiceChatHistory, selectedConcept, first_nam
     });
   };
 
-  // Check if content has practice assessment data
+  // Check if content has practice assessment data - same as PracticeAssessmentDisplay
   const hasPracticeAssessmentData = (content) => {
     if (!content) return false;
-    const text = String(content);
-    return (
-      (text.includes("facet_assessments") || text.includes("overall_assessment")) &&
-      (text.includes("learner_profile") || text.includes("pattern_analysis"))
-    );
+
+    // Check for JSON code block or direct JSON
+    const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
+    if (jsonMatch && jsonMatch[1]) {
+      try {
+        const parsed = JSON.parse(jsonMatch[1].trim());
+        return !!(
+          parsed.learner_profile || 
+          parsed.facet_assessments || 
+          parsed.overall_assessment || 
+          parsed.pattern_analysis ||
+          parsed.personalized_feedback ||
+          parsed.next_steps ||
+          parsed.session_metadata
+        );
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Fallback: Try direct JSON parse
+    try {
+      const parsed = JSON.parse(content);
+      return !!(
+        parsed.learner_profile || 
+        parsed.facet_assessments || 
+        parsed.overall_assessment
+      );
+    } catch (e) {
+      return false;
+    }
   };
 
-  // Extract practice assessment data from content
+  // Extract practice assessment data from content - same as PracticeAssessmentDisplay
   const extractPracticeAssessmentData = (content) => {
     try {
-      const text = String(content);
-      const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/);
+      // Try to extract JSON from code block
+      const jsonMatch = content.match(/```json\s*([\s\S]*?)\s*```/);
       if (jsonMatch && jsonMatch[1]) {
-        return JSON.parse(jsonMatch[1]);
+        return JSON.parse(jsonMatch[1].trim());
       }
 
-      // Fallback: try to find JSON-like structure
-      const possibleJson = text.match(/\{[\s\S]*"facet_assessments"[\s\S]*\}/);
-      if (possibleJson) {
-        return JSON.parse(possibleJson[0]);
-      }
-      return null;
+      // Direct parse if no code block
+      return JSON.parse(content);
     } catch (e) {
       console.error("Error parsing practice assessment JSON:", e);
-      return null;
+      return {};
     }
-  };
-
-  // Calculate overall score for practice assessment
-  const calculatePracticeOverallScore = (assessmentData) => {
-    if (assessmentData?.overall_assessment?.composite_score) {
-      const composite = parseFloat(assessmentData.overall_assessment.composite_score);
-      if (!isNaN(composite)) {
-        return Math.round(composite * 100) / 100;
-      }
-    }
-
-    // Calculate from facet scores if composite_score not available
-    const facets = assessmentData?.facet_assessments;
-    if (facets) {
-      const facetScores = [
-        parseFloat(facets.explanation?.score) || 0,
-        parseFloat(facets.interpretation?.score) || 0,
-        parseFloat(facets.application?.score) || 0,
-        parseFloat(facets.perspective?.score) || 0,
-        parseFloat(facets.empathy?.score) || 0,
-        parseFloat(facets.self_knowledge?.score) || 0
-      ].filter(score => score > 0);
-
-      if (facetScores.length > 0) {
-        const average = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
-        return Math.round(average * 100) / 100;
-      }
-    }
-
-    return 0;
   };
 
   // Get rating label description
@@ -355,31 +415,30 @@ const PracticePDFDownloader = ({ practiceChatHistory, selectedConcept, first_nam
         margin: [0, 30, 0, 15],
       });
 
-      // Overall Score FIRST
-      const overallScore = calculatePracticeOverallScore(practiceAssessmentData);
+      // Calculate scores using SAME LOGIC as PracticeAssessmentDisplay
+      const calculatedOverallScore = calculatePracticeOverallScore(practiceAssessmentData);
+      const formattedOverallScore = formatScore(calculatedOverallScore);
+      const overallColor = getPracticeScoreColor(calculatedOverallScore);
+      const overallLabel = getPracticeScoreLabel(calculatedOverallScore);
+      
+      console.log('Using calculated overall score:', calculatedOverallScore, 'formatted:', formattedOverallScore);
+      
+      // Overall Score FIRST - USING SAME CALCULATION AS PracticeAssessmentDisplay
       content.push({
-        text: `Overall Score: ${overallScore.toFixed(1)}/5`,
+        text: `Overall Score: ${formattedOverallScore}/5`,
         style: "overallScore",
+        margin: [0, 0, 0, 10],
+      });
+
+      content.push({
+        text: `Overall Rating: ${overallLabel}`,
+        style: "subHeader",
         margin: [0, 0, 0, 15],
       });
 
-      // Overall Assessment SECOND (rating, summary)
+      // Overall Assessment SECOND
       if (practiceAssessmentData.overall_assessment) {
         const overall = practiceAssessmentData.overall_assessment;
-
-        if (overall.overall_rating != null) {
-          const rating = String(overall.overall_rating);
-          content.push({
-            text: `Overall Rating: ${rating.charAt(0).toUpperCase() + rating.slice(1)}`,
-            style: "subHeader",
-            margin: [0, 0, 0, 5],
-          });
-          content.push({
-            text: getRatingDescription(rating),
-            style: "summaryText",
-            margin: [0, 0, 0, 5],
-          });
-        }
 
         if (overall.summary != null) {
           content.push({
@@ -395,7 +454,7 @@ const PracticePDFDownloader = ({ practiceChatHistory, selectedConcept, first_nam
         }
       }
 
-      // Six Facets of Understanding THIRD
+      // Six Facets of Understanding THIRD - USING SAME CALCULATION AS PracticeAssessmentDisplay
       if (practiceAssessmentData.facet_assessments) {
         content.push({
           text: "Six Facets of Understanding",
@@ -412,55 +471,68 @@ const PracticePDFDownloader = ({ practiceChatHistory, selectedConcept, first_nam
           { key: "self_knowledge", label: "Self-Knowledge" }
         ];
 
-        facets.forEach(facet => {
+        // Calculate all facet scores first using same logic
+        const facetCalculations = facets.map(facet => {
           const facetData = practiceAssessmentData.facet_assessments[facet.key];
-          if (facetData) {
-            const score = facetData.score || 0;
-            const rating = facetData.rating_label != null ? String(facetData.rating_label) : "";
-            
+          const calculatedScore = calculateFacetScore(facetData);
+          const formattedScore = formatScore(calculatedScore);
+          const scoreColor = getPracticeScoreColor(calculatedScore);
+          const scoreLabel = facetData?.rating_label || getPracticeScoreLabel(calculatedScore);
+          
+          return {
+            ...facet,
+            data: facetData,
+            calculatedScore: calculatedScore,
+            formattedScore: formattedScore,
+            scoreColor: scoreColor,
+            scoreLabel: scoreLabel
+          };
+        });
+
+        // Display facets with calculated scores
+        facetCalculations.forEach(({ label, data, formattedScore, scoreLabel }) => {
+          if (data) {            
             content.push({
-              text: `${facet.label}: ${score}/5`,
+              text: `${label}: ${formattedScore}/5`, // USE CALCULATED SCORE
               style: "scoreItem",
               margin: [0, 8, 0, 3],
             });
 
-            if (rating) {
-              content.push({
-                text: `   Rating: ${rating.charAt(0).toUpperCase() + rating.slice(1)}`,
-                style: "scoreDetail",
-                margin: [20, 0, 0, 3],
-              });
-            }
+            content.push({
+              text: `   Rating: ${scoreLabel.charAt(0).toUpperCase() + scoreLabel.slice(1)}`,
+              style: "scoreDetail",
+              margin: [20, 0, 0, 3],
+            });
 
             // Evidence
-            addBulletList(content, facetData.evidence, "scoreDetail", [20, 0, 0, 3]);
+            addBulletList(content, data.evidence, "scoreDetail", [20, 0, 0, 3]);
 
             // Strengths
-            if (facetData.strengths && Array.isArray(facetData.strengths) && facetData.strengths.length > 0) {
+            if (data.strengths && Array.isArray(data.strengths) && data.strengths.length > 0) {
               content.push({
                 text: "   Strengths:",
                 style: "scoreDetail",
                 margin: [20, 0, 0, 0],
                 bold: true,
               });
-              addBulletList(content, facetData.strengths, "scoreDetail", [20, 0, 0, 3]);
+              addBulletList(content, data.strengths, "scoreDetail", [20, 0, 0, 3]);
             }
 
             // Growth Opportunities
-            if (facetData.growth_opportunities && Array.isArray(facetData.growth_opportunities) && facetData.growth_opportunities.length > 0) {
+            if (data.growth_opportunities && Array.isArray(data.growth_opportunities) && data.growth_opportunities.length > 0) {
               content.push({
                 text: "   Growth Opportunities:",
                 style: "scoreDetail",
                 margin: [20, 0, 0, 0],
                 bold: true,
               });
-              addBulletList(content, facetData.growth_opportunities, "scoreDetail", [20, 0, 0, 3]);
+              addBulletList(content, data.growth_opportunities, "scoreDetail", [20, 0, 0, 3]);
             }
 
             // Developmental Notes
-            if (facetData.developmental_notes != null) {
+            if (data.developmental_notes != null) {
               content.push({
-                text: `   Developmental Notes: ${removeEmojis(facetData.developmental_notes)}`,
+                text: `   Developmental Notes: ${removeEmojis(data.developmental_notes)}`,
                 style: "scoreDetail",
                 margin: [20, 0, 0, 8],
               });
@@ -468,21 +540,17 @@ const PracticePDFDownloader = ({ practiceChatHistory, selectedConcept, first_nam
           }
         });
 
-        // Calculate and display Six Facets Average
-        const facetScores = facets
-          .map(facet => parseFloat(practiceAssessmentData.facet_assessments[facet.key]?.score) || 0)
-          .filter(score => score > 0);
-        
-        if (facetScores.length > 0) {
-          const sixFacetsAvg = facetScores.reduce((sum, score) => sum + score, 0) / facetScores.length;
-          content.push({
-            text: `Six Facets Average: ${sixFacetsAvg.toFixed(1)}/5`,
-            style: "averageScore",
-            margin: [0, 8, 0, 15],
-          });
-        }
+        // Display the calculated overall score again for clarity
+        content.push({
+          text: `Final Overall Score (Calculated from Six Facets): ${formattedOverallScore}/5`,
+          style: "overallScore",
+          margin: [0, 15, 0, 20],
+        });
       }
 
+      // [Rest of your existing code for Pattern Analysis, Personalized Feedback, Next Steps, etc.]
+      // ... (keep all your existing code for these sections)
+      
       // Pattern Analysis FOURTH
       if (practiceAssessmentData.pattern_analysis) {
         content.push({
