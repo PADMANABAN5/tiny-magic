@@ -32,6 +32,7 @@ import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 import { useAuth } from "../components/AuthContext.jsx";
 import VoiceRecorder from "../components/VoiceRecorder.jsx";
 import LevelCompletionToast from "../components/LevelCompletionToast.jsx";
+import AudioVoiceVisualizer from "../components/AudioVoiceVisualizer.jsx";
 const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000/api"; // Fallback URL
 
 function Practicemode() {
@@ -59,6 +60,8 @@ function Practicemode() {
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [showBatchDropdown, setShowBatchDropdown] = useState(false);
   const batchDropdownRef = useRef(null);
+  const [isMicActive, setIsMicActive] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -1852,11 +1855,16 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
                 </div>
               )}
               <div className="chat-input-wrapper">
+                {(!isMicActive || isTranscribing) && (
                 <textarea
                   className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
                   placeholder={
                     isChatEnded
                       ? "This conversation has ended. Please restart to begin a new session."
+                      :isTranscribing
+                          ? "Transcribing your voice..."
+                          : isMicActive
+                        ? "🎙 Listening... (voice input active)"
                       : isInitializing
                         ? "Initializing..."
                         : selectedConcept
@@ -1868,16 +1876,29 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isMicActive || isTranscribing}  // ✅ add isMicActive
                   rows="1"
                 />
-                 <VoiceRecorder
-                      ref={voiceRecorderRef}
-                      onTranscription={(text) => {
-                        setPrompt((prev) => (prev ? prev + " " : "") + text);
-                      }}
-                      disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
-                    />
+                )}
+                 {isMicActive && (
+  <div className={`voice-visualizer-only chat-input ${isChatEnded ? 'disabled' : ''}`} style={{ position: 'relative' }}>
+    <div style={{ position: 'absolute', inset: 0, padding: '1rem 1.25rem' }}> {/* Mimic padding for visual centering */}
+      <AudioVoiceVisualizer
+        analyser={voiceRecorderRef.current?.analyserRef?.current}
+        isActive={isMicActive}
+      />
+    </div>
+  </div>
+)}
+                           <VoiceRecorder
+                  ref={voiceRecorderRef}
+                  onTranscription={(text) => setPrompt((prev) => (prev ? prev + " " : "") + text)}
+                  onRecordingStart={() => setIsMicActive(true)}     // ✅ new
+                  onRecordingStop={() => setIsMicActive(false)}     // ✅ new
+                  onTranscribingStart={() => setIsTranscribing(true)}
+                  onTranscribingEnd={() => setIsTranscribing(false)}
+                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
+                />
                 <button
                   className="send-button"
                   onClick={handleSendClick}

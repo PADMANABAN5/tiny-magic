@@ -18,6 +18,7 @@ export default function OrgList() {
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [isCreating, setIsCreating] = useState(false);
 
   const navigate = useNavigate();
   const storedToken = sessionStorage.getItem("token");
@@ -156,6 +157,7 @@ const isValidOrgName = (name) => {
   }
  
 
+  setIsCreating(true);
 
   try {
     await axios.post(`${process.env.REACT_APP_API_LINK}/organizations`, {
@@ -196,6 +198,8 @@ const isValidOrgName = (name) => {
       // Non-Axios errors (network errors, etc.)
       showToastMsg('Network error. Please check your connection.', 'danger');
     }
+  } finally {
+    setIsCreating(false);
   }
 };
 
@@ -374,11 +378,15 @@ const isValidOrgName = (name) => {
     setNewOrgName(e.target.value);
   }}
   required
-
-                />
+  disabled={isCreating}
+/>
               </div>
-              <button type="submit" className="btn btn-success me-2 ">Create</button>
-              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+              <button type="submit" className="btn btn-success me-2 " disabled={isCreating}>
+                {isCreating ? 'Creating...' : 'Create'}
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={isCreating}>
+                Cancel
+              </button>
             </form>
           </div>
         </div>

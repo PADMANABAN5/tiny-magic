@@ -420,7 +420,7 @@ if (selectedLevel === 'organization') {
               <tbody>
                 {currentAssignments.map((assignment) => (
                   <tr key={assignment.assignment_id || assignment.id}>
-                    <td>{getModelName(assignment.model_id)}</td>
+                    <td>{`${getModelName(assignment.model_id)} (${assignment.name})`}</td>
                     <td>{assignment.level}</td>
                     <td>{getOrgName(assignment.organization_id || "-")}</td>
                     <td>{getBatchName(assignment.batch_id || "-")}</td>
@@ -546,7 +546,7 @@ if (selectedLevel === 'organization') {
                 <option value="">Select Model</option>
                 {models.map((model) => (
                   <option key={model.model_id} value={model.model_id}>
-                    {model.model_name}
+                    {`${model.model_name} (${model.name})`}
                   </option>
                 ))}
               </select>

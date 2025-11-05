@@ -2755,7 +2755,7 @@ html, body {
   height: 48px;
   border: none;
   border-radius: 50%;
-  background: linear-gradient(135deg, #43e97b, #38f9d7);
+  background: linear-gradient(135deg, #0048ff, #38acf9);
 
   color: white;
   display: flex;
@@ -3212,5 +3212,125 @@ html, body {
   .scoring-header h4{
     font-size:1.2rem ;
   }
+}
+.textarea-container {
+   flex: 1;
+  min-height: 48px;
+  max-height: 120px;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 24px;
+  resize: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: all 0.3s ease;
+  background: #fafbfc;
+  width: 100%;
+  min-width: 0;
+}
+
+.voice-visualizer-overlay {
+  position: absolute;
+  bottom: 4px;
+  left: 8px;
+  width: calc(100% - 16px);
+  height: 40px;
+  pointer-events: none;
+  opacity: 0.8;
+}
+.voice-visualizer-only {
+  flex: 1;
+  min-height: 48px;
+  max-height: 120px;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 24px;
+  resize: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: all 0.3s ease;
+  background: #fafbfc;
+  width: 100%;
+  min-width: 0;
+}
+
+.voice-visualizer-only canvas {
+  width: 100%;
+  height: 75px;
+}
+
+.listening-text {
+  margin-top: 4px;
+  font-size: 0.85rem;
+  color: #00ff88;
+  letter-spacing: 0.5px;
+}
+
+.textarea-container {
+   flex: 1;
+  min-height: 48px;
+  max-height: 120px;
+  padding: 1rem 1.25rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 24px;
+  resize: none;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  transition: all 0.3s ease;
+  background: #fafbfc;
+  width: 100%;
+  min-width: 0;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+.mic-controls-container {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.mic-action-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.mic-action-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mic-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cancel-btn {
+  background: rgba(239, 68, 68, 0.1); /* Light red */
+}
+
+.confirm-btn {
+  background: rgba(34, 197, 94, 0.1); /* Light green */
 }
 

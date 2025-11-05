@@ -463,7 +463,7 @@ function AssignmentOrg() {
                     <tbody>
                       {assignments.map((a) => (
                         <tr key={a.assignment_id}>
-                          <td>{a.model_name}</td>
+                          <td>{`${a.model_name} (${a.name})`}</td>
                           <td>{a.name || "—"}</td>
                           <td>{a.level}</td>
                           <td>{a.organization_name || "—"}</td>
@@ -538,7 +538,7 @@ function AssignmentOrg() {
                       <option value="">Select Model</option>
                       {models.map((m) => (
                         <option key={m.model_id} value={m.model_id}>
-                          {m.model_name}
+                          {`${m.model_name} (${m.name})`}
                         </option>
                       ))}
                     </Form.Select>
@@ -556,7 +556,7 @@ function AssignmentOrg() {
                       <option value="">Select Org Model</option>
                       {orgModels.map((m) => (
                         <option key={m.model_id} value={m.model_id}>
-                          {m.model_name}
+                          {`${m.model_name} (${m.name})`}
                         </option>
                       ))}
                     </Form.Select>

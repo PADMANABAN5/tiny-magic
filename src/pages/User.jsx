@@ -63,6 +63,9 @@ export default function User() {
     users: [],
   });
 
+  const [isAdding, setIsAdding] = useState(false);
+  const [isUpdatingProgress, setIsUpdatingProgress] = useState(false);
+
   const getToastType = (bg) => {
     switch (bg) {
       case 'primary':
@@ -203,6 +206,7 @@ export default function User() {
       showToastMsg("Please ensure Organization, Batch, and Pod are selected.", "warning");
       return;
     }
+    setIsAdding(true);
     try {
       const usersToAssign = newUser.users.map((user) => ({
         user_identifier: user.email || user.username || user.user_id,
@@ -250,6 +254,8 @@ export default function User() {
         message = err.response?.data?.message || "An unexpected error occurred";
       }
       showToastMsg(message, "warning");
+    } finally {
+      setIsAdding(false);
     }
   };
 
@@ -260,6 +266,7 @@ export default function User() {
   };
 
   const handleInlineProgressUpdate = async () => {
+    setIsUpdatingProgress(true);
     try {
       const formattedProgress = JSON.parse(progressText);
       await axios.put(
@@ -281,6 +288,8 @@ export default function User() {
           `Failed to update progress: ${err.message}. Ensure JSON format is correct.`
         , "warning");
       }
+    } finally {
+      setIsUpdatingProgress(false);
     }
   };
 
@@ -822,6 +831,7 @@ export default function User() {
                     }));
                   }}
                   required
+                  disabled={isAdding}
                 >
                   <option value="">-- Select Organization --</option>
                   {organizations.map((org) => (
@@ -856,7 +866,7 @@ export default function User() {
                     }));
                   }}
                   required
-                  disabled={!newUser.organization_name}
+                  disabled={!newUser.organization_name || isAdding}
                 >
                   <option value="">-- Select Batch --</option>
                   {filteredBatches.map((batch) => (
@@ -885,7 +895,7 @@ export default function User() {
                     }));
                   }}
                   required
-                  disabled={!newUser.batch_id}
+                  disabled={!newUser.batch_id || isAdding}
                 >
                   <option value="">-- Select Pod --</option>
                   {filteredPods.map((pod) => (
@@ -914,7 +924,7 @@ export default function User() {
                     type="button"
                     className="btn btn-info btn-sm ms-2"
                     onClick={openSelectUsersModal}
-                    disabled={!newUser.organization_name}
+                    disabled={!newUser.organization_name || isAdding}
                     style={{ width: "150px" }}
                   >
                     Select Users
@@ -927,13 +937,14 @@ export default function User() {
                 )}
               </div>
               <div className="d-flex gap-2">
-                <button type="submit" className="btn btn-success">
-                  Add
+                <button type="submit" className="btn btn-success" disabled={isAdding}>
+                  {isAdding ? 'Adding...' : 'Add'}
                 </button>
                 <button
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => setShowAddUserModal(false)}
+                  disabled={isAdding}
                 >
                   Cancel
                 </button>
@@ -1035,17 +1046,20 @@ export default function User() {
               value={progressText}
               onChange={(e) => setProgressText(e.target.value)}
               rows={6}
+              disabled={isUpdatingProgress}
             ></textarea>
             <div className="d-flex gap-2">
               <button
                 className="btn btn-warning"
                 onClick={handleInlineProgressUpdate}
+                disabled={isUpdatingProgress}
               >
-                Update
+                {isUpdatingProgress ? 'Updating...' : 'Update'}
               </button>
               <button
                 className="btn btn-secondary"
                 onClick={() => setShowProgressModal(false)}
+                disabled={isUpdatingProgress}
               >
                 Cancel
               </button>

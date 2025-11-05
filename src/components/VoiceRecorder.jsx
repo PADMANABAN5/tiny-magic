@@ -1,5 +1,6 @@
 import React, { useState, useRef, forwardRef, useImperativeHandle, useEffect } from "react";
 import { FaMicrophone, FaMicrophoneSlash } from "react-icons/fa";
+import { FiLoader, FiStopCircle, FiX, FiCheck } from "react-icons/fi";
 import axios from "axios";
 import { toast } from "react-toastify";
 import "../styles/dashboard.css";
@@ -15,10 +16,13 @@ const VoiceRecorder = forwardRef(
       onRecordingStart,
       onRecordingStop,
       onRecordingChange,
+      onTranscribingStart,
+      onTranscribingEnd,
     },
     ref
   ) => {
     const [isRecording, setIsRecording] = useState(false);
+    const [isTranscribing, setIsTranscribing] = useState(false);
     const mediaRecorderRef = useRef(null);
     const chunksRef = useRef([]);
     const silenceStartRef = useRef(null);
@@ -32,6 +36,7 @@ const VoiceRecorder = forwardRef(
     const autoStoppedRef = useRef(false);
     const cumulativeSpeechMsRef = useRef(0);
     const lastRmsAboveRef = useRef(null);
+    const shouldTranscribeRef = useRef(true); // ✅ Flag to decide whether to transcribe on stop
 
     // PARAMETERS TO TUNE
     const SILENCE_THRESHOLD = 0.018; // try 0.015/0.018/0.02 depending on your mic
@@ -64,8 +69,8 @@ const VoiceRecorder = forwardRef(
         if (!silenceStartRef.current) silenceStartRef.current = now;
         else if (now - silenceStartRef.current > MAX_SILENCE_MS) {
           autoStoppedRef.current = true;
-          stopRecording();
-          toast.info("🎤 No speech detected — recording stopped.");
+          stopRecording(false); // Auto-stop doesn't cancel, but won't transcribe if flagged
+          toast.info(" No speech detected — recording stopped.");
           return;
         }
         speechStartRef.current = null;
@@ -82,8 +87,8 @@ const VoiceRecorder = forwardRef(
         hasSpokenRef.current = true;
         if (now - speechStartRef.current > MAX_SPEECH_MS) {
           autoStoppedRef.current = false;
-          stopRecording();
-          toast.success("🗣️ Recording stopped after 10s of continuous speech.");
+          stopRecording(false); // Proceed to transcribe on max speech
+          toast.success(" Recording stopped after 10s of continuous speech.");
           return;
         }
         silenceStartRef.current = null;
@@ -103,6 +108,7 @@ const VoiceRecorder = forwardRef(
         autoStoppedRef.current = false;
         cumulativeSpeechMsRef.current = 0;
         lastRmsAboveRef.current = null;
+        shouldTranscribeRef.current = true; // Reset flag
         mediaRecorder.ondataavailable = (event) => {
           if (event.data.size > 0) chunksRef.current.push(event.data);
         };
@@ -113,15 +119,24 @@ const VoiceRecorder = forwardRef(
             audioContextRef.current.close();
             audioContextRef.current = null;
           }
+          // Clean up stream tracks
+          if (audioStreamRef.current) {
+            audioStreamRef.current.getTracks().forEach(track => track.stop());
+            audioStreamRef.current = null;
+          }
           // 1. Auto stop (no/long silence)
           if (autoStoppedRef.current) {
             setIsRecording(false);
             mediaRecorderRef.current = null;
             return;
           }
-          // 2. Manual stop but not enough speech
-          if (!hasSpokenRef.current || cumulativeSpeechMsRef.current < MIN_SPEECH_MS) {
-            toast.info("🎤 No clear speech detected — recording stopped.");
+          // 2. Manual stop but not enough speech OR cancelled
+          if (!shouldTranscribeRef.current) {
+            if (!shouldTranscribeRef.current) {
+              toast.info(" Recording cancelled.");
+            } else {
+              toast.info(" No clear speech detected — recording stopped.");
+            }
             setIsRecording(false);
             mediaRecorderRef.current = null;
             return;
@@ -131,8 +146,11 @@ const VoiceRecorder = forwardRef(
           const formData = new FormData();
           formData.append("audio", audioBlob, "recording.webm");
 
+          setIsTranscribing(true); // ✅ Start loader
+          onTranscribingStart && onTranscribingStart();
+
           try {
-            toast.info("⏳ Transcribing your voice...");
+            toast.info(" Transcribing your voice...");
             const res = await axios.post(`${BASE_URL}/transcribe`, formData, {
               headers: { "Content-Type": "multipart/form-data" },
               timeout: 120000,
@@ -148,6 +166,8 @@ const VoiceRecorder = forwardRef(
             console.error("Upload error:", err);
             toast.error("❌ Error uploading audio.");
           } finally {
+            setIsTranscribing(false); // ✅ Stop loader
+            onTranscribingEnd && onTranscribingEnd();
             setIsRecording(false);
             mediaRecorderRef.current = null;
           }
@@ -156,7 +176,7 @@ const VoiceRecorder = forwardRef(
         mediaRecorder.start();
         mediaRecorderRef.current = mediaRecorder;
         setIsRecording(true);              // ✅ triggers onRecordingStart
-        toast.success("🎙️ Recording started. Speak now!");
+        toast.success(" Recording started. Speak now!");
 
         // Audio setup
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
@@ -187,7 +207,8 @@ const VoiceRecorder = forwardRef(
       }
     };
 
-    const stopRecording = () => {
+    const stopRecording = (cancel = false) => {
+      shouldTranscribeRef.current = !cancel; // Set flag based on cancel
       return new Promise((resolve) => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
           setIsRecording(false);           // ✅ triggers onRecordingStop immediately
@@ -199,24 +220,62 @@ const VoiceRecorder = forwardRef(
       });
     };
 
+    // ✅ New handlers for the two buttons
+    const handleCancel = () => {
+      stopRecording(true); // Cancel flag
+    };
+
+    const handleConfirm = () => {
+      stopRecording(false); // Proceed to transcribe
+    };
+
+    const isComponentDisabled = disabled || isTranscribing;
+
     useImperativeHandle(ref, () => ({
-      stopRecording,
+      stopRecording: (cancel = false) => stopRecording(cancel), // Expose with cancel param if needed
+      analyserRef,
     }));
+
+    if (isTranscribing) {
+      return (
+        <div className={`mic-button ${isComponentDisabled ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}>
+          <div className="pulse-container">
+            <FiLoader size={20} className="text-blue-500 animate-spin" />
+          </div>
+        </div>
+      );
+    }
+
+    if (isRecording) {
+      return (
+        <div className="mic-controls-container"> {/* ✅ New container for two buttons */}
+          <button
+            className="mic-action-btn cancel-btn"
+            onClick={handleCancel}
+            disabled={isComponentDisabled}
+            aria-label="Cancel recording"
+          >
+            <FiX size={20} className="text-red-500" />
+          </button>
+          <button
+            className="mic-action-btn confirm-btn"
+            onClick={handleConfirm}
+            disabled={isComponentDisabled}
+            aria-label="Confirm and transcribe"
+          >
+            <FiCheck size={20} className="text-green-500" />
+          </button>
+        </div>
+      );
+    }
 
     return (
       <div
         className={`mic-button ${disabled ? "opacity-50 pointer-events-none" : "cursor-pointer"}`}
-        onClick={!disabled ? (isRecording ? stopRecording : startRecording) : undefined}
-        aria-pressed={isRecording}
-        aria-label={isRecording ? "Stop recording" : "Start recording"}
+        onClick={!disabled ? startRecording : undefined}
+        aria-label="Start recording"
       >
-        {isRecording ? (
-          <div className="pulse-container">
-            <FaMicrophoneSlash size={20} className="text-red-500 mic-icon-animate" />
-          </div>
-        ) : (
-          <FaMicrophone size={20} className="text-green-500" />
-        )}
+        <FaMicrophone size={20} className="text-green-500" />
       </div>
     );
   }
