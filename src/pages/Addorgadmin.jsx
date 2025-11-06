@@ -14,6 +14,7 @@ export default function Addorgadmin() {
   const [organizations, setOrganizations] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [newAdmin, setNewAdmin] = useState({
     organization_name: "",
     email: "",
@@ -22,6 +23,7 @@ export default function Addorgadmin() {
     password: "",
   });
   const [editingAdmin, setEditingAdmin] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -217,6 +219,7 @@ export default function Addorgadmin() {
     firstNameRef.current.setCustomValidity("");
     lastNameRef.current.setCustomValidity("");
     passwordRef.current.setCustomValidity("");
+    setIsCreating(true);
     try {
       await axios.post(
         `${process.env.REACT_APP_API_LINK}/users/orgadmin`,
@@ -268,6 +271,8 @@ export default function Addorgadmin() {
       }
 
       showToastMsg(toastMessage, toastBg);
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -306,6 +311,7 @@ export default function Addorgadmin() {
     editLastNameRef.current.setCustomValidity("");
     editUsernameRef.current.setCustomValidity("");
     editPasswordRef.current.setCustomValidity("");
+    setIsUpdating(true);
     try {
       await axios.put(
         `${process.env.REACT_APP_API_LINK}/users/${editingAdmin.user_id}`,
@@ -347,6 +353,8 @@ export default function Addorgadmin() {
       }
 
       showToastMsg(toastMessage, toastBg);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -821,12 +829,13 @@ export default function Addorgadmin() {
               </div>
 
               <button type="submit" className="btn btn-success me-2">
-                Create
+                {isCreating ? "Creating..." : "Create"}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setShowModal(false)}
+                disabled={isCreating}
               >
                 Cancel
               </button>
@@ -978,12 +987,13 @@ export default function Addorgadmin() {
               </div>
 
               <button type="submit" className="btn btn-success me-2">
-                Update
+                {isUpdating ? "Updating..." : "Update"}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setShowEditModal(false)}
+                disabled={isUpdating}
               >
                 Cancel
               </button>

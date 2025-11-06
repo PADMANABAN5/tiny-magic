@@ -13,6 +13,7 @@ export default function Addusers() {
   const [orgUsers, setOrgUsers] = useState([]);
   const [organizations, setOrganizations] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
   const [newUser, setNewUser] = useState({
     organization_name: "",
     email: "",
@@ -21,6 +22,7 @@ export default function Addusers() {
     password: "",
   });
   const [editingUser, setEditingUser] = useState(null);
+  const [isUpdating, setIsUpdating] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -202,7 +204,7 @@ export default function Addusers() {
 
     if (trimmedUser.email) payload.email = trimmedUser.email;
     if (trimmedUser.password) payload.password = trimmedUser.password;
-
+    setIsCreating(true);
     try {
       await axios.post(
         `${process.env.REACT_APP_API_LINK}/users/orguser`,
@@ -257,6 +259,8 @@ export default function Addusers() {
       }
 
       showToastMsg(errorMessage, "warning");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -276,7 +280,7 @@ export default function Addusers() {
       last_name: capitalize(editingUser.last_name.trim()),
       password: editingUser.password?.trim() || "",
     };
-
+    setIsUpdating(true);
     try {
       await axios.put(
         `${process.env.REACT_APP_API_LINK}/users/${editingUser.user_id}`,
@@ -334,6 +338,8 @@ export default function Addusers() {
 
       console.error("Update failed", err);
       showToastMsg(errorMessage, "warning");
+    } finally {
+      setIsUpdating(false);
     }
   };
   useEffect(() => {
@@ -800,12 +806,13 @@ export default function Addusers() {
                 />
               </div>
               <button type="submit" className="btn btn-success me-2">
-                Create
+                {isCreating ? "Creating..." : "Create"}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setShowModal(false)}
+                disabled={isCreating}
               >
                 Cancel
               </button>
@@ -949,12 +956,13 @@ export default function Addusers() {
                 />
               </div>
               <button type="submit" className="btn btn-success me-2">
-                Update
+                {isUpdating ? "Updating..." : "Update"}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setShowEditModal(false)}
+                disabled={isUpdating}
               >
                 Cancel
               </button>

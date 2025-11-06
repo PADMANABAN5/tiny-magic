@@ -20,6 +20,7 @@ export default function Mentor() {
     last_name: "",
     password: "",
   });
+  const [isCreating, setIsCreating] = useState(false);
   const [editMentor, setEditMentor] = useState({
     user_id: "",
     email: "",
@@ -28,6 +29,7 @@ export default function Mentor() {
     last_name: "",
     password: "",
   });
+  const [isUpdating, setIsUpdating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -152,6 +154,7 @@ export default function Mentor() {
   const handleCreateMentor = async (e) => {
     e.preventDefault();
     const { email, first_name, last_name, password } = newMentor;
+    setIsCreating(true);
 
     try {
       const response = await axios.post(
@@ -195,6 +198,8 @@ export default function Mentor() {
         console.error("Non-Axios error:", err);
         alert("An unexpected error occurred.");
       }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -212,6 +217,7 @@ export default function Mentor() {
 
   const handleUpdateSubmit = async (e) => {
     e.preventDefault();
+    setIsUpdating(true);
     try {
       const response = await axios.put(
         `${process.env.REACT_APP_API_LINK}/users/${editMentor.user_id}`,
@@ -255,6 +261,8 @@ export default function Mentor() {
         console.error("Non-Axios error:", err);
         alert("An unexpected error occurred.");
       }
+    } finally {
+      setIsUpdating(false);
     }
   };
 
@@ -617,12 +625,13 @@ export default function Mentor() {
                 />
               </div>
               <button type="submit" className="btn btn-success me-2">
-                Create
+                {isCreating ? "Creating..." : "Create"}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setShowModal(false)}
+                disabled={isCreating}
               >
                 Cancel
               </button>
@@ -771,12 +780,13 @@ export default function Mentor() {
                 />
               </div>
               <button type="submit" className="btn btn-primary me-2">
-                Update
+                {isUpdating ? "Updating..." : "Update"}
               </button>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => setShowUpdateModal(false)}
+                disabled={isUpdating}
               >
                 Cancel
               </button>
