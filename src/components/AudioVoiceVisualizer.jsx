@@ -4,79 +4,60 @@ const AudioVoiceVisualizer = ({ analyser, isActive }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
-    if (!analyser || !isActive) return;
-
+    if (!analyser) return;
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
+
+    analyser.fftSize = 128;
     const bufferLength = analyser.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
 
-    analyser.fftSize = 256; // fewer bars = smoother
-    analyser.smoothingTimeConstant = 0.8;
-
     const draw = () => {
-      if (!isActive) return;
       requestAnimationFrame(draw);
-
-      analyser.getByteFrequencyData(dataArray);
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const barWidth = 3;
-      const gap = 1;
-      const totalBars = Math.floor(canvas.width / (barWidth + gap));
-      const centerY = canvas.height / 2;
+      if (!isActive) return;
+
+      analyser.getByteFrequencyData(dataArray);
+      const width = canvas.width;
+      const height = canvas.height;
+      const barWidth = 4;
+      const gap = 2;
+      const centerX = width / 2;
+      const centerY = height / 2;
+      const totalBars = Math.floor(centerX / (barWidth + gap));
 
       for (let i = 0; i < totalBars; i++) {
         const value = dataArray[i];
-        const percent = value / 255;
-        const fullBarHeight = canvas.height * percent;
-        const halfHeight = fullBarHeight / 2;
+        const scaled = (value / 255) * (height / 2);
+        const xLeft = centerX - (i + 1) * (barWidth + gap);
+        const xRight = centerX + i * (barWidth + gap);
 
-        const x = i * (barWidth + gap);
+        const gradient = ctx.createLinearGradient(0, centerY - scaled, 0, centerY + scaled);
+        gradient.addColorStop(0, "#333434ff");  // ChatGPT green top
+        gradient.addColorStop(1, "#000000ff");  // darker bottom
+        ctx.fillStyle = gradient;
 
-        // Draw upper bar (above center)
-        if (halfHeight > 0) {
-          const upperY = centerY - halfHeight;
-          const gradientUpper = ctx.createLinearGradient(0, upperY, 0, centerY);
-          gradientUpper.addColorStop(0, "#000000ff");
-          gradientUpper.addColorStop(1, "#000000ff");
-          ctx.fillStyle = gradientUpper;
-          ctx.fillRect(x, upperY, barWidth, halfHeight);
-        }
-
-        // Draw lower bar (below center)
-        if (halfHeight > 0) {
-          const lowerY = centerY;
-          const gradientLower = ctx.createLinearGradient(0, centerY, 0, centerY + halfHeight);
-          gradientLower.addColorStop(0, "#000000ff");
-          gradientLower.addColorStop(1, "#000000ff");
-          ctx.fillStyle = gradientLower;
-          ctx.fillRect(x, lowerY, barWidth, halfHeight);
-        }
+        ctx.fillRect(xLeft, centerY - scaled, barWidth, scaled * 2);
+        ctx.fillRect(xRight, centerY - scaled, barWidth, scaled * 2);
       }
     };
 
     draw();
   }, [analyser, isActive]);
 
- return (
+  return (
     <canvas
       ref={canvasRef}
-      width={500}
-      height={75}
+      width={300}
+      height={80}
       style={{
-       position: 'absolute',
-        top: 0,
-        left:  3,
-        width: '100%',
-        height: '100%',
-        border: 'none',
-        borderRadius: 'inherit', // Inherit rounded corners from .chat-input / .voice-visualizer-only
-        backgroundColor: 'transparent', // Fully transparent to overlay on chat-input background
-        boxShadow: 'none',
-        display: 'block',
-        pointerEvents: 'none', // Allow clicks to pass through if overlaid
-        outline: 'none',
+        width: "100%",
+        height: "100%",
+        background: "transparent",
+        borderRadius: "inherit",
+        display: "block",
+        pointerEvents: "none",
       }}
     />
   );
