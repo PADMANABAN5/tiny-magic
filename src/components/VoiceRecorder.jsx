@@ -39,7 +39,7 @@ const VoiceRecorder = forwardRef(
     const shouldTranscribeRef = useRef(true); // ✅ Flag to decide whether to transcribe on stop
 
     // PARAMETERS TO TUNE
-    const SILENCE_THRESHOLD = 0.018; // try 0.015/0.018/0.02 depending on your mic
+    const SILENCE_THRESHOLD = 0.02; // try 0.015/0.018/0.02 depending on your mic
     const MIN_SPEECH_MS = 500;
     const MAX_SILENCE_MS = 10000;
     const MAX_SPEECH_MS = 10000;

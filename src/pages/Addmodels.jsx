@@ -414,7 +414,7 @@ function AddModels() {
                 type="text"
                 className="form-control"
                 style={{ maxWidth: "250px" }}
-                placeholder="Search by Model Name..."
+                placeholder="Search by Model..."
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
