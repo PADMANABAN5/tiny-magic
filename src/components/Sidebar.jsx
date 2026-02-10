@@ -15,25 +15,30 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { MdMenu } from 'react-icons/md';
+import { useFeatures } from "../components/FeatureContext.jsx"; // Import useFeatures
 const BASE_URL = process.env.REACT_APP_API_LINK;
 
 function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, showMobileMenu = false }) {
   const location = useLocation();
   const navigate = useNavigate();
-   // 🔹 CHANGED: read name sources we saved at login
-  const firstName = sessionStorage.getItem("firstName"); 
-  const username  = sessionStorage.getItem("username");  
-  const email     = sessionStorage.getItem("email");     
- // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
+  // 🔹 CHANGED: read name sources we saved at login
+  const firstName = sessionStorage.getItem("firstName");
+  const username = sessionStorage.getItem("username");
+  const email = sessionStorage.getItem("email");
+  // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
   const displayName =
     (firstName && firstName.trim()) ||
     (username && username.trim()) ||
     (email && email.split("@")[0]) ||
     "User";
-  
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98)
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
+
+  const { isFeatureEnabled } = useFeatures(); // Use context
+  const isPracticeModeEnabled = isFeatureEnabled("practice_mode");
+  const isPracticeHistoryEnabled = isFeatureEnabled("practice_history");
 
   const handleLogout = async () => {
     try {
@@ -64,7 +69,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
       navigate("/login");
     }
   };
- 
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768.98)
@@ -102,7 +107,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
             style={{
-              background:"linear-gradient(135deg, #0077b6, #00b4d8)",
+              background: "linear-gradient(135deg, #0077b6, #00b4d8)",
               border: "none",
               padding: "3px 11px",
               borderRadius: "12px", // Medium rounding
@@ -111,7 +116,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
             }}
 
           >
-            <MdMenu size={28} color="#fff"  />
+            <MdMenu size={28} color="#fff" />
           </button>
         )}
 
@@ -148,10 +153,10 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
             >
               <FaUser className="userlogo-desktop text-white" />
               <span className="text-white username-desktop">
-  {firstName
-    ? `${firstName} (${username || email.split("@")[0] || "User"})`
-    : displayName}
-</span>
+                {firstName
+                  ? `${firstName} (${username || email.split("@")[0] || "User"})`
+                  : displayName}
+              </span>
               <FaCaretDown className="ms-2 text-white" />
             </button>
 
@@ -198,25 +203,27 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
                     Dashboard
                   </Link>
                 </li>
-                <li>
-                  <Link
-                    to="/practice"
-                    className={`dropdown-item d-flex align-items-center 
+                {isPracticeModeEnabled && (
+                  <li>
+                    <Link
+                      to="/practice"
+                      className={`dropdown-item d-flex align-items-center 
     ${location.pathname === "/practice" && !showHistorySubmenu ? "active" : ""
-                      }`}
-                    onClick={(e) => {
-                      if (isProcessingAssessment || isLoading) {
-                        e.preventDefault();
-                      } else {
-                        setShowDropdown(false);
-                        setShowHistorySubmenu(false); // ✅ Close history when Practice clicked
-                      }
-                    }}
-                  >
-                    <FaBook className="me-2" style={{ fontSize: "16px" }} />
-                    Practice
-                  </Link>
-                </li>
+                        }`}
+                      onClick={(e) => {
+                        if (isProcessingAssessment || isLoading) {
+                          e.preventDefault();
+                        } else {
+                          setShowDropdown(false);
+                          setShowHistorySubmenu(false); // ✅ Close history when Practice clicked
+                        }
+                      }}
+                    >
+                      <FaBook className="me-2" style={{ fontSize: "16px" }} />
+                      Practice
+                    </Link>
+                  </li>
+                )}
                 <li>
                   <button
                     className={`dropdown-item history-toggle d-flex align-items-center 
@@ -251,21 +258,23 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
                           <FaChartBar className="me-2" /> Training History
                         </Link>
                       </li>
-                      <li>
-                        <Link
-                          to="/practicehistory"
-                          className={`dropdown-item ${location.pathname === "/practicehistory"
-                            ? "active"
-                            : ""
-                            }`}
-                          onClick={() => {
-                            setShowDropdown(false);
-                            setShowHistorySubmenu(true); // Keep submenu open after click
-                          }}
-                        >
-                          <FaChartLine className="me-2" /> Practice History
-                        </Link>
-                      </li>
+                      {isPracticeHistoryEnabled && (
+                        <li>
+                          <Link
+                            to="/practicehistory"
+                            className={`dropdown-item ${location.pathname === "/practicehistory"
+                              ? "active"
+                              : ""
+                              }`}
+                            onClick={() => {
+                              setShowDropdown(false);
+                              setShowHistorySubmenu(true); // Keep submenu open after click
+                            }}
+                          >
+                            <FaChartLine className="me-2" /> Practice History
+                          </Link>
+                        </li>
+                      )}
                     </ul>
                   )}
                 </li>

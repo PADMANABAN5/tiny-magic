@@ -39,6 +39,7 @@ import { formatMarkdownResponse } from "../utils/formatMarkdownResponse.js";
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from "remark-gfm";
 import AudioVoiceVisualizer from "../components/AudioVoiceVisualizer.jsx";
+import { useFeatures } from "../components/FeatureContext.jsx"; // Import useFeatures
 
 
 
@@ -66,6 +67,8 @@ function Dashboard() {
   const voiceRecorderRef = useRef(null);
   const [isMicActive, setIsMicActive] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const { isFeatureEnabled } = useFeatures(); // Use context
+  const isVoiceEnabled = isFeatureEnabled("voice_mode");
 
   const [menuOpen, setMenuOpen] = useState(false);
   const lastSystemMsg = chatHistory.length
@@ -296,44 +299,44 @@ function Dashboard() {
     }
   };
   const handleBatchSelect = async (batch) => {
-  if (isProcessingAssessment) {
-    toast.warn("⚠️ Please wait, assessment is being processed.");
-    return;
-  }
+    if (isProcessingAssessment) {
+      toast.warn("⚠️ Please wait, assessment is being processed.");
+      return;
+    }
 
-  console.log("🎯 Batch selected:", batch.batch_name);
-  setSelectedBatch(batch);
-  setShowBatchDropdown(false);
+    console.log("🎯 Batch selected:", batch.batch_name);
+    setSelectedBatch(batch);
+    setShowBatchDropdown(false);
 
-  // Update concepts based on selected batch
-  const batchConcepts = batch.concepts || [];
-  setConcepts(batchConcepts);
+    // Update concepts based on selected batch
+    const batchConcepts = batch.concepts || [];
+    setConcepts(batchConcepts);
 
-  // Update sessionStorage with new batch info
-  sessionStorage.setItem("batchId", batch.batch_id);
-  sessionStorage.setItem("organizationId", batch.organization_id);
+    // Update sessionStorage with new batch info
+    sessionStorage.setItem("batchId", batch.batch_id);
+    sessionStorage.setItem("organizationId", batch.organization_id);
 
-  toast.info(`Switched to batch: ${batch.batch_name}`);
+    toast.info(`Switched to batch: ${batch.batch_name}`);
 
-  clearSessionData();
-  setCurrentChatStatus('not_started');
-
-  // Auto-select first concept if available
-  if (batchConcepts.length > 0) {
-    const firstConcept = batchConcepts.find(concept => concept.is_active) || batchConcepts[0];
-    console.log("🚀 Auto-selecting first concept:", firstConcept.concept_name);
-    setSelectedConcept(firstConcept);  // For UI
-
-    // ✅ FIX: Pass firstConcept to checkSessionStatus
-    console.log("🔍 Checking session status for concept:", firstConcept.concept_name);
-    await checkSessionStatus(firstConcept.concept_name, batch.batch_id, firstConcept);
-  } else {
-    setSelectedConcept(null);
     clearSessionData();
     setCurrentChatStatus('not_started');
-    toast.warn("No concepts available in this batch");
-  }
-};
+
+    // Auto-select first concept if available
+    if (batchConcepts.length > 0) {
+      const firstConcept = batchConcepts.find(concept => concept.is_active) || batchConcepts[0];
+      console.log("🚀 Auto-selecting first concept:", firstConcept.concept_name);
+      setSelectedConcept(firstConcept);  // For UI
+
+      // ✅ FIX: Pass firstConcept to checkSessionStatus
+      console.log("🔍 Checking session status for concept:", firstConcept.concept_name);
+      await checkSessionStatus(firstConcept.concept_name, batch.batch_id, firstConcept);
+    } else {
+      setSelectedConcept(null);
+      clearSessionData();
+      setCurrentChatStatus('not_started');
+      toast.warn("No concepts available in this batch");
+    }
+  };
   const initiateFirstMentorMessageWithConcept = async (concept) => {
     if (!concept) {
       setIsInitializing(false);
@@ -735,54 +738,54 @@ function Dashboard() {
       console.log("📊 Extracted scoring data for save:", scoring_data);
 
       const truncateToTwoDecimals = (num) => {
-  if (typeof num !== 'number' || isNaN(num)) return 0;
-  return Math.floor(num * 100) / 100;
-};
+        if (typeof num !== 'number' || isNaN(num)) return 0;
+        return Math.floor(num * 100) / 100;
+      };
 
-// ✅ Calculate and attach all averages and weighted score
-if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) {
-  // Six Facets average
-  const sixFacetScores = [
-    scoring_data.SixFacets.Explanation?.score,
-    scoring_data.SixFacets.Interpretation?.score,
-    scoring_data.SixFacets.Application?.score,
-    scoring_data.SixFacets.Perspective?.score,
-    scoring_data.SixFacets.Empathy?.score,
-    scoring_data.SixFacets["Self-Knowledge"]?.score
-  ].filter(score => typeof score === 'number');
+      // ✅ Calculate and attach all averages and weighted score
+      if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) {
+        // Six Facets average
+        const sixFacetScores = [
+          scoring_data.SixFacets.Explanation?.score,
+          scoring_data.SixFacets.Interpretation?.score,
+          scoring_data.SixFacets.Application?.score,
+          scoring_data.SixFacets.Perspective?.score,
+          scoring_data.SixFacets.Empathy?.score,
+          scoring_data.SixFacets["Self-Knowledge"]?.score
+        ].filter(score => typeof score === 'number');
 
-  const sixFacetsAvg =
-    sixFacetScores.length > 0
-      ? sixFacetScores.reduce((sum, s) => sum + s, 0) / sixFacetScores.length
-      : 0;
+        const sixFacetsAvg =
+          sixFacetScores.length > 0
+            ? sixFacetScores.reduce((sum, s) => sum + s, 0) / sixFacetScores.length
+            : 0;
 
-  // Understanding Skills average
-  const skillScores = [
-    scoring_data.UnderstandingSkills.AskingQuestions?.score,
-    scoring_data.UnderstandingSkills.ClarifyingAmbiguity?.score,
-    scoring_data.UnderstandingSkills.SummarizingConfirming?.score,
-    scoring_data.UnderstandingSkills.ChallengingIdeas?.score,
-    scoring_data.UnderstandingSkills.ComparingConcepts?.score,
-    scoring_data.UnderstandingSkills.AbstractConcrete?.score
-  ].filter(score => typeof score === 'number');
+        // Understanding Skills average
+        const skillScores = [
+          scoring_data.UnderstandingSkills.AskingQuestions?.score,
+          scoring_data.UnderstandingSkills.ClarifyingAmbiguity?.score,
+          scoring_data.UnderstandingSkills.SummarizingConfirming?.score,
+          scoring_data.UnderstandingSkills.ChallengingIdeas?.score,
+          scoring_data.UnderstandingSkills.ComparingConcepts?.score,
+          scoring_data.UnderstandingSkills.AbstractConcrete?.score
+        ].filter(score => typeof score === 'number');
 
-  const understandingSkillsAvg =
-    skillScores.length > 0
-      ? skillScores.reduce((sum, s) => sum + s, 0) / skillScores.length
-      : 0;
+        const understandingSkillsAvg =
+          skillScores.length > 0
+            ? skillScores.reduce((sum, s) => sum + s, 0) / skillScores.length
+            : 0;
 
-  // Final weighted score (60% facets + 40% skills)
-  const finalWeightedScore = (0.6 * sixFacetsAvg) + (0.4 * understandingSkillsAvg);
+        // Final weighted score (60% facets + 40% skills)
+        const finalWeightedScore = (0.6 * sixFacetsAvg) + (0.4 * understandingSkillsAvg);
 
-  // ✅ Attach all calculated averages and weighted score (truncated, not rounded)
-  scoring_data.SixFacets.OverallScore = truncateToTwoDecimals(sixFacetsAvg);
-  scoring_data.UnderstandingSkills.OverallScore = truncateToTwoDecimals(understandingSkillsAvg);
-  scoring_data.FinalWeightedScore = truncateToTwoDecimals(finalWeightedScore);
+        // ✅ Attach all calculated averages and weighted score (truncated, not rounded)
+        scoring_data.SixFacets.OverallScore = truncateToTwoDecimals(sixFacetsAvg);
+        scoring_data.UnderstandingSkills.OverallScore = truncateToTwoDecimals(understandingSkillsAvg);
+        scoring_data.FinalWeightedScore = truncateToTwoDecimals(finalWeightedScore);
 
-  console.log("✅ Six Facets Avg:", scoring_data.SixFacets.OverallScore);
-  console.log("✅ Understanding Skills Avg:", scoring_data.UnderstandingSkills.OverallScore);
-  console.log("✅ Final Weighted Score:", scoring_data.FinalWeightedScore);
-}
+        console.log("✅ Six Facets Avg:", scoring_data.SixFacets.OverallScore);
+        console.log("✅ Understanding Skills Avg:", scoring_data.UnderstandingSkills.OverallScore);
+        console.log("✅ Final Weighted Score:", scoring_data.FinalWeightedScore);
+      }
     }
     console.log("💾 Saving chat with:", {
       requestedStatus,
@@ -918,83 +921,104 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
     }
   };
   const checkSessionStatus = async (conceptName = null, providedBatchId = null, conceptObj = null) => {
-  if (!userId) {
-    console.error("❌ No userId for session check");
-    return;
-  }
-
-  try {
-    setIsLoading(true);
-    const batchId = providedBatchId || sessionStorage.getItem("batchId");
-    if (!batchId) {
-      console.error("❌ No batchId for session check. Cannot proceed.");
-      toast.error("No batch selected. Please choose a batch.");
-      clearSessionData();
-      setCurrentChatStatus('not_started');
+    if (!userId) {
+      console.error("❌ No userId for session check");
       return;
     }
 
-    console.log(`🔍 Checking session: user=${userId}, concept="${conceptName || 'any'}", batch_id=${batchId}`);
-    
-    const params = new URLSearchParams();
-    params.append('user_id', userId);  // Assuming backend expects user_id as param, but code uses /${userId}
-    if (conceptName) params.append('concept_name', conceptName);
-    params.append('batch_id', batchId);  // ALWAYS include batch_id
+    try {
+      setIsLoading(true);
+      const batchId = providedBatchId || sessionStorage.getItem("batchId");
+      if (!batchId) {
+        console.error("❌ No batchId for session check. Cannot proceed.");
+        toast.error("No batch selected. Please choose a batch.");
+        clearSessionData();
+        setCurrentChatStatus('not_started');
+        return;
+      }
 
-    const response = await axios.get(
-      `${BASE_URL}/chat/session-status/${userId}?${params.toString()}`, 
-      config
-    );
+      console.log(`🔍 Checking session: user=${userId}, concept="${conceptName || 'any'}", batch_id=${batchId}`);
 
-    if (response.data.success) {
-      const { data } = response.data;
-      if (data.hasActiveSession) {
-        // Resume logic (parse conversation, set chatId, stage, etc.)
-        console.log(`✅ Resuming active session (ID: ${data.chat.id}) for batch ${batchId}`);
-        setCurrentChatId(data.chat.id);
-        setChatHistory(data.chat.conversation || []);
-        setCurrentStage(data.chat.current_stage + 1);  // Adjust for frontend mapping
-        setSessionType("resume");
-        setResumedFromStatus(data.chat.status);
-        setCurrentChatStatus(data.chat.status);
-        sessionStorage.setItem("currentChatId", data.chat.id);
-        sessionStorage.setItem("chatHistory", JSON.stringify(data.chat.conversation || []));
-        sessionStorage.setItem("sessionType", "resume");
+      const params = new URLSearchParams();
+      params.append('user_id', userId);  // Assuming backend expects user_id as param, but code uses /${userId}
+      if (conceptName) params.append('concept_name', conceptName);
+      params.append('batch_id', batchId);  // ALWAYS include batch_id
+
+      const response = await axios.get(
+        `${BASE_URL}/chat/session-status/${userId}?${params.toString()}`,
+        config
+      );
+
+      if (response.data.success) {
+        const { data } = response.data;
+        if (data.hasActiveSession) {
+          // Resume logic (parse conversation, set chatId, stage, etc.)
+          console.log(`✅ Resuming active session (ID: ${data.chat.id}) for batch ${batchId}`);
+          setCurrentChatId(data.chat.id);
+          setChatHistory(data.chat.conversation || []);
+          setCurrentStage(data.chat.current_stage + 1);  // Adjust for frontend mapping
+          setSessionType("resume");
+          setResumedFromStatus(data.chat.status);
+          setCurrentChatStatus(data.chat.status);
+          sessionStorage.setItem("currentChatId", data.chat.id);
+          sessionStorage.setItem("chatHistory", JSON.stringify(data.chat.conversation || []));
+          sessionStorage.setItem("sessionType", "resume");
+        } else {
+          // Fresh start
+          console.log(`🆕 No active session found for batch ${batchId}. Starting fresh.`);
+          setSessionType("fresh");
+          setCurrentChatId(null);
+          setResumedFromStatus(null);
+          setCurrentChatStatus('not_started');
+          clearSessionData();  // Only clear if fresh
+
+          // ✅ FIX: Use passed conceptObj or find from state/concepts
+          let conceptToUse = conceptObj || selectedConcept;
+          if (!conceptToUse && concepts.length > 0) {
+            conceptToUse = concepts.find(c => c.concept_name === conceptName) ||
+              concepts.find(c => c.is_active) ||
+              concepts[0];
+          } else if (!conceptToUse) {
+            // Fallback: Fetch if needed
+            const fetchedConcepts = await fetchAndReturnConcepts();
+            if (fetchedConcepts.length > 0) {
+              conceptToUse = fetchedConcepts.find(c => c.concept_name === conceptName) || fetchedConcepts[0];
+            }
+          }
+
+          if (conceptToUse) {
+            console.log("🚀 Starting fresh with concept:", conceptToUse.concept_name);
+            setSelectedConcept(conceptToUse);  // Safe: set after finding
+            await initiateFirstMentorMessageWithConcept(conceptToUse);
+          } else {
+            console.error("❌ No valid concept found for fresh session");
+            toast.warn("No concepts available to start session. Please select one.");
+          }
+        }
       } else {
-        // Fresh start
-        console.log(`🆕 No active session found for batch ${batchId}. Starting fresh.`);
+        console.warn("⚠️ Session check failed:", response.data.error);
+        // Fallback to fresh (same logic as above)
         setSessionType("fresh");
         setCurrentChatId(null);
         setResumedFromStatus(null);
         setCurrentChatStatus('not_started');
-        clearSessionData();  // Only clear if fresh
-        
-        // ✅ FIX: Use passed conceptObj or find from state/concepts
+        clearSessionData();
         let conceptToUse = conceptObj || selectedConcept;
         if (!conceptToUse && concepts.length > 0) {
-          conceptToUse = concepts.find(c => c.concept_name === conceptName) || 
-                         concepts.find(c => c.is_active) || 
-                         concepts[0];
-        } else if (!conceptToUse) {
-          // Fallback: Fetch if needed
-          const fetchedConcepts = await fetchAndReturnConcepts();
-          if (fetchedConcepts.length > 0) {
-            conceptToUse = fetchedConcepts.find(c => c.concept_name === conceptName) || fetchedConcepts[0];
-          }
+          conceptToUse = concepts.find(c => c.concept_name === conceptName) ||
+            concepts.find(c => c.is_active) ||
+            concepts[0];
         }
-        
         if (conceptToUse) {
-          console.log("🚀 Starting fresh with concept:", conceptToUse.concept_name);
-          setSelectedConcept(conceptToUse);  // Safe: set after finding
+          console.log("🚀 Fallback: Starting fresh with concept:", conceptToUse.concept_name);
+          setSelectedConcept(conceptToUse);
           await initiateFirstMentorMessageWithConcept(conceptToUse);
-        } else {
-          console.error("❌ No valid concept found for fresh session");
-          toast.warn("No concepts available to start session. Please select one.");
         }
       }
-    } else {
-      console.warn("⚠️ Session check failed:", response.data.error);
-      // Fallback to fresh (same logic as above)
+    } catch (error) {
+      console.error("❌ Error checking session status:", error);
+      toast.error("Failed to check session. Starting fresh.");
+      // Fallback to fresh (reuse logic)
       setSessionType("fresh");
       setCurrentChatId(null);
       setResumedFromStatus(null);
@@ -1002,41 +1026,20 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
       clearSessionData();
       let conceptToUse = conceptObj || selectedConcept;
       if (!conceptToUse && concepts.length > 0) {
-        conceptToUse = concepts.find(c => c.concept_name === conceptName) || 
-                       concepts.find(c => c.is_active) || 
-                       concepts[0];
+        conceptToUse = concepts.find(c => c.concept_name === conceptName) ||
+          concepts.find(c => c.is_active) ||
+          concepts[0];
       }
       if (conceptToUse) {
-        console.log("🚀 Fallback: Starting fresh with concept:", conceptToUse.concept_name);
+        console.log("🚀 Error recovery: Starting fresh with concept:", conceptToUse.concept_name);
         setSelectedConcept(conceptToUse);
         await initiateFirstMentorMessageWithConcept(conceptToUse);
       }
+    } finally {
+      setIsLoading(false);
+      setIsInitializing(false);
     }
-  } catch (error) {
-    console.error("❌ Error checking session status:", error);
-    toast.error("Failed to check session. Starting fresh.");
-    // Fallback to fresh (reuse logic)
-    setSessionType("fresh");
-    setCurrentChatId(null);
-    setResumedFromStatus(null);
-    setCurrentChatStatus('not_started');
-    clearSessionData();
-    let conceptToUse = conceptObj || selectedConcept;
-    if (!conceptToUse && concepts.length > 0) {
-      conceptToUse = concepts.find(c => c.concept_name === conceptName) || 
-                     concepts.find(c => c.is_active) || 
-                     concepts[0];
-    }
-    if (conceptToUse) {
-      console.log("🚀 Error recovery: Starting fresh with concept:", conceptToUse.concept_name);
-      setSelectedConcept(conceptToUse);
-      await initiateFirstMentorMessageWithConcept(conceptToUse);
-    }
-  } finally {
-    setIsLoading(false);
-    setIsInitializing(false);
-  }
-};
+  };
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -1046,21 +1049,21 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
     }
   };
   const handleConceptSelect = async (concept) => {
-  if (isProcessingAssessment) {
-    toast.warn("⚠️ Please wait, assessment is being processed.");
-    return;
-  }
-  console.log("🎯 Concept selected:", concept.concept_name);
-  setSelectedConcept(concept);
-  setShowConceptDropdown(false);
-  clearSessionData();
-  setCurrentChatStatus('not_started');
-  console.log("🔍 Checking session status for concept:", concept.concept_name);
-  const currentBatchId = sessionStorage.getItem("batchId");
-  
-  // ✅ FIX: Pass concept as third param
-  await checkSessionStatus(concept.concept_name, currentBatchId, concept);
-};
+    if (isProcessingAssessment) {
+      toast.warn("⚠️ Please wait, assessment is being processed.");
+      return;
+    }
+    console.log("🎯 Concept selected:", concept.concept_name);
+    setSelectedConcept(concept);
+    setShowConceptDropdown(false);
+    clearSessionData();
+    setCurrentChatStatus('not_started');
+    console.log("🔍 Checking session status for concept:", concept.concept_name);
+    const currentBatchId = sessionStorage.getItem("batchId");
+
+    // ✅ FIX: Pass concept as third param
+    await checkSessionStatus(concept.concept_name, currentBatchId, concept);
+  };
   const getStageStatus = () => {
     if (currentChatStatus === 'completed') return 'completed';
     if (currentChatStatus === 'not_started') return 'not-started';
@@ -1070,38 +1073,38 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
     return 'in-progress';
   };
   useEffect(() => {
-  if (username && userId && !isInitializingRef.current) {
-    isInitializingRef.current = true; // Set lock to prevent concurrent initializations
-    setIsInitializing(true);
-    const initializeSession = async () => {
-      console.log("🚀 Starting session initialization");
-      try {
-        // Fetch concepts first
-        if (concepts.length === 0) {
-          await fetchConcepts();
+    if (username && userId && !isInitializingRef.current) {
+      isInitializingRef.current = true; // Set lock to prevent concurrent initializations
+      setIsInitializing(true);
+      const initializeSession = async () => {
+        console.log("🚀 Starting session initialization");
+        try {
+          // Fetch concepts first
+          if (concepts.length === 0) {
+            await fetchConcepts();
+          }
+          const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
+          if (currentConcepts.length > 0) {
+            const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
+            console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
+            setSelectedConcept(initialConcept); // Set initial concept before checking session
+            const batchId = selectedBatch?.batch_id ?? sessionStorage.getItem("batchId");
+
+            // ✅ FIX: Pass initialConcept to checkSessionStatus
+            await checkSessionStatus(initialConcept.concept_name, batchId, initialConcept);
+          } else {
+            console.log("⚠️ No concepts available, checking session without concept_name");
+            await checkSessionStatus();
+          }
+        } catch (error) {
+          console.error("❌ Error during session initialization:", error);
+          setIsInitializing(false);
+          isInitializingRef.current = false;
         }
-        const currentConcepts = concepts.length > 0 ? concepts : await fetchAndReturnConcepts();
-        if (currentConcepts.length > 0) {
-          const initialConcept = currentConcepts.find(concept => concept.is_active) || currentConcepts[0];
-          console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
-          setSelectedConcept(initialConcept); // Set initial concept before checking session
-          const batchId = selectedBatch?.batch_id ?? sessionStorage.getItem("batchId");
-          
-          // ✅ FIX: Pass initialConcept to checkSessionStatus
-          await checkSessionStatus(initialConcept.concept_name, batchId, initialConcept);
-        } else {
-          console.log("⚠️ No concepts available, checking session without concept_name");
-          await checkSessionStatus();
-        }
-      } catch (error) {
-        console.error("❌ Error during session initialization:", error);
-        setIsInitializing(false);
-        isInitializingRef.current = false;
-      }
-    };
-    initializeSession();
-  }
-}, [username, userId]);
+      };
+      initializeSession();
+    }
+  }, [username, userId]);
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -1570,50 +1573,52 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
                   </button>
                 </div>
                 {(!isMicActive || isTranscribing) && (
-                <textarea
-                  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
-                  placeholder={
-                    isChatEnded
-                      ? "This conversation has ended. Please restart to begin a new session."
-                      :isTranscribing
+                  <textarea
+                    className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
+                    placeholder={
+                      isChatEnded
+                        ? "This conversation has ended. Please restart to begin a new session."
+                        : isTranscribing
                           ? "Transcribing your voice..."
-                      : isMicActive
-                        ? "🎙 Listening... (voice input active)"
-                        : isInitializing
-                          ? "Initializing..."
-                          : selectedConcept
-                            ? "Ask your mentor anything..."
-                            : conceptsLoading
-                              ? "Loading concepts..."
-                              : "Please select a concept first..."
-                  }
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isMicActive || isTranscribing}  // ✅ add isMicActive
-                  rows="1"
-                />
+                          : isMicActive
+                            ? "🎙 Listening... (voice input active)"
+                            : isInitializing
+                              ? "Initializing..."
+                              : selectedConcept
+                                ? "Ask your mentor anything..."
+                                : conceptsLoading
+                                  ? "Loading concepts..."
+                                  : "Please select a concept first..."
+                    }
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isMicActive || isTranscribing}  // ✅ add isMicActive
+                    rows="1"
+                  />
                 )}
-                 {isMicActive && (
-  <div className={`voice-visualizer-only chat-input ${isChatEnded ? 'disabled' : ''}`} style={{ position: 'relative' }}>
-    <div style={{ position: 'absolute', inset: 0, padding: '1rem 1.25rem' }}> {/* Mimic padding for visual centering */}
-      <AudioVoiceVisualizer
-        analyser={voiceRecorderRef.current?.analyserRef?.current}
-        isActive={isMicActive}
-      />
-    </div>
-  </div>
-)}
+                {isMicActive && (
+                  <div className={`voice-visualizer-only chat-input ${isChatEnded ? 'disabled' : ''}`} style={{ position: 'relative' }}>
+                    <div style={{ position: 'absolute', inset: 0, padding: '1rem 1.25rem' }}> {/* Mimic padding for visual centering */}
+                      <AudioVoiceVisualizer
+                        analyser={voiceRecorderRef.current?.analyserRef?.current}
+                        isActive={isMicActive}
+                      />
+                    </div>
+                  </div>
+                )}
 
-                <VoiceRecorder
-                  ref={voiceRecorderRef}
-                  onTranscription={(text) => setPrompt((prev) => (prev ? prev + " " : "") + text)}
-                  onRecordingStart={() => setIsMicActive(true)}     // ✅ new
-                  onRecordingStop={() => setIsMicActive(false)}     // ✅ new
-                  onTranscribingStart={() => setIsTranscribing(true)}
-                  onTranscribingEnd={() => setIsTranscribing(false)}
-                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
-                />
+                {isVoiceEnabled && (
+                  <VoiceRecorder
+                    ref={voiceRecorderRef}
+                    onTranscription={(text) => setPrompt((prev) => (prev ? prev + " " : "") + text)}
+                    onRecordingStart={() => setIsMicActive(true)}
+                    onRecordingStop={() => setIsMicActive(false)}
+                    onTranscribingStart={() => setIsTranscribing(true)}
+                    onTranscribingEnd={() => setIsTranscribing(false)}
+                    disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isProcessingAssessment}
+                  />
+                )}
 
                 <button
                   className="send-button"

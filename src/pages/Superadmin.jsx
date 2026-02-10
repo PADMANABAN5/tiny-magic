@@ -9,6 +9,8 @@ import Supersidebar from '../components/Supersidebar'; // Import the sidebar com
 import { Container, Row, Col, Card, Button, Nav, Navbar } from 'react-bootstrap'; // React-Bootstrap components
 import '../styles/superadmin.css';
 import usePreventBack from '../utils/usePreventBack.js';
+import FeatureTogglePanel from '../components/FeatureTogglePanel'; // Import FeatureTogglePanel
+
 function Superadmin() {
   usePreventBack("/superadmin");
   const username = sessionStorage.getItem("username");
@@ -16,7 +18,7 @@ function Superadmin() {
   const lastname = sessionStorage.getItem("lastname");
   const fullName = `${firstname || ''} ${lastname || ''}`.trim() || 'User';
   const navigate = useNavigate();
-  
+
 
   return (
     <div className="d-flex bg-light min-vh-100">
@@ -35,6 +37,9 @@ function Superadmin() {
             </p>
           </Card.Body>
         </Card>
+
+        {/* Feature Toggles Section */}
+        <FeatureTogglePanel />
 
         {/* Core Management Sections */}
         <div className="mb-5">
@@ -96,7 +101,7 @@ function Superadmin() {
                   </div>
                   <Card.Title className="fs-5 fw-semibold text-dark mb-2">Organization Users</Card.Title>
                   <Card.Text className="text-secondary mb-4 fs-6">
-                   Add and view users within organizations. Oversee user accounts and their roles to maintain a structured environment.
+                    Add and view users within organizations. Oversee user accounts and their roles to maintain a structured environment.
 
                   </Card.Text>
                   <Button
@@ -228,7 +233,7 @@ function Superadmin() {
                 </Card.Body>
               </Card>
             </Col>
-           <Col>
+            <Col>
               <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
                 <Card.Body className="">
                   <div className="p-3 bg-gradient-orange rounded-circle d-inline-flex mb-3">
@@ -247,7 +252,7 @@ function Superadmin() {
                   </Button>
                 </Card.Body>
               </Card>
-            </Col> 
+            </Col>
           </Row>
         </div>
       </Container>

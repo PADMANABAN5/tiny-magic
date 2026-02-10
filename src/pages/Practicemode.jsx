@@ -27,12 +27,13 @@ import Progressbar from "../components/PracticeProgress.jsx";
 import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import PracticePDFDownloader from "../components/PracticePDFDownloader.jsx";
-import PracticeAssessmentDisplay,{hasPracticeAssessmentData, calculatePracticeOverallScore } from "../components/PracticeAssessmentDisplay.jsx";
+import PracticeAssessmentDisplay, { hasPracticeAssessmentData, calculatePracticeOverallScore } from "../components/PracticeAssessmentDisplay.jsx";
 import { parseApiResponseText } from "../utils/parseApiResponseText.js";
 import { useAuth } from "../components/AuthContext.jsx";
 import VoiceRecorder from "../components/VoiceRecorder.jsx";
 import LevelCompletionToast from "../components/LevelCompletionToast.jsx";
 import AudioVoiceVisualizer from "../components/AudioVoiceVisualizer.jsx";
+import { useFeatures } from "../components/FeatureContext.jsx"; // Import useFeatures
 const BASE_URL = process.env.REACT_APP_API_LINK || "http://localhost:5000/api"; // Fallback URL
 
 function Practicemode() {
@@ -62,6 +63,8 @@ function Practicemode() {
   const batchDropdownRef = useRef(null);
   const [isMicActive, setIsMicActive] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const { isFeatureEnabled } = useFeatures(); // Use context
+  const isVoiceEnabled = isFeatureEnabled("voice_mode");
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -116,7 +119,7 @@ function Practicemode() {
     setIsListening(false);
   };
 
- const getLevelName = (level) => {
+  const getLevelName = (level) => {
     if (!selectedConcept) return null;
     switch (level) {
       case 1:
@@ -194,7 +197,7 @@ function Practicemode() {
   const { handleDownloadPDF } = PracticePDFDownloader({
     practiceChatHistory,
     selectedConcept,
-    
+
   });
 
   useEffect(() => {
@@ -269,49 +272,49 @@ function Practicemode() {
   };
 
   const handleBatchSelect = async (batch) => {
-  if (isProcessingAssessment) {
-    toast.warn("⚠️ Please wait, assessment is being processed.");
-    return;
-  }
+    if (isProcessingAssessment) {
+      toast.warn("⚠️ Please wait, assessment is being processed.");
+      return;
+    }
 
-  console.log("🎯 Batch selected:", batch.batch_name);
-  setSelectedBatch(batch);
-  setShowBatchDropdown(false);
+    console.log("🎯 Batch selected:", batch.batch_name);
+    setSelectedBatch(batch);
+    setShowBatchDropdown(false);
 
-  // Update concepts based on selected batch
-  const batchConcepts = batch.concepts || [];
-  setConcepts(batchConcepts);
+    // Update concepts based on selected batch
+    const batchConcepts = batch.concepts || [];
+    setConcepts(batchConcepts);
 
-  // Update sessionStorage with new batch info
-  sessionStorage.setItem("batchId", batch.batch_id);
-  sessionStorage.setItem("organizationId", batch.organization_id);
+    // Update sessionStorage with new batch info
+    sessionStorage.setItem("batchId", batch.batch_id);
+    sessionStorage.setItem("organizationId", batch.organization_id);
 
-  toast.info(`Switched to batch: ${batch.batch_name}`);
+    toast.info(`Switched to batch: ${batch.batch_name}`);
 
-  clearSessionData();
-  setCurrentChatStatus('not_started');
-  setApiData({});
-
-  // Auto-select first concept if available
-  if (batchConcepts.length > 0) {
-    const firstConcept = batchConcepts.find(concept => concept.is_active) || batchConcepts[0];
-    console.log("🚀 Auto-selecting first concept:", firstConcept.concept_name);
-    
-    // ✅ Set the selected concept
-    setSelectedConcept(firstConcept);
-
-    console.log("🔍 Checking session status for concept:", firstConcept.concept_name, "with batch_id:", batch.batch_id);
-    
-    // ✅ FIXED: Pass the concept object as third parameter
-    await checkSessionStatus(firstConcept.concept_name, batch.batch_id, firstConcept);
-  } else {
-    setSelectedConcept(null);
     clearSessionData();
     setCurrentChatStatus('not_started');
     setApiData({});
-    toast.warn("No concepts available in this batch");
-  }
-};
+
+    // Auto-select first concept if available
+    if (batchConcepts.length > 0) {
+      const firstConcept = batchConcepts.find(concept => concept.is_active) || batchConcepts[0];
+      console.log("🚀 Auto-selecting first concept:", firstConcept.concept_name);
+
+      // ✅ Set the selected concept
+      setSelectedConcept(firstConcept);
+
+      console.log("🔍 Checking session status for concept:", firstConcept.concept_name, "with batch_id:", batch.batch_id);
+
+      // ✅ FIXED: Pass the concept object as third parameter
+      await checkSessionStatus(firstConcept.concept_name, batch.batch_id, firstConcept);
+    } else {
+      setSelectedConcept(null);
+      clearSessionData();
+      setCurrentChatStatus('not_started');
+      setApiData({});
+      toast.warn("No concepts available in this batch");
+    }
+  };
   const fetchConcepts = async () => {
     if (!username || conceptsLoading) return;
 
@@ -463,7 +466,7 @@ function Practicemode() {
       case 1: return 2;
       case 2: return 3;
       case 3: return 4;
-      case 4: return 5; 
+      case 4: return 5;
       case 5: return 6;
       default: return 1;
     }
@@ -534,67 +537,67 @@ function Practicemode() {
   const handleRestartChat = () => {
     setShowRestartDialog(true);
   };
- const extractAssessmentScores = (assessmentData) => {
-  if (!assessmentData) return {};
+  const extractAssessmentScores = (assessmentData) => {
+    if (!assessmentData) return {};
 
-  try {
-    // Extract facet assessment object
-    const facets = assessmentData?.facet_assessments || {};
+    try {
+      // Extract facet assessment object
+      const facets = assessmentData?.facet_assessments || {};
 
-    // Safely extract numeric scores for each facet
-    const explanation = Number(facets.explanation?.score || 0);
-    const interpretation = Number(facets.interpretation?.score || 0);
-    const application = Number(facets.application?.score || 0);
-    const perspective = Number(facets.perspective?.score || 0);
-    const empathy = Number(facets.empathy?.score || 0);
-    const self_knowledge = Number(facets.self_knowledge?.score || 0);
+      // Safely extract numeric scores for each facet
+      const explanation = Number(facets.explanation?.score || 0);
+      const interpretation = Number(facets.interpretation?.score || 0);
+      const application = Number(facets.application?.score || 0);
+      const perspective = Number(facets.perspective?.score || 0);
+      const empathy = Number(facets.empathy?.score || 0);
+      const self_knowledge = Number(facets.self_knowledge?.score || 0);
 
-    // Compute average
-    const scores = [explanation, interpretation, application, perspective, empathy, self_knowledge];
-    const validScores = scores.filter((s) => s > 0);
-    const average =
-      validScores.length > 0
-        ? (validScores.reduce((sum, v) => sum + v, 0) / validScores.length).toFixed(2)
-        : "0.00";
+      // Compute average
+      const scores = [explanation, interpretation, application, perspective, empathy, self_knowledge];
+      const validScores = scores.filter((s) => s > 0);
+      const average =
+        validScores.length > 0
+          ? (validScores.reduce((sum, v) => sum + v, 0) / validScores.length).toFixed(2)
+          : "0.00";
 
-    // Construct clean extracted structure
-    // Calculate overall performance score first (cannot declare inside object literal)
-    let uiScore = calculatePracticeOverallScore(assessmentData);
+      // Construct clean extracted structure
+      // Calculate overall performance score first (cannot declare inside object literal)
+      let uiScore = calculatePracticeOverallScore(assessmentData);
 
-// Convert to string for slicing
-uiScore = String(uiScore);
+      // Convert to string for slicing
+      uiScore = String(uiScore);
 
-// Slice to 2 decimals if decimal exists (NO rounding)
-if (uiScore.includes(".")) {
-  uiScore = uiScore.slice(0, uiScore.indexOf(".") + 3);
-}
+      // Slice to 2 decimals if decimal exists (NO rounding)
+      if (uiScore.includes(".")) {
+        uiScore = uiScore.slice(0, uiScore.indexOf(".") + 3);
+      }
 
-// Convert back to Number
-uiScore = Number(uiScore);
+      // Convert back to Number
+      uiScore = Number(uiScore);
 
-    const extracted = {
-      six_facets: {
-        explanation,
-        interpretation,
-        application,
-        perspective,
-        empathy,
-        self_knowledge,
-        average,
-      },
-      overall_performance_score: uiScore,
-      overall_rating: assessmentData?.overall_assessment?.overall_rating || "",
-      summary: assessmentData?.overall_assessment?.summary || "",
-      scoring_data: assessmentData, // include full JSON for backend storage
-    };
+      const extracted = {
+        six_facets: {
+          explanation,
+          interpretation,
+          application,
+          perspective,
+          empathy,
+          self_knowledge,
+          average,
+        },
+        overall_performance_score: uiScore,
+        overall_rating: assessmentData?.overall_assessment?.overall_rating || "",
+        summary: assessmentData?.overall_assessment?.summary || "",
+        scoring_data: assessmentData, // include full JSON for backend storage
+      };
 
-    console.log("🧩 Extracted assessment summary:", extracted);
-    return extracted;
-  } catch (err) {
-    console.error("❌ Error extracting assessment scores:", err);
-    return {};
-  }
-};
+      console.log("🧩 Extracted assessment summary:", extracted);
+      return extracted;
+    } catch (err) {
+      console.error("❌ Error extracting assessment scores:", err);
+      return {};
+    }
+  };
 
 
 
@@ -630,18 +633,18 @@ uiScore = Number(uiScore);
         // Update apiData with the latest assessment
         extractedScores = extractAssessmentScores(assessmentData);
 
-      // Update apiData
-      setApiData(prev => ({
-        ...prev,
-        assessmentData,  // Full structure
-        assessment_scores: extractedScores
-      }));
+        // Update apiData
+        setApiData(prev => ({
+          ...prev,
+          assessmentData,  // Full structure
+          assessment_scores: extractedScores
+        }));
 
-       if (selectedConcept?.concept_name) {
-        sessionStorage.setItem(
-          `scenarioProgress_${selectedConcept.concept_name}`,
-          JSON.stringify({ ...assessmentData, assessment_scores: extractedScores })
-        );
+        if (selectedConcept?.concept_name) {
+          sessionStorage.setItem(
+            `scenarioProgress_${selectedConcept.concept_name}`,
+            JSON.stringify({ ...assessmentData, assessment_scores: extractedScores })
+          );
         }
       } catch (err) {
         console.warn("⚠️ Could not parse assessment response", err);
@@ -657,11 +660,11 @@ uiScore = Number(uiScore);
       setPracticeChatHistory(finalHistory);
       sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
 
-       const updatedSessionHistory = [
-         ...sessionHistory,
-         { Mentee: "", Mentor: assessmentResponse.apiResponseText }
-       ];
-       setSessionHistory(updatedSessionHistory);
+      const updatedSessionHistory = [
+        ...sessionHistory,
+        { Mentee: "", Mentor: assessmentResponse.apiResponseText }
+      ];
+      setSessionHistory(updatedSessionHistory);
 
       setCurrentChatStatus("completed");
       setIsChatEnded(true);
@@ -742,178 +745,178 @@ uiScore = Number(uiScore);
     setPrompt(event.target.value);
   };
 
- const handleSendClick = async () => {
-  if (voiceRecorderRef.current) {
-    await voiceRecorderRef.current.stopRecording();
-  }
-  if (!prompt.trim() || !selectedConcept || isChatEnded) {
-    if (isChatEnded) {
-      toast.warn("This conversation has ended. Please restart to begin a new session.");
+  const handleSendClick = async () => {
+    if (voiceRecorderRef.current) {
+      await voiceRecorderRef.current.stopRecording();
+    }
+    if (!prompt.trim() || !selectedConcept || isChatEnded) {
+      if (isChatEnded) {
+        toast.warn("This conversation has ended. Please restart to begin a new session.");
+        return;
+      }
+      toast.warn("Please enter a prompt and select a concept.");
       return;
     }
-    toast.warn("Please enter a prompt and select a concept.");
-    return;
-  }
 
-  const isFirstUserMessage = currentStage === 0;
+    const isFirstUserMessage = currentStage === 0;
 
-  if (isFirstUserMessage) {
-    setIsTransitioning(true);
-    setCurrentStage(1);
-    setTimeout(() => setIsTransitioning(false), 800);
-  }
-
-  setIsLoading(true);
-  const userPrompt = prompt.trim();
-  setPrompt("");
-
-  // Step 1: Add ONLY user message first (immediate UI feedback)
-  const userMessageEntry = { user: userPrompt, system: "" };
-  const historyWithUserMsg = [...practiceChatHistory, userMessageEntry];
-  setPracticeChatHistory(historyWithUserMsg);
-  sessionStorage.setItem("practiceChatHistory", JSON.stringify(historyWithUserMsg));
-
-  try {
-    const organizationId = sessionStorage.getItem("organizationId");
-    const batchId = sessionStorage.getItem("batchId");
-
-    // Step 2: Process the user's message and get mentor response
-    const initialResponse = await processPromptAndCallLLM({
-      username,
-      selectedPrompt,
-      selectedModel: "gpt-4o",
-      sessionHistory,
-      userPrompt: userPrompt,
-      selectedConcept,
-      organizationId,
-      batchId
-    });
-
-    console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
-
-    const parsedResponse = (() => {
-      try {
-        const cleanedText = initialResponse.apiResponseText
-          .replace(/```json\s*/i, "")
-          .replace(/```$/, "")
-          .trim();
-        return JSON.parse(cleanedText);
-      } catch (e) {
-        return {};
-      }
-    })();
-
-    // Update apiData with the latest response
-    setApiData(parsedResponse);
-    if (selectedConcept?.concept_name) {
-      sessionStorage.setItem(
-        `scenarioProgress_${selectedConcept.concept_name}`,
-        JSON.stringify(parsedResponse)
-      );
+    if (isFirstUserMessage) {
+      setIsTransitioning(true);
+      setCurrentStage(1);
+      setTimeout(() => setIsTransitioning(false), 800);
     }
 
-    const apiCurrentLevel = Number(parsedResponse.current_level) || 0;
-    const newStatus = parsedResponse.status || "";
-    const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
+    setIsLoading(true);
+    const userPrompt = prompt.trim();
+    setPrompt("");
 
-    const mentorMessage = parseApiResponseText(initialResponse.apiResponseText);
+    // Step 1: Add ONLY user message first (immediate UI feedback)
+    const userMessageEntry = { user: userPrompt, system: "" };
+    const historyWithUserMsg = [...practiceChatHistory, userMessageEntry];
+    setPracticeChatHistory(historyWithUserMsg);
+    sessionStorage.setItem("practiceChatHistory", JSON.stringify(historyWithUserMsg));
 
-    // Step 3: Create complete conversation with mentor response
-    const completeEntry = { user: userPrompt, system: mentorMessage };
-    const historyComplete = [...practiceChatHistory, completeEntry];
-    
-    // Update both state and storage with complete conversation
-    setPracticeChatHistory(historyComplete);
-    sessionStorage.setItem("practiceChatHistory", JSON.stringify(historyComplete));
+    try {
+      const organizationId = sessionStorage.getItem("organizationId");
+      const batchId = sessionStorage.getItem("batchId");
 
-    // Step 4: Update session history
-    const updatedSessionHistory = [
-      ...sessionHistory,
-      { Mentee: userPrompt, Mentor: mentorMessage },
-    ];
-    setSessionHistory(updatedSessionHistory);
-
-    // Step 5: Check if assessment is needed
-    if (newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested || parsedResponse.interactionCompleted) {
-      console.log("🎯 handleSendClick: Triggering assessment due to", newStatus === "complete" || newStatus === "exit" ? "status complete/exit" : parsedResponse.interactionCompleted ? "interactionCompleted" : "endRequested");
-      setIsProcessingAssessment(true);
-      
-      const assessmentResponse = await processPromptAndCallLLM({
+      // Step 2: Process the user's message and get mentor response
+      const initialResponse = await processPromptAndCallLLM({
         username,
-        selectedPrompt: "practiceAssessment",
+        selectedPrompt,
         selectedModel: "gpt-4o",
-        sessionHistory: updatedSessionHistory,
+        sessionHistory,
         userPrompt: userPrompt,
         selectedConcept,
         organizationId,
         batchId
       });
 
-      setLlmContent(assessmentResponse.apiResponseText);
-      let assessmentData = null;
-      let extractedScores = {};
-      try {
-        const cleanedAssessmentText = assessmentResponse.apiResponseText
-          .replace(/```json\s*/i, "")
-          .replace(/```$/, "")
-          .trim();
-        assessmentData = JSON.parse(cleanedAssessmentText);
+      console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
 
-        extractedScores = extractAssessmentScores(assessmentData);
-
-        setApiData(prev => ({
-          ...prev,
-          assessmentData,
-          assessment_scores: extractedScores
-        }));
-
-        if (selectedConcept?.concept_name) {
-          sessionStorage.setItem(
-            `scenarioProgress_${selectedConcept.concept_name}`,
-            JSON.stringify({ ...assessmentData, assessment_scores: extractedScores })
-          );
+      const parsedResponse = (() => {
+        try {
+          const cleanedText = initialResponse.apiResponseText
+            .replace(/```json\s*/i, "")
+            .replace(/```$/, "")
+            .trim();
+          return JSON.parse(cleanedText);
+        } catch (e) {
+          return {};
         }
-      } catch (err) {
-        console.warn("⚠️ Could not parse assessment response", err);
+      })();
+
+      // Update apiData with the latest response
+      setApiData(parsedResponse);
+      if (selectedConcept?.concept_name) {
+        sessionStorage.setItem(
+          `scenarioProgress_${selectedConcept.concept_name}`,
+          JSON.stringify(parsedResponse)
+        );
       }
 
-      const assessmentChatEntry = { user: "", system: assessmentResponse.apiResponseText };
-      const finalHistory = [...historyComplete, assessmentChatEntry];
-      setPracticeChatHistory(finalHistory);
-      sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
+      const apiCurrentLevel = Number(parsedResponse.current_level) || 0;
+      const newStatus = parsedResponse.status || "";
+      const newProgressStage = apiCurrentLevel > 0 ? apiCurrentLevel + 1 : 0;
 
-      const finalSessionHistory = [
-        ...updatedSessionHistory,
-        { Mentee: "", Mentor: assessmentResponse.apiResponseText }
+      const mentorMessage = parseApiResponseText(initialResponse.apiResponseText);
+
+      // Step 3: Create complete conversation with mentor response
+      const completeEntry = { user: userPrompt, system: mentorMessage };
+      const historyComplete = [...practiceChatHistory, completeEntry];
+
+      // Update both state and storage with complete conversation
+      setPracticeChatHistory(historyComplete);
+      sessionStorage.setItem("practiceChatHistory", JSON.stringify(historyComplete));
+
+      // Step 4: Update session history
+      const updatedSessionHistory = [
+        ...sessionHistory,
+        { Mentee: userPrompt, Mentor: mentorMessage },
       ];
-      setSessionHistory(finalSessionHistory);
-      setCurrentChatStatus('completed');
-      
-      // Pass the parsed assessment to handleSaveChat with the complete history
-      await handleSaveChat("completed", true, finalHistory, assessmentData, extractedScores);
-      setJustSavedAssessment(true);
-      setTimeout(() => setJustSavedAssessment(false), 1000);
+      setSessionHistory(updatedSessionHistory);
 
-      setEndReason((newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested) ? 'endRequested' : 'interactionCompleted');
-      setIsChatEnded(true);
-      console.log("🔒 handleSendClick: Chat ended, input restricted");
-    } else {
-      if (isFirstUserMessage || newProgressStage >= currentStage) {
-        setCurrentStage(newProgressStage);
-        setCurrentChatStatus("inprogress");
-        console.log("➡️ Progressing to stage:", newProgressStage);
+      // Step 5: Check if assessment is needed
+      if (newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested || parsedResponse.interactionCompleted) {
+        console.log("🎯 handleSendClick: Triggering assessment due to", newStatus === "complete" || newStatus === "exit" ? "status complete/exit" : parsedResponse.interactionCompleted ? "interactionCompleted" : "endRequested");
+        setIsProcessingAssessment(true);
+
+        const assessmentResponse = await processPromptAndCallLLM({
+          username,
+          selectedPrompt: "practiceAssessment",
+          selectedModel: "gpt-4o",
+          sessionHistory: updatedSessionHistory,
+          userPrompt: userPrompt,
+          selectedConcept,
+          organizationId,
+          batchId
+        });
+
+        setLlmContent(assessmentResponse.apiResponseText);
+        let assessmentData = null;
+        let extractedScores = {};
+        try {
+          const cleanedAssessmentText = assessmentResponse.apiResponseText
+            .replace(/```json\s*/i, "")
+            .replace(/```$/, "")
+            .trim();
+          assessmentData = JSON.parse(cleanedAssessmentText);
+
+          extractedScores = extractAssessmentScores(assessmentData);
+
+          setApiData(prev => ({
+            ...prev,
+            assessmentData,
+            assessment_scores: extractedScores
+          }));
+
+          if (selectedConcept?.concept_name) {
+            sessionStorage.setItem(
+              `scenarioProgress_${selectedConcept.concept_name}`,
+              JSON.stringify({ ...assessmentData, assessment_scores: extractedScores })
+            );
+          }
+        } catch (err) {
+          console.warn("⚠️ Could not parse assessment response", err);
+        }
+
+        const assessmentChatEntry = { user: "", system: assessmentResponse.apiResponseText };
+        const finalHistory = [...historyComplete, assessmentChatEntry];
+        setPracticeChatHistory(finalHistory);
+        sessionStorage.setItem("practiceChatHistory", JSON.stringify(finalHistory));
+
+        const finalSessionHistory = [
+          ...updatedSessionHistory,
+          { Mentee: "", Mentor: assessmentResponse.apiResponseText }
+        ];
+        setSessionHistory(finalSessionHistory);
+        setCurrentChatStatus('completed');
+
+        // Pass the parsed assessment to handleSaveChat with the complete history
+        await handleSaveChat("completed", true, finalHistory, assessmentData, extractedScores);
+        setJustSavedAssessment(true);
+        setTimeout(() => setJustSavedAssessment(false), 1000);
+
+        setEndReason((newStatus === "complete" || newStatus === "exit" || parsedResponse.endRequested) ? 'endRequested' : 'interactionCompleted');
+        setIsChatEnded(true);
+        console.log("🔒 handleSendClick: Chat ended, input restricted");
+      } else {
+        if (isFirstUserMessage || newProgressStage >= currentStage) {
+          setCurrentStage(newProgressStage);
+          setCurrentChatStatus("inprogress");
+          console.log("➡️ Progressing to stage:", newProgressStage);
+        }
+
+        // No auto-save here - let the useEffect handle it
       }
-      
-      // No auto-save here - let the useEffect handle it
+    } catch (error) {
+      console.error("❌ handleSendClick: Error in API request:", error);
+      toast.error("Failed to process request. Please try again.");
+    } finally {
+      setIsLoading(false);
+      setIsProcessingAssessment(false);
     }
-  } catch (error) {
-    console.error("❌ handleSendClick: Error in API request:", error);
-    toast.error("Failed to process request. Please try again.");
-  } finally {
-    setIsLoading(false);
-    setIsProcessingAssessment(false);
-  }
-};
+  };
 
   const handleDownloadConcept = (downloadLink, conceptName) => {
     if (!downloadLink) {
@@ -978,14 +981,14 @@ uiScore = Number(uiScore);
     const statusToSave = requestedStatus || getFrontendStatusForSave();
     const stageToSave = getCurrentStageForAPI(statusToSave);
     const conceptNameToSave = selectedConcept?.concept_name;
-   let scoring_data = null;
-if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
-  const assessmentToExtract = finalAssessmentOverride || apiData?.assessmentData || apiData?.final_assessment;
-  if (assessmentToExtract) {
-    extractedScores = extractAssessmentScores(assessmentToExtract);
-    console.log('🔄 Fallback: Re-extracted scores directly into extractedScores');
-  }
-}
+    let scoring_data = null;
+    if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
+      const assessmentToExtract = finalAssessmentOverride || apiData?.assessmentData || apiData?.final_assessment;
+      if (assessmentToExtract) {
+        extractedScores = extractAssessmentScores(assessmentToExtract);
+        console.log('🔄 Fallback: Re-extracted scores directly into extractedScores');
+      }
+    }
     console.log("💾 Saving chat with:", {
       requestedStatus,
       statusToSave,
@@ -1004,15 +1007,15 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
       const batchId = selectedBatch?.batch_id ?? sessionStorage.getItem("batchId");
       const requestData = {
         batch_id: batchId,
-         conversation: historyToSave,
-  status: statusToSave,
-  current_stage: stageToSave,
-  concept_name: conceptNameToSave,
-  // Only include scores if we have them and status is completed
-  ...(statusToSave === 'completed' && Object.keys(extractedScores).length > 0 && {
-    scoring_data: extractedScores 
-  })
-};
+        conversation: historyToSave,
+        status: statusToSave,
+        current_stage: stageToSave,
+        concept_name: conceptNameToSave,
+        // Only include scores if we have them and status is completed
+        ...(statusToSave === 'completed' && Object.keys(extractedScores).length > 0 && {
+          scoring_data: extractedScores
+        })
+      };
 
       console.log("📤 requestData for save:", requestData);
       if (currentPracticeChatId && PracSessionType === "resume") {
@@ -1116,119 +1119,146 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
     }
   };
 
- const checkSessionStatus = async (conceptName = null, providedBatchId = null, conceptObj = null) => {
-  if (!username || !userId) {
-    setIsInitializing(false);
-    return;
-  }
-
-  setIsLoading(true);
-
-  // ✅ FIX: Ensure we always have a valid array for concepts
-  const availableConcepts = Array.isArray(concepts) ? concepts : [];
-
-  try {
-    // Use the provided batchId, or fallback to selectedBatch or sessionStorage
-    const finalBatchId = providedBatchId || selectedBatch?.batch_id || sessionStorage.getItem("batchId");
-    
-    if (!finalBatchId) {
-      console.error("❌ No batchId available for session check");
-      toast.error("No batch selected. Please select a batch first.");
-      setIsLoading(false);
+  const checkSessionStatus = async (conceptName = null, providedBatchId = null, conceptObj = null) => {
+    if (!username || !userId) {
       setIsInitializing(false);
       return;
     }
 
-    // Build URL with ALL required parameters
-    let apiUrl = `${BASE_URL}/practicemode/session-status/${userId}?batch_id=${finalBatchId}`;
-    
-    if (conceptName) {
-      apiUrl += `&concept_name=${encodeURIComponent(conceptName)}`;
-    }
+    setIsLoading(true);
 
-    console.log("🔍 Checking session with:", { userId, finalBatchId, conceptName });
+    // ✅ FIX: Ensure we always have a valid array for concepts
+    const availableConcepts = Array.isArray(concepts) ? concepts : [];
 
-    const response = await axios.get(apiUrl, config);
+    try {
+      // Use the provided batchId, or fallback to selectedBatch or sessionStorage
+      const finalBatchId = providedBatchId || selectedBatch?.batch_id || sessionStorage.getItem("batchId");
 
-    console.log("📡 Session status response:", response.data);
+      if (!finalBatchId) {
+        console.error("❌ No batchId available for session check");
+        toast.error("No batch selected. Please select a batch first.");
+        setIsLoading(false);
+        setIsInitializing(false);
+        return;
+      }
 
-    if (response.data && response.data.success) {
-      const { 
-        PracSessionType, 
-        hasActiveSession, 
-        shouldStartFresh, 
-        practicemode: chat
-      } = response.data.data;
+      // Build URL with ALL required parameters
+      let apiUrl = `${BASE_URL}/practicemode/session-status/${userId}?batch_id=${finalBatchId}`;
 
-      // ✅ Check if we should resume the session
-      if (PracSessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
-        console.log("🔄 Resuming existing session:", chat);
+      if (conceptName) {
+        apiUrl += `&concept_name=${encodeURIComponent(conceptName)}`;
+      }
 
-        // Resume the session with the chat data
-        setPracticeChatHistory(chat.conversation || []);
+      console.log("🔍 Checking session with:", { userId, finalBatchId, conceptName });
 
-        const loadedSessionHistory = (chat.conversation || [])
-          .filter((item) => item.user !== undefined && item.system !== undefined)
-          .map((item) => ({ Mentee: item.user, Mentor: item.system }));
-        setSessionHistory(loadedSessionHistory);
+      const response = await axios.get(apiUrl, config);
 
-        setCurrentPracticeChatId(chat.id);
-        setPracSessionType("resume");
-        setResumedFromStatus(chat.status);
-        setCurrentChatStatus(chat.status);
+      console.log("📡 Session status response:", response.data);
 
-        // Map the stage correctly
-        const progressStage = mapApiStageToProgressbarIndex(
-          chat.current_stage,
-          chat.status,
-          false
-        );
-        setCurrentStage(progressStage);
+      if (response.data && response.data.success) {
+        const {
+          PracSessionType,
+          hasActiveSession,
+          shouldStartFresh,
+          practicemode: chat
+        } = response.data.data;
 
-        // Set API data from the resumed session
-        setApiData(prev => ({
-          ...prev,
-          current_scenario_number: chat.current_scenario_number,
-          scenarios_completed: chat.scenarios_completed,
-          session_progress: {
-            ...(prev.session_progress || {}),
-            total_scenarios: chat.total_scenarios
-          }
-        }));
+        // ✅ Check if we should resume the session
+        if (PracSessionType === "resume" && hasActiveSession && chat && !shouldStartFresh) {
+          console.log("🔄 Resuming existing session:", chat);
 
-        console.log("✅ Session resumed with stage:", {
-          apiStage: chat.current_stage,
-          status: chat.status,
-          progressStage: progressStage,
-          conceptName: chat.concept_name
-        });
+          // Resume the session with the chat data
+          setPracticeChatHistory(chat.conversation || []);
 
-        // Update session storage
-        sessionStorage.setItem("practiceChatHistory", JSON.stringify(chat.conversation || []));
-        console.log("💾 Setting currentPracticeChatId:", chat.id);
-        sessionStorage.setItem("currentPracticeChatId", chat.id.toString());
-        sessionStorage.setItem("PracSessionType", "resume");
+          const loadedSessionHistory = (chat.conversation || [])
+            .filter((item) => item.user !== undefined && item.system !== undefined)
+            .map((item) => ({ Mentee: item.user, Mentor: item.system }));
+          setSessionHistory(loadedSessionHistory);
 
-        // Set the correct concept - with proper array checks
-        if (chat.concept_name && Array.isArray(availableConcepts) && availableConcepts.length > 0) {
-          const matchingConcept = availableConcepts.find(c => c.concept_name === chat.concept_name);
-          if (matchingConcept) {
-            setSelectedConcept(matchingConcept);
-            console.log("✅ Concept restored from session:", matchingConcept.concept_name);
-          } else if (conceptName) {
-            const providedConcept = availableConcepts.find(c => 
-              c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
-            );
-            if (providedConcept) {
-              setSelectedConcept(providedConcept);
-              console.log("🔄 Using provided concept:", providedConcept.concept_name);
+          setCurrentPracticeChatId(chat.id);
+          setPracSessionType("resume");
+          setResumedFromStatus(chat.status);
+          setCurrentChatStatus(chat.status);
+
+          // Map the stage correctly
+          const progressStage = mapApiStageToProgressbarIndex(
+            chat.current_stage,
+            chat.status,
+            false
+          );
+          setCurrentStage(progressStage);
+
+          // Set API data from the resumed session
+          setApiData(prev => ({
+            ...prev,
+            current_scenario_number: chat.current_scenario_number,
+            scenarios_completed: chat.scenarios_completed,
+            session_progress: {
+              ...(prev.session_progress || {}),
+              total_scenarios: chat.total_scenarios
+            }
+          }));
+
+          console.log("✅ Session resumed with stage:", {
+            apiStage: chat.current_stage,
+            status: chat.status,
+            progressStage: progressStage,
+            conceptName: chat.concept_name
+          });
+
+          // Update session storage
+          sessionStorage.setItem("practiceChatHistory", JSON.stringify(chat.conversation || []));
+          console.log("💾 Setting currentPracticeChatId:", chat.id);
+          sessionStorage.setItem("currentPracticeChatId", chat.id.toString());
+          sessionStorage.setItem("PracSessionType", "resume");
+
+          // Set the correct concept - with proper array checks
+          if (chat.concept_name && Array.isArray(availableConcepts) && availableConcepts.length > 0) {
+            const matchingConcept = availableConcepts.find(c => c.concept_name === chat.concept_name);
+            if (matchingConcept) {
+              setSelectedConcept(matchingConcept);
+              console.log("✅ Concept restored from session:", matchingConcept.concept_name);
+            } else if (conceptName) {
+              const providedConcept = availableConcepts.find(c =>
+                c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
+              );
+              if (providedConcept) {
+                setSelectedConcept(providedConcept);
+                console.log("🔄 Using provided concept:", providedConcept.concept_name);
+              }
             }
           }
-        }
 
+        } else {
+          // ✅ Start fresh session
+          console.log("🆕 Starting fresh session - conditions not met for resume");
+          clearSessionData();
+          setCurrentChatStatus('not_started');
+
+          // ✅ FIX: Use the passed conceptObj or find from available concepts
+          let conceptToUse = conceptObj;
+          if (!conceptToUse && Array.isArray(availableConcepts) && availableConcepts.length > 0) {
+            if (conceptName) {
+              conceptToUse = availableConcepts.find(c =>
+                c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
+              );
+            }
+            if (!conceptToUse) {
+              conceptToUse = availableConcepts.find(concept => concept.is_active) || availableConcepts[0];
+            }
+          }
+
+          if (conceptToUse) {
+            console.log("🚀 Starting fresh conversation with concept:", conceptToUse.concept_name);
+            setSelectedConcept(conceptToUse);
+            await initiateFirstMentorMessageWithConcept(conceptToUse);
+          } else {
+            console.error("❌ No valid concept found");
+            toast.warn("No valid concept available to start session.");
+          }
+        }
       } else {
-        // ✅ Start fresh session
-        console.log("🆕 Starting fresh session - conditions not met for resume");
+        console.log("⚠️ No session data or API not successful, starting fresh");
         clearSessionData();
         setCurrentChatStatus('not_started');
 
@@ -1236,7 +1266,7 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
         let conceptToUse = conceptObj;
         if (!conceptToUse && Array.isArray(availableConcepts) && availableConcepts.length > 0) {
           if (conceptName) {
-            conceptToUse = availableConcepts.find(c => 
+            conceptToUse = availableConcepts.find(c =>
               c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
             );
           }
@@ -1246,73 +1276,46 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
         }
 
         if (conceptToUse) {
-          console.log("🚀 Starting fresh conversation with concept:", conceptToUse.concept_name);
+          console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
           setSelectedConcept(conceptToUse);
           await initiateFirstMentorMessageWithConcept(conceptToUse);
         } else {
-          console.error("❌ No valid concept found");
-          toast.warn("No valid concept available to start session.");
+          console.error("❌ No valid concept found for fresh start");
         }
       }
-    } else {
-      console.log("⚠️ No session data or API not successful, starting fresh");
+
+      await fetchChatCounts();
+    } catch (error) {
+      console.error("❌ Error checking session status:", error);
       clearSessionData();
       setCurrentChatStatus('not_started');
 
-      // ✅ FIX: Use the passed conceptObj or find from available concepts
+      // ✅ FIX: Error recovery with proper concept handling
       let conceptToUse = conceptObj;
-      if (!conceptToUse && Array.isArray(availableConcepts) && availableConcepts.length > 0) {
+      if (!conceptToUse && Array.isArray(concepts) && concepts.length > 0) {
         if (conceptName) {
-          conceptToUse = availableConcepts.find(c => 
+          conceptToUse = concepts.find(c =>
             c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
           );
         }
         if (!conceptToUse) {
-          conceptToUse = availableConcepts.find(concept => concept.is_active) || availableConcepts[0];
+          conceptToUse = concepts.find(concept => concept.is_active) || concepts[0];
         }
       }
 
       if (conceptToUse) {
-        console.log("🚀 Force-starting fresh conversation:", conceptToUse.concept_name);
+        console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
         setSelectedConcept(conceptToUse);
         await initiateFirstMentorMessageWithConcept(conceptToUse);
       } else {
-        console.error("❌ No valid concept found for fresh start");
+        console.error("❌ No concepts available for error recovery");
       }
+    } finally {
+      setIsLoading(false);
+      setIsInitializing(false);
+      isInitializingRef.current = false;
     }
-
-    await fetchChatCounts();
-  } catch (error) {
-    console.error("❌ Error checking session status:", error);
-    clearSessionData();
-    setCurrentChatStatus('not_started');
-
-    // ✅ FIX: Error recovery with proper concept handling
-    let conceptToUse = conceptObj;
-    if (!conceptToUse && Array.isArray(concepts) && concepts.length > 0) {
-      if (conceptName) {
-        conceptToUse = concepts.find(c => 
-          c.concept_name && c.concept_name.toLowerCase().includes(conceptName.toLowerCase())
-        );
-      }
-      if (!conceptToUse) {
-        conceptToUse = concepts.find(concept => concept.is_active) || concepts[0];
-      }
-    }
-
-    if (conceptToUse) {
-      console.log("🚀 Error recovery - starting fresh conversation:", conceptToUse.concept_name);
-      setSelectedConcept(conceptToUse);
-      await initiateFirstMentorMessageWithConcept(conceptToUse);
-    } else {
-      console.error("❌ No concepts available for error recovery");
-    }
-  } finally {
-    setIsLoading(false);
-    setIsInitializing(false);
-    isInitializingRef.current = false;
-  }
-};
+  };
   const handleKeyPress = (event) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -1323,23 +1326,23 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
   };
 
   const handleConceptSelect = async (concept) => {
-  if (isProcessingAssessment) {
-    toast.warn("⚠️ Please wait, assessment is being processed.");
-    return;
-  }
-  console.log("🎯 Concept selected:", concept.concept_name);
-  setSelectedConcept(concept);
-  setShowConceptDropdown(false);
-  setApiData({}); 
-  clearSessionData();
-  setCurrentChatStatus('not_started');
+    if (isProcessingAssessment) {
+      toast.warn("⚠️ Please wait, assessment is being processed.");
+      return;
+    }
+    console.log("🎯 Concept selected:", concept.concept_name);
+    setSelectedConcept(concept);
+    setShowConceptDropdown(false);
+    setApiData({});
+    clearSessionData();
+    setCurrentChatStatus('not_started');
 
-  console.log("🔍 Checking session status for concept:", concept.concept_name);
-  const currentBatchId = sessionStorage.getItem("batchId");
-  
-  // ✅ FIXED: Pass the concept object as third parameter
-  await checkSessionStatus(concept.concept_name, currentBatchId, concept);
-};
+    console.log("🔍 Checking session status for concept:", concept.concept_name);
+    const currentBatchId = sessionStorage.getItem("batchId");
+
+    // ✅ FIXED: Pass the concept object as third parameter
+    await checkSessionStatus(concept.concept_name, currentBatchId, concept);
+  };
 
   const getStageStatus = () => {
     if (currentChatStatus === 'completed') return 'completed';
@@ -1369,7 +1372,7 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
             console.log("🎯 Initial concept for session check:", initialConcept.concept_name);
             setSelectedConcept(initialConcept); // Set initial concept before checking session
             const batchId = selectedBatch?.batch_id ?? sessionStorage.getItem("batchId");
-            
+
             // ✅ Pass initialConcept to checkSessionStatus
             await checkSessionStatus(initialConcept.concept_name, batchId, initialConcept);
           } else {
@@ -1467,8 +1470,8 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
   return (
     <div className="learning-dashboard">
       <Sidebar isProcessingAssessment={isProcessingAssessment} isLoading={isLoading} menuOpen={menuOpen}
-        setMenuOpen={setMenuOpen} showMobileMenu={true}/>
-    
+        setMenuOpen={setMenuOpen} showMobileMenu={true} />
+
       {showRestartDialog && (
         <div className="restart-dialog-overlay">
           <div className="restart-dialog">
@@ -1544,188 +1547,188 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
       )}
       <div className="dashboard-layout">
         {(isMobile ? menuOpen : true) && (
-        <div className="control-panel">
-          <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
-            <div className="section-header">
-              <FiBook className="section-icon" />
-              <h3>Select Batch</h3>
-            </div>
-            <div className="concept-selector" ref={batchDropdownRef}>
-              <div
-                className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
-                onClick={() => !(isProcessingAssessment || isLoading) && setShowBatchDropdown(!showBatchDropdown)}
-              >
-                <span className="concept-text">
-                  {conceptsLoading
-                    ? "Loading batches..."
-                    : selectedBatch
-                      ? selectedBatch.batch_name
-                      : batches.length > 0
-                        ? "Choose a batch"
-                        : "No batches available"
-                  }
-                </span>
-                <FiChevronDown className={`dropdown-arrow ${showBatchDropdown ? 'open' : ''}`} />
+          <div className="control-panel">
+            <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
+              <div className="section-header">
+                <FiBook className="section-icon" />
+                <h3>Select Batch</h3>
               </div>
-              {showBatchDropdown && (
-                <div className="concept-dropdown">
-                  {conceptsLoading ? (
-                    <div className="concept-option">
-                      <div className="concept-name">Loading...</div>
-                    </div>
-                  ) : batches.length > 0 ? (
-                    batches.map((batch) => (
-                      <div
-                        key={batch.batch_id}
-                        className={`concept-option ${selectedBatch?.batch_id === batch.batch_id ? 'selected' : ''}`}
-                        onClick={() => handleBatchSelect(batch)}
-                      >
-                        <div className="concept-name">{batch.batch_name}</div> 
+              <div className="concept-selector" ref={batchDropdownRef}>
+                <div
+                  className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
+                  onClick={() => !(isProcessingAssessment || isLoading) && setShowBatchDropdown(!showBatchDropdown)}
+                >
+                  <span className="concept-text">
+                    {conceptsLoading
+                      ? "Loading batches..."
+                      : selectedBatch
+                        ? selectedBatch.batch_name
+                        : batches.length > 0
+                          ? "Choose a batch"
+                          : "No batches available"
+                    }
+                  </span>
+                  <FiChevronDown className={`dropdown-arrow ${showBatchDropdown ? 'open' : ''}`} />
+                </div>
+                {showBatchDropdown && (
+                  <div className="concept-dropdown">
+                    {conceptsLoading ? (
+                      <div className="concept-option">
+                        <div className="concept-name">Loading...</div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="concept-option">
-                      <div className="concept-name">No batches available</div>
-                      <div className="concept-description">Contact your administrator</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
-            <div className="section-header">
-              <FiTarget className="section-icon" />
-              <h3>Select Concept</h3>
-            </div>
-            <div className="concept-selector" ref={conceptDropdownRef}>
-              <div
-                className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
-                onClick={() => !(isProcessingAssessment || isLoading) && setShowConceptDropdown(!showConceptDropdown)}
-              >
-                <span className="concept-text">
-                  {conceptsLoading
-                    ? "Loading concepts..."
-                    : selectedConcept
-                      ? selectedConcept.concept_name
-                      : concepts.length > 0
-                        ? "Choose a concept to learn"
-                        : "No concepts available"
-                  }
-                </span>
-                <FiChevronDown className={`dropdown-arrow ${showConceptDropdown ? 'open' : ''}`} />
-              </div>
-              {showConceptDropdown && (
-                <div className="concept-dropdown">
-                  {conceptsLoading ? (
-                    <div className="concept-option">
-                      <div className="concept-name">Loading...</div>
-                    </div>
-                  ) : concepts.length > 0 ? (
-                    concepts.map((concept) => (
-                      <div
-                        key={concept.concept_id}
-                        className="concept-option flex items-center justify-between cursor-pointer"
-                        onClick={() => handleConceptSelect(concept)}
-                      >
-                        <div className="concept-name">{concept.concept_name}</div>
-                        {concept.download_link && (
-                          <button
-                            className="download-btn1 relative group"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadConcept(concept.download_link, concept.concept_name);
-                            }}
-                            data-tooltip="Download concept material"
-                            aria-label={`Download ${concept.concept_name} material`}
-                          >
-                            <FiDownload className="w-5 h-5" />
-                            <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
-                              Download
-                            </span>
-                          </button>
-                        )}
+                    ) : batches.length > 0 ? (
+                      batches.map((batch) => (
+                        <div
+                          key={batch.batch_id}
+                          className={`concept-option ${selectedBatch?.batch_id === batch.batch_id ? 'selected' : ''}`}
+                          onClick={() => handleBatchSelect(batch)}
+                        >
+                          <div className="concept-name">{batch.batch_name}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="concept-option">
+                        <div className="concept-name">No batches available</div>
+                        <div className="concept-description">Contact your administrator</div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="concept-option">
-                      <div className="concept-name">No concepts available</div>
-                      <div className="concept-description">Contact your administrator</div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </div>
-          <div className="control-section">
-            <div className="section-header"
-              style={{
-                cursor: isMobile ? 'pointer' : 'default',
-                userSelect: 'none'
-              }}>
-              <FiTrendingUp className="section-icon" />
-              <h3>Learning Progress</h3>
-            </div>
-            <div className="stage-cards">
-              <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
-                <div className="stage-icon not-started">
-                  <FiClock />
-                </div>
-                <div className="stage-content">
-                  <h4>Not Started</h4>
-                </div>
-              </div>
-              <div className={`stage-card ${getStageStatus() === 'in-progress' ? 'active' : ''} ${isTransitioning ? 'transitioning' : ''}`}>
-                <div className="stage-icon in-progress">
-                  <FiPlay />
-                </div>
-                <div className="stage-content">
-                  <div className="stage-header">
-                    <h4>In Progress</h4>
+                    )}
                   </div>
-                  {getStageStatus() === 'in-progress' && (
-                    <div className="stage-progress-content">
-                      <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
-                        <div className="progress-info">
-                          <span>
-                            {currentStage <= 1 ? "Starting..." :
-                              currentStage === 7 ? "Completed" :
-                                `Level ${currentStage - 1}/5`}
-                          </span>
-                          <span>
-                            {(() => {
-                              const completed = Math.max(currentStage - 2, 0);
-                              return `${Math.round((completed / 5) * 100)}%`;
-                            })()}
-                          </span>
+                )}
+              </div>
+            </div>
+            <div className={`control-section ${isLoading || isProcessingAssessment ? 'disabled' : ''}`}>
+              <div className="section-header">
+                <FiTarget className="section-icon" />
+                <h3>Select Concept</h3>
+              </div>
+              <div className="concept-selector" ref={conceptDropdownRef}>
+                <div
+                  className={`concept-dropdown-trigger ${isProcessingAssessment || isLoading ? 'disabled' : ''}`}
+                  onClick={() => !(isProcessingAssessment || isLoading) && setShowConceptDropdown(!showConceptDropdown)}
+                >
+                  <span className="concept-text">
+                    {conceptsLoading
+                      ? "Loading concepts..."
+                      : selectedConcept
+                        ? selectedConcept.concept_name
+                        : concepts.length > 0
+                          ? "Choose a concept to learn"
+                          : "No concepts available"
+                    }
+                  </span>
+                  <FiChevronDown className={`dropdown-arrow ${showConceptDropdown ? 'open' : ''}`} />
+                </div>
+                {showConceptDropdown && (
+                  <div className="concept-dropdown">
+                    {conceptsLoading ? (
+                      <div className="concept-option">
+                        <div className="concept-name">Loading...</div>
+                      </div>
+                    ) : concepts.length > 0 ? (
+                      concepts.map((concept) => (
+                        <div
+                          key={concept.concept_id}
+                          className="concept-option flex items-center justify-between cursor-pointer"
+                          onClick={() => handleConceptSelect(concept)}
+                        >
+                          <div className="concept-name">{concept.concept_name}</div>
+                          {concept.download_link && (
+                            <button
+                              className="download-btn1 relative group"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadConcept(concept.download_link, concept.concept_name);
+                              }}
+                              data-tooltip="Download concept material"
+                              aria-label={`Download ${concept.concept_name} material`}
+                            >
+                              <FiDownload className="w-5 h-5" />
+                              <span className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-gray-700 text-white text-xs px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 z-50">
+                                Download
+                              </span>
+                            </button>
+                          )}
                         </div>
-                        <div className="progress-bar">
-                          <div
-                            className="progress-fill"
-                            style={{
-                              width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
-                            }}
-                          ></div>
-                        </div>
-                        <div className="substages">
-                          <Progressbar currentStage={currentStage} showOnlyStages={true} />
+                      ))
+                    ) : (
+                      <div className="concept-option">
+                        <div className="concept-name">No concepts available</div>
+                        <div className="concept-description">Contact your administrator</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="control-section">
+              <div className="section-header"
+                style={{
+                  cursor: isMobile ? 'pointer' : 'default',
+                  userSelect: 'none'
+                }}>
+                <FiTrendingUp className="section-icon" />
+                <h3>Learning Progress</h3>
+              </div>
+              <div className="stage-cards">
+                <div className={`stage-card ${getStageStatus() === 'not-started' ? 'active' : ''}`}>
+                  <div className="stage-icon not-started">
+                    <FiClock />
+                  </div>
+                  <div className="stage-content">
+                    <h4>Not Started</h4>
+                  </div>
+                </div>
+                <div className={`stage-card ${getStageStatus() === 'in-progress' ? 'active' : ''} ${isTransitioning ? 'transitioning' : ''}`}>
+                  <div className="stage-icon in-progress">
+                    <FiPlay />
+                  </div>
+                  <div className="stage-content">
+                    <div className="stage-header">
+                      <h4>In Progress</h4>
+                    </div>
+                    {getStageStatus() === 'in-progress' && (
+                      <div className="stage-progress-content">
+                        <div className={`substage-progress ${isTransitioning ? 'fade-in' : ''}`}>
+                          <div className="progress-info">
+                            <span>
+                              {currentStage <= 1 ? "Starting..." :
+                                currentStage === 7 ? "Completed" :
+                                  `Level ${currentStage - 1}/5`}
+                            </span>
+                            <span>
+                              {(() => {
+                                const completed = Math.max(currentStage - 2, 0);
+                                return `${Math.round((completed / 5) * 100)}%`;
+                              })()}
+                            </span>
+                          </div>
+                          <div className="progress-bar">
+                            <div
+                              className="progress-fill"
+                              style={{
+                                width: `${Math.round((Math.max(currentStage - 2, 0) / 5) * 100)}%`
+                              }}
+                            ></div>
+                          </div>
+                          <div className="substages">
+                            <Progressbar currentStage={currentStage} showOnlyStages={true} />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className={`stage-card ${getStageStatus() === 'completed' ? 'active' : ''}`}>
-                <div className="stage-icon completed">
-                  <FiCheckCircle />
-                </div>
-                <div className="stage-content">
-                  <h4>Completed</h4>
+                <div className={`stage-card ${getStageStatus() === 'completed' ? 'active' : ''}`}>
+                  <div className="stage-icon completed">
+                    <FiCheckCircle />
+                  </div>
+                  <div className="stage-content">
+                    <h4>Completed</h4>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
         )}
         <div className="chat-panel">
           <div className="top-right-actions">
@@ -1856,41 +1859,41 @@ if (statusToSave === 'completed' && Object.keys(extractedScores).length === 0) {
               )}
               <div className="chat-input-wrapper">
                 {(!isMicActive || isTranscribing) && (
-                <textarea
-                  className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
-                  placeholder={
-                    isChatEnded
-                      ? "This conversation has ended. Please restart to begin a new session."
-                      :isTranscribing
+                  <textarea
+                    className={`chat-input ${isChatEnded ? 'disabled' : ''}`}
+                    placeholder={
+                      isChatEnded
+                        ? "This conversation has ended. Please restart to begin a new session."
+                        : isTranscribing
                           ? "Transcribing your voice..."
                           : isMicActive
-                        ? "🎙 Listening... (voice input active)"
-                      : isInitializing
-                        ? "Initializing..."
-                        : selectedConcept
-                          ? "Ask your mentor anything..."
-                          : conceptsLoading
-                            ? "Loading concepts..."
-                            : "Please select a concept first..."
-                  }
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isMicActive || isTranscribing}  // ✅ add isMicActive
-                  rows="1"
-                />
+                            ? "🎙 Listening... (voice input active)"
+                            : isInitializing
+                              ? "Initializing..."
+                              : selectedConcept
+                                ? "Ask your mentor anything..."
+                                : conceptsLoading
+                                  ? "Loading concepts..."
+                                  : "Please select a concept first..."
+                    }
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    disabled={isLoading || !selectedConcept || isInitializing || isChatEnded || isMicActive || isTranscribing}  // ✅ add isMicActive
+                    rows="1"
+                  />
                 )}
-                 {isMicActive && (
-  <div className={`voice-visualizer-only chat-input ${isChatEnded ? 'disabled' : ''}`} style={{ position: 'relative' }}>
-    <div style={{ position: 'absolute', inset: 0, padding: '1rem 1.25rem' }}> {/* Mimic padding for visual centering */}
-      <AudioVoiceVisualizer
-        analyser={voiceRecorderRef.current?.analyserRef?.current}
-        isActive={isMicActive}
-      />
-    </div>
-  </div>
-)}
-                           <VoiceRecorder
+                {isMicActive && (
+                  <div className={`voice-visualizer-only chat-input ${isChatEnded ? 'disabled' : ''}`} style={{ position: 'relative' }}>
+                    <div style={{ position: 'absolute', inset: 0, padding: '1rem 1.25rem' }}> {/* Mimic padding for visual centering */}
+                      <AudioVoiceVisualizer
+                        analyser={voiceRecorderRef.current?.analyserRef?.current}
+                        isActive={isMicActive}
+                      />
+                    </div>
+                  </div>
+                )}
+                <VoiceRecorder
                   ref={voiceRecorderRef}
                   onTranscription={(text) => setPrompt((prev) => (prev ? prev + " " : "") + text)}
                   onRecordingStart={() => setIsMicActive(true)}     // ✅ new

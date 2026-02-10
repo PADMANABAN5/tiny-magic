@@ -1,12 +1,12 @@
-import React , {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { toast } from 'react-toastify';
 import Login from './pages/Login.jsx';
-import Dashboard from './pages/Dashboard.jsx'; 
+import Dashboard from './pages/Dashboard.jsx';
 import Variables from './pages/Variables.jsx';
 import Prompt from './pages/prompt.jsx';
-import Superadmin from './pages/Superadmin.jsx'; 
+import Superadmin from './pages/Superadmin.jsx';
 import Mentor from './pages/Mentor.jsx';
 import Orgadmin from './pages/Orgadmin.jsx';
 import OrgList from './pages/Organistation.jsx';
@@ -41,11 +41,16 @@ import ForgotPassword from './components/Forgotpassword.jsx';
 import Models from './pages/Models_management.jsx'
 import Addmodels from './pages/Addmodels.jsx';
 import Assignmodels from './pages/Assignmodels.jsx';
-import ViewModel from './pages/Viewmodels.js';
+import ViewModel from './pages/Viewmodels.jsx';
 import ViewAssignedModels from './pages/ViewAssignedModels.jsx';
 import ViewOrgModels from './pages/ViewOrgmodels.jsx';
 import AddOrgModels from './pages/AddOrgModel.jsx';
 import AssignmentOrg from './pages/AssignmentOrg.jsx';
+
+// Feature Flag Imports
+import { FeatureProvider } from './components/FeatureContext.jsx';
+import FeatureGuard from './components/FeatureGuard.jsx';
+
 function getRedirectPath() {
   const token = sessionStorage.getItem("token");
   const role = sessionStorage.getItem("role_name");
@@ -68,14 +73,14 @@ function getRedirectPath() {
 
   return "/login";
 }
- 
+
 
 function App() {
-  
+
   return (
-    <>
-     <AutoLogout timeout={10 * 60 * 1000} />
-     
+    <FeatureProvider>
+      <AutoLogout timeout={10 * 60 * 1000} />
+
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
@@ -89,7 +94,9 @@ function App() {
           <PrivateRoute roles={["orguser"]}><PageProtection /><ConversationHistory /></PrivateRoute>
         } />
         <Route path="/practicehistory" element={
-          <PrivateRoute roles={["orguser"]}><PageProtection /><PracticeHistory /></PrivateRoute>
+          <FeatureGuard feature="practice_history" fallback={<Navigate to="/dashboard" replace />}>
+            <PrivateRoute roles={["orguser"]}><PageProtection /><PracticeHistory /></PrivateRoute>
+          </FeatureGuard>
         } />
         <Route path="/variables" element={
           <PrivateRoute roles={["orguser"]}><PageProtection /><Variables /></PrivateRoute>
@@ -133,14 +140,14 @@ function App() {
           <PrivateRoute roles={["superadmin"]}><Addorgadmin /></PrivateRoute>
         } />
         <Route path="/models" element={
-          <PrivateRoute roles={["superadmin"]}><Models/></PrivateRoute>
-        }/>
+          <PrivateRoute roles={["superadmin"]}><Models /></PrivateRoute>
+        } />
         <Route path="/addmodels" element={
-          <PrivateRoute roles={["superadmin"]}><Addmodels/></PrivateRoute>
-        }/>
+          <PrivateRoute roles={["superadmin"]}><Addmodels /></PrivateRoute>
+        } />
         <Route path="/assignmodels" element={
-          <PrivateRoute roles={["superadmin"]}><Assignmodels/></PrivateRoute>
-        }/>
+          <PrivateRoute roles={["superadmin"]}><Assignmodels /></PrivateRoute>
+        } />
         <Route path="/orgadminbatch" element={
           <PrivateRoute roles={["orgadmin"]}><OrgadminBatch /></PrivateRoute>
         } />
@@ -158,8 +165,8 @@ function App() {
         } />
         <Route path="/orgadmin/assignments" element={
           <PrivateRoute roles={["orgadmin"]}><ViewAssignedModels /></PrivateRoute>
-        } />       
-         <Route path="/orgadmin/organization-models" element={
+        } />
+        <Route path="/orgadmin/organization-models" element={
           <PrivateRoute roles={["orgadmin"]}><ViewOrgModels /></PrivateRoute>
         } />
         <Route path="/orgadmin/add-orgmodels" element={
@@ -167,7 +174,7 @@ function App() {
         } />
         <Route path="/orgadmin/org-assignment" element={
           <PrivateRoute roles={["orgadmin"]}><AssignmentOrg /></PrivateRoute>
-        } />          
+        } />
         <Route path="/mentordashboard" element={
           <PrivateRoute roles={["mentor"]}><Mentordashboard /></PrivateRoute>
         } />
@@ -179,10 +186,10 @@ function App() {
         } />
         <Route path="/mentorpodusers/:podId" element={
           <PrivateRoute roles={["mentor"]}><Mentorpodusers /></PrivateRoute>
-        }/>
+        } />
         <Route path="/mentorpodusersprogress/:userId" element={
           <PrivateRoute roles={["mentor"]}><MentorPodusersprogress /></PrivateRoute>
-        }/>
+        } />
         <Route path="/archived" element={
           <PrivateRoute roles={["superadmin"]}><Archived /></PrivateRoute>
         } />
@@ -190,15 +197,17 @@ function App() {
           <PrivateRoute roles={["superadmin"]}><ArchivedConcepts /></PrivateRoute>
         } />
         <Route path="/practice" element={
-          <PrivateRoute roles={["orguser"]}>
-            <PageProtection />
-            <Practicemode />
-          </PrivateRoute>
+          <FeatureGuard feature="practice_mode" fallback={<Navigate to="/dashboard" replace />}>
+            <PrivateRoute roles={["orguser"]}>
+              <PageProtection />
+              <Practicemode />
+            </PrivateRoute>
+          </FeatureGuard>
         } />
 
         {/* Redirect to login if no route matches */}
       </Routes>
-    <ToastContainer
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar
@@ -209,8 +218,8 @@ function App() {
         draggable={false}
         pauseOnHover={false}
       />
-   
-    </>
+
+    </FeatureProvider>
   );
 }
 
