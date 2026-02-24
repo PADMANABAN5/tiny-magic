@@ -83,13 +83,13 @@ function App() {
 
         {/* ✅ Protected Routes by Role */}
         <Route path="/dashboard" element={
-          <PrivateRoute roles={["orguser"]}><PageProtection /><Dashboard /></PrivateRoute>
+          <PrivateRoute roles={["orguser"]}><Dashboard /></PrivateRoute>
         } />
         <Route path="/conversationhistory" element={
-          <PrivateRoute roles={["orguser"]}><PageProtection /><ConversationHistory /></PrivateRoute>
+          <PrivateRoute roles={["orguser"]}><ConversationHistory /></PrivateRoute>
         } />
         <Route path="/practicehistory" element={
-          <PrivateRoute roles={["orguser"]}><PageProtection /><PracticeHistory /></PrivateRoute>
+          <PrivateRoute roles={["orguser"]}><PracticeHistory /></PrivateRoute>
         } />
         <Route path="/variables" element={
           <PrivateRoute roles={["orguser"]}><PageProtection /><Variables /></PrivateRoute>
