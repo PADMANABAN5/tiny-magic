@@ -21,7 +21,7 @@ export default function Pods() {
   const [showModal, setShowModal] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedPodId, setSelectedPodId] = useState(null);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchPodName, setSearchPodName] = useState("");
@@ -66,21 +66,23 @@ export default function Pods() {
     const podNameMatch = pod.pod_name
       ?.toLowerCase()
       .includes(searchPodName.toLowerCase());
+
+    // Standardize to strings for comparison
     const orgMatch =
       selectedOrganization === "" ||
-      pod.organization_id?.toString() === selectedOrganization;
+      String(pod.organization_id) === String(selectedOrganization);
 
     // Filter by batch name (text input)
     const batchName =
-      batches.find((b) => b.batch_id === pod.batch_id)?.batch_name || "";
+      batches.find((b) => String(b.batch_id) === String(pod.batch_id))?.batch_name || "";
     const batchMatch =
       searchBatchName === "" ||
       batchName.toLowerCase().includes(searchBatchName.toLowerCase());
 
     // Filter by mentor (check if any in pod.mentors array matches searchMentorName by ID or full name)
-    const mentorMatch = searchMentorName === "" || 
-      pod.mentors?.some(m => 
-        m.user_id?.toString() === searchMentorName || 
+    const mentorMatch = searchMentorName === "" ||
+      pod.mentors?.some(m =>
+        String(m.user_id) === String(searchMentorName) ||
         `${m.first_name || ""} ${m.last_name || ""}`.toLowerCase().includes(searchMentorName.toLowerCase())
       );
 
@@ -92,18 +94,18 @@ export default function Pods() {
   const currentPods = filteredPods.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredPods.length / itemsPerPage);
   const handlePageChange = (pageNumber) => setCurrentPage(pageNumber);
-  
+
   const validatePodName = (e) => {
-  const { value } = e.target;
-  if (!podNameRegex.test(value)) {
-    e.target.setCustomValidity(
-      "Please enter a valid pod name."
-    );
-  } else {
-    e.target.setCustomValidity("");
-  }
-  e.target.reportValidity();
-};
+    const { value } = e.target;
+    if (!podNameRegex.test(value)) {
+      e.target.setCustomValidity(
+        "Please enter a valid pod name."
+      );
+    } else {
+      e.target.setCustomValidity("");
+    }
+    e.target.reportValidity();
+  };
 
   const getToastType = (bg) => {
     switch (bg) {
@@ -294,7 +296,7 @@ export default function Pods() {
           case 400:
             showToastMsg(
               `${data.message || "Invalid request parameters"}`
-            , "warning");
+              , "warning");
             break;
           case 401:
             showToastMsg("Unauthorized. Please log in.", "warning");
@@ -379,52 +381,52 @@ export default function Pods() {
             <button
               className="create-btn"
               onClick={openCreateModal}
-              
+
             >
               <FaPlus />
             </button>
           </div>
           <div className="d-flex flex-wrap align-items-center gap-3 mb-3">
             {/* Show Entries */}
-             <div className="d-flex align-items-center">
-                <span className="me-2">Show entries:</span>
-                <Dropdown className="entries-dropdown" autoClose="true">
-                  <Dropdown.Toggle
-                    variant="outline-secondary"
-                    id="entries-dropdown"
-                    className="d-flex justify-content-between align-items-center"
-                    style={{
-                      width: "80px",
-                      textAlign: "left",
-                      backgroundColor: "#fff",
-                      color: "#000",
-                      borderColor: "#ccc",
-                      boxShadow: "none",
-                      padding: "6px 10px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    {itemsPerPage}
-                  </Dropdown.Toggle>
-            
-                  <Dropdown.Menu
-                    style={{
-                      minWidth: "80px",
-                      maxWidth: "100px",
-                      backgroundColor: "#fff",
-                      maxHeight: "130px",
-                      overflowY: "auto",
-                      border: "1px solid #ccc",
-                      marginTop: "0px",
-                      boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
-                      padding: "0",
-                      scrollbarWidth: "thin", 
-                      scrollbarColor: "#ccc transparent", 
-                    }}
-                  >
- 
-                    <style>
-                      {`
+            <div className="d-flex align-items-center">
+              <span className="me-2">Show entries:</span>
+              <Dropdown className="entries-dropdown" autoClose="true">
+                <Dropdown.Toggle
+                  variant="outline-secondary"
+                  id="entries-dropdown"
+                  className="d-flex justify-content-between align-items-center"
+                  style={{
+                    width: "80px",
+                    textAlign: "left",
+                    backgroundColor: "#fff",
+                    color: "#000",
+                    borderColor: "#ccc",
+                    boxShadow: "none",
+                    padding: "6px 10px",
+                    fontSize: "14px",
+                  }}
+                >
+                  {itemsPerPage}
+                </Dropdown.Toggle>
+
+                <Dropdown.Menu
+                  style={{
+                    minWidth: "80px",
+                    maxWidth: "100px",
+                    backgroundColor: "#fff",
+                    maxHeight: "130px",
+                    overflowY: "auto",
+                    border: "1px solid #ccc",
+                    marginTop: "0px",
+                    boxShadow: "0 2px 5px rgba(0, 0, 0, 0.15)",
+                    padding: "0",
+                    scrollbarWidth: "thin",
+                    scrollbarColor: "#ccc transparent",
+                  }}
+                >
+
+                  <style>
+                    {`
                         .entries-dropdown .dropdown-menu::-webkit-scrollbar {
                           width: 5px;
                         }
@@ -436,95 +438,95 @@ export default function Pods() {
                           background-color: #999;
                         }
                       `}
-                    </style>
-            
-                    {[5, 10, 15, 20, 50].map((num) => (
-                      <Dropdown.Item
-                        key={num}
-                        onClick={() => {
-                          setCurrentPage(1);
-                          setItemsPerPage(num);
-                        }}
-                        active={itemsPerPage === num}
-                        style={{
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          padding: "6px 0",
-                          fontSize: "14px",
-                          textAlign: "center",
-                        }}
-                      >
-                        {num}
-                      </Dropdown.Item>
-                    ))}
-                  </Dropdown.Menu>
-                </Dropdown>
-              </div>
+                  </style>
 
-           
-              <input
-                type="text"
-                className="form-control"
-                style={{ maxWidth: "200px" }}
-                placeholder="Search Pod Name"
-                value={searchPodName}
-                onChange={(e) => {
-                  setSearchPodName(e.target.value);
-                  setCurrentPage(1);
+                  {[5, 10, 15, 20, 50].map((num) => (
+                    <Dropdown.Item
+                      key={num}
+                      onClick={() => {
+                        setCurrentPage(1);
+                        setItemsPerPage(num);
+                      }}
+                      active={itemsPerPage === num}
+                      style={{
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        padding: "6px 0",
+                        fontSize: "14px",
+                        textAlign: "center",
+                      }}
+                    >
+                      {num}
+                    </Dropdown.Item>
+                  ))}
+                </Dropdown.Menu>
+              </Dropdown>
+            </div>
+
+
+            <input
+              type="text"
+              className="form-control"
+              style={{ maxWidth: "200px" }}
+              placeholder="Search Pod Name"
+              value={searchPodName}
+              onChange={(e) => {
+                setSearchPodName(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+
+            {/* Changed Batch filter to input */}
+            <input
+              type="text"
+              className="form-control"
+              style={{ maxWidth: "200px" }}
+              placeholder="Search Batch Name"
+              value={searchBatchName}
+              onChange={(e) => {
+                setSearchBatchName(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+
+            {/* Organization Dropdown */}
+            <Dropdown className="organization-dropdown" autoClose="true" drop="down">
+              <Dropdown.Toggle
+                id="organization-dropdown"
+                variant="outline-secondary"
+                className="d-flex justify-content-between align-items-center text-truncate"
+                style={{
+                  maxWidth: "200px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  backgroundColor: "#fff",
+                  color: "#000",
+                  borderColor: "#ccc",
+                  boxShadow: "none",
+                  padding: "6px 10px",
+                  fontSize: "14px",
                 }}
-              />
+              >
+                {selectedOrganization
+                  ? organizations.find((o) => String(o.organization_id) === String(selectedOrganization))?.organization_name
+                  : "All Organizations"}
+              </Dropdown.Toggle>
 
-              {/* Changed Batch filter to input */}
-              <input
-                type="text"
-                className="form-control"
-                style={{ maxWidth: "200px" }}
-                placeholder="Search Batch Name"
-                value={searchBatchName}
-                onChange={(e) => {
-                  setSearchBatchName(e.target.value);
-                  setCurrentPage(1);
+              <Dropdown.Menu
+                style={{
+                  maxHeight: "150px",
+                  overflowY: "auto",
+                  backgroundColor: "#fff",
+                  border: "1px solid #ccc",
+                  boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+                  padding: 0,
                 }}
-              />
-
-              {/* Organization Dropdown */}
-<Dropdown className="organization-dropdown" autoClose="true" drop="down">
-  <Dropdown.Toggle
-    id="organization-dropdown"
-    variant="outline-secondary"
-    className="d-flex justify-content-between align-items-center text-truncate"
-    style={{
-      maxWidth: "200px",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap",
-      backgroundColor: "#fff",
-      color: "#000",
-      borderColor: "#ccc",
-      boxShadow: "none",
-      padding: "6px 10px",
-      fontSize: "14px",
-    }}
-  >
-    {selectedOrganization
-      ? organizations.find((o) => o.organization_id === selectedOrganization)?.organization_name
-      : "All Organizations"}
-  </Dropdown.Toggle>
-
-  <Dropdown.Menu
-    style={{
-      maxHeight: "150px",
-      overflowY: "auto",
-      backgroundColor: "#fff",
-      border: "1px solid #ccc",
-      boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
-      padding: 0,
-    }}
-  >
-    {/* ✅ Enable horizontal scroll per item, hide scrollbar */}
-    <style>
-      {`
+              >
+                {/* ✅ Enable horizontal scroll per item, hide scrollbar */}
+                <style>
+                  {`
         .organization-dropdown .dropdown-item {
           display: block;
           overflow-x: auto;
@@ -537,98 +539,97 @@ export default function Pods() {
           display: none; /* Chrome/Safari/Edge hides scrollbar */
         }
       `}
-    </style>
+                </style>
 
-    <Dropdown.Item
-      onClick={() => {
-        setSelectedOrganization("");
-        setCurrentPage(1);
-      }}
-      active={selectedOrganization === ""}
-    >
-      All Organizations
-    </Dropdown.Item>
+                <Dropdown.Item
+                  onClick={() => {
+                    setSelectedOrganization("");
+                    setCurrentPage(1);
+                  }}
+                  active={selectedOrganization === ""}
+                >
+                  All Organizations
+                </Dropdown.Item>
 
-    {organizations.map((org) => (
-      <Dropdown.Item
-        key={org.organization_id}
-        onClick={() => {
-          setSelectedOrganization(org.organization_id);
-          setCurrentPage(1);
-        }}
-        active={selectedOrganization === org.organization_id}
-      >
-        {org.organization_name}
-      </Dropdown.Item>
-    ))}
-  </Dropdown.Menu>
-</Dropdown>
-
-
-             <Dropdown className="mentor-dropdown" autoClose="true" drop="down">
-  <Dropdown.Toggle
-    id="mentor-dropdown"
-    variant="outline-secondary"
-    className="d-flex justify-content-between align-items-center text-truncate"
-    style={{
-      maxWidth: "250px",
-      overflow: "hidden",
-      textOverflow: "ellipsis",
-      whiteSpace: "nowrap",
-      backgroundColor: "#fff",
-      color: "#000",
-      borderColor: "#ccc",
-      boxShadow: "none",
-      padding: "6px 10px",
-      fontSize: "14px",
-    }}
-  >
-    {searchMentorName
-      ? mentors.find((m) => String(m.user_id) === String(searchMentorName))
-        ? `${mentors.find((m) => String(m.user_id) === String(searchMentorName)).first_name || ""} ${
-            mentors.find((m) => String(m.user_id) === String(searchMentorName)).last_name || ""
-          }`.trim()
-        : "Select Mentor"
-      : "All Mentors"}
-  </Dropdown.Toggle>
-
-  <Dropdown.Menu
-    style={{
-      maxHeight: "150px",
-      overflowY: "auto",
-      backgroundColor: "#fff",
-      border: "1px solid #ccc",
-      boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
-      padding: 0,
-    }}
-  >
-    <Dropdown.Item
-      onClick={() => {
-        setSearchMentorName("");
-        setCurrentPage(1);
-      }}
-      active={searchMentorName === ""}
-    >
-      All Mentors
-    </Dropdown.Item>
-
-    {mentors.map((mentor) => (
-      <Dropdown.Item
-        key={mentor.user_id}
-        onClick={() => {
-          setSearchMentorName(String(mentor.user_id)); // 👈 convert to string
-          setCurrentPage(1);
-        }}
-        active={String(searchMentorName) === String(mentor.user_id)}
-      >
-        {`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()}
-      </Dropdown.Item>
-    ))}
-  </Dropdown.Menu>
-</Dropdown>
+                {organizations.map((org) => (
+                  <Dropdown.Item
+                    key={org.organization_id}
+                    onClick={() => {
+                      setSelectedOrganization(String(org.organization_id));
+                      setCurrentPage(1);
+                    }}
+                    active={String(selectedOrganization) === String(org.organization_id)}
+                  >
+                    {org.organization_name}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
 
 
-            
+            <Dropdown className="mentor-dropdown" autoClose="true" drop="down">
+              <Dropdown.Toggle
+                id="mentor-dropdown"
+                variant="outline-secondary"
+                className="d-flex justify-content-between align-items-center text-truncate"
+                style={{
+                  maxWidth: "250px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  backgroundColor: "#fff",
+                  color: "#000",
+                  borderColor: "#ccc",
+                  boxShadow: "none",
+                  padding: "6px 10px",
+                  fontSize: "14px",
+                }}
+              >
+                {searchMentorName
+                  ? mentors.find((m) => String(m.user_id) === String(searchMentorName))
+                    ? `${mentors.find((m) => String(m.user_id) === String(searchMentorName)).first_name || ""} ${mentors.find((m) => String(m.user_id) === String(searchMentorName)).last_name || ""
+                      }`.trim()
+                    : "Select Mentor"
+                  : "All Mentors"}
+              </Dropdown.Toggle>
+
+              <Dropdown.Menu
+                style={{
+                  maxHeight: "150px",
+                  overflowY: "auto",
+                  backgroundColor: "#fff",
+                  border: "1px solid #ccc",
+                  boxShadow: "0 2px 5px rgba(0,0,0,0.15)",
+                  padding: 0,
+                }}
+              >
+                <Dropdown.Item
+                  onClick={() => {
+                    setSearchMentorName("");
+                    setCurrentPage(1);
+                  }}
+                  active={searchMentorName === ""}
+                >
+                  All Mentors
+                </Dropdown.Item>
+
+                {mentors.map((mentor) => (
+                  <Dropdown.Item
+                    key={mentor.user_id}
+                    onClick={() => {
+                      setSearchMentorName(String(mentor.user_id)); // 👈 convert to string
+                      setCurrentPage(1);
+                    }}
+                    active={String(searchMentorName) === String(mentor.user_id)}
+                  >
+                    {`${mentor.first_name || ""} ${mentor.last_name || ""}`.trim()}
+                  </Dropdown.Item>
+                ))}
+              </Dropdown.Menu>
+            </Dropdown>
+
+
+
           </div>
 
           {loading ? (
@@ -661,32 +662,31 @@ export default function Pods() {
                             )?.batch_name || "—"}
                           </td>
                           <td>
-  <OverlayTrigger
-    trigger="click"
-    rootClose={true}  // Explicitly enable outside-click closing
-    rootCloseEvent="mousedown"
-    placement="top"
-    overlay={
-      <Popover id={`mentors-popover-${pod.pod_id}`}>
-        <Popover.Header as="h3">Mentors ({pod.mentors?.length || 0})</Popover.Header>
-        <Popover.Body>
-          {getMentorPopover(pod.mentors)}
-        </Popover.Body>
-      </Popover>
-    }
-  >
-    <Badge className="outline-primary cursor-pointer user-select-none">
-      {pod.mentors?.length || 0} Mentors
-    </Badge>
-  </OverlayTrigger>
-</td>
+                            <OverlayTrigger
+                              trigger="click"
+                              rootClose={true}  // Explicitly enable outside-click closing
+                              rootCloseEvent="mousedown"
+                              placement="top"
+                              overlay={
+                                <Popover id={`mentors-popover-${pod.pod_id}`}>
+                                  <Popover.Header as="h3">Mentors ({pod.mentors?.length || 0})</Popover.Header>
+                                  <Popover.Body>
+                                    {getMentorPopover(pod.mentors)}
+                                  </Popover.Body>
+                                </Popover>
+                              }
+                            >
+                              <Badge className="outline-primary cursor-pointer user-select-none">
+                                {pod.mentors?.length || 0} Mentors
+                              </Badge>
+                            </OverlayTrigger>
+                          </td>
                           <td>
                             <span
-                              className={`badge ${
-                                pod.is_active
+                              className={`badge ${pod.is_active
                                   ? "bg-success"
                                   : "bg-secondary"
-                              }`}
+                                }`}
                             >
                               {pod.is_active ? "Active" : "Inactive"}
                             </span>
@@ -861,7 +861,7 @@ export default function Pods() {
                       ...prev,
                       pod_name: e.target.value,
                     }));
-                    validatePodName(e); 
+                    validatePodName(e);
                   }}
                   required
                 />

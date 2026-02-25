@@ -1,12 +1,12 @@
-import React , {useState, useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css';
 import { toast } from 'react-toastify';
 import Login from './pages/Login.jsx';
-import Dashboard from './pages/Dashboard.jsx'; 
+import Dashboard from './pages/Dashboard.jsx';
 import Variables from './pages/Variables.jsx';
 import Prompt from './pages/prompt.jsx';
-import Superadmin from './pages/Superadmin.jsx'; 
+import Superadmin from './pages/Superadmin.jsx';
 import Mentor from './pages/Mentor.jsx';
 import Orgadmin from './pages/Orgadmin.jsx';
 import OrgList from './pages/Organistation.jsx';
@@ -68,14 +68,14 @@ function getRedirectPath() {
 
   return "/login";
 }
- 
+
 
 function App() {
-  
+
   return (
     <>
-     <AutoLogout timeout={10 * 60 * 1000} />
-     
+      <AutoLogout timeout={10 * 60 * 1000} />
+
       <Routes>
         <Route path="/" element={<Navigate to={getRedirectPath()} />} />
         <Route path="/login" element={<Login />} />
@@ -133,14 +133,14 @@ function App() {
           <PrivateRoute roles={["superadmin"]}><Addorgadmin /></PrivateRoute>
         } />
         <Route path="/models" element={
-          <PrivateRoute roles={["superadmin"]}><Models/></PrivateRoute>
-        }/>
+          <PrivateRoute roles={["superadmin"]}><Models /></PrivateRoute>
+        } />
         <Route path="/addmodels" element={
-          <PrivateRoute roles={["superadmin"]}><Addmodels/></PrivateRoute>
-        }/>
+          <PrivateRoute roles={["superadmin"]}><Addmodels /></PrivateRoute>
+        } />
         <Route path="/assignmodels" element={
-          <PrivateRoute roles={["superadmin"]}><Assignmodels/></PrivateRoute>
-        }/>
+          <PrivateRoute roles={["superadmin"]}><Assignmodels /></PrivateRoute>
+        } />
         <Route path="/orgadminbatch" element={
           <PrivateRoute roles={["orgadmin"]}><OrgadminBatch /></PrivateRoute>
         } />
@@ -158,8 +158,8 @@ function App() {
         } />
         <Route path="/orgadmin/assignments" element={
           <PrivateRoute roles={["orgadmin"]}><ViewAssignedModels /></PrivateRoute>
-        } />       
-         <Route path="/orgadmin/organization-models" element={
+        } />
+        <Route path="/orgadmin/organization-models" element={
           <PrivateRoute roles={["orgadmin"]}><ViewOrgModels /></PrivateRoute>
         } />
         <Route path="/orgadmin/add-orgmodels" element={
@@ -167,7 +167,7 @@ function App() {
         } />
         <Route path="/orgadmin/org-assignment" element={
           <PrivateRoute roles={["orgadmin"]}><AssignmentOrg /></PrivateRoute>
-        } />          
+        } />
         <Route path="/mentordashboard" element={
           <PrivateRoute roles={["mentor"]}><Mentordashboard /></PrivateRoute>
         } />
@@ -179,10 +179,10 @@ function App() {
         } />
         <Route path="/mentorpodusers/:podId" element={
           <PrivateRoute roles={["mentor"]}><Mentorpodusers /></PrivateRoute>
-        }/>
+        } />
         <Route path="/mentorpodusersprogress/:userId" element={
           <PrivateRoute roles={["mentor"]}><MentorPodusersprogress /></PrivateRoute>
-        }/>
+        } />
         <Route path="/archived" element={
           <PrivateRoute roles={["superadmin"]}><Archived /></PrivateRoute>
         } />
@@ -191,14 +191,12 @@ function App() {
         } />
         <Route path="/practice" element={
           <PrivateRoute roles={["orguser"]}>
-            <PageProtection />
             <Practicemode />
           </PrivateRoute>
         } />
 
-        {/* Redirect to login if no route matches */}
       </Routes>
-    <ToastContainer
+      <ToastContainer
         position="top-right"
         autoClose={3000}
         hideProgressBar
@@ -209,7 +207,7 @@ function App() {
         draggable={false}
         pauseOnHover={false}
       />
-   
+
     </>
   );
 }
