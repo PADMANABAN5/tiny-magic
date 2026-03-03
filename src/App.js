@@ -35,7 +35,6 @@ import { ToastContainer } from "react-toastify";
 import PageProtection from './components/Pageprotection.jsx';
 import { AuthProvider } from "./components/AuthContext.jsx";
 import AutoLogout from "./components/Autologout.jsx";
-// ✅ Import the PrivateRoute component
 import PrivateRoute from './components/PrivateRoute.jsx';
 import ForgotPassword from './components/Forgotpassword.jsx';
 import Models from './pages/Models_management.jsx'
@@ -81,7 +80,6 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
-        {/* ✅ Protected Routes by Role */}
         <Route path="/dashboard" element={
           <PrivateRoute roles={["orguser"]}><Dashboard /></PrivateRoute>
         } />

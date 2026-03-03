@@ -28,17 +28,6 @@ export const processPromptAndCallLLM = async (
       !organizationId ||
       !batchId 
     ) {
-      console.error("Missing required fields:", {
-        username,
-        selectedPrompt,
-        selectedModel,
-        sessionHistoryLength: sessionHistory?.length,
-        userPrompt,
-        selectedConcept,
-        organizationId,
-        batchId,
-       
-      });
       throw new Error("Missing required fields for LLM request");
     }
 
@@ -52,28 +41,22 @@ export const processPromptAndCallLLM = async (
     let modelName = selectedModel;
     let modelId = null; // Initialize modelId
     try {
-      console.log("🔍 Fetching fallback model info with orgId:", organizationId, "batchId:", batchId);
       const fallbackRes = await axios.get(
         `${BASE_URL}/llm/assignments/fallback?organization_id=${organizationId}&batch_id=${batchId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      console.log("📡 Full fallback response:", fallbackRes.data); // Added detailed logging
-
       if (fallbackRes.data?.success && fallbackRes.data?.data) {
         const fallbackData = fallbackRes.data.data;
-        console.log("📦 Fallback data object:", fallbackData); // Log the data object
         
         if (fallbackData.model_name) {
           modelName = fallbackData.model_name;
-          console.log("✅ Resolved model_name from fallback API:", modelName);
         } else {
           console.warn("⚠️ No model_name in fallback data, using provided selectedModel");
         }
         
         if (fallbackData.model_id) {
           modelId = fallbackData.model_id;
-          console.log("✅ Resolved model_id from fallback API:", modelId);
         } else {
           console.warn("⚠️ No model_id in fallback data");
         }
@@ -96,13 +79,7 @@ export const processPromptAndCallLLM = async (
       organizationId,
       batchId,
     };
-    // Log request for debugging
-    console.log(
-      `Sending request to /api/prompts/process (Prompt: ${selectedPrompt}):`,
-      requestData
-    );
 
-    // Attempt request with retries
     let lastError;
     for (let attempt = 1; attempt <= retries; attempt++) {
       try {
@@ -113,9 +90,8 @@ export const processPromptAndCallLLM = async (
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
-              // "Cache-Control": "no-cache",
             },
-            timeout: 150000, // 150-second timeout for long-running requests
+            timeout: 150000,
           }
         );
 
@@ -123,10 +99,6 @@ export const processPromptAndCallLLM = async (
           throw new Error(response.data.message || "Backend processing failed");
         }
 
-        console.log(
-          `Received response for ${selectedPrompt}:`,
-          response.data.data
-        );
         return response.data.data;
       } catch (error) {
         console.error(

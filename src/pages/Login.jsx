@@ -46,107 +46,107 @@ function Login() {
     if (!hasSpecialChar) return { isValid: false, message: "🔑 Password must contain at least one special character (!@#$%^&*?)." };
     return { isValid: true, message: "" };
   };
-   const allowCopyPaste = (e) => {
+  const allowCopyPaste = (e) => {
     e.stopPropagation(); // Prevent global event handlers from blocking
   };
-const encryptPayload = async (identifier, password) => {
-  try {
-    // Convert your base64 key from .env to ArrayBuffer
-    const keyBase64 = process.env.REACT_APP_JWT_ENCRYPTION_KEY; // store key in .env
-    if (!keyBase64) throw new Error("Encryption key missing in env");
+  const encryptPayload = async (identifier, password) => {
+    try {
+      // Convert your base64 key from .env to ArrayBuffer
+      const keyBase64 = process.env.REACT_APP_JWT_ENCRYPTION_KEY; // store key in .env
+      if (!keyBase64) throw new Error("Encryption key missing in env");
 
-    const keyBytes = Uint8Array.from(atob(keyBase64), c => c.charCodeAt(0));
-    const key = await crypto.subtle.importKey(
-      "raw",
-      keyBytes,
-      { name: "AES-GCM" },
-      false,
-      ["encrypt"]
-    );
+      const keyBytes = Uint8Array.from(atob(keyBase64), c => c.charCodeAt(0));
+      const key = await crypto.subtle.importKey(
+        "raw",
+        keyBytes,
+        { name: "AES-GCM" },
+        false,
+        ["encrypt"]
+      );
 
-    const iv = crypto.getRandomValues(new Uint8Array(12)); // 12-byte IV
-    const encoder = new TextEncoder();
-    const data = encoder.encode(JSON.stringify({ identifier, password }));
+      const iv = crypto.getRandomValues(new Uint8Array(12)); // 12-byte IV
+      const encoder = new TextEncoder();
+      const data = encoder.encode(JSON.stringify({ identifier, password }));
 
-    const encryptedBuffer = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
-      key,
-      data
-    );
+      const encryptedBuffer = await crypto.subtle.encrypt(
+        { name: "AES-GCM", iv },
+        key,
+        data
+      );
 
-    // CHANGED: Extract TAG (last 16 bytes) and CT, then concat IV + TAG + CT to match backend
-    const encryptedBytes = new Uint8Array(encryptedBuffer);
-    const tag = encryptedBytes.slice(-16); // Auth tag (16 bytes)
-    const ct = encryptedBytes.slice(0, -16); // Ciphertext
+      // CHANGED: Extract TAG (last 16 bytes) and CT, then concat IV + TAG + CT to match backend
+      const encryptedBytes = new Uint8Array(encryptedBuffer);
+      const tag = encryptedBytes.slice(-16); // Auth tag (16 bytes)
+      const ct = encryptedBytes.slice(0, -16); // Ciphertext
 
-    const combined = new Uint8Array(iv.length + tag.length + ct.length);
-    combined.set(iv, 0);
-    combined.set(tag, iv.length);
-    combined.set(ct, iv.length + tag.length);
+      const combined = new Uint8Array(iv.length + tag.length + ct.length);
+      combined.set(iv, 0);
+      combined.set(tag, iv.length);
+      combined.set(ct, iv.length + tag.length);
 
-    // Base64 encode
-    return btoa(String.fromCharCode(...combined));
-  } catch (err) {
-    console.error("Encryption failed:", err);
-    throw err;
-  }
-};
+      // Base64 encode
+      return btoa(String.fromCharCode(...combined));
+    } catch (err) {
+      console.error("Encryption failed:", err);
+      throw err;
+    }
+  };
 
 
- const handleSubmit = async (e) => {
-  e.preventDefault();
-  setError("");
-  setIsSubmitting(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
 
-  const sanitizedIdentifier = identifier.trim();
-  const sanitizedPassword = password.trim();
+    const sanitizedIdentifier = identifier.trim();
+    const sanitizedPassword = password.trim();
 
-  if (!sanitizedIdentifier || !sanitizedPassword) {
-    setError("Both fields are required.");
-    setIsSubmitting(false);
-    return;
-  }
-
-  try {
-    const encryptedPayload = await encryptPayload(sanitizedIdentifier, sanitizedPassword);
-
-    const response = await axios.post(
-      `${BASE_URL}/users/login`,
-      { encryptedPayload },
-      { headers: { "Content-Type": "application/json" } }
-    );
-
-    const user = response.data?.data;
-    if (!user) throw new Error("Unexpected response from server.");
-
-    login(user);
-    sessionStorage.setItem("token", user.token || "");
-    sessionStorage.setItem("firstName", user.first_name || "");
-    sessionStorage.setItem("lastName", user.last_name || "");
-    sessionStorage.setItem("username", user.username || "");
-
-    if (user.is_default_password) {
-      setUserDetails(user);
-      setShowPasswordChangeModal(true);
+    if (!sanitizedIdentifier || !sanitizedPassword) {
+      setError("Both fields are required.");
       setIsSubmitting(false);
       return;
     }
 
-    redirectBasedOnRole(user);
-  } catch (err) {
-    const status = err.response?.status;
-    const message = err.response?.data?.message;
+    try {
+      const encryptedPayload = await encryptPayload(sanitizedIdentifier, sanitizedPassword);
 
-    if (status === 401) setError(`❌ ${message || "Invalid credentials."}`);
-    else if (status === 403) setError("🚫 Access denied.");
-    else if (status === 429) setError(`🔒 ${message || "Too many attempts. Try later."}`);
-    else if (status === 400) setError("❗ Invalid or missing credentials.");
-    else setError("⚠️ Login failed. Try again.");
+      const response = await axios.post(
+        `${BASE_URL}/users/login`,
+        { encryptedPayload },
+        { headers: { "Content-Type": "application/json" } }
+      );
 
-    setIsLoggedIn(false);
-    setIsSubmitting(false);
-  }
-};
+      const user = response.data?.data;
+      if (!user) throw new Error("Unexpected response from server.");
+
+      login(user);
+      sessionStorage.setItem("token", user.token || "");
+      sessionStorage.setItem("firstName", user.first_name || "");
+      sessionStorage.setItem("lastName", user.last_name || "");
+      sessionStorage.setItem("username", user.username || "");
+
+      if (user.is_default_password) {
+        setUserDetails(user);
+        setShowPasswordChangeModal(true);
+        setIsSubmitting(false);
+        return;
+      }
+
+      redirectBasedOnRole(user);
+    } catch (err) {
+      const status = err.response?.status;
+      const message = err.response?.data?.message;
+
+      if (status === 401) setError(`❌ ${message || "Invalid credentials."}`);
+      else if (status === 403) setError("🚫 Access denied.");
+      else if (status === 429) setError(`🔒 ${message || "Too many attempts. Try later."}`);
+      else if (status === 400) setError("❗ Invalid or missing credentials.");
+      else setError("⚠️ Login failed. Try again.");
+
+      setIsLoggedIn(false);
+      setIsSubmitting(false);
+    }
+  };
 
 
   const redirectBasedOnRole = (user) => {
@@ -274,7 +274,7 @@ const encryptPayload = async (identifier, password) => {
                   onPaste={allowCopyPaste}
                   //onSelectStart={allowCopyPaste}
                   onKeyDown={allowCopyPaste}
-                 style={{ userSelect: 'auto' }}
+                  style={{ userSelect: 'auto' }}
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   autoComplete="username"
@@ -287,11 +287,11 @@ const encryptPayload = async (identifier, password) => {
                 <div className="password-input-container">
                   <input
                     onCopy={allowCopyPaste}
-              onCut={allowCopyPaste}
-              onPaste={allowCopyPaste}
-             // onSelectStart={allowCopyPaste}
-              onKeyDown={allowCopyPaste}
-              style={{ userSelect: 'auto' }}
+                    onCut={allowCopyPaste}
+                    onPaste={allowCopyPaste}
+                    // onSelectStart={allowCopyPaste}
+                    onKeyDown={allowCopyPaste}
+                    style={{ userSelect: 'auto' }}
                     type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -309,13 +309,13 @@ const encryptPayload = async (identifier, password) => {
                 </div>
               </div>
               <div className="forgot-password-link" style={{ textAlign: 'right', marginBottom: '10px' }}>
-  <Link
-    to="/forgot-password"
-    style={{ textDecoration: 'none', color: '#085a5cff', cursor: 'pointer'}}
-  >
-    Forgot Password?
-  </Link>
-</div>
+                <Link
+                  to="/forgot-password"
+                  style={{ textDecoration: 'none', color: '#085a5cff', cursor: 'pointer' }}
+                >
+                  Forgot Password?
+                </Link>
+              </div>
 
               <button className="login-btn" type="submit" disabled={isSubmitting}>
                 {isSubmitting ? "Please Wait..." : "Login"}
@@ -336,12 +336,12 @@ const encryptPayload = async (identifier, password) => {
               <label>Current Password</label>
               <div className="password-input-container">
                 <input
-                onCopy={allowCopyPaste}
-              onCut={allowCopyPaste}
-              onPaste={allowCopyPaste}
-              onSelectStart={allowCopyPaste}
-              onKeyDown={allowCopyPaste}
-              style={{ userSelect: 'auto' }}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onPaste={allowCopyPaste}
+                  onSelectStart={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  style={{ userSelect: 'auto' }}
                   type={showCurrentPwd ? "text" : "password"}
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
@@ -364,12 +364,12 @@ const encryptPayload = async (identifier, password) => {
               <label>New Password</label>
               <div className="password-input-container">
                 <input
-                onCopy={allowCopyPaste}
-              onCut={allowCopyPaste}
-              onPaste={allowCopyPaste}
-              onSelectStart={allowCopyPaste}
-              onKeyDown={allowCopyPaste}
-              style={{ userSelect: 'auto' }}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onPaste={allowCopyPaste}
+                  onSelectStart={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  style={{ userSelect: 'auto' }}
                   type={showNewPwd ? "text" : "password"}
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
@@ -392,12 +392,12 @@ const encryptPayload = async (identifier, password) => {
               <label>Confirm Password</label>
               <div className="password-input-container">
                 <input
-                onCopy={allowCopyPaste}
-              onCut={allowCopyPaste}
-              onPaste={allowCopyPaste}
-              onSelectStart={allowCopyPaste}
-              onKeyDown={allowCopyPaste}
-              style={{ userSelect: 'auto' }}
+                  onCopy={allowCopyPaste}
+                  onCut={allowCopyPaste}
+                  onPaste={allowCopyPaste}
+                  onSelectStart={allowCopyPaste}
+                  onKeyDown={allowCopyPaste}
+                  style={{ userSelect: 'auto' }}
                   type={showConfirmPwd ? "text" : "password"}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}

@@ -7,7 +7,8 @@
 }
 
 /* Root and container width fixes */
-html, body {
+html,
+body {
   width: 100%;
   min-width: 100%;
   overflow-x: hidden;
@@ -36,7 +37,8 @@ html, body {
   flex: 1;
   display: flex;
   height: 100vh;
-  width: calc(100% - 250px); /* Ensure it takes remaining space */
+  width: calc(100% - 250px);
+  /* Ensure it takes remaining space */
   min-width: calc(100vw - 250px);
   overflow: hidden;
 }
@@ -44,27 +46,38 @@ html, body {
 /* Left Control Panel - Fixed width */
 .control-panel {
   width: 400px;
-  min-width: 400px; /* Prevent shrinking */
-  max-width: 400px; /* Prevent growing */
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.95)); /* Subtle gradient for depth */
-  backdrop-filter: blur(20px); /* Maintain glassmorphism effect */
-  border-right: 1px solid rgba(226, 232, 240, 0.8); /* Subtle border */
+  min-width: 400px;
+  /* Prevent shrinking */
+  max-width: 400px;
+  /* Prevent growing */
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(241, 245, 249, 0.95));
+  /* Subtle gradient for depth */
+  backdrop-filter: blur(20px);
+  /* Maintain glassmorphism effect */
+  border-right: 1px solid rgba(226, 232, 240, 0.8);
+  /* Subtle border */
   flex-direction: column;
-  overflow-y: auto; /* Scrollable content */
-  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08); /* Slightly stronger shadow for prominence */
-  flex-shrink: 0; /* Prevent flexbox shrinking */
-  transition: transform 0.3s ease; /* Smooth transition for responsive collapse */
+  overflow-y: auto;
+  /* Scrollable content */
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.08);
+  /* Slightly stronger shadow for prominence */
+  flex-shrink: 0;
+  /* Prevent flexbox shrinking */
+  transition: transform 0.3s ease;
+  /* Smooth transition for responsive collapse */
 }
 
 /* Right Chat Panel - Takes remaining space */
 .chat-panel {
   flex: 1;
-  min-width: 0; /* Allow shrinking if needed */
+  min-width: 0;
+  /* Allow shrinking if needed */
   display: flex;
   flex-direction: column;
   background: white;
   overflow: hidden;
-  width: 100%; /* Ensure full width */
+  width: 100%;
+  /* Ensure full width */
   position: relative;
 }
 
@@ -126,7 +139,7 @@ html, body {
     width: 100%;
     min-width: 100vw;
   }
-  
+
   .control-panel {
     width: 300px;
     min-width: 300px;
@@ -148,7 +161,7 @@ html, body {
     width: 100%;
     min-width: 100vw;
   }
-  
+
   .control-panel {
     width: 100%;
     min-width: 100%;
@@ -157,7 +170,7 @@ html, body {
     max-height: 40vh;
     order: 2;
   }
-  
+
   .chat-panel {
     order: 1;
     height: 60vh;
@@ -167,12 +180,17 @@ html, body {
 
 /* Control Panel Header */
 .control-header {
-  padding: 1.5rem 2rem; /* Adjusted padding for better spacing */
-  border-bottom: 1px solid rgba(226, 232, 240, 0.6); /* Consistent border */
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.04)); /* Slightly stronger gradient */
-  position: sticky; /* Keep header fixed at top */
+  padding: 1.5rem 2rem;
+  /* Adjusted padding for better spacing */
+  border-bottom: 1px solid rgba(226, 232, 240, 0.6);
+  /* Consistent border */
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.08), rgba(118, 75, 162, 0.04));
+  /* Slightly stronger gradient */
+  position: sticky;
+  /* Keep header fixed at top */
   top: 0;
-  z-index: 10; /* Ensure header stays above content */
+  z-index: 10;
+  /* Ensure header stays above content */
 }
 
 .header-content {
@@ -298,7 +316,10 @@ html, body {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   border: 1px solid #e2e8f0;
   z-index: 1000;
-  overflow: hidden;
+  max-height: 280px;
+  /* Approximately 5 items (55px each) */
+  overflow-y: auto;
+  overflow-x: hidden;
   animation: slideDown 0.3s ease;
 }
 
@@ -307,6 +328,7 @@ html, body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -344,6 +366,7 @@ html, body {
   background: linear-gradient(135deg, #10b981, #059669);
   color: white;
 }
+
 .tooltip-container {
   position: relative;
   display: inline-block;
@@ -370,7 +393,7 @@ html, body {
 .tooltip-container:hover::after {
   opacity: 1;
 }
- 
+
 .stage-cards {
   display: flex;
   flex-direction: column;
@@ -378,6 +401,7 @@ html, body {
   height: auto;
   min-height: 0;
 }
+
 .stage-card {
   background: white;
   padding: 1rem;
@@ -386,11 +410,15 @@ html, body {
   border: 2px solid transparent;
   transition: all 0.3s ease;
   display: flex;
-  align-items: stretch; /* Changed from flex-start to stretch */
+  align-items: stretch;
+  /* Changed from flex-start to stretch */
   gap: 1rem;
-  flex: 1; /* Allow cards to grow */
-  min-height: 40px; /* Minimum height for consistency */
+  flex: 1;
+  /* Allow cards to grow */
+  min-height: 40px;
+  /* Minimum height for consistency */
 }
+
 .concept-option {
   display: flex;
   align-items: center;
@@ -430,24 +458,25 @@ html, body {
 }
 
 .download-btn1:hover svg {
-  color: #2563eb; /* Tailwind blue-600 */
+  color: #2563eb;
+  /* Tailwind blue-600 */
 }
-.end-session-btn{
+
+.end-session-btn {
   width: 48px;
-    height: 48px;
-    border: none;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #ea667c, #764ba2);
-    color: white;
-    display: flex
-;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    flex-shrink: 0;
-    font-size: 1rem;
-    box-shadow: 0 2px 8px
+  height: 48px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ea667c, #764ba2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  font-size: 1rem;
+  box-shadow: 0 2px 8px
 }
 
 /* Tooltip styling */
@@ -457,7 +486,8 @@ html, body {
   top: -2rem;
   left: 50%;
   transform: translateX(-50%);
-  background-color: #4b5563; /* Tailwind gray-700 */
+  background-color: #4b5563;
+  /* Tailwind gray-700 */
   color: #fff;
   font-size: 0.75rem;
   border-radius: 0.375rem;
@@ -477,8 +507,10 @@ html, body {
   border-color: #667eea;
   box-shadow: 0 4px 16px rgba(102, 126, 234, 0.15);
   background: linear-gradient(135deg, rgba(102, 126, 234, 0.02), rgba(118, 75, 162, 0.01));
-  flex: 1; /* Active cards take more space */
-  min-height: auto; /* Remove min-height constraint for active cards */
+  flex: 1;
+  /* Active cards take more space */
+  min-height: auto;
+  /* Remove min-height constraint for active cards */
   border: 2px solid #007bff;
 }
 
@@ -491,7 +523,8 @@ html, body {
   justify-content: center;
   font-size: 1.25rem;
   flex-shrink: 0;
-  align-self: flex-start; /* Keep icon at top */
+  align-self: flex-start;
+  /* Keep icon at top */
 }
 
 /* Stage Content - Use Full Available Space */
@@ -499,8 +532,10 @@ html, body {
   flex: 1;
   display: flex;
   flex-direction: column;
-  height: 100%; /* Use full height */
-  min-height: 0; /* Allow shrinking */
+  height: 100%;
+  /* Use full height */
+  min-height: 0;
+  /* Allow shrinking */
 }
 
 /* Stage header container - keeps h4 and p in one line */
@@ -511,7 +546,8 @@ html, body {
   margin-bottom: 0px;
   flex-wrap: wrap;
   gap: 0.5rem;
-  flex-shrink: 0; /* Don't shrink header */
+  flex-shrink: 0;
+  /* Don't shrink header */
 }
 
 .stage-header h4 {
@@ -555,12 +591,14 @@ html, body {
 
 /* Progress content below header - Use remaining space */
 .stage-progress-content {
-  flex: 1; /* Take remaining space */
+  flex: 1;
+  /* Take remaining space */
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Allow shrinking */
+  min-height: 0;
+  /* Allow shrinking */
   width: -webkit-fill-available;
-      margin-left: -70px;
+  margin-left: -70px;
 }
 
 /* Substage Progress - Full available space */
@@ -570,10 +608,12 @@ html, body {
   background: rgba(59, 130, 246, 0.05);
   border-radius: 12px;
   border: 1px solid rgba(59, 130, 246, 0.1);
-  flex: 1; /* Use all available space */
+  flex: 1;
+  /* Use all available space */
   display: flex;
   flex-direction: column;
-  min-height: 0; /* Allow shrinking */
+  min-height: 0;
+  /* Allow shrinking */
 }
 
 .progress-info {
@@ -605,7 +645,8 @@ html, body {
 
 .substages {
   margin-top: 0px;
-  flex: 1; /* Take remaining space in substage-progress */
+  flex: 1;
+  /* Take remaining space in substage-progress */
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -616,14 +657,16 @@ html, body {
   height: 100%;
   display: flex;
   flex-direction: column;
-  min-height: 200px; /* Minimum height for visibility */
+  min-height: 200px;
+  /* Minimum height for visibility */
 }
 
 /* Ensure vertical milestone bar uses available space */
 .substages .vertical-milestone-bar {
   flex: 1;
   min-height: 150px;
-  max-height: none; /* Remove height constraints */
+  max-height: none;
+  /* Remove height constraints */
 }
 
 /* For cards that are not active, keep them compact */
@@ -672,29 +715,39 @@ html, body {
 }
 
 .control-section {
-  padding: 1.5rem 2rem; /* Consistent padding with header */
-  border-bottom: 1px solid rgba(241, 245, 249, 0.8); /* Subtle section separator */
-  flex-grow: 1; /* Allow sections to expand */
+  padding: 1.5rem 2rem;
+  /* Consistent padding with header */
+  border-bottom: 1px solid rgba(241, 245, 249, 0.8);
+  /* Subtle section separator */
+  flex-grow: 1;
+  /* Allow sections to expand */
   display: flex;
   flex-direction: column;
-  gap: 1rem; /* Space between internal elements */
-  transition: background-color 0.3s ease; /* Smooth hover effect */
+  gap: 1rem;
+  /* Space between internal elements */
+  transition: background-color 0.3s ease;
+  /* Smooth hover effect */
 }
 
 /* Last Control Section - Take remaining space */
 .control-section:last-child {
-  flex-grow: 1; /* Allow last section to take remaining space */
-  margin-bottom: 60px; /* Remove excessive margin */
+  flex-grow: 1;
+  /* Allow last section to take remaining space */
+  margin-bottom: 60px;
+  /* Remove excessive margin */
 }
 
 /* Hover Effect for Control Sections */
 .control-section:hover {
-  background: rgba(248, 250, 252, 0.5); /* Subtle hover background */
+  background: rgba(248, 250, 252, 0.5);
+  /* Subtle hover background */
 }
+
 /* Learning Progress Section - Use available space */
 
 .control-section:last-child .stage-cards {
-  flex: 1; /* Use remaining space in the section */
+  flex: 1;
+  /* Use remaining space in the section */
 }
 
 /* Responsive adjustments */
@@ -702,28 +755,29 @@ html, body {
   .stage-cards {
     flex-direction: column;
     overflow-x: auto;
-    gap: 1rem;         /* space between cards */
+    gap: 1rem;
+    /* space between cards */
     align-items: stretch;
     width: 100%;
   }
-  
+
   .stage-card {
     min-width: auto;
     width: 100%;
     margin: 0 auto;
   }
-  
+
   .stage-card.active {
     min-width: 280px;
     flex: none;
   }
-  
+
   .stage-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 0.25rem;
   }
-  
+
   .stage-header-inline {
     flex-direction: column;
     align-items: flex-start;
@@ -745,10 +799,12 @@ html, body {
     transform: scale(1);
     flex: 1;
   }
+
   50% {
     transform: scale(1.02);
     flex: 1.5;
   }
+
   100% {
     transform: scale(1);
     flex: 2;
@@ -926,8 +982,15 @@ html, body {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-8px);
+  }
 }
 
 .chat-empty h3 {
@@ -955,6 +1018,7 @@ html, body {
     opacity: 0;
     transform: translateY(15px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1071,8 +1135,13 @@ html, body {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 .loading-indicator span {
@@ -1083,8 +1152,9 @@ html, body {
 
 .chat-input::placeholder {
   color: #94a3b8;
-  text-align: left;    /* For horizontal left alignment */
-  white-space: nowrap; 
+  text-align: left;
+  /* For horizontal left alignment */
+  white-space: nowrap;
 }
 
 .chat-input:focus {
@@ -1144,8 +1214,13 @@ html, body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .api-modal {
@@ -1164,6 +1239,7 @@ html, body {
     opacity: 0;
     transform: scale(0.9) translateY(-20px);
   }
+
   to {
     opacity: 1;
     transform: scale(1) translateY(0);
@@ -1315,11 +1391,11 @@ html, body {
   .control-panel {
     width: 320px;
   }
-  
+
   .control-section {
     padding: 1.5rem;
   }
-  
+
   .chat-header,
   .chat-messages,
   .chat-input-container {
@@ -1332,13 +1408,13 @@ html, body {
   .control-section {
     padding: 1rem;
   }
-  
+
   .stage-cards {
     flex-direction: column;
     overflow-x: auto;
     gap: 0.75rem;
   }
-  
+
   .stage-card {
     min-width: 200px;
   }
@@ -1368,6 +1444,7 @@ html, body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1434,6 +1511,7 @@ html, body {
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
+
   .control-panel,
   .chat-panel,
   .stage-card,
@@ -1441,12 +1519,12 @@ html, body {
   .message-text {
     border: 2px solid #000;
   }
-  
+
   .stage-card.active {
     border-color: #000;
     background: #fff;
   }
-  
+
   .action-btn {
     border: 2px solid #000;
   }
@@ -1454,6 +1532,7 @@ html, body {
 
 /* Reduced motion preferences */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   ::before,
   ::after {
@@ -1462,7 +1541,7 @@ html, body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-  
+
   .stage-card:hover,
   .concept-option:hover,
   .action-btn:hover,
@@ -1477,47 +1556,51 @@ html, body {
   .learning-dashboard {
     background: white;
   }
-  
+
   .control-panel {
     display: none;
   }
-  
+
   .chat-panel {
     width: 100%;
     margin-left: 0;
   }
-  
+
   .chat-header,
   .chat-input-container {
     display: none;
   }
-  
+
   .chat-messages {
     background: white;
     padding: 1rem;
     height: auto;
     overflow: visible;
   }
-  
+
   .message-text {
     background: white;
     border: 1px solid #ccc;
     box-shadow: none;
     page-break-inside: avoid;
   }
-  
+
   .user-message .message-text {
     background: #f3f4f6;
     color: #000;
   }
-  
+
   .message-group {
     page-break-inside: avoid;
     margin-bottom: 1rem;
   }
-}bar,
-.chat-messages::-webkit-scrollbar {
+}
+
+.control-panel::-webkit-scrollbar,
+.chat-messages::-webkit-scrollbar,
+.concept-dropdown::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 .control-panel::-webkit-scrollbar-track,
@@ -1527,7 +1610,8 @@ html, body {
 }
 
 .control-panel::-webkit-scrollbar-thumb,
-.chat-messages::-webkit-scrollbar-thumb {
+.chat-messages::-webkit-scrollbar-thumb,
+.concept-dropdown::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 3px;
 }
@@ -1537,6 +1621,7 @@ html, body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1560,10 +1645,10 @@ html, body {
 /* Substage Progress */
 .substage-progress {
   margin-top: 5px;
-    padding: 10px;
-    background: transparent;
-    border-radius: 12px;
-    border: none;
+  padding: 10px;
+  background: transparent;
+  border-radius: 12px;
+  border: none;
 }
 
 .action-btn:disabled {
@@ -1589,12 +1674,15 @@ html, body {
 
 /* Custom scrollbar */
 .control-panel::-webkit-scrollbar,
-.chat-messages::-webkit-scrollbar {
+.chat-messages::-webkit-scrollbar,
+.concept-dropdown::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
 
 .control-panel::-webkit-scrollbar-thumb:hover,
-.chat-messages::-webkit-scrollbar-thumb:hover {
+.chat-messages::-webkit-scrollbar-thumb:hover,
+.concept-dropdown::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
@@ -1606,13 +1694,14 @@ html, body {
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
+
   .control-panel,
   .chat-panel,
   .stage-card,
   .concept-dropdown {
     border: 2px solid #000;
   }
-  
+
   .message-text {
     border: 1px solid #000;
   }
@@ -1620,24 +1709,34 @@ html, body {
 
 /* Print styles */
 @media print {
+
   .chat-header,
   .chat-input-container {
     display: none;
   }
-}track,
+}
+
+track,
 .chat-messages::-webkit-scrollbar-track {
   background: #f1f5f9;
   border-radius: 3px;
 }
- .dashboard-layout{
-      margin-top: 70px;
- }
- .alert-primary, .alert-secondary, .navbar {
-    background-color: #fff !important;
-    color: #fff !important;
+
+.dashboard-layout {
+  margin-top: 70px;
 }
-.nav-link, .navbar-brand, .prompt-nav.active {
-    color: #fff !important;
+
+.alert-primary,
+.alert-secondary,
+.navbar {
+  background-color: #fff !important;
+  color: #fff !important;
+}
+
+.nav-link,
+.navbar-brand,
+.prompt-nav.active {
+  color: #fff !important;
 }
 
 .top-right-actions {
@@ -1725,6 +1824,7 @@ html, body {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -1744,7 +1844,7 @@ html, body {
   transition: background-color 0.2s ease;
   font-size: 14px;
   font-weight: 500;
-  color:#000;
+  color: #000;
 }
 
 .top-save-option:hover {
@@ -1811,11 +1911,13 @@ html, body {
 .top-action-btn:hover::after {
   opacity: 1;
 }
+
 .prompt-nav {
-    color: #000 !important;
+  color: #000 !important;
 }
+
 .nav-link.active {
-    font-weight: 700;
+  font-weight: 700;
 }
 
 /* Stage card animations */
@@ -1831,15 +1933,17 @@ html, body {
 @keyframes stageActivate {
   0% {
     transform: scale(1);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
+
   50% {
     transform: scale(1.05);
-    box-shadow: 0 8px 25px rgba(0,123,255,0.3);
+    box-shadow: 0 8px 25px rgba(0, 123, 255, 0.3);
   }
+
   100% {
     transform: scale(1);
-    box-shadow: 0 4px 15px rgba(0,123,255,0.2);
+    box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
   }
 }
 
@@ -1859,6 +1963,7 @@ html, body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -1869,9 +1974,11 @@ html, body {
   0% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }
+
   100% {
     transform: scale(1);
   }
@@ -1882,6 +1989,7 @@ html, body {
     opacity: 0;
     transform: translateY(-20px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);
@@ -1996,6 +2104,7 @@ html, body {
     opacity: 0;
     transform: translateY(10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2007,19 +2116,42 @@ html, body {
 }
 
 /* Add some delay for staggered animation */
-.score-card:nth-child(1) { animation-delay: 0.1s; }
-.score-card:nth-child(2) { animation-delay: 0.2s; }
-.score-card:nth-child(3) { animation-delay: 0.3s; }
-.score-card:nth-child(4) { animation-delay: 0.4s; }
-.score-card:nth-child(5) { animation-delay: 0.5s; }
-.score-card:nth-child(6) { animation-delay: 0.6s; }
-.score-card:nth-child(7) { animation-delay: 0.7s; }
-.restart-session-btn {
-    width: auto;
-    border-radius: 10px;
+.score-card:nth-child(1) {
+  animation-delay: 0.1s;
 }
-.restart-session-btn svg, .chat-ended-notice svg{
-    margin-right: 10px;
+
+.score-card:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.score-card:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.score-card:nth-child(4) {
+  animation-delay: 0.4s;
+}
+
+.score-card:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+.score-card:nth-child(6) {
+  animation-delay: 0.6s;
+}
+
+.score-card:nth-child(7) {
+  animation-delay: 0.7s;
+}
+
+.restart-session-btn {
+  width: auto;
+  border-radius: 10px;
+}
+
+.restart-session-btn svg,
+.chat-ended-notice svg {
+  margin-right: 10px;
 }
 
 /* Restart Dialog Overlay */
@@ -2042,6 +2174,7 @@ html, body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -2065,6 +2198,7 @@ html, body {
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -2219,7 +2353,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px; 
+  gap: 16px;
 }
 
 .end-icon {
@@ -2271,7 +2405,7 @@ html, body {
   cursor: pointer;
   transition: all 0.3s ease;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  width:auto;
+  width: auto;
 }
 
 .restart-session-btn:hover:not(:disabled) {
@@ -2328,24 +2462,24 @@ html, body {
     width: 95%;
     margin: 20px;
   }
-  
+
   .restart-dialog-actions {
     flex-direction: column;
   }
-  
+
   .restart-btn {
     flex: none;
     width: 100%;
   }
-  
+
   .end-content h4 {
     font-size: 20px;
   }
-  
+
   .end-content p {
     font-size: 14px;
   }
-  
+
   .restart-session-btn {
     padding: 12px 24px;
     font-size: 14px;
@@ -2358,63 +2492,63 @@ html, body {
     background: #1f2937;
     border-color: #374151;
   }
-  
+
   .restart-dialog-header {
     border-bottom-color: #374151;
   }
-  
+
   .restart-dialog-header h3 {
     color: #f9fafb;
   }
-  
+
   .restart-dialog-content p {
     color: #d1d5db;
   }
-  
+
   .restart-dialog-info {
     background: #111827;
     border-color: #374151;
   }
-  
+
   .session-info strong {
     color: #e5e7eb;
   }
-  
+
   .restart-btn.cancel {
     background: #374151;
     color: #d1d5db;
     border-color: #4b5563;
   }
-  
+
   .restart-btn.cancel:hover:not(:disabled) {
     background: #4b5563;
     border-color: #6b7280;
     color: #f3f4f6;
   }
-  
+
   .chat-end-section {
     background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
     border-color: #374151;
   }
-  
+
   .end-content h4 {
     color: #f8fafc;
   }
-  
+
   .end-content p {
     color: #d1d5db;
   }
-  
+
   .end-action-hint {
     color: #9ca3af !important;
   }
-  
+
   .chat-ended-notice {
     background: #451a03;
     border-color: #f59e0b;
     color: #fbbf24;
   }
-  
+
   .chat-input.disabled {
     background-color: #374151;
     color: #6b7280;
@@ -2677,10 +2811,12 @@ html, body {
   background: #fefce8;
   border-left: 4px solid #eab308;
 }
+
 .score-strengths {
   background: #b7f22c5d;
   border-left: 4px solid #e2f50b;
 }
+
 .score-justification p,
 .score-example p,
 .score-improvement p {
@@ -2699,28 +2835,28 @@ html, body {
   .scoring-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .breakdown-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .overall-header {
     flex-direction: column;
     text-align: center;
   }
-  
+
   .score-card-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 12px;
   }
-  
+
   .breakdown-item {
     flex-direction: column;
     gap: 8px;
     text-align: center;
   }
-  
+
   .breakdown-average {
     flex-direction: column;
     gap: 8px;
@@ -2734,6 +2870,7 @@ html, body {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -2747,11 +2884,11 @@ html, body {
 }
 
 .breakdown-item:hover {
-  background: #f3f4f6; 
+  background: #f3f4f6;
 }
 
 .mic-button {
-   width: 48px;
+  width: 48px;
   height: 48px;
   border: none;
   border-radius: 50%;
@@ -2767,45 +2904,53 @@ html, body {
   font-size: 1rem;
   box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
 }
+
 .mic-button:disabled {
   background: #9ca3af;
   cursor: not-allowed;
   box-shadow: none;
 }
+
 .mic-button:hover {
   transform: translateY(-2px);
 }
+
 .mic-button.listening {
   background: #ff4b4b;
   color: white;
 }
+
 .stage-icons1 {
-   display: flex;
-  justify-content: space-between; /* pushes them apart */
+  display: flex;
+  justify-content: space-between;
+  /* pushes them apart */
   align-items: center;
   padding: 1rem 2rem;
-  gap: 2rem; 
+  gap: 2rem;
 }
 
 .stage-icon1 {
   display: flex;
   flex-direction: column;
   align-items: center;
-  
+
   font-size: 2rem;
   opacity: 0.3;
   transition: all 0.3s ease;
-   
+
 }
 
 .stage-icon1.active {
   opacity: 1;
-  color: #4caf50; /* highlight color */
+  color: #4caf50;
+  /* highlight color */
   transform: scale(1.2);
 }
+
 .icons-card1 {
   margin-bottom: 1rem;
 }
+
 .vertical-layout {
   display: flex;
   flex-direction: column;
@@ -2818,54 +2963,64 @@ html, body {
 }
 
 .scenario-info b {
-  color: #4caf50; /* highlight score */
+  color: #4caf50;
+  /* highlight score */
 }
 
 
 /* Specific colors */
 .stage-icon1.active.not-started {
-  color: #ff9800; /* Orange */
+  color: #ff9800;
+  /* Orange */
 }
 
 .stage-icon1.active.in-progress {
-  color: #2196f3; /* Blue */
+  color: #2196f3;
+  /* Blue */
 }
 
 .stage-icon1.active.completed {
-  color: #4caf50; /* Green */
+  color: #4caf50;
+  /* Green */
 }
+
 .level-completion-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* Semi-transparent backdrop */
+  background: rgba(0, 0, 0, 0.5);
+  /* Semi-transparent backdrop */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
   animation: fadeIn 0.3s ease-in-out;
 }
+
 .stage-completion-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* Semi-transparent backdrop */
+  background: rgba(0, 0, 0, 0.5);
+  /* Semi-transparent backdrop */
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
   animation: fadeIn 0.3s ease-in-out;
 }
-.level-completion-modal{
+
+.level-completion-modal {
   background: linear-gradient(135deg, #4caf50, #81c784);
   border-radius: 12px;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 0 20px rgba(76, 175, 80, 0.8); /* Green shadow */
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+  /* Green shadow */
   position: relative;
   overflow: hidden;
   animation: scaleIn 0.3s ease-in-out;
@@ -2876,11 +3031,13 @@ html, body {
   border-radius: 12px;
   padding: 20px;
   text-align: center;
-  box-shadow: 0 0 20px rgba(76, 175, 80, 0.8); /* Green shadow */
+  box-shadow: 0 0 20px rgba(76, 175, 80, 0.8);
+  /* Green shadow */
   position: relative;
   overflow: hidden;
   animation: scaleIn 0.3s ease-in-out;
 }
+
 .level-completion-content {
   color: white;
   font-family: Arial, sans-serif;
@@ -2890,6 +3047,7 @@ html, body {
   color: white;
   font-family: Arial, sans-serif;
 }
+
 .level-completion-content h3 {
   font-size: 24px;
   margin: 0 0 10px;
@@ -2901,10 +3059,12 @@ html, body {
   margin: 0 0 10px;
   font-weight: bold;
 }
+
 .level-completion-content p {
   font-size: 18px;
   margin: 0;
 }
+
 .stage-completion-content p {
   font-size: 18px;
   margin: 0;
@@ -2969,6 +3129,7 @@ html, body {
     transform: translateY(-100%) rotate(0deg);
     opacity: 1;
   }
+
   100% {
     transform: translateY(100%) rotate(360deg);
     opacity: 0;
@@ -2979,6 +3140,7 @@ html, body {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -2989,6 +3151,7 @@ html, body {
     transform: scale(0.8);
     opacity: 0;
   }
+
   to {
     transform: scale(1);
     opacity: 1;
@@ -2997,35 +3160,44 @@ html, body {
 
 
 @media (max-width: 768px) {
-  html, body {
+
+  html,
+  body {
     height: auto !important;
     min-height: 100% !important;
     overflow-x: hidden !important;
     overflow-y: auto !important;
   }
-  .learning-dashboard, .dashboard-layout {
+
+  .learning-dashboard,
+  .dashboard-layout {
     position: relative !important;
     height: auto !important;
     min-height: 100vh !important;
     width: 100vw !important;
     overflow-y: visible !important;
   }
+
   .dashboard-layout {
     display: flex;
     flex-direction: column !important;
   }
+
   .control-section:last-child {
-  flex-grow: 1; 
-  margin-bottom: 0px; 
+    flex-grow: 1;
+    margin-bottom: 0px;
   }
+
   .control-panel {
     position: fixed !important;
-    top: 60px !important; /* adjust if your header height differs */
+    top: 60px !important;
+    /* adjust if your header height differs */
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
     width: 100vw !important;
-    height: calc(100vh - 60px) !important; /* full remaining screen height */
+    height: calc(100vh - 60px) !important;
+    /* full remaining screen height */
     max-height: none !important;
     overflow-y: auto !important;
     background: rgba(255, 255, 255, 0.97) !important;
@@ -3036,15 +3208,17 @@ html, body {
     padding: 1rem;
     display: block !important;
     scroll-behavior: smooth !important;
-    -webkit-overflow-scrolling: touch; /* for iOS smooth scroll */
+    -webkit-overflow-scrolling: touch;
+    /* for iOS smooth scroll */
     transition: all 0.3s ease-in-out;
   }
+
   .chat-panel {
     height: auto !important;
     min-height: 0 !important;
     max-height: none !important;
     overflow: visible !important;
-    order: 1 !important;         
+    order: 1 !important;
     min-height: 60vh !important;
     width: 100vw !important;
     background: #fff !important;
@@ -3052,35 +3226,42 @@ html, body {
     z-index: 1;
     padding-bottom: 80px;
   }
+
   .stage-header {
     align-items: center;
     justify-content: center;
     text-align: center;
   }
-   .stage-content{
+
+  .stage-content {
     align-items: start !important;
   }
-  .stage-card{
+
+  .stage-card {
     align-items: center;
   }
-  .section-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 0rem;
-}
-.message-group {
-  margin-bottom: 0rem !important;
-  animation: messageSlideIn 0.4s ease-out;
-}
 
-.chat-container{
-  height: calc(100vh - 70px);
-}
-.chat-messages {
-  padding: 64px 24px 0px 24px;
-}
- .chat-input-container {
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0rem;
+  }
+
+  .message-group {
+    margin-bottom: 0rem !important;
+    animation: messageSlideIn 0.4s ease-out;
+  }
+
+  .chat-container {
+    height: calc(100vh - 70px);
+  }
+
+  .chat-messages {
+    padding: 64px 24px 0px 24px;
+  }
+
+  .chat-input-container {
     position: fixed;
     bottom: 0;
     left: 0;
@@ -3088,42 +3269,47 @@ html, body {
     margin-bottom: 0;
     padding: 1rem;
     background: #fff;
-    z-index: 999; /* ensure it stays above other elements */
+    z-index: 999;
+    /* ensure it stays above other elements */
     border-top: 1px solid rgba(226, 232, 240, 0.8);
   }
 
 }
+
 .pulse-container {
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
- 
+
 .mic-icon-animate {
   animation: pulse 1.2s infinite ease-in-out;
 }
- 
+
 @keyframes pulse {
   0% {
     transform: scale(1);
     opacity: 1;
   }
+
   50% {
     transform: scale(1.3);
     opacity: 0.7;
   }
+
   100% {
     transform: scale(1);
     opacity: 1;
   }
 }
+
 .markdown-text {
   white-space: pre-wrap;
   line-height: 1.6;
   font-family: "Inter", sans-serif;
 }
- 
+
 .markdown-text code,
 .markdown-text pre {
   background: #f8fafc;
@@ -3133,6 +3319,7 @@ html, body {
 }
 
 @media (max-width: 768px) {
+
   .assessment-display,
   .assessment-section,
   .overall-assessment,
@@ -3148,6 +3335,7 @@ html, body {
     border: none !important;
     box-shadow: none !important;
   }
+
   .scoring-grid,
   .breakdown-grid {
     grid-template-columns: 1fr !important;
@@ -3156,6 +3344,7 @@ html, body {
 }
 
 @media (max-width: 450px) {
+
   .overall-assessment p,
   .overall-score-card,
   .overall-score-badge,
@@ -3165,18 +3354,21 @@ html, body {
     font-size: 0.9rem !important;
     border: none !important;
   }
+
   .overall-score-badge {
     min-width: 60px !important;
     padding: 8px 10px !important;
   }
-  .overall-header h4{
+
+  .overall-header h4 {
     flex-direction: column !important;
     gap: 8px !important;
     text-align: center !important;
     align-items: center !important;
     font-size: 1.2rem !important;
   }
-   .score-breakdown {
+
+  .score-breakdown {
     margin-top: 6px !important;
     padding: 4px !important;
     background-color: #f9fafb !important;
@@ -3187,6 +3379,7 @@ html, body {
     font-size: 0.9rem !important;
     box-sizing: border-box !important;
   }
+
   .score-breakdown h5,
   .score-breakdown-label,
   .breakdown-facet,
@@ -3195,12 +3388,14 @@ html, body {
     text-align: center !important;
     width: 100% !important;
   }
+
   .score-breakdown-section {
     flex-direction: column !important;
     align-items: center !important;
     gap: 6px !important;
     margin: 0 !important;
   }
+
   .breakdown-facet,
   .breakdown-score {
     margin: 2px 0 !important;
@@ -3209,12 +3404,14 @@ html, body {
     padding: 3px !important;
     box-sizing: border-box !important;
   }
-  .scoring-header h4{
-    font-size:1.2rem ;
+
+  .scoring-header h4 {
+    font-size: 1.2rem;
   }
 }
+
 .textarea-container {
-   flex: 1;
+  flex: 1;
   min-height: 48px;
   max-height: 120px;
   padding: 1rem 1.25rem;
@@ -3239,6 +3436,7 @@ html, body {
   pointer-events: none;
   opacity: 0.8;
 }
+
 .voice-visualizer-only {
   flex: 1;
   min-height: 48px;
@@ -3269,7 +3467,7 @@ html, body {
 }
 
 .textarea-container {
-   flex: 1;
+  flex: 1;
   min-height: 48px;
   max-height: 120px;
   padding: 1rem 1.25rem;
@@ -3284,10 +3482,12 @@ html, body {
   width: 100%;
   min-width: 0;
 }
+
 @keyframes spin {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
   }
@@ -3296,6 +3496,7 @@ html, body {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
 .mic-controls-container {
   display: flex;
   gap: 0.5rem;
@@ -3327,10 +3528,11 @@ html, body {
 }
 
 .cancel-btn {
-  background: rgba(239, 68, 68, 0.1); /* Light red */
+  background: rgba(239, 68, 68, 0.1);
+  /* Light red */
 }
 
 .confirm-btn {
-  background: rgba(34, 197, 94, 0.1); /* Light green */
+  background: rgba(34, 197, 94, 0.1);
+  /* Light green */
 }
-

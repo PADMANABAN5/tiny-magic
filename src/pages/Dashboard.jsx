@@ -19,14 +19,11 @@ import {
   FiStopCircle,
   FiRefreshCw,
   FiAlertCircle,
-  FiChevronUp
 } from "react-icons/fi";
 import { useNavigate, useLocation } from "react-router-dom";
-import { FaDownload } from 'react-icons/fa';
 import axios from "axios";
 import { processPromptAndCallLLM } from "../utils/processPromptAndCallLLM";
 import Progressbar from "../components/Progressbar.jsx";
-import Tesseract from 'tesseract.js';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import PDFDownloader from "../components/PDFDownloader.jsx";
@@ -91,7 +88,7 @@ function Dashboard() {
     }
     const recognition = new SpeechRecognition();
     recognition.lang = "en-US";
-    recognition.interimResults = false; // only final results
+    recognition.interimResults = false;
     recognition.continuous = true;
     recognition.onresult = (event) => {
       let finalTranscript = "";
@@ -145,8 +142,6 @@ function Dashboard() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
-
-  // Refs for outside click detection
   const conceptDropdownRef = useRef(null);
   const topSaveButtonRef = useRef(null);
   const topSaveOptionsRef = useRef(null);
@@ -226,11 +221,9 @@ function Dashboard() {
     if (!username || conceptsLoading) return [];
     setConceptsLoading(true);
     try {
-      console.log("🎯 Fetching concepts for fresh session:", username);
       const response = await axios.get(`${BASE_URL}/pod-users/user/${username}`, config);
       if (response.data && response.data.success && response.data.data) {
         const conceptsData = response.data.data.batch?.concepts || [];
-        console.log("✅ Concepts fetched for fresh session:", conceptsData.length);
         setConcepts(conceptsData);
         return conceptsData;
       } else {
@@ -266,16 +259,11 @@ function Dashboard() {
 
         // Set concepts based on selected batch
         const conceptsData = currentBatch?.concepts || data.batch?.concepts || [];
-        console.log("✅ Concepts loaded:", conceptsData.length);
         setConcepts(conceptsData);
         const batch = response.data.data.batch;
         if (batch?.batch_id && batch?.organization_id) {
           sessionStorage.setItem("batchId", batch.batch_id);
           sessionStorage.setItem("organizationId", batch.organization_id);
-          console.log("✅ Stored batchId and orgId in sessionStorage", {
-            batchId: batch.batch_id,
-            orgId: batch.organization_id,
-          });
         } else {
           console.warn("⚠️ Could not find batchId or orgId in pod-user response.");
         }
@@ -300,16 +288,10 @@ function Dashboard() {
     toast.warn("⚠️ Please wait, assessment is being processed.");
     return;
   }
-
-  console.log("🎯 Batch selected:", batch.batch_name);
   setSelectedBatch(batch);
   setShowBatchDropdown(false);
-
-  // Update concepts based on selected batch
   const batchConcepts = batch.concepts || [];
   setConcepts(batchConcepts);
-
-  // Update sessionStorage with new batch info
   sessionStorage.setItem("batchId", batch.batch_id);
   sessionStorage.setItem("organizationId", batch.organization_id);
 
@@ -321,11 +303,7 @@ function Dashboard() {
   // Auto-select first concept if available
   if (batchConcepts.length > 0) {
     const firstConcept = batchConcepts.find(concept => concept.is_active) || batchConcepts[0];
-    console.log("🚀 Auto-selecting first concept:", firstConcept.concept_name);
-    setSelectedConcept(firstConcept);  // For UI
-
-    // ✅ FIX: Pass firstConcept to checkSessionStatus
-    console.log("🔍 Checking session status for concept:", firstConcept.concept_name);
+    setSelectedConcept(firstConcept);
     await checkSessionStatus(firstConcept.concept_name, batch.batch_id, firstConcept);
   } else {
     setSelectedConcept(null);
@@ -341,7 +319,6 @@ function Dashboard() {
     }
     const organizationId = sessionStorage.getItem("organizationId");
     const batchId = sessionStorage.getItem("batchId");
-    console.log("🚀 Initiating first mentor message with concept:", concept.concept_name);
     setIsLoading(true);
     try {
       clearSessionData();
@@ -597,7 +574,6 @@ function Dashboard() {
         organizationId,
         batchId
       });
-      console.log("📡 handleSendClick: Received initial LLM response:", initialResponse);
 
       let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
@@ -658,7 +634,6 @@ function Dashboard() {
           ...prev,
           { Mentee: "", Mentor: assessmentResponse.apiResponseText },
         ]);
-        console.log("📥 Assessment Response:", assessmentResponse.apiResponseText);
 
         setCurrentChatStatus('completed');
         if (newInteractionCompleted) {
@@ -732,7 +707,6 @@ function Dashboard() {
     let scoring_data = null;
     if (statusToSave === 'completed' && llmContent) {
       scoring_data = extractScoringData(llmContent);
-      console.log("📊 Extracted scoring data for save:", scoring_data);
 
       const truncateToTwoDecimals = (num) => {
   if (typeof num !== 'number' || isNaN(num)) return 0;
@@ -770,31 +744,12 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
     skillScores.length > 0
       ? skillScores.reduce((sum, s) => sum + s, 0) / skillScores.length
       : 0;
-
-  // Final weighted score (60% facets + 40% skills)
   const finalWeightedScore = (0.6 * sixFacetsAvg) + (0.4 * understandingSkillsAvg);
-
-  // ✅ Attach all calculated averages and weighted score (truncated, not rounded)
   scoring_data.SixFacets.OverallScore = truncateToTwoDecimals(sixFacetsAvg);
   scoring_data.UnderstandingSkills.OverallScore = truncateToTwoDecimals(understandingSkillsAvg);
   scoring_data.FinalWeightedScore = truncateToTwoDecimals(finalWeightedScore);
-
-  console.log("✅ Six Facets Avg:", scoring_data.SixFacets.OverallScore);
-  console.log("✅ Understanding Skills Avg:", scoring_data.UnderstandingSkills.OverallScore);
-  console.log("✅ Final Weighted Score:", scoring_data.FinalWeightedScore);
 }
     }
-    console.log("💾 Saving chat with:", {
-      requestedStatus,
-      statusToSave,
-      stageToSave,
-      currentStage,
-      frontendStatus: getStageStatus(),
-      currentChatStatus,
-      chatHistoryLength: chatHistory.length,
-      conceptName: conceptNameToSave,
-      hasScoring: !!scoring_data
-    });
     if (showLoader) setIsLoading(true);
     try {
       let response;
@@ -825,13 +780,6 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
         actionMessage = "Created new chat";
       }
       setShowSaveOptions(false);
-      console.log("✅ Chat saved successfully:", {
-        status: statusToSave,
-        stage: stageToSave,
-        conceptName: conceptNameToSave,
-        chatId: response.data.data.id,
-        hasScoring: !!response.data.data.scoring
-      });
       if (response.data.data.scoring) {
         console.log("📊 Scoring data saved:", {
           sixFacetsAverage: response.data.data.scoring.six_facets.average,
@@ -933,8 +881,6 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
       setCurrentChatStatus('not_started');
       return;
     }
-
-    console.log(`🔍 Checking session: user=${userId}, concept="${conceptName || 'any'}", batch_id=${batchId}`);
     
     const params = new URLSearchParams();
     params.append('user_id', userId);  // Assuming backend expects user_id as param, but code uses /${userId}
@@ -949,8 +895,6 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
     if (response.data.success) {
       const { data } = response.data;
       if (data.hasActiveSession) {
-        // Resume logic (parse conversation, set chatId, stage, etc.)
-        console.log(`✅ Resuming active session (ID: ${data.chat.id}) for batch ${batchId}`);
         setCurrentChatId(data.chat.id);
         setChatHistory(data.chat.conversation || []);
         setCurrentStage(data.chat.current_stage + 1);  // Adjust for frontend mapping
@@ -961,15 +905,11 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
         sessionStorage.setItem("chatHistory", JSON.stringify(data.chat.conversation || []));
         sessionStorage.setItem("sessionType", "resume");
       } else {
-        // Fresh start
-        console.log(`🆕 No active session found for batch ${batchId}. Starting fresh.`);
         setSessionType("fresh");
         setCurrentChatId(null);
         setResumedFromStatus(null);
         setCurrentChatStatus('not_started');
-        clearSessionData();  // Only clear if fresh
-        
-        // ✅ FIX: Use passed conceptObj or find from state/concepts
+        clearSessionData();
         let conceptToUse = conceptObj || selectedConcept;
         if (!conceptToUse && concepts.length > 0) {
           conceptToUse = concepts.find(c => c.concept_name === conceptName) || 
@@ -984,7 +924,6 @@ if (scoring_data && scoring_data.SixFacets && scoring_data.UnderstandingSkills) 
         }
         
         if (conceptToUse) {
-          console.log("🚀 Starting fresh with concept:", conceptToUse.concept_name);
           setSelectedConcept(conceptToUse);  // Safe: set after finding
           await initiateFirstMentorMessageWithConcept(conceptToUse);
         } else {
