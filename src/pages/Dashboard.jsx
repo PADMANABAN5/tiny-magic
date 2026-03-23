@@ -575,10 +575,13 @@ function Dashboard() {
         batchId
       });
 
-      let newApiCurrentStage = initialResponse.currentStage || 0;
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
       let newEndRequested = initialResponse.endRequested || false;
-      const newProgressStage = mapApiStageToProgressbarIndex(newApiCurrentStage, 'inprogress', newInteractionCompleted);
+      
+      let newProgressStage = currentStage;
+      if (initialResponse.readyForNextStage) {
+        newProgressStage = currentStage === 0 ? 1 : currentStage + 1;
+      }
       if (isFirstUserMessage || newProgressStage >= currentStage) {
         setCurrentStage(newProgressStage);
         setCurrentChatStatus('inprogress');

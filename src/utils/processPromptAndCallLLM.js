@@ -4,6 +4,36 @@ const BASE_URL =
   process.env.REACT_APP_API_LINK ||
   "https://nextgenlearn.api.magiqspark.ai/api";
 
+const fetchCurrentStageFromSession = async (token, batchId, selectedConcept) => {
+  try {
+    const userId = sessionStorage.getItem("userId");
+    const conceptName = selectedConcept?.concept_name || selectedConcept;
+
+    if (!userId || !conceptName || !batchId) return null;
+
+    const params = new URLSearchParams({
+      user_id: userId,
+      batch_id: batchId,
+    });
+    
+    if (typeof conceptName === 'string') {
+      params.append('concept_name', conceptName);
+    }
+
+    const { data } = await axios.get(
+      `${BASE_URL}/chat/session-status/${userId}?${params.toString()}`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    return data?.success && data?.data?.hasActiveSession 
+      ? data.data.chat?.current_stage 
+      : null;
+  } catch (err) {
+    console.error("❌ Error fetching current stage from session-status:", err);
+    return null;
+  }
+};
+
 export const processPromptAndCallLLM = async (
   {
     username,
@@ -14,6 +44,7 @@ export const processPromptAndCallLLM = async (
     selectedConcept,
     organizationId,
     batchId,
+    currentStage,
   },
   retries = 3,
   retryDelay = 2000
@@ -26,7 +57,7 @@ export const processPromptAndCallLLM = async (
       !selectedModel ||
       !selectedConcept ||
       !organizationId ||
-      !batchId 
+      !batchId
     ) {
       throw new Error("Missing required fields for LLM request");
     }
@@ -37,6 +68,8 @@ export const processPromptAndCallLLM = async (
       console.error("No authentication token found in sessionStorage");
       throw new Error("Authentication token missing");
     }
+
+    let finalCurrentStage = currentStage ?? await fetchCurrentStageFromSession(token, batchId, selectedConcept);
     
     let modelName = selectedModel;
     let modelId = null; // Initialize modelId
@@ -48,13 +81,13 @@ export const processPromptAndCallLLM = async (
 
       if (fallbackRes.data?.success && fallbackRes.data?.data) {
         const fallbackData = fallbackRes.data.data;
-        
+
         if (fallbackData.model_name) {
           modelName = fallbackData.model_name;
         } else {
           console.warn("⚠️ No model_name in fallback data, using provided selectedModel");
         }
-        
+
         if (fallbackData.model_id) {
           modelId = fallbackData.model_id;
         } else {
@@ -66,7 +99,7 @@ export const processPromptAndCallLLM = async (
     } catch (err) {
       console.error("❌ Error fetching model_name or model_id from fallback API:", err.response?.data || err.message);
     }
-    
+
     // Prepare request data
     const requestData = {
       username,
@@ -78,6 +111,7 @@ export const processPromptAndCallLLM = async (
       selectedConcept,
       organizationId,
       batchId,
+      currentStage: finalCurrentStage !== undefined && finalCurrentStage !== null ? finalCurrentStage : 0,
     };
 
     let lastError;
