@@ -331,8 +331,7 @@ function Dashboard() {
         selectedConcept: concept,
         organizationId,
         batchId,
-
-
+        currentStage: 0
       });
       const mentorMessage = formatMarkdownResponse(response.apiResponseText);
       const updatedHistory = [{ user: "", system: mentorMessage }];
@@ -401,7 +400,8 @@ function Dashboard() {
         userPrompt: "",
         selectedConcept,
         organizationId,
-        batchId
+        batchId,
+        currentStage: 0
       });
       const cleaned = response.apiResponseText.replace(/\*\*(.*?)\*\*/g, '$1');
       const mentorMessage = formatMarkdownResponse(cleaned, {
@@ -452,7 +452,8 @@ function Dashboard() {
         userPrompt: "",
         selectedConcept,
         organizationId,
-        batchId
+        batchId,
+        currentStage: Math.max(currentStage - 1, 0)
       });
       setLlmContent(assessmentResponse.apiResponseText);
       const assessmentChatEntry = {
@@ -572,7 +573,8 @@ function Dashboard() {
         userPrompt: userPrompt,
         selectedConcept,
         organizationId,
-        batchId
+        batchId,
+        currentStage: Math.max(currentStage - 1, 0)
       });
 
       let newInteractionCompleted = initialResponse.interactionCompleted || false;
@@ -620,7 +622,8 @@ function Dashboard() {
           userPrompt: userPrompt,
           selectedConcept,
           organizationId,
-          batchId
+          batchId,
+          currentStage: Math.max(currentStage - 1, 0)
         });
         setLlmContent(assessmentResponse.apiResponseText);
         const assessmentChatEntry = {

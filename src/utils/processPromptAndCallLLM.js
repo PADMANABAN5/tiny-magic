@@ -15,7 +15,7 @@ const fetchCurrentStageFromSession = async (token, batchId, selectedConcept) => 
       user_id: userId,
       batch_id: batchId,
     });
-    
+
     if (typeof conceptName === 'string') {
       params.append('concept_name', conceptName);
     }
@@ -25,8 +25,8 @@ const fetchCurrentStageFromSession = async (token, batchId, selectedConcept) => 
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    return data?.success && data?.data?.hasActiveSession 
-      ? data.data.chat?.current_stage 
+    return data?.success && data?.data?.hasActiveSession
+      ? data.data.chat?.current_stage
       : null;
   } catch (err) {
     console.error("❌ Error fetching current stage from session-status:", err);
@@ -70,7 +70,7 @@ export const processPromptAndCallLLM = async (
     }
 
     let finalCurrentStage = currentStage ?? await fetchCurrentStageFromSession(token, batchId, selectedConcept);
-    
+
     let modelName = selectedModel;
     let modelId = null; // Initialize modelId
     try {
@@ -81,13 +81,11 @@ export const processPromptAndCallLLM = async (
 
       if (fallbackRes.data?.success && fallbackRes.data?.data) {
         const fallbackData = fallbackRes.data.data;
-
         if (fallbackData.model_name) {
           modelName = fallbackData.model_name;
         } else {
           console.warn("⚠️ No model_name in fallback data, using provided selectedModel");
         }
-
         if (fallbackData.model_id) {
           modelId = fallbackData.model_id;
         } else {
@@ -99,7 +97,6 @@ export const processPromptAndCallLLM = async (
     } catch (err) {
       console.error("❌ Error fetching model_name or model_id from fallback API:", err.response?.data || err.message);
     }
-
     // Prepare request data
     const requestData = {
       username,
