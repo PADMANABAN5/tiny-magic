@@ -582,7 +582,9 @@ function Dashboard() {
       
       let newProgressStage = currentStage;
       if (initialResponse.readyForNextStage) {
-        newProgressStage = currentStage === 0 ? 1 : currentStage + 1;
+        newProgressStage = Math.max(currentStage - 1, 0) + 2;
+      } else {
+        newProgressStage = Math.max(currentStage, 1);
       }
       if (isFirstUserMessage || newProgressStage >= currentStage) {
         setCurrentStage(newProgressStage);
