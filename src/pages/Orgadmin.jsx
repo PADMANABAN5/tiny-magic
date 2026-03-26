@@ -474,6 +474,36 @@ function Orgadmin() {
   };
 
   /* -----------------------------------------------------------
+   * CSV Export (Using provided endpoint)
+   * --------------------------------------------------------- */
+  const handleDownloadCSV = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_LINK}/reports/progress/download?organization_name=${organizationName}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob", // Important for downloading files
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      const fname = organizationName.replace(/\s+/g, "_") || "organization";
+      link.setAttribute("download", `organization_progress_report_${fname}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+      alert("Failed to download CSV report.");
+    }
+  };
+
+  /* -----------------------------------------------------------
    * Pagination controls handlers for Progress Report
    * --------------------------------------------------------- */
   const handleProgressPageChange = (pageNumber) => {
@@ -726,11 +756,14 @@ function Orgadmin() {
                         <FiDownload className="me-1" /> Download
                       </Dropdown.Toggle>
                       <Dropdown.Menu>
-                        <Dropdown.Item onClick={handleDownloadPDF}>
+                        {/*<Dropdown.Item onClick={handleDownloadPDF}>
                           Download as PDF
                         </Dropdown.Item>
                         <Dropdown.Item onClick={handleDownloadExcel}>
                           Download as Excel
+                        </Dropdown.Item>*/}
+                        <Dropdown.Item onClick={handleDownloadCSV}>
+                          Download as CSV
                         </Dropdown.Item>
                       </Dropdown.Menu>
                     </Dropdown>
@@ -975,48 +1008,48 @@ function Orgadmin() {
             </Card.Body>
           </Card>
 
-         <Row className="mb-4 g-4 justify-content-center">
-  <Col xs={12} md={4}>
-    <Card className="shadow-sm rounded-4 border-0 h-100 transition-all" style={{ background: 'linear-gradient(145deg, #ffffff, #f8f9fa)', border: '1px solid #e9ecef' }}>
-      <Card.Body className="p-4 d-flex flex-column align-items-center">
-        <div className="mb-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', background: 'rgba(56, 142, 60, 0.1)', borderRadius: '12px' }}>
-          <FiPlus size={40} style={{ color: '#388e3c' }} />
-        </div>
-        <h5 className="fw-bold text-dark mb-2 fs-5 text-center">Add Models</h5>
-        <p className="text-muted mb-3 small text-center">Add a new Model for your org.</p>
-        <Button 
-          variant="outline-info" 
-          size="sm" 
-          className="rounded-pill px-4 py-2 fw-semibold border-info"
-          onClick={() => navigate('/orgadmin/add-orgmodels')}
-        >
-          Organization Models
-        </Button>
-      </Card.Body>
-    </Card>
-  </Col>
-  <Col xs={12} md={4}>
-    <Card className="shadow-sm rounded-4 border-0 h-100 transition-all" style={{ background: 'linear-gradient(145deg, #ffffff, #f8f9fa)', border: '1px solid #e9ecef' }}>
-      <Card.Body className="p-4 d-flex flex-column align-items-center">
-        <div className="mb-3">
-          <div className="d-flex justify-content-center align-items-center rounded-circle bg-primary bg-opacity-10" style={{ width: '56px', height: '56px', border: '1px solid rgba(13, 110, 253, 0.2)' }}>
-            <FaTasks size={32} style={{ color: '#0d6efd' }} />
-          </div>
-        </div>
-        <h5 className="fw-bold text-dark mb-2 fs-5 text-center">Manage Assignments</h5>
-        <p className="text-muted mb-3 small text-center">Assign organization or batch-level models easily.</p>
-        <Button 
-          variant="outline-info" 
-          size="sm" 
-          className="rounded-pill px-4 py-2 fw-semibold"
-          onClick={() => navigate("/orgadmin/org-assignment")}
-        >
-          Assignments
-        </Button>
-      </Card.Body>
-    </Card>
-  </Col>
-</Row>
+          <Row className="mb-4 g-4 justify-content-center">
+            <Col xs={12} md={4}>
+              <Card className="shadow-sm rounded-4 border-0 h-100 transition-all" style={{ background: 'linear-gradient(145deg, #ffffff, #f8f9fa)', border: '1px solid #e9ecef' }}>
+                <Card.Body className="p-4 d-flex flex-column align-items-center">
+                  <div className="mb-3" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '56px', height: '56px', background: 'rgba(56, 142, 60, 0.1)', borderRadius: '12px' }}>
+                    <FiPlus size={40} style={{ color: '#388e3c' }} />
+                  </div>
+                  <h5 className="fw-bold text-dark mb-2 fs-5 text-center">Add Models</h5>
+                  <p className="text-muted mb-3 small text-center">Add a new Model for your org.</p>
+                  <Button
+                    variant="outline-info"
+                    size="sm"
+                    className="rounded-pill px-4 py-2 fw-semibold border-info"
+                    onClick={() => navigate('/orgadmin/add-orgmodels')}
+                  >
+                    Organization Models
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+            <Col xs={12} md={4}>
+              <Card className="shadow-sm rounded-4 border-0 h-100 transition-all" style={{ background: 'linear-gradient(145deg, #ffffff, #f8f9fa)', border: '1px solid #e9ecef' }}>
+                <Card.Body className="p-4 d-flex flex-column align-items-center">
+                  <div className="mb-3">
+                    <div className="d-flex justify-content-center align-items-center rounded-circle bg-primary bg-opacity-10" style={{ width: '56px', height: '56px', border: '1px solid rgba(13, 110, 253, 0.2)' }}>
+                      <FaTasks size={32} style={{ color: '#0d6efd' }} />
+                    </div>
+                  </div>
+                  <h5 className="fw-bold text-dark mb-2 fs-5 text-center">Manage Assignments</h5>
+                  <p className="text-muted mb-3 small text-center">Assign organization or batch-level models easily.</p>
+                  <Button
+                    variant="outline-info"
+                    size="sm"
+                    className="rounded-pill px-4 py-2 fw-semibold"
+                    onClick={() => navigate("/orgadmin/org-assignment")}
+                  >
+                    Assignments
+                  </Button>
+                </Card.Body>
+              </Card>
+            </Col>
+          </Row>
           {/* Batch Cards */}
           {!pageLoading && !batchesError && (
             <>

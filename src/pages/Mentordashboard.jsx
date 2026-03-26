@@ -179,6 +179,34 @@ function Mentordashboard() {
     }
   };
 
+  // --- CSV Download Function ---
+  const handleDownloadCSV = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_LINK}/reports/progress/download?mentor_id=${mentorId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${sessionStorage.getItem("token")}`, // using token like orgadmin
+          },
+          responseType: "blob",
+        }
+      );
+
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      const fname = fullName.replace(/\s+/g, "_") || "mentor";
+      link.setAttribute("download", `mentor_progress_report_${fname}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Error downloading CSV:", error);
+      alert("Failed to download CSV report.");
+    }
+  };
+
   // --- Pagination Logic for Mentor Progress Report Table ---
   // Group all progress data by user_id first
   const groupedMentorProgressData = mentorProgressReportData.reduce((acc, item) => {
@@ -310,7 +338,7 @@ function Mentordashboard() {
                     <option value="50">50</option>
                   </Form.Select>
                 </div>
-                <button
+                {/*<button
                   onClick={handleDownloadPDF}
                   style={{
                     padding: '10px 15px',
@@ -323,6 +351,20 @@ function Mentordashboard() {
                   }}
                 >
                   Download Progress Report PDF 📄
+                </button>*/}
+                <button
+                  onClick={handleDownloadCSV}
+                  style={{
+                    padding: '10px 15px',
+                    backgroundColor: '#198754', // Green color similar to standard CSV export buttons
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '5px',
+                    cursor: 'pointer',
+                    fontSize: '16px'
+                  }}
+                >
+                  Download Progress Report CSV 📄
                 </button>
               </div>
 

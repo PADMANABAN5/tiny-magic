@@ -429,7 +429,35 @@ const getUniqueValues = (data, property) => {
       saveAs(blob, `mentor_progress_report_${fname}.xlsx`);
     };
   
+    /* -----------------------------------------------------------
+     * CSV Export (Using provided endpoint)
+     * --------------------------------------------------------- */
+    const handleDownloadCSV = async () => {
+      try {
+        const response = await axios.get(
+          `${process.env.REACT_APP_API_LINK}/reports/progress/download?mentor_id=${mentorId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            responseType: "blob",
+          }
+        );
 
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        const fname = fullName.replace(/\s+/g, "_") || "mentor";
+        link.setAttribute("download", `mentor_progress_report_${fname}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Error downloading CSV:", error);
+        alert("Failed to download CSV report.");
+      }
+    };
   
   /* -----------------------------------------------------------
    * Pagination controls handlers
@@ -689,8 +717,9 @@ const getUniqueValues = (data, property) => {
       <FiDownload className="me-1" /> Download
     </Dropdown.Toggle>
     <Dropdown.Menu>
-      <Dropdown.Item onClick={handleDownloadPDF}>Download as PDF</Dropdown.Item>
-      <Dropdown.Item onClick={handleDownloadExcel}>Download as Excel</Dropdown.Item>
+      {/*<Dropdown.Item onClick={handleDownloadPDF}>Download as PDF</Dropdown.Item>
+      <Dropdown.Item onClick={handleDownloadExcel}>Download as Excel</Dropdown.Item>*/}
+      <Dropdown.Item onClick={handleDownloadCSV}>Download as CSV</Dropdown.Item>
     </Dropdown.Menu>
   </Dropdown>
 </div>
