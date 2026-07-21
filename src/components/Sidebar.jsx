@@ -20,17 +20,17 @@ const BASE_URL = process.env.REACT_APP_API_LINK;
 function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, showMobileMenu = false }) {
   const location = useLocation();
   const navigate = useNavigate();
-   // 🔹 CHANGED: read name sources we saved at login
-  const firstName = sessionStorage.getItem("firstName"); 
-  const username  = sessionStorage.getItem("username");  
-  const email     = sessionStorage.getItem("email");     
- // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
+  // 🔹 CHANGED: read name sources we saved at login
+  const firstName = sessionStorage.getItem("firstName");
+  const username = sessionStorage.getItem("username");
+  const email = sessionStorage.getItem("email");
+  // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
   const displayName =
     (firstName && firstName.trim()) ||
     (username && username.trim()) ||
     (email && email.split("@")[0]) ||
     "User";
-  
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768.98)
   const [showDropdown, setShowDropdown] = useState(false);
   const [showHistorySubmenu, setShowHistorySubmenu] = useState(false);
@@ -64,7 +64,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
       navigate("/login");
     }
   };
- 
+
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth < 768.98)
@@ -92,7 +92,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
           onClick={(e) => isProcessingAssessment && e.preventDefault()}
         >
           <div className="logo-container">
-            <img src="/logo.png" alt="Logo" className="logo-image" />
+            {/* <img src="/logo.png" alt="Logo" className="logo-image" /> */}
           </div>
         </Link>
 
@@ -102,7 +102,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
             onClick={() => setMenuOpen(!menuOpen)}
             aria-label="Toggle menu"
             style={{
-              background:"linear-gradient(135deg, #0077b6, #00b4d8)",
+              background: "linear-gradient(135deg, #0077b6, #00b4d8)",
               border: "none",
               padding: "3px 11px",
               borderRadius: "12px", // Medium rounding
@@ -111,7 +111,7 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
             }}
 
           >
-            <MdMenu size={28} color="#fff"  />
+            <MdMenu size={28} color="#fff" />
           </button>
         )}
 
@@ -148,10 +148,10 @@ function Sidebar({ isProcessingAssessment, isLoading, menuOpen, setMenuOpen, sho
             >
               <FaUser className="userlogo-desktop text-white" />
               <span className="text-white username-desktop">
-  {firstName
-    ? `${firstName} (${username || email.split("@")[0] || "User"})`
-    : displayName}
-</span>
+                {firstName
+                  ? `${firstName} (${username || email.split("@")[0] || "User"})`
+                  : displayName}
+              </span>
               <FaCaretDown className="ms-2 text-white" />
             </button>
 

@@ -8,7 +8,7 @@ import {
   FaUser,
   FaCaretDown,
   FaHistory,
-  FaSlidersH 
+  FaSlidersH
 } from "react-icons/fa";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -18,22 +18,22 @@ const BASE_URL = process.env.REACT_APP_API_LINK;
 function Supersidebar() {
   const location = useLocation();
   const navigate = useNavigate();
- 
+
   const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
   const [showDropdown, setShowDropdown] = useState(false);
 
   // 🔹 CHANGED: read name sources we saved at login
-  const firstName = sessionStorage.getItem("firstName"); 
-  const username  = sessionStorage.getItem("username");  
-  const email     = sessionStorage.getItem("email");    
- // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
+  const firstName = sessionStorage.getItem("firstName");
+  const username = sessionStorage.getItem("username");
+  const email = sessionStorage.getItem("email");
+  // 🔹 CHANGED: build a friendly display name (firstName → username → email local-part → "User")
   const displayName =
     (firstName && firstName.trim()) ||
     (username && username.trim()) ||
     (email && email.split("@")[0]) ||
     "User";
 
-    const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
       const token = sessionStorage.getItem("token"); // store your login token here
       await axios.post(
@@ -63,7 +63,7 @@ function Supersidebar() {
     }
   };
 
-  
+
 
   useEffect(() => {
     const handleResize = () => {
@@ -72,7 +72,7 @@ function Supersidebar() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
- 
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest('.dropdown')) {
@@ -85,13 +85,13 @@ function Supersidebar() {
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light fixed-top border-bottom shadow-sm px-3">
-      <div className="container-fluid"> 
+      <div className="container-fluid">
         <Link to="/superadmin" className="navbar-brand d-flex align-items-center">
           <div className="logo-container">
-            <img src="/logo.png" alt="Logo" className="logo-image" /> 
+            {/* <img src="/logo.png" alt="Logo" className="logo-image" />  */}
           </div>
         </Link>
- 
+
         <div className="ms-auto">
           <div className="dropdown">
             <button
@@ -102,41 +102,39 @@ function Supersidebar() {
             >
               <FaUser className="me-2 text-white" />
               <span className="text-white">{firstName
-    ? `${firstName} (${username || email.split("@")[0] || "User"})`
-    : displayName}</span>
+                ? `${firstName} (${username || email.split("@")[0] || "User"})`
+                : displayName}</span>
               <FaCaretDown className="ms-2 text-white" />
             </button>
-            
+
             {showDropdown && (
               <ul className="dropdown-menu dropdown-menu-end show">
                 <li>
                   <Link
                     to="/superadmin"
-                    className={`dropdown-item d-flex align-items-center ${
-                      location.pathname === "/superadmin" ? "active" : ""
-                    }`}
+                    className={`dropdown-item d-flex align-items-center ${location.pathname === "/superadmin" ? "active" : ""
+                      }`}
                     onClick={() => setShowDropdown(false)}
                   >
                     <FaTachometerAlt className="me-2" style={{ fontSize: "16px" }} />
                     Dashboard
                   </Link>
-                   <Link
-                      to="/prompt"
-                      className={`dropdown-item d-flex align-items-center ${
-                      location.pathname === "/prompt" ? "active" : ""
+                  <Link
+                    to="/prompt"
+                    className={`dropdown-item d-flex align-items-center ${location.pathname === "/prompt" ? "active" : ""
                       }`}
-                      onClick={() => setShowDropdown(false)}
-                      >
-                      <FaSlidersH  className="me-2" style={{ fontSize: "16px" }} />
-                      Prompt
-                      </Link> 
+                    onClick={() => setShowDropdown(false)}
+                  >
+                    <FaSlidersH className="me-2" style={{ fontSize: "16px" }} />
+                    Prompt
+                  </Link>
                 </li>
                 <li><hr className="dropdown-divider" /></li>
                 <li>
                   <button
                     className="dropdown-item d-flex align-items-center text-danger"
                     onClick={() => {
-                      
+
                       setShowDropdown(false);
                       handleLogout();
                     }}

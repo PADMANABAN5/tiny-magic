@@ -16,7 +16,7 @@ function Superadmin() {
   const lastname = sessionStorage.getItem("lastname");
   const fullName = `${firstname || ''} ${lastname || ''}`.trim() || 'User';
   const navigate = useNavigate();
-  
+
 
   return (
     <div className="d-flex bg-light min-vh-100">
@@ -28,7 +28,7 @@ function Superadmin() {
         <Card className="shadow-sm mb-3 mt-4 border-0 rounded-3" >
           <Card.Body>
             <h1 className="fs-3 text-dark mb-2">
-              Welcome, <span className="text-primary">{fullName || 'Super Admin'}</span>!👋 from <span className="text-primary">{'Tiny Magiq'}</span>
+              Welcome, <span className="text-primary">{fullName || 'Super Admin'}</span>!👋 from <span className="text-primary">{'Ai Mentor'}</span>
             </h1>
             <p className="text-secondary fs-6 mb-0">
               Manage platform-wide settings, organizations, and admin controls. Your central hub for ultimate control.
@@ -96,7 +96,7 @@ function Superadmin() {
                   </div>
                   <Card.Title className="fs-5 fw-semibold text-dark mb-2">Organization Users</Card.Title>
                   <Card.Text className="text-secondary mb-4 fs-6">
-                   Add and view users within organizations. Oversee user accounts and their roles to maintain a structured environment.
+                    Add and view users within organizations. Oversee user accounts and their roles to maintain a structured environment.
 
                   </Card.Text>
                   <Button
@@ -228,7 +228,7 @@ function Superadmin() {
                 </Card.Body>
               </Card>
             </Col>
-           <Col>
+            <Col>
               <Card className="shadow-sm h-100 border-0 rounded-3 card-superadmin">
                 <Card.Body className="">
                   <div className="p-3 bg-gradient-orange rounded-circle d-inline-flex mb-3">
@@ -247,7 +247,7 @@ function Superadmin() {
                   </Button>
                 </Card.Body>
               </Card>
-            </Col> 
+            </Col>
           </Row>
         </div>
       </Container>
